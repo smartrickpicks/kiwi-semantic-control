@@ -5,3 +5,6 @@ run = "python3 local_runner/validate_config.py --base config/config_pack.base.js
 
 [nix]
 channel = "stable-25_05"
+
+[agent]
+expertMode = true

@@ -282,7 +282,10 @@ def evaluate_rules(merged_cfg: dict, std: dict, qa_loaded: bool):
                             "new_value": None,
                             "reason_category": "salesforce_rules",
                             "severity": severity,
-                            "notes": rule.get("rule_id")
+                            "notes": rule.get("rule_id"),
+                            "_ck": ck,
+                            "_fu": fu,
+                            "_fn": fn
                         })
 
                 # REQUIRE_PRESENT
@@ -326,7 +329,10 @@ def evaluate_rules(merged_cfg: dict, std: dict, qa_loaded: bool):
                         "new_value": proposed_value,
                         "reason_category": "salesforce_rules",
                         "severity": severity,
-                        "notes": rule.get("rule_id")
+                        "notes": rule.get("rule_id"),
+                        "_ck": ck,
+                        "_fu": fu,
+                        "_fn": fn
                     })
 
         # Aggregate status for this record using full JOIN TRIPLET
@@ -373,22 +379,33 @@ def evaluate_rules(merged_cfg: dict, std: dict, qa_loaded: bool):
     # Deterministic ordering of outputs
     def key_contract(d):
         return (
-            norm_cmp(d.get("contract_key")),
-            norm_cmp(d.get("file_url")),
-            norm_cmp(d.get("file_name")),
+            "" if d.get("contract_key") else "zzz",  # contract_key present sorts first
+            norm_cmp(d.get("contract_key") or ""),
+            norm_cmp(d.get("file_url") or ""),
+            norm_cmp(d.get("file_name") or ""),
             d.get("sheet", ""),
             d.get("field", ""),
         )
 
     sf_field_actions = sorted(sf_field_actions, key=key_contract)
     sf_issues = sorted(sf_issues, key=lambda d: (
-        norm_cmp(d.get("contract_key")), norm_cmp(d.get("file_url")), norm_cmp(d.get("file_name")), d.get("sheet", ""), d.get("field", ""), d.get("issue_type", "")
+        "" if d.get("contract_key") else "zzz",  # contract_key present sorts first
+        norm_cmp(d.get("contract_key") or ""), norm_cmp(d.get("file_url") or ""), norm_cmp(d.get("file_name") or ""), d.get("sheet", ""), d.get("field", ""), d.get("issue_type", "")
     ))
     sf_change_log = sorted(sf_change_log, key=lambda d: (
+        "" if d.get("_ck") else "zzz",  # contract_key present sorts first
+        norm_cmp(d.get("_ck") or ""),
+        norm_cmp(d.get("_fu") or ""),
+        norm_cmp(d.get("_fn") or ""),
         d.get("sheet", ""), d.get("field", ""), norm_cmp(str(d.get("old_value"))), norm_cmp(str(d.get("new_value")))
     ))
+    # Remove internal sorting keys from sf_change_log
+    sf_change_log = [{k: v for k, v in d.items() if not k.startswith("_")} for d in sf_change_log]
     sf_contract_results = sorted(sf_contract_results, key=lambda d: (
-        norm_cmp(d.get("contract_key")), norm_cmp(d.get("file_url")), norm_cmp(d.get("file_name"))
+        "" if d.get("contract_key") else "zzz",  # contract_key present sorts first
+        norm_cmp(d.get("contract_key") or ""),
+        norm_cmp(d.get("file_url") or ""),
+        norm_cmp(d.get("file_name") or "")
     ))
     sf_manual_review_queue = sorted(sf_manual_review_queue, key=lambda d: (
         norm_cmp(d.get("contract_key")), d.get("severity", "")
