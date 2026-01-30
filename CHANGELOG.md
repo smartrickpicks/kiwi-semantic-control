@@ -1,5 +1,27 @@
 # CHANGELOG
 
+## Version: v1.0.0
+Date: 2026-01-30
+
+### Added
+- Viewer v1.0 Multi-Page Navigation + Mode Toggle
+  - Left-nav sidebar with 4 pages: Run, Triage, Patch Studio, Review
+  - Hash-based routing (#/run, #/triage, #/patch, #/review)
+  - Mode toggle: Operator, Reviewer, Analyst (persisted to localStorage)
+  - Run page: Toolbar, dataset paths, status summary, Stream Model as collapsible About
+  - Triage page: Summary cards, filters, queues, workbench drilldown
+  - Patch Studio page: Preflight Gate, Patch Draft Builder, copy outputs
+  - Review page: Config+Patch Inspector, Session Loader (Comparison Mode), Evidence summary
+  - Why: Improve navigation and focus by separating workflows into dedicated pages.
+
+### Technical Details
+- All existing features preserved (no regressions)
+- Hash-based routing for SPA-like navigation within single HTML file
+- Mode toggle changes visible emphasis (placeholder for future mode-specific visibility)
+- Storage keys updated to v10
+
+---
+
 ## Version: v0.9.0
 Date: 2026-01-30
 

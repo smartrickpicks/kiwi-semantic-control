@@ -708,62 +708,62 @@ Note: This viewer does NOT execute any commands automatically.
         </div>
 
         <div class="config-inspector" id="config-inspector">
-    <div class="config-inspector-header">
-      <h3>Config + Patch Inspector (Ruleset Delta)</h3>
-      <button class="config-inspector-toggle" id="config-inspector-toggle">Show</button>
-    </div>
-    <div class="config-inspector-body" id="config-inspector-body">
-      <div class="config-inspector-row">
-        <div class="config-inspector-field">
-          <label>Base Config Path</label>
-          <input type="text" id="base-config-path" value="config/config_pack.base.json" placeholder="config/config_pack.base.json">
+          <div class="config-inspector-header">
+            <h3>Config + Patch Inspector (Ruleset Delta)</h3>
+            <button class="config-inspector-toggle" id="config-inspector-toggle">Show</button>
+          </div>
+          <div class="config-inspector-body" id="config-inspector-body">
+            <div class="config-inspector-row">
+              <div class="config-inspector-field">
+                <label>Base Config Path</label>
+                <input type="text" id="base-config-path" value="config/config_pack.base.json" placeholder="config/config_pack.base.json">
+              </div>
+              <div class="config-inspector-field">
+                <label>Patch Path</label>
+                <input type="text" id="patch-path" value="config/config_pack.example.patch.json" placeholder="config/config_pack.example.patch.json">
+              </div>
+              <div class="config-inspector-actions">
+                <button class="config-inspector-btn config-inspector-btn-primary" id="load-config">Load Config</button>
+                <button class="config-inspector-btn config-inspector-btn-secondary" id="clear-config">Clear</button>
+              </div>
+            </div>
+            <div class="config-inspector-status" id="config-status" style="display: none;"></div>
+            <div id="config-results" style="display: none;">
+              <div class="patch-summary" id="patch-summary"></div>
+              <div class="ruleset-delta" id="ruleset-delta"></div>
+              <div class="table-container">
+                <table class="changes-table" id="changes-table"></table>
+              </div>
+              <div class="config-inspector-copy-actions">
+                <button class="config-copy-btn" id="copy-ruleset-delta">Copy Ruleset Delta (Markdown)</button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="config-inspector-field">
-          <label>Patch Path</label>
-          <input type="text" id="patch-path" value="config/config_pack.example.patch.json" placeholder="config/config_pack.example.patch.json">
-        </div>
-        <div class="config-inspector-actions">
-          <button class="config-inspector-btn config-inspector-btn-primary" id="load-config">Load Config</button>
-          <button class="config-inspector-btn config-inspector-btn-secondary" id="clear-config">Clear</button>
-        </div>
-      </div>
-      <div class="config-inspector-status" id="config-status" style="display: none;"></div>
-      <div id="config-results" style="display: none;">
-        <div class="patch-summary" id="patch-summary"></div>
-        <div class="ruleset-delta" id="ruleset-delta"></div>
-        <div class="table-container">
-          <table class="changes-table" id="changes-table"></table>
-        </div>
-        <div class="config-inspector-copy-actions">
-          <button class="config-copy-btn" id="copy-ruleset-delta">Copy Ruleset Delta (Markdown)</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <div class="session-loader" id="session-loader">
-    <div class="session-loader-header">
-      <h3>Session Loader (Comparison Mode)</h3>
-      <button class="session-loader-toggle" id="session-loader-toggle">Show</button>
-    </div>
-    <div class="session-loader-body" id="session-loader-body">
-      <div class="session-loader-row">
-        <div class="session-loader-field">
-          <label>Primary Artifact Path</label>
-          <input type="text" id="primary-path" value="out/sf_packet.preview.json" placeholder="out/sf_packet.preview.json">
+        <div class="session-loader" id="session-loader">
+          <div class="session-loader-header">
+            <h3>Session Loader (Comparison Mode)</h3>
+            <button class="session-loader-toggle" id="session-loader-toggle">Show</button>
+          </div>
+          <div class="session-loader-body" id="session-loader-body">
+            <div class="session-loader-row">
+              <div class="session-loader-field">
+                <label>Primary Artifact Path</label>
+                <input type="text" id="primary-path" value="out/sf_packet.preview.json" placeholder="out/sf_packet.preview.json">
+              </div>
+              <div class="session-loader-field">
+                <label>Comparison Artifact Path (optional)</label>
+                <input type="text" id="compare-path" placeholder="out/sf_packet.preview.prev.json">
+              </div>
+              <div class="session-loader-actions">
+                <button class="session-loader-btn session-loader-btn-primary" id="load-session">Load</button>
+                <button class="session-loader-btn session-loader-btn-secondary" id="clear-compare">Clear Compare</button>
+              </div>
+            </div>
+            <div class="session-loader-status" id="session-status" style="display: none;"></div>
+          </div>
         </div>
-        <div class="session-loader-field">
-          <label>Comparison Artifact Path (optional)</label>
-          <input type="text" id="compare-path" placeholder="out/sf_packet.preview.prev.json">
-        </div>
-        <div class="session-loader-actions">
-          <button class="session-loader-btn session-loader-btn-primary" id="load-session">Load</button>
-          <button class="session-loader-btn session-loader-btn-secondary" id="clear-compare">Clear Compare</button>
-        </div>
-      </div>
-      <div class="session-loader-status" id="session-status" style="display: none;"></div>
-    </div>
-  </div>
 
         <div id="review-evidence-summary" class="evidence-summary-panel"></div>
       </div><!-- end page-review -->

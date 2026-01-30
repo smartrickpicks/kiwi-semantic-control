@@ -3,7 +3,7 @@
 ## Overview
 A read-only, single-file HTML viewer for sf_packet artifacts. No build step, no dependencies, no external network requests.
 
-**Version:** 0.9
+**Version:** 1.0
 
 ## How to Open
 
@@ -390,6 +390,30 @@ Changes are sorted by:
 
 ## Version History
 
+### Multi-Page Navigation + Mode Toggle (v1.0)
+
+The viewer now uses a 4-page navigation structure with hash-based routing.
+
+**Pages:**
+| Page | Path | Purpose |
+|------|------|---------|
+| Run | #/run | Execute validation/preview commands, view dataset paths, status summary |
+| Triage | #/triage | Summary cards, filters, issues/actions queues, workbench drilldown |
+| Patch Studio | #/patch | Preflight Gate, Patch Draft Builder, copy outputs |
+| Review | #/review | Config+Patch Inspector, Comparison Mode, Evidence summary |
+
+**Mode Toggle:**
+| Mode | Description |
+|------|-------------|
+| Operator | Default view for running commands and monitoring status |
+| Reviewer | Focused view for reviewing changes and evidence |
+| Analyst | Focused view for data analysis and triage |
+
+**Navigation:**
+- Click nav items in the left sidebar to switch pages
+- Use browser back/forward buttons with hash URLs
+- Mode selection is persisted to localStorage
+
 ### Session + Stream Model (v0.9)
 
 Conceptual UI-only model for future continuous/streaming pipeline semantics.
@@ -440,6 +464,7 @@ Click to copy a PR-ready explanation of the stream model.
 
 | Version | Features |
 |---------|----------|
+| 1.0 | Multi-Page Navigation + Mode Toggle (Run/Triage/Patch Studio/Review pages, Operator/Reviewer/Analyst modes) |
 | 0.9 | Session + Stream Model (Session Timeline, Record States, Never-Stop Flow, Reconsolidation Rules, Copy Stream Semantics) |
 | 0.8 | Config + Patch Inspector (Ruleset Loader, Patch Summary, Version Match, Changes Table, Ruleset Delta Counts, Copy Ruleset Delta Markdown, Preflight Integration) |
 | 0.7 | Comparison Mode (Session Loader, Delta Summary Cards, row-level change indicators, Copy Delta Summary) |
