@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Board Viewer v0.3</title>
+  <title>Control Board Viewer v0.4</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 20px; }
@@ -109,13 +109,19 @@
     .drawer-table tr:hover { background: #f9f9f9; }
     .drawer-empty { color: #666; font-style: italic; padding: 20px; text-align: center; background: #f9f9f9; border-radius: 6px; }
     .drawer-actions { padding: 15px 20px; border-top: 1px solid #eee; flex-shrink: 0; }
-    .drawer-btn { width: 100%; padding: 12px; background: #1565c0; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9em; }
+    .drawer-btn { padding: 10px 14px; background: #1565c0; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; }
     .drawer-btn:hover { background: #1976d2; }
+    .drawer-actions-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .drawer-btn-secondary { background: #455a64; }
+    .drawer-btn-secondary:hover { background: #546e7a; }
+    .drawer-warning { background: #fff3e0; color: #e65100; padding: 10px 15px; font-size: 0.85em; border-bottom: 1px solid #ffe0b2; }
+    .identity-primary { color: #4caf50; font-weight: bold; }
+    .identity-fallback { color: #90a4ae; }
   </style>
 </head>
 <body>
   <h1>Control Board Viewer</h1>
-  <p class="subtitle">v0.3 | Governance-only | Offline-first | Record Workbench</p>
+  <p class="subtitle">v0.4 | Governance-only | Offline-first | Universal Drilldown + Copy PR Kit</p>
 
   <div class="toolbar" id="toolbar">
     <button class="toolbar-btn" data-cmd="validate">Validate</button>
@@ -217,9 +223,15 @@ Note: This viewer does NOT execute any commands automatically.
       <button class="drawer-tab" data-tab="actions">Actions <span class="drawer-tab-count" id="actions-count">0</span></button>
       <button class="drawer-tab" data-tab="changelog">Change Log <span class="drawer-tab-count" id="changelog-count">0</span></button>
     </div>
+    <div class="drawer-warning" id="drawer-warning" style="display: none;"></div>
     <div class="drawer-body" id="drawer-body"></div>
     <div class="drawer-actions">
-      <button class="drawer-btn" id="drawer-copy">Copy JSON (Current Tab)</button>
+      <div class="drawer-actions-grid">
+        <button class="drawer-btn" id="drawer-copy">Copy JSON</button>
+        <button class="drawer-btn drawer-btn-secondary" id="copy-pr-summary">Copy PR Summary</button>
+        <button class="drawer-btn drawer-btn-secondary" id="copy-patch-skeleton">Copy Patch Skeleton</button>
+        <button class="drawer-btn drawer-btn-secondary" id="copy-rule-draft">Copy Rule Draft</button>
+      </div>
     </div>
   </div>
 
@@ -229,7 +241,7 @@ Note: This viewer does NOT execute any commands automatically.
     const RELATIVE_PRIMARY = '../../out/sf_packet.preview.json';
     const RELATIVE_FALLBACK = '../../examples/expected_outputs/sf_packet.example.json';
     const COMMANDS_PATH = 'run_commands.json';
-    const STORAGE_KEY = 'viewer_selection_v03';
+    const STORAGE_KEY = 'viewer_selection_v04';
 
     let commands = {};
     let allData = { contractResults: [], issues: [], fieldActions: [], changeLog: [] };
@@ -315,11 +327,29 @@ Note: This viewer does NOT execute any commands automatically.
       return eq(a.contract_key, b.contract_key) && eq(a.file_url, b.file_url) && eq(a.file_name, b.file_name);
     }
 
+    function getPrimaryKey(identity) {
+      if (identity.contract_key !== null) return 'contract_key';
+      if (identity.file_url !== null) return 'file_url';
+      if (identity.file_name !== null) return 'file_name';
+      return null;
+    }
+
     function formatJoinIdentityPill(identity) {
+      const primary = getPrimaryKey(identity);
+      const format = (key, label, val) => {
+        const v = val ?? 'null';
+        if (key === primary) return `<span class="identity-primary">${label}=${v}</span>`;
+        return `<span class="identity-fallback">${label}=${v}</span>`;
+      };
+      return `${format('contract_key', 'ck', identity.contract_key)} | ${format('file_url', 'fu', identity.file_url)} | ${format('file_name', 'fn', identity.file_name)}`;
+    }
+
+    function formatJoinIdentityText(identity) {
       const ck = identity.contract_key ?? 'null';
       const fu = identity.file_url ?? 'null';
       const fn = identity.file_name ?? 'null';
-      return `ck=${ck} | fu=${fu} | fn=${fn}`;
+      const primary = getPrimaryKey(identity);
+      return `ck=${ck} | fu=${fu} | fn=${fn} (PRIMARY: ${primary || 'none'})`;
     }
 
     function getRelatedRecords(identity, dataArray) {
@@ -397,11 +427,9 @@ Note: This viewer does NOT execute any commands automatically.
         </div>
       `;
       
-      if (type === 'contractResults') {
-        container.querySelectorAll('tbody tr').forEach(tr => {
-          tr.addEventListener('click', () => openDrawer(parseInt(tr.dataset.idx)));
-        });
-      }
+      container.querySelectorAll('tbody tr').forEach(tr => {
+        tr.addEventListener('click', () => openDrawerFromType(type, parseInt(tr.dataset.idx)));
+      });
     }
 
     function renderAllTables() {
@@ -532,17 +560,34 @@ Note: This viewer does NOT execute any commands automatically.
       document.getElementById('changelog-count').textContent = changelogCount;
     }
 
-    function openDrawer(idx) {
-      const record = allData.contractResults[idx];
+    function openDrawerFromType(type, idx) {
+      const dataMap = { contractResults: allData.contractResults, issues: allData.issues, fieldActions: allData.fieldActions };
+      const record = dataMap[type]?.[idx];
       if (!record) return;
 
       const identity = getJoinIdentity(record);
       currentSelection.joinIdentity = identity;
-      currentSelection.contractIdx = idx;
+      currentSelection.sourceType = type;
+
+      const matchingContracts = allData.contractResults.filter(r => joinIdentityEquals(getJoinIdentity(r), identity));
+      if (type === 'contractResults') {
+        currentSelection.contractIdx = idx;
+      } else {
+        const contractIdx = allData.contractResults.findIndex(r => joinIdentityEquals(getJoinIdentity(r), identity));
+        currentSelection.contractIdx = contractIdx >= 0 ? contractIdx : null;
+      }
       currentSelection.activeTab = 'contract';
 
-      document.getElementById('identity-pill').textContent = formatJoinIdentityPill(identity);
+      document.getElementById('identity-pill').innerHTML = formatJoinIdentityPill(identity);
       updateTabCounts(identity);
+
+      const warning = document.getElementById('drawer-warning');
+      if (matchingContracts.length > 1) {
+        warning.textContent = `Warning: ${matchingContracts.length} contracts share this join identity. Showing first match deterministically.`;
+        warning.style.display = 'block';
+      } else {
+        warning.style.display = 'none';
+      }
 
       document.querySelectorAll('.drawer-tab').forEach(t => t.classList.remove('active'));
       document.querySelector('.drawer-tab[data-tab="contract"]').classList.add('active');
@@ -553,6 +598,10 @@ Note: This viewer does NOT execute any commands automatically.
       document.getElementById('drawer-overlay').classList.add('active');
 
       saveSelection();
+    }
+
+    function openDrawer(idx) {
+      openDrawerFromType('contractResults', idx);
     }
 
     function closeDrawer() {
@@ -603,7 +652,7 @@ Note: This viewer does NOT execute any commands automatically.
 
         sel.contractIdx = contractIdx;
         currentSelection = sel;
-        document.getElementById('identity-pill').textContent = formatJoinIdentityPill(sel.joinIdentity);
+        document.getElementById('identity-pill').innerHTML = formatJoinIdentityPill(sel.joinIdentity);
         updateTabCounts(sel.joinIdentity);
 
         document.querySelectorAll('.drawer-tab').forEach(t => {
@@ -766,7 +815,10 @@ Note: This viewer does NOT execute any commands automatically.
     });
 
     document.getElementById('drawer-copy').addEventListener('click', async () => {
-      const json = document.getElementById('drawer-body').dataset.json || '{}';
+      const rawJson = document.getElementById('drawer-body').dataset.json || '{}';
+      const parsed = JSON.parse(rawJson);
+      const sorted = sortObjectKeys(parsed);
+      const json = JSON.stringify(sorted, null, 2);
       const success = await copyToClipboard(json);
       const btn = document.getElementById('drawer-copy');
       const orig = btn.textContent;
@@ -775,9 +827,117 @@ Note: This viewer does NOT execute any commands automatically.
     });
 
     document.getElementById('identity-copy').addEventListener('click', async () => {
-      const pill = document.getElementById('identity-pill').textContent;
-      const success = await copyToClipboard(pill);
+      const identity = currentSelection.joinIdentity;
+      if (!identity) return;
+      const text = formatJoinIdentityText(identity);
+      const success = await copyToClipboard(text);
       const btn = document.getElementById('identity-copy');
+      const orig = btn.textContent;
+      btn.textContent = success ? 'Copied!' : 'Failed';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+
+    function sortObjectKeys(obj) {
+      if (obj === null || typeof obj !== 'object') return obj;
+      if (Array.isArray(obj)) return obj.map(sortObjectKeys);
+      return Object.keys(obj).sort().reduce((acc, key) => {
+        acc[key] = sortObjectKeys(obj[key]);
+        return acc;
+      }, {});
+    }
+
+    function generatePRSummary() {
+      const identity = currentSelection.joinIdentity;
+      if (!identity) return '';
+      const contract = currentSelection.contractIdx !== null 
+        ? allData.contractResults[currentSelection.contractIdx] : null;
+      const issues = sortBySeverityFirst(getRelatedRecords(identity, allData.issues), ['sheet', 'field', 'issue_type']);
+      const actions = sortBySeverityFirst(getRelatedRecords(identity, allData.fieldActions), ['sheet', 'field', 'action']);
+      const primary = getPrimaryKey(identity);
+      const primaryVal = identity[primary] || 'unknown';
+
+      let md = `# PR: Fix issues for ${primary}=${primaryVal}\n\n`;
+      md += `## WHY\n`;
+      md += `This record has ${issues.length} issue(s) and ${actions.length} pending action(s) that need resolution.\n\n`;
+      md += `## Affected Artifacts\n`;
+      md += `- **Join Identity**: ${formatJoinIdentityText(identity)}\n`;
+      md += `- **Contract Status**: ${contract?.sf_contract_status || 'unknown'}\n`;
+      md += `- **Detected Subtype**: ${contract?.detected_subtype || 'unknown'}\n`;
+      if (issues.length > 0) {
+        md += `- **Issues**: ${issues.map(i => i.issue_type).join(', ')}\n`;
+      }
+      md += `\n## Smoke Status\nunknown (run \`bash scripts/replit_smoke.sh\` to verify)\n`;
+      return md;
+    }
+
+    function generatePatchSkeleton() {
+      const identity = currentSelection.joinIdentity;
+      if (!identity) return '{}';
+      const issues = sortBySeverityFirst(getRelatedRecords(identity, allData.issues), ['sheet', 'field', 'issue_type']);
+      const primary = getPrimaryKey(identity);
+      const primaryVal = (identity[primary] || 'unknown').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
+      const patch = {
+        base_version: "0.1.0",
+        changes: issues.map((issue, idx) => ({
+          op: "add_rule",
+          rule_id: `NEW_RULE_${primaryVal}_${idx + 1}`,
+          description: `Fix: ${issue.issue_type} on ${issue.field || 'unknown'}`,
+          when: { sheet: issue.sheet || "", field: issue.field || "", operator: "EXISTS", value: null },
+          then: { action: "REQUIRE_PRESENT", sheet: issue.sheet || "", field: issue.field || "", severity: issue.severity || "warning" }
+        }))
+      };
+      return JSON.stringify(sortObjectKeys(patch), null, 2);
+    }
+
+    function generateRuleDraft() {
+      const identity = currentSelection.joinIdentity;
+      if (!identity) return '';
+      const issues = sortBySeverityFirst(getRelatedRecords(identity, allData.issues), ['sheet', 'field', 'issue_type']);
+      const primary = getPrimaryKey(identity);
+      
+      let draft = `# Rule Draft\n\n`;
+      if (issues.length === 0) {
+        draft += `No issues found for this join identity.\n`;
+      } else {
+        issues.forEach((issue, idx) => {
+          draft += `## Rule ${idx + 1}\n\n`;
+          draft += `**WHEN**\n`;
+          draft += `- Sheet: ${issue.sheet || 'any'}\n`;
+          draft += `- Field: ${issue.field || 'any'}\n`;
+          draft += `- Condition: ${issue.issue_type || 'unknown'}\n\n`;
+          draft += `**THEN**\n`;
+          draft += `- Action: REQUIRE_PRESENT\n`;
+          draft += `- Severity: ${issue.severity || 'warning'}\n\n`;
+          draft += `**BECAUSE**\n`;
+          draft += `- ${issue.details || 'Issue detected during validation'}\n`;
+          draft += `- Primary key: ${primary}=${identity[primary]}\n\n`;
+        });
+      }
+      return draft;
+    }
+
+    document.getElementById('copy-pr-summary').addEventListener('click', async () => {
+      const text = generatePRSummary();
+      const success = await copyToClipboard(text);
+      const btn = document.getElementById('copy-pr-summary');
+      const orig = btn.textContent;
+      btn.textContent = success ? 'Copied!' : 'Failed';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+
+    document.getElementById('copy-patch-skeleton').addEventListener('click', async () => {
+      const text = generatePatchSkeleton();
+      const success = await copyToClipboard(text);
+      const btn = document.getElementById('copy-patch-skeleton');
+      const orig = btn.textContent;
+      btn.textContent = success ? 'Copied!' : 'Failed';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+
+    document.getElementById('copy-rule-draft').addEventListener('click', async () => {
+      const text = generateRuleDraft();
+      const success = await copyToClipboard(text);
+      const btn = document.getElementById('copy-rule-draft');
       const orig = btn.textContent;
       btn.textContent = success ? 'Copied!' : 'Failed';
       setTimeout(() => btn.textContent = orig, 1500);

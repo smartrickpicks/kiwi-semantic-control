@@ -3,7 +3,7 @@
 ## Overview
 A read-only, single-file HTML viewer for sf_packet artifacts. No build step, no dependencies, no external network requests.
 
-**Version:** 0.3
+**Version:** 0.4
 
 ## How to Open
 
@@ -67,31 +67,43 @@ Filters apply across all three main tables. Click a chip to toggle it on/off (in
 
 **Note:** Global filters do NOT affect the contents of the Record Workbench drawer once a record is selected. The drawer always shows all related records for the selected join identity.
 
-### Record Workbench (Drilldown Drawer)
+### Universal Drilldown (v0.4)
 
-Click any row in the Contract Results table to open the Record Workbench drawer.
+Click any row in **any table** (Contract Results, Issues, or Field Actions) to open the Record Workbench drawer. The workbench displays all related records sharing the same join identity.
 
-#### Join Identity
-The drawer header displays a **join identity pill** showing the triplet:
+### Record Workbench
+
+#### Join Identity with PRIMARY Indicator
+The drawer header displays a **join identity pill** with visual emphasis on the PRIMARY key:
+- **Green (PRIMARY):** The first non-null key in the join priority order
+- **Gray (fallback):** Secondary keys in the identity
+
+Priority order: `contract_key` → `file_url` → `file_name`
+
+Example display:
 ```
-ck=<contract_key> | fu=<file_url> | fn=<file_name>
+ck=ABC123 | fu=null | fn=null (PRIMARY: contract_key)
 ```
-Click "Copy ID" to copy this identifier to clipboard.
+
+Click "Copy ID" to copy the full identity string including PRIMARY indicator.
+
+#### Duplicate Join Identity Warning (v0.4)
+If multiple contracts share the same join identity, a warning banner appears:
+```
+Warning: N contracts share this join identity. Showing first match deterministically.
+```
 
 #### Tabs
 The workbench has four tabs:
 
 | Tab | Content |
 |-----|---------|
-| **Contract** | Full JSON of the selected contract record |
+| **Contract** | Full JSON of the matching contract record |
 | **Issues** | All `sf_issues` rows matching the join identity |
 | **Actions** | All `sf_field_actions` rows matching the join identity |
 | **Change Log** | All `sf_change_log` rows matching the join identity |
 
 Each tab shows a count badge indicating how many related records exist.
-
-#### Join Identity Matching
-Records are matched by exact equality on the triplet `(contract_key, file_url, file_name)`. Missing/undefined values are normalized to `null` before comparison.
 
 #### Sorting Within Tabs
 - **Issues:** severity (blocking > warning > info), then contract_key, file_url, file_name, sheet, field, issue_type
@@ -101,13 +113,61 @@ Records are matched by exact equality on the triplet `(contract_key, file_url, f
 #### Empty States
 If no related records exist for a tab, the message "No related <type> for this join identity." is displayed.
 
-#### Copy JSON
-Click "Copy JSON (Current Tab)" to copy the data from the active tab to clipboard.
+### Copy PR Kit (v0.4)
+
+The workbench footer includes four copy buttons for generating PR artifacts:
+
+| Button | Output |
+|--------|--------|
+| **Copy JSON** | Current tab's data as JSON (sorted keys) |
+| **Copy PR Summary** | Markdown summary with title, WHY section, affected artifacts, smoke status |
+| **Copy Patch Skeleton** | JSON patch template with `add_rule` entries for each issue |
+| **Copy Rule Draft** | WHEN / THEN / BECAUSE format for each issue |
+
+All copied JSON has sorted keys for deterministic output.
+
+#### PR Summary Format
+```markdown
+# PR: Fix issues for <primary_key>=<value>
+
+## WHY
+This record has N issue(s) and M pending action(s) that need resolution.
+
+## Affected Artifacts
+- **Join Identity**: ck=... | fu=... | fn=... (PRIMARY: ...)
+- **Contract Status**: ready/needs_review/blocked
+- **Detected Subtype**: ...
+- **Issues**: issue_type_1, issue_type_2, ...
+
+## Smoke Status
+unknown (run `bash scripts/replit_smoke.sh` to verify)
+```
+
+#### Rule Draft Format
+```markdown
+# Rule Draft
+
+## Rule 1
+
+**WHEN**
+- Sheet: ...
+- Field: ...
+- Condition: ...
+
+**THEN**
+- Action: REQUIRE_PRESENT
+- Severity: warning
+
+**BECAUSE**
+- Issue details...
+- Primary key: contract_key=ABC123
+```
 
 ### State Persistence
 The viewer persists your selection in localStorage:
 - **Selected join identity**
 - **Active tab**
+- **Source type** (which table was clicked)
 
 On page reload, if the previously selected record still exists in the data, the drawer reopens with the same selection and tab. If the record no longer exists, the selection is cleared.
 
@@ -162,3 +222,13 @@ To view different data, either:
 - **Deterministic display**: Sorting matches run_local.py output ordering
 - **Keyboard shortcuts**: Press `Escape` to close modals and drawers
 - **State persistence**: Selection saved to localStorage
+- **Normalized output**: All copied JSON has sorted keys for reproducibility
+
+## Version History
+
+| Version | Features |
+|---------|----------|
+| 0.4 | Universal drilldown from all tables, Copy PR Kit (Summary/Patch/Rule), PRIMARY key indicator, duplicate identity warning |
+| 0.3 | Record Workbench with tabbed drawer, join identity matching, localStorage persistence |
+| 0.2 | Toolbar with copy-only commands, filters, basic drilldown |
+| 0.1 | Initial viewer with summary, tables |
