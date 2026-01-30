@@ -1947,6 +1947,236 @@
       }
     ];
     
+    // ========== COMMENT (RFI) SYSTEM ==========
+    var COMMENTS_STORAGE_KEY = 'orchestrate.comments.v1';
+    
+    var COMMENT_STATUSES = ['Open', 'ReviewerResponded', 'Resolved', 'ElevatedToPatchRequest', 'Closed'];
+    var COMMENT_SCOPES = ['field', 'sheet', 'contract'];
+    var COMMENT_ROLES = ['Analyst', 'Reviewer', 'Admin'];
+    
+    var commentsStore = {
+      comments: [],
+      loaded: false
+    };
+    
+    function generateCommentId() {
+      return 'CMT_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6);
+    }
+    
+    function loadComments() {
+      try {
+        var stored = localStorage.getItem(COMMENTS_STORAGE_KEY);
+        if (stored) {
+          var parsed = JSON.parse(stored);
+          commentsStore.comments = Array.isArray(parsed.comments) ? parsed.comments : [];
+        } else {
+          commentsStore.comments = [];
+        }
+        commentsStore.loaded = true;
+      } catch (e) {
+        console.error('Failed to load comments:', e);
+        commentsStore.comments = [];
+        commentsStore.loaded = true;
+      }
+      return commentsStore.comments;
+    }
+    
+    function saveComments() {
+      try {
+        var data = {
+          version: '1.0.0',
+          saved_at: new Date().toISOString(),
+          comments: commentsStore.comments
+        };
+        localStorage.setItem(COMMENTS_STORAGE_KEY, JSON.stringify(data));
+        return true;
+      } catch (e) {
+        console.error('Failed to save comments:', e);
+        return false;
+      }
+    }
+    
+    function createComment(options) {
+      var now = new Date().toISOString();
+      var comment = {
+        comment_id: generateCommentId(),
+        created_at_utc: now,
+        author: options.author || 'Unknown',
+        author_role: options.author_role || currentMode || 'Analyst',
+        record_identity: {
+          contract_key: options.contract_key || null,
+          file_url: options.file_url || null,
+          file_name: options.file_name || null
+        },
+        scope: {
+          level: options.scope_level || 'contract',
+          sheet: options.sheet || null,
+          field: options.field || null
+        },
+        message: options.message || '',
+        status: 'Open',
+        linked_patch_request_id: null,
+        history: [
+          {
+            at_utc: now,
+            actor: options.author || 'Unknown',
+            role: options.author_role || currentMode || 'Analyst',
+            action: 'Created',
+            notes: null
+          }
+        ]
+      };
+      commentsStore.comments.push(comment);
+      saveComments();
+      return comment;
+    }
+    
+    function getComment(commentId) {
+      return commentsStore.comments.find(function(c) { return c.comment_id === commentId; }) || null;
+    }
+    
+    function updateComment(commentId, updates, actor, actorRole) {
+      var comment = getComment(commentId);
+      if (!comment) return null;
+      
+      var now = new Date().toISOString();
+      var changes = [];
+      
+      if (updates.message !== undefined && updates.message !== comment.message) {
+        comment.message = updates.message;
+        changes.push('message');
+      }
+      if (updates.status !== undefined && updates.status !== comment.status) {
+        var oldStatus = comment.status;
+        comment.status = updates.status;
+        changes.push('status: ' + oldStatus + ' → ' + updates.status);
+      }
+      if (updates.linked_patch_request_id !== undefined) {
+        comment.linked_patch_request_id = updates.linked_patch_request_id;
+        changes.push('linked to patch request');
+      }
+      
+      if (changes.length > 0) {
+        comment.history.push({
+          at_utc: now,
+          actor: actor || 'Unknown',
+          role: actorRole || currentMode || 'Analyst',
+          action: 'Updated',
+          notes: changes.join('; ')
+        });
+        saveComments();
+      }
+      return comment;
+    }
+    
+    function addCommentResponse(commentId, responseMessage, actor, actorRole) {
+      var comment = getComment(commentId);
+      if (!comment) return null;
+      
+      var now = new Date().toISOString();
+      comment.history.push({
+        at_utc: now,
+        actor: actor || 'Unknown',
+        role: actorRole || currentMode || 'Analyst',
+        action: 'Responded',
+        notes: responseMessage
+      });
+      
+      if (actorRole === 'Reviewer' || actorRole === 'Admin') {
+        comment.status = 'ReviewerResponded';
+      }
+      
+      saveComments();
+      return comment;
+    }
+    
+    function resolveComment(commentId, actor, actorRole) {
+      return updateComment(commentId, { status: 'Resolved' }, actor, actorRole);
+    }
+    
+    function closeComment(commentId, actor, actorRole) {
+      return updateComment(commentId, { status: 'Closed' }, actor, actorRole);
+    }
+    
+    function elevateCommentToPatchRequest(commentId, patchRequestId, actor, actorRole) {
+      var comment = getComment(commentId);
+      if (!comment) return null;
+      
+      comment.status = 'ElevatedToPatchRequest';
+      comment.linked_patch_request_id = patchRequestId;
+      comment.history.push({
+        at_utc: new Date().toISOString(),
+        actor: actor || 'Unknown',
+        role: actorRole || 'Reviewer',
+        action: 'Elevated to Patch Request',
+        notes: 'Linked to ' + patchRequestId
+      });
+      
+      saveComments();
+      return comment;
+    }
+    
+    function deleteComment(commentId) {
+      var idx = commentsStore.comments.findIndex(function(c) { return c.comment_id === commentId; });
+      if (idx === -1) return false;
+      commentsStore.comments.splice(idx, 1);
+      saveComments();
+      return true;
+    }
+    
+    function getCommentsForRecord(contractKey, fileUrl, fileName) {
+      return commentsStore.comments.filter(function(c) {
+        var ri = c.record_identity;
+        return (ri.contract_key === contractKey || (!ri.contract_key && !contractKey)) &&
+               (ri.file_url === fileUrl || (!ri.file_url && !fileUrl)) &&
+               (ri.file_name === fileName || (!ri.file_name && !fileName));
+      });
+    }
+    
+    function getCommentsByStatus(status) {
+      return commentsStore.comments.filter(function(c) { return c.status === status; });
+    }
+    
+    function getOpenComments() {
+      return commentsStore.comments.filter(function(c) {
+        return c.status === 'Open' || c.status === 'ReviewerResponded';
+      });
+    }
+    
+    function getCommentCounts() {
+      var counts = {
+        total: commentsStore.comments.length,
+        open: 0,
+        reviewer_responded: 0,
+        resolved: 0,
+        elevated: 0,
+        closed: 0
+      };
+      commentsStore.comments.forEach(function(c) {
+        if (c.status === 'Open') counts.open++;
+        else if (c.status === 'ReviewerResponded') counts.reviewer_responded++;
+        else if (c.status === 'Resolved') counts.resolved++;
+        else if (c.status === 'ElevatedToPatchRequest') counts.elevated++;
+        else if (c.status === 'Closed') counts.closed++;
+      });
+      return counts;
+    }
+    
+    function exportCommentsJSON() {
+      return JSON.stringify({
+        exported_at: new Date().toISOString(),
+        count: commentsStore.comments.length,
+        comments: commentsStore.comments.map(function(c) {
+          return Object.assign({}, c);
+        }).sort(function(a, b) {
+          return a.created_at_utc.localeCompare(b.created_at_utc);
+        })
+      }, null, 2);
+    }
+    
+    // Initialize comments on load
+    loadComments();
+    
     // ========== STANDARDIZER (D3) ==========
     let standardizerResult = {
       mergedDataset: null,
