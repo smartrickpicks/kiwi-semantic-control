@@ -1,0 +1,66 @@
+{
+  "dataset_id": "sample_v1",
+  "version": "1.0.0",
+  "created_at": "2026-01-30T00:00:00Z",
+  "description": "Deterministic demo dataset for testing structured intent and the full workflow.",
+  "sheets": {
+    "contracts": {
+      "headers": ["contract_key", "file_url", "file_name", "label_name", "artist_name", "subtype", "status", "effective_date"],
+      "rows": [
+        {"contract_key": "CK-001", "file_url": "https://example.org/contract_a.pdf", "file_name": "contract_a.pdf", "label_name": "Acme Records", "artist_name": "The Samples", "subtype": "exclusive", "status": "active", "effective_date": "2024-01-15"},
+        {"contract_key": "CK-002", "file_url": "https://example.org/contract_b.pdf", "file_name": "contract_b.pdf", "label_name": "Various Artists", "artist_name": "", "subtype": "compilation", "status": "active", "effective_date": "2024-02-20"},
+        {"contract_key": "CK-003", "file_url": "https://example.org/contract_c.pdf", "file_name": "contract_c.pdf", "label_name": "Indie House", "artist_name": "Solo Artist", "subtype": "non-exclusive", "status": "pending", "effective_date": ""},
+        {"contract_key": "", "file_url": "https://example.org/contract_d.pdf", "file_name": "contract_d.pdf", "label_name": "Beta Music", "artist_name": "Beta Band", "subtype": "exclusive", "status": "draft", "effective_date": "2024-03-01"},
+        {"contract_key": "CK-005", "file_url": "", "file_name": "contract_e.pdf", "label_name": "Gamma Tunes", "artist_name": "", "subtype": "exclusive", "status": "active", "effective_date": "2024-04-10"}
+      ]
+    },
+    "catalog": {
+      "headers": ["contract_key", "file_url", "file_name", "track_title", "artist_name", "isrc", "release_date", "genre"],
+      "rows": [
+        {"contract_key": "CK-001", "file_url": "https://example.org/contract_a.pdf", "file_name": "contract_a.pdf", "track_title": "Sample Song One", "artist_name": "The Samples", "isrc": "US-ABC-24-00001", "release_date": "2024-05-01", "genre": "Rock"},
+        {"contract_key": "CK-001", "file_url": "https://example.org/contract_a.pdf", "file_name": "contract_a.pdf", "track_title": "Sample Song Two", "artist_name": "The Samples", "isrc": "US-ABC-24-00002", "release_date": "2024-05-01", "genre": "Rock"},
+        {"contract_key": "CK-002", "file_url": "https://example.org/contract_b.pdf", "file_name": "contract_b.pdf", "track_title": "Compilation Hit", "artist_name": "", "isrc": "", "release_date": "2024-06-15", "genre": "Pop"},
+        {"contract_key": "CK-003", "file_url": "https://example.org/contract_c.pdf", "file_name": "contract_c.pdf", "track_title": "", "artist_name": "Solo Artist", "isrc": "US-DEF-24-00003", "release_date": "", "genre": "Jazz"},
+        {"contract_key": "CK-005", "file_url": "", "file_name": "contract_e.pdf", "track_title": "Gamma Track", "artist_name": "Gamma Star", "isrc": "US-GHI-24-00004", "release_date": "2024-07-20", "genre": "Electronic"}
+      ]
+    },
+    "royalties": {
+      "headers": ["contract_key", "file_url", "file_name", "period", "gross_revenue", "artist_share_pct", "net_payable"],
+      "rows": [
+        {"contract_key": "CK-001", "file_url": "https://example.org/contract_a.pdf", "file_name": "contract_a.pdf", "period": "2024-Q1", "gross_revenue": "15000.00", "artist_share_pct": "50", "net_payable": "7500.00"},
+        {"contract_key": "CK-001", "file_url": "https://example.org/contract_a.pdf", "file_name": "contract_a.pdf", "period": "2024-Q2", "gross_revenue": "18500.00", "artist_share_pct": "50", "net_payable": "9250.00"},
+        {"contract_key": "CK-002", "file_url": "https://example.org/contract_b.pdf", "file_name": "contract_b.pdf", "period": "2024-Q1", "gross_revenue": "8000.00", "artist_share_pct": "", "net_payable": ""},
+        {"contract_key": "CK-003", "file_url": "https://example.org/contract_c.pdf", "file_name": "contract_c.pdf", "period": "2024-Q2", "gross_revenue": "", "artist_share_pct": "40", "net_payable": ""}
+      ]
+    }
+  },
+  "issues": [
+    {"issue_id": "ISS-001", "contract_key": "CK-002", "file_url": "https://example.org/contract_b.pdf", "file_name": "contract_b.pdf", "sheet": "contracts", "field": "artist_name", "issue_type": "MISSING_REQUIRED", "severity": "warning", "message": "Compilation contract missing artist attribution"},
+    {"issue_id": "ISS-002", "contract_key": "CK-003", "file_url": "https://example.org/contract_c.pdf", "file_name": "contract_c.pdf", "sheet": "contracts", "field": "effective_date", "issue_type": "MISSING_REQUIRED", "severity": "blocking", "message": "Contract missing effective date"},
+    {"issue_id": "ISS-003", "contract_key": "", "file_url": "https://example.org/contract_d.pdf", "file_name": "contract_d.pdf", "sheet": "contracts", "field": "contract_key", "issue_type": "MISSING_REQUIRED", "severity": "blocking", "message": "Contract key is missing"},
+    {"issue_id": "ISS-004", "contract_key": "CK-005", "file_url": "", "file_name": "contract_e.pdf", "sheet": "contracts", "field": "file_url", "issue_type": "MISSING_REQUIRED", "severity": "warning", "message": "File URL is missing"},
+    {"issue_id": "ISS-005", "contract_key": "CK-002", "file_url": "https://example.org/contract_b.pdf", "file_name": "contract_b.pdf", "sheet": "catalog", "field": "isrc", "issue_type": "MISSING_REQUIRED", "severity": "warning", "message": "ISRC code missing for track"},
+    {"issue_id": "ISS-006", "contract_key": "CK-003", "file_url": "https://example.org/contract_c.pdf", "file_name": "contract_c.pdf", "sheet": "catalog", "field": "track_title", "issue_type": "MISSING_REQUIRED", "severity": "blocking", "message": "Track title is missing"},
+    {"issue_id": "ISS-007", "contract_key": "CK-002", "file_url": "https://example.org/contract_b.pdf", "file_name": "contract_b.pdf", "sheet": "royalties", "field": "artist_share_pct", "issue_type": "MISSING_REQUIRED", "severity": "warning", "message": "Artist share percentage missing"}
+  ],
+  "field_actions": [
+    {"action_id": "FA-001", "contract_key": "CK-002", "file_url": "https://example.org/contract_b.pdf", "file_name": "contract_b.pdf", "sheet": "contracts", "field": "label_name", "action": "REVIEW", "triggered_by": "SF_R1_LABEL_NOT_ARTIST"},
+    {"action_id": "FA-002", "contract_key": "CK-001", "file_url": "https://example.org/contract_a.pdf", "file_name": "contract_a.pdf", "sheet": "catalog", "field": "artist_name", "action": "VALIDATE", "triggered_by": "SF_R2_ARTIST_REQUIRED"}
+  ],
+  "contract_results": [
+    {"contract_key": "CK-001", "file_url": "https://example.org/contract_a.pdf", "file_name": "contract_a.pdf", "status": "ready", "subtype": "exclusive", "issue_count": 0},
+    {"contract_key": "CK-002", "file_url": "https://example.org/contract_b.pdf", "file_name": "contract_b.pdf", "status": "needs_review", "subtype": "compilation", "issue_count": 3},
+    {"contract_key": "CK-003", "file_url": "https://example.org/contract_c.pdf", "file_name": "contract_c.pdf", "status": "blocked", "subtype": "non-exclusive", "issue_count": 2},
+    {"contract_key": "", "file_url": "https://example.org/contract_d.pdf", "file_name": "contract_d.pdf", "status": "blocked", "subtype": "exclusive", "issue_count": 1},
+    {"contract_key": "CK-005", "file_url": "", "file_name": "contract_e.pdf", "status": "needs_review", "subtype": "exclusive", "issue_count": 1}
+  ],
+  "summary": {
+    "total_contracts": 5,
+    "ready": 1,
+    "needs_review": 2,
+    "blocked": 2,
+    "total_issues": 7,
+    "blocking_issues": 3,
+    "warning_issues": 4
+  }
+}

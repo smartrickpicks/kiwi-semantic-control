@@ -1,4 +1,4 @@
-# Kiwi Semantic Control Board (v1.2.4)
+# Kiwi Semantic Control Board (v1.2.5)
 
 ## Overview
 
@@ -50,6 +50,14 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - Updated PatchRequestV1 schema with intent_structured and intent_rendered fields
 - Form validation with required fields and character limits
 - Removed legacy Patch Studio overlay panel (no more stacked drawers)
+
+**v1.2.5 Loader + Testability:**
+- Loader as first-class nav item (top of sidebar, "Start" section)
+- Loader page: Load Sample Dataset, Import CSV/XLSX, Attach PDF
+- Deterministic sample dataset (examples/datasets/sample_v1.json) with one-click load
+- Test Utilities: Reset Demo State, Rebuild Field Index
+- Dataset summary card after load with CTA to Spreadsheet View
+- CSV import with delimiter inference and header normalization
 
 **What This Is NOT:**
 - Not a runtime system

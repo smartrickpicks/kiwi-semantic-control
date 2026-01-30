@@ -1,5 +1,43 @@
 # CHANGELOG
 
+## Version: v1.2.5
+Date: 2026-01-30
+
+### Added (Loader + Testability)
+
+- Loader as First-Class Entry Point
+  - New "Loader" nav item at top of sidebar under "Start" section
+  - Loader page with three import options: Sample Dataset, CSV/XLSX, PDF Attachment
+  - Dataset summary card shows sheets, rows, contracts, issues after load
+  - "Open Spreadsheet View" CTA navigates to triage after load
+
+- Deterministic Sample Dataset
+  - In-repo sample dataset at examples/datasets/sample_v1.json
+  - One-click "Load Sample Dataset" hydrates app state with contracts, catalog, royalties sheets
+  - 5 sample contracts with 7 issues for testing structured intent dropdowns
+  - Target Field dropdown immediately populated after loading
+
+- Test Utilities
+  - Reset Demo State: clears namespaced localStorage keys only
+  - Rebuild Field Index: repopulates Target Field dropdown without reload
+
+- CSV Import
+  - Local CSV file import with delimiter inference (comma, tab, semicolon)
+  - Header normalization to snake_case
+  - Auto-generates contract_results from rows with contract_key
+  - Note: XLSX requires export to CSV first (no external dependencies)
+
+- PDF Attachment
+  - Attach local PDFs as artifact references
+  - Persists metadata (id, filename, size, timestamp, object URL)
+  - PDF list displays attached files with size
+
+### Changed
+- Empty state now points to Loader instead of Data Sources drawer
+- navigateTo() supports 'loader' as valid page
+
+---
+
 ## Version: v1.2.4
 Date: 2026-01-30
 
