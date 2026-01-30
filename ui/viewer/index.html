@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Board Viewer v0.5</title>
+  <title>Control Board Viewer v0.6</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 20px; }
@@ -156,11 +156,61 @@
     .evidence-btns { display: flex; flex-wrap: wrap; gap: 6px; }
     .evidence-btn { padding: 6px 10px; font-size: 0.75em; background: #e0e0e0; border: none; border-radius: 4px; cursor: pointer; }
     .evidence-btn:hover { background: #bdbdbd; }
+
+    .patch-studio-tabs { display: flex; background: #1b5e20; flex-shrink: 0; }
+    .patch-studio-tab { flex: 1; padding: 10px 8px; text-align: center; color: rgba(255,255,255,0.7); background: none; border: none; cursor: pointer; font-size: 0.85em; border-bottom: 3px solid transparent; transition: all 0.2s; }
+    .patch-studio-tab:hover { color: white; background: rgba(255,255,255,0.1); }
+    .patch-studio-tab.active { color: white; border-bottom-color: #81c784; background: rgba(255,255,255,0.1); }
+    .patch-studio-panel { display: none; }
+    .patch-studio-panel.active { display: block; }
+
+    .preflight-checklist { margin-bottom: 15px; }
+    .preflight-step { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f9f9f9; border-radius: 6px; margin-bottom: 8px; }
+    .preflight-step-num { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75em; font-weight: bold; flex-shrink: 0; }
+    .preflight-step-num.pending { background: #e0e0e0; color: #666; }
+    .preflight-step-num.pass { background: #c8e6c9; color: #2e7d32; }
+    .preflight-step-num.warn { background: #fff3e0; color: #e65100; }
+    .preflight-step-num.fail { background: #ffcdd2; color: #c62828; }
+    .preflight-step-info { flex-grow: 1; }
+    .preflight-step-title { font-weight: 600; font-size: 0.9em; }
+    .preflight-step-status { font-size: 0.75em; color: #666; }
+    .preflight-step-chip { padding: 2px 8px; border-radius: 10px; font-size: 0.7em; font-weight: 600; text-transform: uppercase; }
+    .preflight-step-chip.pending { background: #e0e0e0; color: #666; }
+    .preflight-step-chip.pass { background: #c8e6c9; color: #2e7d32; }
+    .preflight-step-chip.warn { background: #fff3e0; color: #e65100; }
+    .preflight-step-chip.fail { background: #ffcdd2; color: #c62828; }
+
+    .preflight-input-group { margin-bottom: 15px; }
+    .preflight-input-group label { display: block; font-size: 0.8em; color: #666; margin-bottom: 4px; font-weight: 600; }
+    .preflight-input-group textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85em; font-family: 'Courier New', monospace; min-height: 80px; resize: vertical; }
+    .preflight-input-group input { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; }
+    .preflight-input-actions { display: flex; gap: 6px; margin-top: 6px; }
+    .preflight-parse-btn { padding: 4px 10px; font-size: 0.75em; background: #1565c0; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .preflight-parse-btn:hover { background: #1976d2; }
+    .preflight-clear-btn { padding: 4px 10px; font-size: 0.75em; background: #e0e0e0; border: none; border-radius: 4px; cursor: pointer; }
+    .preflight-clear-btn:hover { background: #bdbdbd; }
+
+    .preflight-result { background: #f5f5f5; border-radius: 6px; padding: 10px 12px; margin-top: 8px; font-size: 0.85em; }
+    .preflight-result.pass { background: #e8f5e9; border-left: 3px solid #2e7d32; }
+    .preflight-result.warn { background: #fff8e1; border-left: 3px solid #f57c00; }
+    .preflight-result.fail { background: #ffebee; border-left: 3px solid #c62828; }
+    .preflight-result-row { display: flex; justify-content: space-between; padding: 3px 0; }
+    .preflight-result-key { color: #666; }
+    .preflight-result-val { font-weight: 500; font-family: 'Courier New', monospace; }
+
+    .preflight-conflicts-table { width: 100%; border-collapse: collapse; font-size: 0.8em; margin-top: 10px; }
+    .preflight-conflicts-table th, .preflight-conflicts-table td { padding: 6px 8px; text-align: left; border-bottom: 1px solid #eee; }
+    .preflight-conflicts-table th { background: #f5f5f5; font-weight: 600; }
+
+    .preflight-section-title { font-size: 0.85em; font-weight: 600; color: #333; margin: 15px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #eee; }
+    .preflight-reset-row { display: flex; gap: 8px; margin-top: 15px; }
+    .preflight-reset-btn { padding: 8px 14px; font-size: 0.85em; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .preflight-reset-btn:hover { background: #d32f2f; }
   </style>
 </head>
 <body>
   <h1>Control Board Viewer</h1>
-  <p class="subtitle">v0.5 | Governance-only | Offline-first | Patch Studio Lite</p>
+  <p class="subtitle">v0.6 | Governance-only | Offline-first | Preflight Gate</p>
 
   <div class="toolbar" id="toolbar">
     <button class="toolbar-btn" data-cmd="validate">Validate</button>
@@ -277,37 +327,101 @@ Note: This viewer does NOT execute any commands automatically.
   <div class="patch-studio" id="patch-studio">
     <div class="patch-studio-header">
       <div class="patch-studio-header-row">
-        <h3>Patch Studio Lite</h3>
+        <h3>Patch Studio</h3>
         <button class="patch-studio-close" id="patch-studio-close">&times;</button>
       </div>
-      <span style="font-size: 0.8em; opacity: 0.8;">Build patch drafts from selected records</span>
+      <span style="font-size: 0.8em; opacity: 0.8;">Build and validate patch drafts</span>
+    </div>
+    <div class="patch-studio-tabs">
+      <button class="patch-studio-tab active" data-panel="draft">Draft</button>
+      <button class="patch-studio-tab" data-panel="preflight">Preflight</button>
     </div>
     <div class="patch-studio-body">
-      <div class="patch-field">
-        <label>Base Version</label>
-        <input type="text" id="patch-base-version" placeholder="0.1.0" value="0.1.0">
+      <div class="patch-studio-panel active" id="panel-draft">
+        <div class="patch-field">
+          <label>Base Version</label>
+          <input type="text" id="patch-base-version" placeholder="0.1.0" value="0.1.0">
+        </div>
+        <div class="patch-field">
+          <label>Author</label>
+          <input type="text" id="patch-author" placeholder="operator@example.com">
+        </div>
+        <div class="patch-field">
+          <label>Rationale</label>
+          <textarea id="patch-rationale" placeholder="Describe why this patch is needed..."></textarea>
+        </div>
+        <div class="patch-changes-header">
+          <h4>Changes (<span id="patch-changes-count">0</span>)</h4>
+          <button class="selection-btn" id="clear-patch-changes">Clear All</button>
+        </div>
+        <div class="patch-changes-list" id="patch-changes-list">
+          <div class="patch-empty">No changes added. Select issues/actions in the Workbench tabs and add them here.</div>
+        </div>
+        <div class="evidence-section">
+          <h4>Evidence Helper (Copy Only)</h4>
+          <div class="evidence-btns">
+            <button class="evidence-btn" id="copy-smoke-baseline">Smoke Baseline</button>
+            <button class="evidence-btn" id="copy-smoke-edge">Smoke Edge</button>
+            <button class="evidence-btn" id="copy-evidence-template">Evidence Template</button>
+          </div>
+        </div>
       </div>
-      <div class="patch-field">
-        <label>Author</label>
-        <input type="text" id="patch-author" placeholder="operator@example.com">
-      </div>
-      <div class="patch-field">
-        <label>Rationale</label>
-        <textarea id="patch-rationale" placeholder="Describe why this patch is needed..."></textarea>
-      </div>
-      <div class="patch-changes-header">
-        <h4>Changes (<span id="patch-changes-count">0</span>)</h4>
-        <button class="selection-btn" id="clear-patch-changes">Clear All</button>
-      </div>
-      <div class="patch-changes-list" id="patch-changes-list">
-        <div class="patch-empty">No changes added. Select issues/actions in the Workbench tabs and add them here.</div>
-      </div>
-      <div class="evidence-section">
-        <h4>Evidence Helper (Copy Only)</h4>
-        <div class="evidence-btns">
-          <button class="evidence-btn" id="copy-smoke-baseline">Smoke Baseline</button>
-          <button class="evidence-btn" id="copy-smoke-edge">Smoke Edge</button>
-          <button class="evidence-btn" id="copy-evidence-template">Evidence Template</button>
+      <div class="patch-studio-panel" id="panel-preflight">
+        <div class="preflight-checklist" id="preflight-checklist"></div>
+        <div class="preflight-section-title">1. Base Version Check</div>
+        <div class="preflight-input-group">
+          <label>Base Version (or paste base JSON header)</label>
+          <input type="text" id="preflight-base-version" placeholder='0.1.0 or {"version": "0.1.0", ...}'>
+          <div class="preflight-input-actions">
+            <button class="preflight-parse-btn" data-parse="base-version">Parse</button>
+            <button class="preflight-clear-btn" data-clear="base-version">Clear</button>
+          </div>
+          <div class="preflight-result" id="preflight-base-result" style="display: none;"></div>
+        </div>
+        <div class="preflight-section-title">2. Validation Report</div>
+        <div class="preflight-input-group">
+          <label>Paste validator output (stdout/stderr or JSON)</label>
+          <textarea id="preflight-validation-input" placeholder="OK: configuration valid&#10;base.version: 0.1.0&#10;patch.base_version: 0.1.0&#10;changes_count: 3"></textarea>
+          <div class="preflight-input-actions">
+            <button class="preflight-parse-btn" data-parse="validation">Parse</button>
+            <button class="preflight-clear-btn" data-clear="validation">Clear</button>
+          </div>
+          <div class="preflight-result" id="preflight-validation-result" style="display: none;"></div>
+        </div>
+        <div class="preflight-section-title">3. Conflict Check</div>
+        <div class="preflight-input-group">
+          <label>Paste conflict report (or type "reviewed" for manual confirmation)</label>
+          <textarea id="preflight-conflict-input" placeholder="No conflicts found&#10;OR&#10;reviewed"></textarea>
+          <div class="preflight-input-actions">
+            <button class="preflight-parse-btn" data-parse="conflict">Parse</button>
+            <button class="preflight-clear-btn" data-clear="conflict">Clear</button>
+          </div>
+          <div class="preflight-result" id="preflight-conflict-result" style="display: none;"></div>
+        </div>
+        <div class="preflight-section-title">4. Smoke Evidence</div>
+        <div class="preflight-input-group">
+          <label>Paste smoke test output (baseline)</label>
+          <textarea id="preflight-smoke-baseline-input" placeholder="OK: preview output matches expected"></textarea>
+          <div class="preflight-input-actions">
+            <button class="preflight-parse-btn" data-parse="smoke-baseline">Parse</button>
+            <button class="preflight-clear-btn" data-clear="smoke-baseline">Clear</button>
+          </div>
+        </div>
+        <div class="preflight-input-group">
+          <label>Paste smoke test output (edge, optional)</label>
+          <textarea id="preflight-smoke-edge-input" placeholder="OK: preview output matches expected"></textarea>
+          <div class="preflight-input-actions">
+            <button class="preflight-parse-btn" data-parse="smoke-edge">Parse</button>
+            <button class="preflight-clear-btn" data-clear="smoke-edge">Clear</button>
+          </div>
+        </div>
+        <div class="preflight-input-group">
+          <label>SHA256 Hashes (optional)</label>
+          <input type="text" id="preflight-sha256" placeholder="patch: abc123..., output: def456...">
+        </div>
+        <div class="preflight-result" id="preflight-smoke-result" style="display: none;"></div>
+        <div class="preflight-reset-row">
+          <button class="preflight-reset-btn" id="preflight-reset">Reset All Evidence</button>
         </div>
       </div>
     </div>
@@ -324,7 +438,9 @@ Note: This viewer does NOT execute any commands automatically.
     const RELATIVE_PRIMARY = '../../out/sf_packet.preview.json';
     const RELATIVE_FALLBACK = '../../examples/expected_outputs/sf_packet.example.json';
     const COMMANDS_PATH = 'run_commands.json';
-    const STORAGE_KEY = 'viewer_selection_v05';
+    const STORAGE_KEY = 'viewer_selection_v06';
+    const PREFLIGHT_STORAGE_KEY = 'viewer_preflight_v06';
+    const PATCH_STORAGE_KEY = 'viewer_patch_v06';
 
     let commands = {};
     let allData = { contractResults: [], issues: [], fieldActions: [], changeLog: [] };
@@ -332,6 +448,14 @@ Note: This viewer does NOT execute any commands automatically.
     let currentSelection = { joinIdentity: null, contractIdx: null, activeTab: 'contract' };
     let selectedRecords = { issues: new Set(), actions: new Set(), changelog: new Set() };
     let patchDraft = { baseVersion: '0.1.0', author: '', rationale: '', changes: [] };
+    let preflightEvidence = {
+      baseVersion: { raw: '', parsed: null, status: 'pending' },
+      validation: { raw: '', parsed: null, status: 'pending' },
+      conflict: { raw: '', parsed: null, status: 'pending' },
+      smokeBaseline: { raw: '', parsed: null, status: 'pending' },
+      smokeEdge: { raw: '', parsed: null, status: 'pending' },
+      sha256: ''
+    };
 
     function normCmp(v) {
       if (v === null || v === undefined) return '';
@@ -1030,7 +1154,7 @@ Note: This viewer does NOT execute any commands automatically.
     }
 
     document.getElementById('copy-pr-summary').addEventListener('click', async () => {
-      const text = generatePRSummary();
+      const text = generatePRSummaryWithEvidence();
       const success = await copyToClipboard(text);
       const btn = document.getElementById('copy-pr-summary');
       const orig = btn.textContent;
@@ -1157,6 +1281,7 @@ Note: This viewer does NOT execute any commands automatically.
       });
       
       renderPatchChanges();
+      savePatchDraft();
       document.getElementById('patch-studio').classList.add('active');
     }
 
@@ -1195,11 +1320,13 @@ Note: This viewer does NOT execute any commands automatically.
       const key = btn.dataset.key;
       patchDraft.changes = patchDraft.changes.filter(c => c._key !== key);
       renderPatchChanges();
+      savePatchDraft();
     });
 
     document.getElementById('clear-patch-changes').addEventListener('click', () => {
       patchDraft.changes = [];
       renderPatchChanges();
+      savePatchDraft();
     });
 
     document.getElementById('open-patch-studio').addEventListener('click', () => {
@@ -1214,14 +1341,17 @@ Note: This viewer does NOT execute any commands automatically.
 
     document.getElementById('patch-base-version').addEventListener('input', e => {
       patchDraft.baseVersion = e.target.value;
+      savePatchDraft();
     });
 
     document.getElementById('patch-author').addEventListener('input', e => {
       patchDraft.author = e.target.value;
+      savePatchDraft();
     });
 
     document.getElementById('patch-rationale').addEventListener('input', e => {
       patchDraft.rationale = e.target.value;
+      savePatchDraft();
     });
 
     function generateGroupedRules() {
@@ -1410,8 +1540,396 @@ Add any additional notes here.
       setTimeout(() => btn.textContent = orig, 1500);
     });
 
+    document.querySelector('.patch-studio-tabs').addEventListener('click', e => {
+      const tab = e.target.closest('.patch-studio-tab');
+      if (!tab) return;
+      const panelName = tab.dataset.panel;
+      document.querySelectorAll('.patch-studio-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      document.querySelectorAll('.patch-studio-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(`panel-${panelName}`).classList.add('active');
+      if (panelName === 'preflight') renderPreflightChecklist();
+    });
+
+    function parseBaseVersion(input) {
+      const trimmed = input.trim();
+      if (!trimmed) return { parsed: null, status: 'pending' };
+      if (trimmed.startsWith('{')) {
+        try {
+          const json = JSON.parse(trimmed);
+          if (json.version) return { parsed: { version: json.version }, status: 'pass' };
+          return { parsed: null, status: 'warn', message: 'No version field found in JSON' };
+        } catch (e) {
+          return { parsed: null, status: 'warn', message: 'Invalid JSON, storing as raw text' };
+        }
+      }
+      const versionMatch = trimmed.match(/^(\d+\.\d+\.\d+)$/);
+      if (versionMatch) return { parsed: { version: versionMatch[1] }, status: 'pass' };
+      return { parsed: { version: trimmed }, status: 'warn', message: 'Non-standard version format' };
+    }
+
+    function parseValidation(input) {
+      const trimmed = input.trim();
+      if (!trimmed) return { parsed: null, status: 'pending' };
+      const result = { status: 'unknown', baseVersion: null, patchBaseVersion: null, changesCount: null, conflicts: [] };
+      if (trimmed.toLowerCase().includes('ok:') || trimmed.toLowerCase().includes('valid')) {
+        result.status = 'ok';
+      } else if (trimmed.toLowerCase().includes('error') || trimmed.toLowerCase().includes('fail')) {
+        result.status = 'error';
+      }
+      const bvMatch = trimmed.match(/base\.version[:\s]+([0-9.]+)/i);
+      if (bvMatch) result.baseVersion = bvMatch[1];
+      const pbvMatch = trimmed.match(/patch\.base_version[:\s]+([0-9.]+)/i);
+      if (pbvMatch) result.patchBaseVersion = pbvMatch[1];
+      const ccMatch = trimmed.match(/changes_count[:\s]+(\d+)/i);
+      if (ccMatch) result.changesCount = parseInt(ccMatch[1]);
+      const conflictMatches = [...trimmed.matchAll(/conflict[:\s]*(.*?)(?:\n|$)/gi)];
+      result.conflicts = conflictMatches.map(m => m[1].trim()).filter(Boolean);
+      if (result.status === 'ok') return { parsed: result, status: 'pass' };
+      if (result.status === 'error') return { parsed: result, status: 'fail' };
+      return { parsed: result, status: 'warn', message: 'Could not determine validation status' };
+    }
+
+    function parseConflict(input) {
+      const trimmed = input.trim().toLowerCase();
+      if (!trimmed) return { parsed: null, status: 'pending' };
+      if (trimmed === 'reviewed') return { parsed: { reviewed: true }, status: 'warn', message: 'Manual review confirmed' };
+      if (trimmed.includes('no conflict') || trimmed.includes('0 conflicts')) {
+        return { parsed: { conflicts: [], count: 0 }, status: 'pass' };
+      }
+      const conflictLines = input.trim().split('\n').filter(l => l.trim() && !l.toLowerCase().includes('no conflict'));
+      if (conflictLines.length > 0) {
+        return { parsed: { conflicts: conflictLines, count: conflictLines.length }, status: 'fail', message: `${conflictLines.length} conflict(s) found` };
+      }
+      return { parsed: { reviewed: true }, status: 'warn', message: 'Content stored for manual review' };
+    }
+
+    function parseSmoke(input) {
+      const trimmed = input.trim();
+      if (!trimmed) return { parsed: null, status: 'pending' };
+      if (trimmed.toLowerCase().includes('ok:') || trimmed.toLowerCase().includes('matches expected')) {
+        return { parsed: { pass: true }, status: 'pass' };
+      }
+      if (trimmed.toLowerCase().includes('fail') || trimmed.toLowerCase().includes('error') || trimmed.toLowerCase().includes('mismatch')) {
+        return { parsed: { pass: false }, status: 'fail' };
+      }
+      return { parsed: { raw: trimmed }, status: 'warn', message: 'Could not determine pass/fail' };
+    }
+
+    function renderPreflightChecklist() {
+      const steps = [
+        { id: 1, title: 'Base Version Check', key: 'baseVersion', desc: getStepDescription('baseVersion') },
+        { id: 2, title: 'Validation Report', key: 'validation', desc: getStepDescription('validation') },
+        { id: 3, title: 'Conflict Check', key: 'conflict', desc: getStepDescription('conflict') },
+        { id: 4, title: 'Smoke Evidence', key: 'smoke', desc: getStepDescription('smoke') }
+      ];
+      const html = steps.map(step => {
+        const status = getStepStatus(step.key);
+        return `
+          <div class="preflight-step">
+            <div class="preflight-step-num ${status}">${step.id}</div>
+            <div class="preflight-step-info">
+              <div class="preflight-step-title">${step.title}</div>
+              <div class="preflight-step-status">${step.desc}</div>
+            </div>
+            <span class="preflight-step-chip ${status}">${status}</span>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('preflight-checklist').innerHTML = html;
+    }
+
+    function getStepStatus(key) {
+      if (key === 'smoke') {
+        const baseline = preflightEvidence.smokeBaseline.status;
+        if (baseline === 'pass') return 'pass';
+        if (baseline === 'fail') return 'fail';
+        if (baseline === 'warn') return 'warn';
+        return 'pending';
+      }
+      return preflightEvidence[key]?.status || 'pending';
+    }
+
+    function getStepDescription(key) {
+      const ev = preflightEvidence;
+      if (key === 'baseVersion') {
+        if (ev.baseVersion.parsed?.version) return `Version: ${ev.baseVersion.parsed.version}`;
+        if (ev.baseVersion.status === 'warn') return ev.baseVersion.message || 'Needs review';
+        return 'Not provided';
+      }
+      if (key === 'validation') {
+        if (ev.validation.parsed) {
+          const p = ev.validation.parsed;
+          if (p.status === 'ok') return `Valid (base: ${p.baseVersion || '?'}, changes: ${p.changesCount || '?'})`;
+          if (p.status === 'error') return 'Validation failed';
+        }
+        if (ev.validation.status === 'warn') return ev.validation.message || 'Needs review';
+        return 'Not provided';
+      }
+      if (key === 'conflict') {
+        if (ev.conflict.parsed?.count === 0) return 'No conflicts';
+        if (ev.conflict.parsed?.count > 0) return `${ev.conflict.parsed.count} conflict(s)`;
+        if (ev.conflict.parsed?.reviewed) return 'Manual review confirmed';
+        return 'Not provided';
+      }
+      if (key === 'smoke') {
+        const parts = [];
+        if (ev.smokeBaseline.parsed?.pass === true) parts.push('Baseline: PASS');
+        else if (ev.smokeBaseline.parsed?.pass === false) parts.push('Baseline: FAIL');
+        else if (ev.smokeBaseline.status === 'warn') parts.push('Baseline: Review');
+        if (ev.smokeEdge.parsed?.pass === true) parts.push('Edge: PASS');
+        else if (ev.smokeEdge.parsed?.pass === false) parts.push('Edge: FAIL');
+        else if (ev.smokeEdge.status === 'warn') parts.push('Edge: Review');
+        return parts.length > 0 ? parts.join(', ') : 'Not provided';
+      }
+      return 'Unknown';
+    }
+
+    function renderPreflightResult(containerId, evidence) {
+      const container = document.getElementById(containerId);
+      if (!evidence.parsed && evidence.status === 'pending') {
+        container.style.display = 'none';
+        return;
+      }
+      container.style.display = 'block';
+      container.className = `preflight-result ${evidence.status}`;
+      let html = '';
+      if (evidence.message) {
+        html += `<div style="margin-bottom:6px;"><em>${evidence.message}</em></div>`;
+      }
+      if (evidence.parsed) {
+        const entries = Object.entries(evidence.parsed).filter(([k, v]) => v !== null && k !== 'conflicts');
+        entries.sort((a, b) => a[0].localeCompare(b[0]));
+        entries.forEach(([key, val]) => {
+          html += `<div class="preflight-result-row"><span class="preflight-result-key">${key}:</span><span class="preflight-result-val">${val}</span></div>`;
+        });
+        if (evidence.parsed.conflicts && evidence.parsed.conflicts.length > 0) {
+          html += `<table class="preflight-conflicts-table"><thead><tr><th>#</th><th>Conflict</th></tr></thead><tbody>`;
+          evidence.parsed.conflicts.forEach((c, i) => {
+            html += `<tr><td>${i + 1}</td><td>${c}</td></tr>`;
+          });
+          html += `</tbody></table>`;
+        }
+      }
+      container.innerHTML = html || '<em>Parsed successfully</em>';
+    }
+
+    function handlePreflightParse(type) {
+      if (type === 'base-version') {
+        const input = document.getElementById('preflight-base-version').value;
+        const result = parseBaseVersion(input);
+        preflightEvidence.baseVersion = { raw: input, ...result };
+        renderPreflightResult('preflight-base-result', preflightEvidence.baseVersion);
+      } else if (type === 'validation') {
+        const input = document.getElementById('preflight-validation-input').value;
+        const result = parseValidation(input);
+        preflightEvidence.validation = { raw: input, ...result };
+        renderPreflightResult('preflight-validation-result', preflightEvidence.validation);
+      } else if (type === 'conflict') {
+        const input = document.getElementById('preflight-conflict-input').value;
+        const result = parseConflict(input);
+        preflightEvidence.conflict = { raw: input, ...result };
+        renderPreflightResult('preflight-conflict-result', preflightEvidence.conflict);
+      } else if (type === 'smoke-baseline') {
+        const input = document.getElementById('preflight-smoke-baseline-input').value;
+        const result = parseSmoke(input);
+        preflightEvidence.smokeBaseline = { raw: input, ...result };
+        updateSmokeResult();
+      } else if (type === 'smoke-edge') {
+        const input = document.getElementById('preflight-smoke-edge-input').value;
+        const result = parseSmoke(input);
+        preflightEvidence.smokeEdge = { raw: input, ...result };
+        updateSmokeResult();
+      }
+      renderPreflightChecklist();
+      savePreflightEvidence();
+    }
+
+    function updateSmokeResult() {
+      const container = document.getElementById('preflight-smoke-result');
+      const baseline = preflightEvidence.smokeBaseline;
+      const edge = preflightEvidence.smokeEdge;
+      const sha = document.getElementById('preflight-sha256').value;
+      preflightEvidence.sha256 = sha;
+      if (baseline.status === 'pending' && edge.status === 'pending') {
+        container.style.display = 'none';
+        return;
+      }
+      container.style.display = 'block';
+      const overallStatus = (baseline.status === 'fail' || edge.status === 'fail') ? 'fail' :
+        (baseline.status === 'pass' && (edge.status === 'pass' || edge.status === 'pending')) ? 'pass' : 'warn';
+      container.className = `preflight-result ${overallStatus}`;
+      let html = '';
+      html += `<div class="preflight-result-row"><span class="preflight-result-key">Baseline:</span><span class="preflight-result-val">${baseline.parsed?.pass === true ? 'PASS' : baseline.parsed?.pass === false ? 'FAIL' : baseline.status}</span></div>`;
+      if (edge.status !== 'pending') {
+        html += `<div class="preflight-result-row"><span class="preflight-result-key">Edge:</span><span class="preflight-result-val">${edge.parsed?.pass === true ? 'PASS' : edge.parsed?.pass === false ? 'FAIL' : edge.status}</span></div>`;
+      }
+      if (sha) {
+        html += `<div class="preflight-result-row"><span class="preflight-result-key">SHA256:</span><span class="preflight-result-val" style="word-break:break-all;">${sha}</span></div>`;
+      }
+      container.innerHTML = html;
+    }
+
+    function handlePreflightClear(type) {
+      if (type === 'base-version') {
+        document.getElementById('preflight-base-version').value = '';
+        preflightEvidence.baseVersion = { raw: '', parsed: null, status: 'pending' };
+        document.getElementById('preflight-base-result').style.display = 'none';
+      } else if (type === 'validation') {
+        document.getElementById('preflight-validation-input').value = '';
+        preflightEvidence.validation = { raw: '', parsed: null, status: 'pending' };
+        document.getElementById('preflight-validation-result').style.display = 'none';
+      } else if (type === 'conflict') {
+        document.getElementById('preflight-conflict-input').value = '';
+        preflightEvidence.conflict = { raw: '', parsed: null, status: 'pending' };
+        document.getElementById('preflight-conflict-result').style.display = 'none';
+      } else if (type === 'smoke-baseline') {
+        document.getElementById('preflight-smoke-baseline-input').value = '';
+        preflightEvidence.smokeBaseline = { raw: '', parsed: null, status: 'pending' };
+        updateSmokeResult();
+      } else if (type === 'smoke-edge') {
+        document.getElementById('preflight-smoke-edge-input').value = '';
+        preflightEvidence.smokeEdge = { raw: '', parsed: null, status: 'pending' };
+        updateSmokeResult();
+      }
+      renderPreflightChecklist();
+      savePreflightEvidence();
+    }
+
+    document.getElementById('panel-preflight').addEventListener('click', e => {
+      const parseBtn = e.target.closest('.preflight-parse-btn');
+      if (parseBtn) {
+        handlePreflightParse(parseBtn.dataset.parse);
+        return;
+      }
+      const clearBtn = e.target.closest('.preflight-clear-btn');
+      if (clearBtn) {
+        handlePreflightClear(clearBtn.dataset.clear);
+        return;
+      }
+    });
+
+    document.getElementById('preflight-sha256').addEventListener('input', () => {
+      preflightEvidence.sha256 = document.getElementById('preflight-sha256').value;
+      updateSmokeResult();
+      savePreflightEvidence();
+    });
+
+    document.getElementById('preflight-reset').addEventListener('click', () => {
+      preflightEvidence = {
+        baseVersion: { raw: '', parsed: null, status: 'pending' },
+        validation: { raw: '', parsed: null, status: 'pending' },
+        conflict: { raw: '', parsed: null, status: 'pending' },
+        smokeBaseline: { raw: '', parsed: null, status: 'pending' },
+        smokeEdge: { raw: '', parsed: null, status: 'pending' },
+        sha256: ''
+      };
+      document.getElementById('preflight-base-version').value = '';
+      document.getElementById('preflight-validation-input').value = '';
+      document.getElementById('preflight-conflict-input').value = '';
+      document.getElementById('preflight-smoke-baseline-input').value = '';
+      document.getElementById('preflight-smoke-edge-input').value = '';
+      document.getElementById('preflight-sha256').value = '';
+      document.getElementById('preflight-base-result').style.display = 'none';
+      document.getElementById('preflight-validation-result').style.display = 'none';
+      document.getElementById('preflight-conflict-result').style.display = 'none';
+      document.getElementById('preflight-smoke-result').style.display = 'none';
+      renderPreflightChecklist();
+      savePreflightEvidence();
+    });
+
+    function savePreflightEvidence() {
+      try {
+        localStorage.setItem(PREFLIGHT_STORAGE_KEY, JSON.stringify(preflightEvidence));
+      } catch (e) {}
+    }
+
+    function restorePreflightEvidence() {
+      try {
+        const stored = localStorage.getItem(PREFLIGHT_STORAGE_KEY);
+        if (!stored) return;
+        preflightEvidence = JSON.parse(stored);
+        document.getElementById('preflight-base-version').value = preflightEvidence.baseVersion?.raw || '';
+        document.getElementById('preflight-validation-input').value = preflightEvidence.validation?.raw || '';
+        document.getElementById('preflight-conflict-input').value = preflightEvidence.conflict?.raw || '';
+        document.getElementById('preflight-smoke-baseline-input').value = preflightEvidence.smokeBaseline?.raw || '';
+        document.getElementById('preflight-smoke-edge-input').value = preflightEvidence.smokeEdge?.raw || '';
+        document.getElementById('preflight-sha256').value = preflightEvidence.sha256 || '';
+        if (preflightEvidence.baseVersion?.status !== 'pending') renderPreflightResult('preflight-base-result', preflightEvidence.baseVersion);
+        if (preflightEvidence.validation?.status !== 'pending') renderPreflightResult('preflight-validation-result', preflightEvidence.validation);
+        if (preflightEvidence.conflict?.status !== 'pending') renderPreflightResult('preflight-conflict-result', preflightEvidence.conflict);
+        if (preflightEvidence.smokeBaseline?.status !== 'pending' || preflightEvidence.smokeEdge?.status !== 'pending') updateSmokeResult();
+      } catch (e) {}
+    }
+
+    function savePatchDraft() {
+      try {
+        const toSave = { ...patchDraft, changes: patchDraft.changes.map(c => ({ _key: c._key, _source: c._source, record: c.record })) };
+        localStorage.setItem(PATCH_STORAGE_KEY, JSON.stringify(toSave));
+      } catch (e) {}
+    }
+
+    function restorePatchDraft() {
+      try {
+        const stored = localStorage.getItem(PATCH_STORAGE_KEY);
+        if (!stored) return;
+        const data = JSON.parse(stored);
+        patchDraft.baseVersion = data.baseVersion || '0.1.0';
+        patchDraft.author = data.author || '';
+        patchDraft.rationale = data.rationale || '';
+        patchDraft.changes = data.changes || [];
+        document.getElementById('patch-base-version').value = patchDraft.baseVersion;
+        document.getElementById('patch-author').value = patchDraft.author;
+        document.getElementById('patch-rationale').value = patchDraft.rationale;
+        renderPatchChanges();
+      } catch (e) {}
+    }
+
+    function generatePRSummaryWithEvidence() {
+      const identity = currentSelection.joinIdentity;
+      const contract = currentSelection.contractIdx !== null 
+        ? allData.contractResults[currentSelection.contractIdx] : null;
+      const issues = identity ? sortBySeverityFirst(getRelatedRecords(identity, allData.issues), ['sheet', 'field', 'issue_type']) : [];
+      const actions = identity ? sortBySeverityFirst(getRelatedRecords(identity, allData.fieldActions), ['sheet', 'field', 'action']) : [];
+      const primary = identity ? getPrimaryKey(identity) : null;
+      const primaryVal = identity?.[primary] || 'unknown';
+
+      const ev = preflightEvidence;
+      const baseVer = ev.baseVersion.parsed?.version || document.getElementById('patch-base-version').value || 'unknown';
+      const patchBaseVer = ev.validation.parsed?.patchBaseVersion || document.getElementById('patch-base-version').value || 'unknown';
+      const smokeBaselineStatus = ev.smokeBaseline.parsed?.pass === true ? 'PASS' : ev.smokeBaseline.parsed?.pass === false ? 'FAIL' : 'unknown';
+      const smokeEdgeStatus = ev.smokeEdge.parsed?.pass === true ? 'PASS' : ev.smokeEdge.parsed?.pass === false ? 'FAIL' : ev.smokeEdge.status === 'pending' ? 'N/A' : 'unknown';
+      const sha256 = ev.sha256 || '<SHA256_HASH>';
+
+      let md = `# PR: Fix issues for ${primary || 'unknown'}=${primaryVal}\n\n`;
+      md += `## WHY\n`;
+      if (identity) {
+        md += `This record has ${issues.length} issue(s) and ${actions.length} pending action(s) that need resolution.\n\n`;
+      } else {
+        md += `Patch draft with ${patchDraft.changes.length} change(s).\n\n`;
+      }
+      md += `## Affected Artifacts\n`;
+      if (identity) {
+        md += `- **Join Identity**: ${formatJoinIdentityText(identity)}\n`;
+        md += `- **Contract Status**: ${contract?.sf_contract_status || 'unknown'}\n`;
+        md += `- **Detected Subtype**: ${contract?.detected_subtype || 'unknown'}\n`;
+        if (issues.length > 0) {
+          md += `- **Issues**: ${issues.map(i => i.issue_type).join(', ')}\n`;
+        }
+      }
+      md += `\n## Evidence\n`;
+      md += `- **base.version**: ${baseVer}\n`;
+      md += `- **patch.base_version**: ${patchBaseVer}\n`;
+      md += `- **Smoke Baseline**: ${smokeBaselineStatus}\n`;
+      md += `- **Smoke Edge**: ${smokeEdgeStatus}\n`;
+      md += `- **SHA256**: ${sha256}\n`;
+      return md;
+    }
+
     loadCommands();
     loadData();
+    restorePreflightEvidence();
+    restorePatchDraft();
   </script>
 </body>
 </html>

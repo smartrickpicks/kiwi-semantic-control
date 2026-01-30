@@ -1,0 +1,84 @@
+{
+  "agent": "REPLIT",
+  "role": "ui_implementer",
+  "task_type": "FEATURE_BUILD",
+  "task_id": "CBV-0.6",
+  "title": "Control Board Viewer v0.6 — Preflight Gate (Validate + Conflicts + Smoke Evidence, copy-only)",
+  "scope_lock": [
+    "Governance-only",
+    "Offline-first",
+    "No network calls",
+    "No command execution from UI",
+    "No file writes from UI",
+    "Copy-to-clipboard only"
+  ],
+  "objective": "Add a Preflight Gate workflow so a Patch Draft is not considered 'PR-ready' unless validation/conflict/smoke evidence artifacts are captured (copy-only).",
+  "features": [
+    {
+      "name": "Preflight Tab in Patch Studio",
+      "requirements": [
+        "Add a new tab or section in Patch Studio: 'Preflight'",
+        "Show a 4-step checklist with status chips: (1) Base Version Check, (2) Validation Report, (3) Conflict Check, (4) Smoke Evidence",
+        "Each step is satisfied only by user-provided paste-in artifacts (UI cannot execute commands)"
+      ]
+    },
+    {
+      "name": "Paste-In Evidence Inputs",
+      "requirements": [
+        "Add paste boxes for:",
+        "A) base.version value (string) OR pasted base JSON header snippet",
+        "B) validator output (stdout/stderr text) OR a JSON validation report if available",
+        "C) conflict report (if validator includes conflicts, parse and render; else allow paste text and mark as 'reviewed')",
+        "D) smoke log snippet (baseline and optional edge), plus optional SHA256 strings",
+        "Provide 'Parse' button(s) that attempt lightweight extraction from pasted text and show extracted fields"
+      ]
+    },
+    {
+      "name": "Render Validation + Conflicts",
+      "requirements": [
+        "Render a structured view of validation results when parse succeeds:",
+        "- status ok/error",
+        "- base.version, patch.base_version, changes_count",
+        "- conflicts table (if any)",
+        "If parse fails, still store paste blob and mark as 'manual review' (yellow state)"
+      ]
+    },
+    {
+      "name": "PR Kit Generator Upgrade",
+      "requirements": [
+        "Update 'Copy PR Summary' to include an 'Evidence' section with placeholders filled when possible:",
+        "- base.version",
+        "- patch.base_version",
+        "- smoke baseline pass/fail (based on pasted logs)",
+        "- smoke edge pass/fail (optional)",
+        "- SHA256 values (optional)",
+        "PR Kit output must be deterministic and stable"
+      ]
+    },
+    {
+      "name": "Deterministic State",
+      "requirements": [
+        "Persist Patch Draft + Preflight evidence blobs + parsed fields in localStorage",
+        "Add 'Reset Evidence' button that clears only evidence (not the patch draft)",
+        "Add 'Export Patch Draft (JSON)' remains copy-only, sorted keys, stable ordering"
+      ]
+    }
+  ],
+  "determinism": {
+    "join_triplet": "contract_key -> file_url -> file_name",
+    "severity_order": ["blocking", "warning", "info"],
+    "stable_sorting": "Severity first, then join triplet (nulls last), then sheet, field, type"
+  },
+  "acceptance_criteria": [
+    "Preflight Gate checklist reflects paste-in evidence states (green/yellow/red)",
+    "Validation results render when parse succeeds; conflicts render in a table when present",
+    "PR Summary includes an Evidence section populated from captured artifacts",
+    "No dependencies added, no network calls, no execution, no file writes",
+    "README updated with v0.6 workflow"
+  ],
+  "expected_outputs": [
+    "Updated ui/viewer/index.html",
+    "Updated ui/viewer/README.md"
+  ],
+  "completion_signal": "Control Board Viewer v0.6 complete; Preflight Gate works end-to-end with paste-in evidence and deterministic PR kit."
+}

@@ -3,7 +3,7 @@
 ## Overview
 A read-only, single-file HTML viewer for sf_packet artifacts. No build step, no dependencies, no external network requests.
 
-**Version:** 0.5
+**Version:** 0.6
 
 ## How to Open
 
@@ -82,7 +82,7 @@ The workbench has four tabs:
 | **Actions** | All `sf_field_actions` rows matching the join identity |
 | **Change Log** | All `sf_change_log` rows matching the join identity |
 
-### Selectable Records (v0.5)
+### Selectable Records
 
 In the Issues, Actions, and Change Log tabs, each row has a checkbox for selection:
 
@@ -95,24 +95,25 @@ In the Issues, Actions, and Change Log tabs, each row has a checkbox for selecti
 
 Selection persists within the current workbench session.
 
-### Patch Studio Lite (v0.5)
+### Patch Studio (v0.6)
 
-Access Patch Studio by clicking the green "Patch Studio" button in the Record Workbench.
+Access Patch Studio by clicking the green "Patch Studio" button in the Record Workbench. Patch Studio now has two tabs: **Draft** and **Preflight**.
 
-#### Draft Fields
+#### Draft Tab
+
 | Field | Description |
 |-------|-------------|
 | **Base Version** | Version this patch applies to (e.g., "0.1.0") |
 | **Author** | Your email or identifier |
 | **Rationale** | Description of why this patch is needed |
 
-#### Changes Preview
+**Changes Preview:**
 - Shows all records added to the patch draft
 - Sorted by severity (blocking > warning > info), then sheet/field
 - Remove individual items with the × button
 - Clear all changes with the "Clear All" button
 
-#### Copy Outputs
+**Copy Outputs:**
 
 | Button | Output Format |
 |--------|---------------|
@@ -120,11 +121,49 @@ Access Patch Studio by clicking the green "Patch Studio" button in the Record Wo
 | **Copy Rule Mapping (JSON)** | Array of rule objects in patch-rule shape |
 | **Copy Grouped Rule Draft** | WHEN/THEN/BECAUSE text with grouped rules |
 
-All outputs are deterministic with sorted keys and stable ordering.
+#### Preflight Tab (v0.6)
 
-### Evidence Helper (v0.5)
+The Preflight Gate ensures your patch draft is validated before PR submission.
 
-Located in Patch Studio, provides copy-only buttons for:
+**4-Step Checklist:**
+
+| Step | Description |
+|------|-------------|
+| 1. Base Version Check | Verify base.version matches patch.base_version |
+| 2. Validation Report | Paste validator output to confirm config is valid |
+| 3. Conflict Check | Confirm no rule conflicts exist |
+| 4. Smoke Evidence | Paste smoke test results (baseline + optional edge) |
+
+**Checklist Status Chips:**
+- **Green (pass):** Evidence parsed successfully, step satisfied
+- **Yellow (warn):** Evidence needs manual review
+- **Red (fail):** Validation or smoke test failed
+- **Gray (pending):** No evidence provided yet
+
+**Paste-In Evidence Inputs:**
+Each step has a text input where you paste terminal output. Click "Parse" to extract structured data:
+
+| Input | What to Paste |
+|-------|---------------|
+| Base Version | Version string (e.g., "0.1.0") or JSON with version field |
+| Validation Report | Output from `python3 local_runner/validate_config.py` |
+| Conflict Check | Conflict report text, or type "reviewed" for manual confirmation |
+| Smoke Baseline | Output from `bash scripts/replit_smoke.sh` |
+| Smoke Edge | Output from `bash scripts/replit_smoke.sh edge` (optional) |
+| SHA256 | Optional hash values for verification |
+
+**Parsed Results:**
+When parsing succeeds, a result panel shows extracted fields:
+- Validation: status, base.version, patch.base_version, changes_count
+- Conflicts: rendered as a table if any are found
+- Smoke: PASS/FAIL status for baseline and edge
+
+**Reset Evidence:**
+Click "Reset All Evidence" to clear all preflight inputs without affecting the patch draft.
+
+### Evidence Helper
+
+Located in the Draft tab, provides copy-only buttons for:
 
 | Button | Content |
 |--------|---------|
@@ -132,13 +171,17 @@ Located in Patch Studio, provides copy-only buttons for:
 | **Smoke Edge** | Edge case smoke test command |
 | **Evidence Template** | Markdown template with placeholders for SHA256, commit, verification checklist |
 
-### Copy PR Kit
+### Copy PR Kit (with Evidence)
 
-| Button | Output |
-|--------|--------|
-| **Copy JSON** | Current tab's data as JSON (sorted keys) |
-| **Copy PR Summary** | Markdown summary with title, WHY section, affected artifacts |
-| **Copy Rule Draft** | WHEN / THEN / BECAUSE format for each issue |
+The "Copy PR Summary" button now generates a PR summary that includes an **Evidence section** populated from Preflight data:
+
+| Field | Source |
+|-------|--------|
+| base.version | From Preflight or Draft field |
+| patch.base_version | From parsed validation report or Draft field |
+| Smoke Baseline | PASS/FAIL from parsed smoke output |
+| Smoke Edge | PASS/FAIL or N/A if not provided |
+| SHA256 | From preflight SHA256 input |
 
 ### Determinism Guarantees
 
@@ -147,13 +190,13 @@ All outputs follow these ordering rules:
 - **Join triplet:** contract_key → file_url → file_name (nulls last)
 - **Secondary sort:** sheet, field, then type-specific fields
 - **JSON:** All keys sorted alphabetically
-- **Rule IDs:** Based on primary key + index (no timestamps)
+- **Rule IDs:** Based on per-record primary key + index (no timestamps)
 
 ### State Persistence
-The viewer persists your selection in localStorage:
-- Selected join identity
-- Active tab
-- Source type
+The viewer persists your data in localStorage:
+- Selected join identity (STORAGE_KEY)
+- Patch draft including changes, author, rationale (PATCH_STORAGE_KEY)
+- Preflight evidence blobs and parsed fields (PREFLIGHT_STORAGE_KEY)
 
 ### Summary Cards
 Displays counts from `sf_summary`:
@@ -176,23 +219,27 @@ Three main tables with deterministic sorting:
 
 ## Workflow
 
-### Building a Patch Draft
+### Building a Patch Draft with Preflight Validation
 
 1. Click any row in a table to open the Record Workbench
 2. Navigate to the Issues or Actions tab
 3. Check the records you want to include in the patch
-4. Click "Add Selected to Patch"
-5. Patch Studio opens showing your selected changes
-6. Fill in Base Version, Author, and Rationale
-7. Click "Copy Full Patch Draft (JSON)" to copy the complete patch
-8. Paste into your patch file and review
+4. Click "Add Selected to Patch" to open Patch Studio
+5. Fill in Base Version, Author, and Rationale in the Draft tab
+6. Switch to the **Preflight** tab
+7. Run validation in your terminal and paste the output
+8. Click "Parse" for each evidence input
+9. Verify all 4 checklist steps show green or yellow status
+10. Switch back to Draft tab and click "Copy Full Patch Draft (JSON)"
+11. Use "Copy PR Summary" to get a PR description with evidence included
 
 ### Generating Evidence
 
-1. After creating a patch, use Evidence Helper buttons
-2. Copy smoke commands and run them in terminal
-3. Copy Evidence Template and fill in commit SHA, file hash
-4. Include evidence in your PR
+1. Use Evidence Helper buttons (Draft tab) to copy smoke commands
+2. Run commands in terminal
+3. Switch to Preflight tab and paste outputs
+4. Click Parse to extract structured data
+5. Copy PR Summary includes populated Evidence section
 
 ## Files
 
@@ -211,12 +258,13 @@ Three main tables with deterministic sorting:
 - **No file writes**: All output is copy-to-clipboard only
 - **Deterministic display**: Sorting matches run_local.py output ordering
 - **Keyboard shortcuts**: Press `Escape` to close modals, drawers, and Patch Studio
-- **State persistence**: Selection saved to localStorage
+- **State persistence**: Selection, patch draft, and preflight evidence saved to localStorage
 
 ## Version History
 
 | Version | Features |
 |---------|----------|
+| 0.6 | Preflight Gate (4-step validation checklist, paste-in evidence parsing, PR Summary with Evidence section, localStorage persistence for preflight + patch draft) |
 | 0.5 | Patch Studio Lite (selectable records, grouped rule builder, full patch draft, evidence helper) |
 | 0.4 | Universal drilldown, Copy PR Kit, PRIMARY key indicator, duplicate identity warning |
 | 0.3 | Record Workbench with tabbed drawer, join identity matching, localStorage persistence |
