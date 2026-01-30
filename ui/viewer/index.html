@@ -1741,7 +1741,7 @@
         </div>
       `;
       
-      document.getElementById('copy-delta-summary').addEventListener('click', async () => {
+      document.getElementById('copy-delta-summary')?.addEventListener('click', async () => {
         const md = generateDeltaMarkdown();
         const success = await copyToClipboard(md);
         const btn = document.getElementById('copy-delta-summary');
@@ -2361,7 +2361,7 @@
         return;
       }
       
-      sourceInfo.textContent = `Data source: ${source}`;
+      if (sourceInfo) sourceInfo.textContent = `Data source: ${source}`;
       
       renderSummary(data.sf_summary || {});
       
@@ -2428,7 +2428,7 @@
     document.getElementById('drawer-close')?.addEventListener('click', closeDrawer);
     document.getElementById('drawer-overlay')?.addEventListener('click', closeDrawer);
 
-    document.getElementById('drawer-tabs').addEventListener('click', e => {
+    document.getElementById('drawer-tabs')?.addEventListener('click', e => {
       const tab = e.target.closest('.drawer-tab');
       if (!tab) return;
       const tabName = tab.dataset.tab;
@@ -2439,7 +2439,7 @@
       saveSelection();
     });
 
-    document.getElementById('drawer-copy').addEventListener('click', async () => {
+    document.getElementById('drawer-copy')?.addEventListener('click', async () => {
       const rawJson = document.getElementById('drawer-body').dataset.json || '{}';
       const parsed = JSON.parse(rawJson);
       const sorted = sortObjectKeys(parsed);
@@ -2451,7 +2451,7 @@
       setTimeout(() => btn.textContent = orig, 1500);
     });
 
-    document.getElementById('identity-copy').addEventListener('click', async () => {
+    document.getElementById('identity-copy')?.addEventListener('click', async () => {
       const identity = currentSelection.joinIdentity;
       if (!identity) return;
       const text = formatJoinIdentityText(identity);
@@ -2541,7 +2541,7 @@
       return draft;
     }
 
-    document.getElementById('copy-pr-summary').addEventListener('click', async () => {
+    document.getElementById('copy-pr-summary')?.addEventListener('click', async () => {
       const text = generatePRSummaryWithEvidence();
       const success = await copyToClipboard(text);
       const btn = document.getElementById('copy-pr-summary');
@@ -2550,7 +2550,7 @@
       setTimeout(() => btn.textContent = orig, 1500);
     });
 
-    document.getElementById('copy-rule-draft').addEventListener('click', async () => {
+    document.getElementById('copy-rule-draft')?.addEventListener('click', async () => {
       const text = generateRuleDraft();
       const success = await copyToClipboard(text);
       const btn = document.getElementById('copy-rule-draft');
@@ -2559,12 +2559,12 @@
       setTimeout(() => btn.textContent = orig, 1500);
     });
 
-    document.getElementById('filter-search').addEventListener('input', e => {
+    document.getElementById('filter-search')?.addEventListener('input', e => {
       activeFilters.search = e.target.value;
       renderAllTables();
     });
 
-    document.getElementById('severity-chips').addEventListener('click', e => {
+    document.getElementById('severity-chips')?.addEventListener('click', e => {
       const chip = e.target.closest('.filter-chip');
       if (!chip) return;
       const sev = chip.dataset.severity;
@@ -2579,7 +2579,7 @@
       renderAllTables();
     });
 
-    document.getElementById('status-chips').addEventListener('click', e => {
+    document.getElementById('status-chips')?.addEventListener('click', e => {
       const chip = e.target.closest('.filter-chip');
       if (!chip) return;
       const status = chip.dataset.status;
@@ -2594,7 +2594,7 @@
       renderAllTables();
     });
 
-    document.getElementById('filter-subtype').addEventListener('change', e => {
+    document.getElementById('filter-subtype')?.addEventListener('change', e => {
       activeFilters.subtype = e.target.value;
       renderAllTables();
     });
@@ -2607,7 +2607,7 @@
       }
     });
 
-    document.getElementById('drawer-body').addEventListener('change', e => {
+    document.getElementById('drawer-body')?.addEventListener('change', e => {
       if (e.target.type !== 'checkbox') return;
       const key = e.target.dataset.key;
       const tabType = document.getElementById('drawer-body').dataset.tabType;
@@ -2624,7 +2624,7 @@
       updateSelectionCount(tabType);
     });
 
-    document.getElementById('drawer-body').addEventListener('click', e => {
+    document.getElementById('drawer-body')?.addEventListener('click', e => {
       const btn = e.target.closest('.selection-btn');
       if (!btn) return;
       
@@ -2702,7 +2702,7 @@
       }).join('');
     }
 
-    document.getElementById('patch-changes-list').addEventListener('click', e => {
+    document.getElementById('patch-changes-list')?.addEventListener('click', e => {
       const btn = e.target.closest('.patch-change-remove');
       if (!btn) return;
       const key = btn.dataset.key;
@@ -2711,33 +2711,33 @@
       savePatchDraft();
     });
 
-    document.getElementById('clear-patch-changes').addEventListener('click', () => {
+    document.getElementById('clear-patch-changes')?.addEventListener('click', () => {
       patchDraft.changes = [];
       renderPatchChanges();
       savePatchDraft();
     });
 
-    document.getElementById('open-patch-studio').addEventListener('click', () => {
+    document.getElementById('open-patch-studio')?.addEventListener('click', () => {
       document.getElementById('patch-studio').classList.add('active');
     });
 
-    document.getElementById('patch-studio-close').addEventListener('click', closePatchStudio);
+    document.getElementById('patch-studio-close')?.addEventListener('click', closePatchStudio);
 
     function closePatchStudio() {
       document.getElementById('patch-studio').classList.remove('active');
     }
 
-    document.getElementById('patch-base-version').addEventListener('input', e => {
+    document.getElementById('patch-base-version')?.addEventListener('input', e => {
       patchDraft.baseVersion = e.target.value;
       savePatchDraft();
     });
 
-    document.getElementById('patch-author').addEventListener('input', e => {
+    document.getElementById('patch-author')?.addEventListener('input', e => {
       patchDraft.author = e.target.value;
       savePatchDraft();
     });
 
-    document.getElementById('patch-rationale').addEventListener('input', e => {
+    document.getElementById('patch-rationale')?.addEventListener('input', e => {
       patchDraft.rationale = e.target.value;
       savePatchDraft();
     });
@@ -2852,7 +2852,7 @@
       return JSON.stringify(sortObjectKeys(patch), null, 2);
     }
 
-    document.getElementById('copy-full-patch').addEventListener('click', async () => {
+    document.getElementById('copy-full-patch')?.addEventListener('click', async () => {
       const text = generateFullPatchDraft();
       const success = await copyToClipboard(text);
       const btn = document.getElementById('copy-full-patch');
@@ -2861,7 +2861,7 @@
       setTimeout(() => btn.textContent = orig, 1500);
     });
 
-    document.getElementById('copy-rule-mapping').addEventListener('click', async () => {
+    document.getElementById('copy-rule-mapping')?.addEventListener('click', async () => {
       const text = generateRuleMapping();
       const success = await copyToClipboard(text);
       const btn = document.getElementById('copy-rule-mapping');
@@ -2870,7 +2870,7 @@
       setTimeout(() => btn.textContent = orig, 1500);
     });
 
-    document.getElementById('copy-grouped-rules').addEventListener('click', async () => {
+    document.getElementById('copy-grouped-rules')?.addEventListener('click', async () => {
       const text = generateGroupedRules();
       const success = await copyToClipboard(text);
       const btn = document.getElementById('copy-grouped-rules');
@@ -2879,7 +2879,7 @@
       setTimeout(() => btn.textContent = orig, 1500);
     });
 
-    document.getElementById('copy-smoke-baseline').addEventListener('click', async () => {
+    document.getElementById('copy-smoke-baseline')?.addEventListener('click', async () => {
       const cmd = commands.commands?.smoke_baseline || 'bash scripts/replit_smoke.sh';
       const success = await copyToClipboard(cmd);
       const btn = document.getElementById('copy-smoke-baseline');
@@ -2888,7 +2888,7 @@
       setTimeout(() => btn.textContent = orig, 1500);
     });
 
-    document.getElementById('copy-smoke-edge').addEventListener('click', async () => {
+    document.getElementById('copy-smoke-edge')?.addEventListener('click', async () => {
       const cmd = commands.commands?.smoke_edge || 'bash scripts/replit_smoke.sh edge';
       const success = await copyToClipboard(cmd);
       const btn = document.getElementById('copy-smoke-edge');
@@ -2897,7 +2897,7 @@
       setTimeout(() => btn.textContent = orig, 1500);
     });
 
-    document.getElementById('copy-evidence-template').addEventListener('click', async () => {
+    document.getElementById('copy-evidence-template')?.addEventListener('click', async () => {
       const identity = currentSelection.joinIdentity;
       const primary = identity ? getPrimaryKey(identity) : null;
       const primaryVal = identity?.[primary] || 'unknown';
@@ -3184,7 +3184,7 @@ Add any additional notes here.
       savePreflightEvidence();
     }
 
-    document.getElementById('panel-preflight').addEventListener('click', e => {
+    document.getElementById('panel-preflight')?.addEventListener('click', e => {
       const parseBtn = e.target.closest('.preflight-parse-btn');
       if (parseBtn) {
         handlePreflightParse(parseBtn.dataset.parse);
@@ -3197,13 +3197,13 @@ Add any additional notes here.
       }
     });
 
-    document.getElementById('preflight-sha256').addEventListener('input', () => {
+    document.getElementById('preflight-sha256')?.addEventListener('input', () => {
       preflightEvidence.sha256 = document.getElementById('preflight-sha256').value;
       updateSmokeResult();
       savePreflightEvidence();
     });
 
-    document.getElementById('preflight-reset').addEventListener('click', () => {
+    document.getElementById('preflight-reset')?.addEventListener('click', () => {
       preflightEvidence = {
         baseVersion: { raw: '', parsed: null, status: 'pending' },
         validation: { raw: '', parsed: null, status: 'pending' },
@@ -3493,25 +3493,29 @@ Add any additional notes here.
       return md;
     }
 
-    document.getElementById('copy-stream-semantics').addEventListener('click', async () => {
+    document.getElementById('copy-stream-semantics')?.addEventListener('click', async () => {
       const md = generateStreamSemanticsMarkdown();
       const success = await copyToClipboard(md);
       const btn = document.getElementById('copy-stream-semantics');
-      const orig = btn.textContent;
-      btn.textContent = success ? 'Copied!' : 'Failed';
-      setTimeout(() => btn.textContent = orig, 1500);
+      if (btn) {
+        const orig = btn.textContent;
+        btn.textContent = success ? 'Copied!' : 'Failed';
+        setTimeout(() => btn.textContent = orig, 1500);
+      }
     });
 
-    document.getElementById('simulate-sessions').addEventListener('click', () => {
+    document.getElementById('simulate-sessions')?.addEventListener('click', () => {
       renderRecordStateSummary();
       renderSessionTimeline();
     });
 
-    document.getElementById('config-inspector-toggle').addEventListener('click', () => {
+    document.getElementById('config-inspector-toggle')?.addEventListener('click', () => {
       const body = document.getElementById('config-inspector-body');
       const btn = document.getElementById('config-inspector-toggle');
-      body.classList.toggle('active');
-      btn.textContent = body.classList.contains('active') ? 'Hide' : 'Show';
+      if (body && btn) {
+        body.classList.toggle('active');
+        btn.textContent = body.classList.contains('active') ? 'Hide' : 'Show';
+      }
     });
 
     async function loadConfigFile(path) {
@@ -3781,9 +3785,9 @@ Add any additional notes here.
       }
     }
 
-    document.getElementById('load-config').addEventListener('click', loadConfigWithPatch);
+    document.getElementById('load-config')?.addEventListener('click', loadConfigWithPatch);
     
-    document.getElementById('clear-config').addEventListener('click', () => {
+    document.getElementById('clear-config')?.addEventListener('click', () => {
       loadedBaseConfig = null;
       loadedPatch = null;
       configVersionMatch = null;
@@ -3791,7 +3795,7 @@ Add any additional notes here.
       document.getElementById('config-status').style.display = 'none';
     });
 
-    document.getElementById('copy-ruleset-delta').addEventListener('click', async () => {
+    document.getElementById('copy-ruleset-delta')?.addEventListener('click', async () => {
       const md = generateRulesetDeltaMarkdown();
       const success = await copyToClipboard(md);
       const btn = document.getElementById('copy-ruleset-delta');
@@ -3800,7 +3804,7 @@ Add any additional notes here.
       setTimeout(() => btn.textContent = orig, 1500);
     });
 
-    document.getElementById('session-loader-toggle').addEventListener('click', () => {
+    document.getElementById('session-loader-toggle')?.addEventListener('click', () => {
       const body = document.getElementById('session-loader-body');
       const btn = document.getElementById('session-loader-toggle');
       body.classList.toggle('active');
@@ -3880,13 +3884,13 @@ Add any additional notes here.
       }
     }
 
-    document.getElementById('load-session').addEventListener('click', () => {
+    document.getElementById('load-session')?.addEventListener('click', () => {
       const primaryPath = document.getElementById('primary-path').value.trim() || 'out/sf_packet.preview.json';
       const comparePath = document.getElementById('compare-path').value.trim();
       loadDataWithComparison(primaryPath, comparePath);
     });
 
-    document.getElementById('clear-compare').addEventListener('click', () => {
+    document.getElementById('clear-compare')?.addEventListener('click', () => {
       document.getElementById('compare-path').value = '';
       compareData = null;
       rowChanges = { contractResults: {}, issues: {}, fieldActions: {} };
@@ -3915,7 +3919,7 @@ Add any additional notes here.
         document.getElementById('wizard-artifact-path').value = btn.dataset.path;
       });
     });
-    document.getElementById('wizard-load-artifact').addEventListener('click', async () => {
+    document.getElementById('wizard-load-artifact')?.addEventListener('click', async () => {
       const path = document.getElementById('wizard-artifact-path').value.trim();
       if (!path) {
         showWizardStatus('data-source-status', 'Please enter an artifact path', 'error');
@@ -3948,10 +3952,10 @@ Add any additional notes here.
     });
 
     // Ruleset modal events
-    document.getElementById('ruleset-modal').addEventListener('click', e => {
+    document.getElementById('ruleset-modal')?.addEventListener('click', e => {
       if (e.target.id === 'ruleset-modal') closeRulesetModal();
     });
-    document.getElementById('wizard-load-ruleset').addEventListener('click', async () => {
+    document.getElementById('wizard-load-ruleset')?.addEventListener('click', async () => {
       const basePath = document.getElementById('wizard-base-config').value.trim();
       const patchPath = document.getElementById('wizard-patch-config').value.trim();
       if (!basePath) {
@@ -3971,7 +3975,7 @@ Add any additional notes here.
     });
 
     // Compare modal events
-    document.getElementById('compare-modal').addEventListener('click', e => {
+    document.getElementById('compare-modal')?.addEventListener('click', e => {
       if (e.target.id === 'compare-modal') closeCompareModal();
     });
     document.querySelectorAll('#compare-modal .wizard-preset-btn').forEach(btn => {
@@ -3981,7 +3985,7 @@ Add any additional notes here.
         document.getElementById('wizard-compare-path').value = btn.dataset.compare || '';
       });
     });
-    document.getElementById('wizard-load-compare').addEventListener('click', async () => {
+    document.getElementById('wizard-load-compare')?.addEventListener('click', async () => {
       const comparePath = document.getElementById('wizard-compare-path').value.trim();
       if (!comparePath) {
         compareData = null;
@@ -4010,7 +4014,7 @@ Add any additional notes here.
     });
 
     // Run modal events
-    document.getElementById('run-modal').addEventListener('click', e => {
+    document.getElementById('run-modal')?.addEventListener('click', e => {
       if (e.target.id === 'run-modal') closeRunModal();
     });
     document.querySelectorAll('#run-modal .toolbar-btn').forEach(btn => {
