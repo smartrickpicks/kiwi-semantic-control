@@ -1,0 +1,65 @@
+{
+  "type": "TASK",
+  "target": "REPLIT",
+  "task_id": "TASK-UI-11",
+  "title": "v0.9 Session + Stream Model (Conceptual Bridge, No Runtime)",
+  "scope": "ui/viewer",
+  "objective": "Lay the semantic groundwork for a future continuous/streaming pipeline WITHOUT adding runtime execution. This is a conceptual + UI-only step that models how streaming would reconcile partial records over time.",
+  "constraints": {
+    "offline_only": true,
+    "governance_only": true,
+    "no_network_calls": true,
+    "no_file_writes": true,
+    "single_file_html": true,
+    "no_dependencies": true
+  },
+  "features": [
+    {
+      "name": "Session Timeline Panel",
+      "description": "Model a stream as ordered 'sessions' (ingest waves). UI-only JSON describing batches arriving over time."
+    },
+    {
+      "name": "Record State Model",
+      "description": "Introduce UI-level states: CONSOLIDATED | PARTIAL | WAITING | BLOCKED. Derived deterministically from issues/actions severity."
+    },
+    {
+      "name": "Reconciliation Logic (UI)",
+      "description": "Show how partial records upgrade to consolidated when missing warnings are resolved in later sessions (no execution)."
+    },
+    {
+      "name": "Never-Stop Flow Visualization",
+      "description": "Explain and visualize the 'open faucet' idea: good records flow through immediately; partials wait and rejoin later."
+    },
+    {
+      "name": "Copy Stream Semantics Markdown",
+      "description": "One-click PR-ready markdown explaining the stream semantics model (how backlogs are avoided, how reconsolidation works)."
+    }
+  ],
+  "determinism": {
+    "sorting": [
+      "session_index asc",
+      "record_state order: CONSOLIDATED > PARTIAL > WAITING > BLOCKED",
+      "severity order: blocking > warning > info",
+      "join triplet asc (nulls last)"
+    ],
+    "normalization": "All session models and copies use sorted keys and stable arrays"
+  },
+  "non_goals": [
+    "No actual streaming",
+    "No async processing",
+    "No queues, workers, or APIs",
+    "No changes to Kiwi or harness behavior"
+  ],
+  "acceptance_criteria": [
+    "UI can model multiple sessions with deterministic state transitions",
+    "Partial → Consolidated upgrade is visually clear and rule-based",
+    "Copy Stream Semantics Markdown is stable and review-ready",
+    "All existing v0.8 features remain unchanged"
+  ],
+  "outputs": [
+    "Updated ui/viewer/index.html (Session panel + state model)",
+    "New docs/14_stream_semantics.md (governance-only explanation)",
+    "CHANGELOG.md v0.9 entry (no semantic changes)"
+  ],
+  "status_on_complete": "AWAITING_OPERATOR_REVIEW"
+}

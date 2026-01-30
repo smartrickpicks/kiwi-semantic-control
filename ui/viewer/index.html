@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Board Viewer v0.8</title>
+  <title>Control Board Viewer v0.9</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 20px; }
@@ -312,11 +312,180 @@
     .config-inspector-copy-actions { display: flex; gap: 10px; margin-top: 15px; }
     .config-copy-btn { padding: 8px 14px; font-size: 0.85em; background: #880e4f; color: white; border: none; border-radius: 4px; cursor: pointer; }
     .config-copy-btn:hover { background: #ad1457; }
+
+    .stream-panel { background: #e0f2f1; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .stream-panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .stream-panel-header h3 { margin: 0; font-size: 0.95em; color: #00695c; }
+    .stream-panel-toggle { padding: 6px 12px; font-size: 0.8em; background: #00695c; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .stream-panel-toggle:hover { background: #00897b; }
+    .stream-panel-body { display: none; }
+    .stream-panel-body.active { display: block; }
+
+    .stream-concept { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .stream-concept h4 { margin: 0 0 10px 0; font-size: 0.95em; color: #00695c; }
+    .stream-concept p { font-size: 0.85em; color: #555; line-height: 1.5; margin-bottom: 10px; }
+
+    .session-timeline { display: flex; gap: 15px; overflow-x: auto; padding: 10px 0; }
+    .session-card { background: white; border-radius: 8px; padding: 12px; min-width: 180px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #00695c; }
+    .session-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .session-card-title { font-weight: 600; font-size: 0.9em; color: #333; }
+    .session-card-idx { font-size: 0.75em; color: #666; background: #e0e0e0; padding: 2px 6px; border-radius: 10px; }
+    .session-card-stats { font-size: 0.8em; color: #666; }
+    .session-card-stats div { display: flex; justify-content: space-between; padding: 2px 0; }
+
+    .state-chip { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7em; font-weight: 600; text-transform: uppercase; }
+    .state-chip.consolidated { background: #c8e6c9; color: #2e7d32; }
+    .state-chip.partial { background: #fff3e0; color: #e65100; }
+    .state-chip.waiting { background: #e3f2fd; color: #1565c0; }
+    .state-chip.blocked { background: #ffcdd2; color: #c62828; }
+
+    .state-legend { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+    .state-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8em; }
+
+    .flow-diagram { background: #fafafa; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+    .flow-diagram-title { font-weight: 600; font-size: 0.9em; color: #333; margin-bottom: 10px; }
+    .flow-stages { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .flow-stage { background: white; padding: 10px 15px; border-radius: 6px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); min-width: 100px; }
+    .flow-stage-name { font-size: 0.8em; font-weight: 600; color: #333; }
+    .flow-stage-desc { font-size: 0.7em; color: #666; margin-top: 4px; }
+    .flow-arrow { color: #00695c; font-size: 1.2em; }
+    .flow-stage.source { border-left: 3px solid #1565c0; }
+    .flow-stage.process { border-left: 3px solid #00695c; }
+    .flow-stage.output { border-left: 3px solid #2e7d32; }
+    .flow-stage.hold { border-left: 3px solid #ff9800; }
+
+    .reconsolidation-table { width: 100%; border-collapse: collapse; font-size: 0.85em; margin-bottom: 15px; }
+    .reconsolidation-table th, .reconsolidation-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid #eee; }
+    .reconsolidation-table th { background: #00695c; color: white; font-weight: 600; }
+    .reconsolidation-table tr:hover { background: #e0f2f1; }
+
+    .stream-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .stream-btn { padding: 8px 14px; font-size: 0.85em; background: #00695c; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .stream-btn:hover { background: #00897b; }
+
+    .record-state-summary { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+    .record-state-card { background: white; padding: 10px 15px; border-radius: 6px; text-align: center; min-width: 100px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .record-state-card .count { font-size: 1.3em; font-weight: bold; }
+    .record-state-card .label { font-size: 0.7em; color: #666; text-transform: uppercase; }
+    .record-state-card.consolidated .count { color: #2e7d32; }
+    .record-state-card.partial .count { color: #e65100; }
+    .record-state-card.waiting .count { color: #1565c0; }
+    .record-state-card.blocked .count { color: #c62828; }
   </style>
 </head>
 <body>
   <h1>Control Board Viewer</h1>
-  <p class="subtitle">v0.8 | Governance-only | Offline-first | Config Inspector</p>
+  <p class="subtitle">v0.9 | Governance-only | Offline-first | Stream Model</p>
+
+  <div class="stream-panel" id="stream-panel">
+    <div class="stream-panel-header">
+      <h3>Session + Stream Model (Conceptual)</h3>
+      <button class="stream-panel-toggle" id="stream-panel-toggle">Show</button>
+    </div>
+    <div class="stream-panel-body" id="stream-panel-body">
+      <div class="stream-concept">
+        <h4>Never-Stop Flow (Open Faucet Model)</h4>
+        <p>In a continuous pipeline, records flow like water through an open faucet. <strong>Good records</strong> (CONSOLIDATED) pass through immediately. <strong>Partial records</strong> wait in a holding area until missing data arrives in later sessions, then rejoin the flow. <strong>Blocked records</strong> require manual intervention before proceeding.</p>
+        <p>This model prevents backlogs: instead of stopping the entire pipeline for one problem, issues are isolated and resolved asynchronously while the rest of the data flows through.</p>
+      </div>
+
+      <div class="flow-diagram">
+        <div class="flow-diagram-title">Flow Visualization</div>
+        <div class="flow-stages">
+          <div class="flow-stage source">
+            <div class="flow-stage-name">Ingest</div>
+            <div class="flow-stage-desc">New records arrive</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-stage process">
+            <div class="flow-stage-name">Validate</div>
+            <div class="flow-stage-desc">Apply semantic rules</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-stage output">
+            <div class="flow-stage-name">Consolidated</div>
+            <div class="flow-stage-desc">Ready for downstream</div>
+          </div>
+          <span class="flow-arrow" style="opacity: 0.3;">↓</span>
+          <div class="flow-stage hold">
+            <div class="flow-stage-name">Holding</div>
+            <div class="flow-stage-desc">Partial/Waiting records</div>
+          </div>
+          <span class="flow-arrow">→</span>
+          <div class="flow-stage process">
+            <div class="flow-stage-name">Reconsolidate</div>
+            <div class="flow-stage-desc">Later session resolves</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stream-concept">
+        <h4>Record State Model</h4>
+        <div class="state-legend">
+          <div class="state-legend-item"><span class="state-chip consolidated">CONSOLIDATED</span> No blocking/warning issues - flows through</div>
+          <div class="state-legend-item"><span class="state-chip partial">PARTIAL</span> Has warnings - usable but incomplete</div>
+          <div class="state-legend-item"><span class="state-chip waiting">WAITING</span> Missing required data - held for later</div>
+          <div class="state-legend-item"><span class="state-chip blocked">BLOCKED</span> Blocking issues - requires manual fix</div>
+        </div>
+      </div>
+
+      <div class="stream-concept">
+        <h4>Current Dataset State Summary</h4>
+        <div id="record-state-summary" class="record-state-summary"></div>
+      </div>
+
+      <div class="stream-concept">
+        <h4>Simulated Session Timeline</h4>
+        <p style="margin-bottom: 10px;">This timeline models how records would arrive and be processed across multiple ingest waves. Each session shows the state distribution at that point in time.</p>
+        <div id="session-timeline" class="session-timeline"></div>
+      </div>
+
+      <div class="stream-concept">
+        <h4>Reconsolidation Rules</h4>
+        <table class="reconsolidation-table">
+          <thead>
+            <tr>
+              <th>Current State</th>
+              <th>Condition</th>
+              <th>New State</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="state-chip partial">PARTIAL</span></td>
+              <td>All warnings resolved in later session</td>
+              <td><span class="state-chip consolidated">CONSOLIDATED</span></td>
+              <td>Release to downstream</td>
+            </tr>
+            <tr>
+              <td><span class="state-chip waiting">WAITING</span></td>
+              <td>Missing data arrives</td>
+              <td><span class="state-chip partial">PARTIAL</span> or <span class="state-chip consolidated">CONSOLIDATED</span></td>
+              <td>Re-evaluate with new data</td>
+            </tr>
+            <tr>
+              <td><span class="state-chip blocked">BLOCKED</span></td>
+              <td>Manual intervention + re-submit</td>
+              <td><span class="state-chip consolidated">CONSOLIDATED</span></td>
+              <td>Operator action required</td>
+            </tr>
+            <tr>
+              <td><span class="state-chip consolidated">CONSOLIDATED</span></td>
+              <td>New blocking issue detected</td>
+              <td><span class="state-chip blocked">BLOCKED</span></td>
+              <td>Hold and notify</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="stream-actions">
+        <button class="stream-btn" id="copy-stream-semantics">Copy Stream Semantics (Markdown)</button>
+        <button class="stream-btn" id="simulate-sessions">Simulate Sessions from Data</button>
+      </div>
+    </div>
+  </div>
 
   <div class="config-inspector" id="config-inspector">
     <div class="config-inspector-header">
@@ -603,9 +772,9 @@ Note: This viewer does NOT execute any commands automatically.
     const RELATIVE_PRIMARY = '../../out/sf_packet.preview.json';
     const RELATIVE_FALLBACK = '../../examples/expected_outputs/sf_packet.example.json';
     const COMMANDS_PATH = 'run_commands.json';
-    const STORAGE_KEY = 'viewer_selection_v08';
-    const PREFLIGHT_STORAGE_KEY = 'viewer_preflight_v08';
-    const PATCH_STORAGE_KEY = 'viewer_patch_v08';
+    const STORAGE_KEY = 'viewer_selection_v09';
+    const PREFLIGHT_STORAGE_KEY = 'viewer_preflight_v09';
+    const PATCH_STORAGE_KEY = 'viewer_patch_v09';
     const COMPARISON_PATH = '../../out/sf_packet.preview.prev.json';
 
     let loadedBaseConfig = null;
@@ -2306,6 +2475,197 @@ Add any additional notes here.
       md += `- **SHA256**: ${sha256}\n`;
       return md;
     }
+
+    document.getElementById('stream-panel-toggle').addEventListener('click', () => {
+      const body = document.getElementById('stream-panel-body');
+      const btn = document.getElementById('stream-panel-toggle');
+      body.classList.toggle('active');
+      btn.textContent = body.classList.contains('active') ? 'Hide' : 'Show';
+      if (body.classList.contains('active')) {
+        renderRecordStateSummary();
+        renderSessionTimeline();
+      }
+    });
+
+    function deriveRecordState(record) {
+      const joinKey = getJoinKey(record);
+      const recordIssues = allData.issues.filter(i => getJoinKey(i) === joinKey);
+      
+      const hasBlocking = recordIssues.some(i => i.severity === 'blocking');
+      const hasWarning = recordIssues.some(i => i.severity === 'warning');
+      const hasInfo = recordIssues.some(i => i.severity === 'info');
+      const hasMissingData = recordIssues.some(i => 
+        i.issue_type === 'missing_data' || 
+        i.issue_type === 'join_failure' ||
+        i.issue_type === 'missing_required'
+      );
+      
+      if (hasBlocking) return 'BLOCKED';
+      if (hasMissingData && hasWarning) return 'WAITING';
+      if (hasWarning) return 'PARTIAL';
+      return 'CONSOLIDATED';
+    }
+
+    function computeRecordStates() {
+      const states = { CONSOLIDATED: 0, PARTIAL: 0, WAITING: 0, BLOCKED: 0 };
+      allData.contractResults.forEach(record => {
+        const state = deriveRecordState(record);
+        states[state]++;
+      });
+      return states;
+    }
+
+    function renderRecordStateSummary() {
+      const container = document.getElementById('record-state-summary');
+      const states = computeRecordStates();
+      
+      container.innerHTML = `
+        <div class="record-state-card consolidated">
+          <div class="count">${states.CONSOLIDATED}</div>
+          <div class="label">Consolidated</div>
+        </div>
+        <div class="record-state-card partial">
+          <div class="count">${states.PARTIAL}</div>
+          <div class="label">Partial</div>
+        </div>
+        <div class="record-state-card waiting">
+          <div class="count">${states.WAITING}</div>
+          <div class="label">Waiting</div>
+        </div>
+        <div class="record-state-card blocked">
+          <div class="count">${states.BLOCKED}</div>
+          <div class="label">Blocked</div>
+        </div>
+      `;
+    }
+
+    function simulateSessions() {
+      const total = allData.contractResults.length;
+      if (total === 0) return [];
+      
+      const sessionCount = Math.min(3, Math.ceil(total / 2));
+      const sessions = [];
+      
+      for (let i = 0; i < sessionCount; i++) {
+        const isLast = i === sessionCount - 1;
+        const consolidatedPct = 0.3 + (i * 0.25);
+        const partialPct = 0.3 - (i * 0.1);
+        const waitingPct = 0.2 - (i * 0.08);
+        const blockedPct = 1 - consolidatedPct - partialPct - waitingPct;
+        
+        const sessionRecords = Math.ceil(total / sessionCount);
+        
+        sessions.push({
+          index: i + 1,
+          name: `Session ${i + 1}`,
+          timestamp: `T+${i * 30}min`,
+          records: sessionRecords,
+          states: {
+            CONSOLIDATED: Math.round(sessionRecords * consolidatedPct),
+            PARTIAL: Math.round(sessionRecords * partialPct),
+            WAITING: Math.round(sessionRecords * waitingPct),
+            BLOCKED: Math.max(0, sessionRecords - Math.round(sessionRecords * consolidatedPct) - Math.round(sessionRecords * partialPct) - Math.round(sessionRecords * waitingPct))
+          },
+          reconsolidated: i > 0 ? Math.round(sessionRecords * 0.1) : 0
+        });
+      }
+      
+      return sessions;
+    }
+
+    function renderSessionTimeline() {
+      const container = document.getElementById('session-timeline');
+      const sessions = simulateSessions();
+      
+      if (sessions.length === 0) {
+        container.innerHTML = '<div class="stream-concept"><p>No data loaded. Load an artifact to see simulated sessions.</p></div>';
+        return;
+      }
+      
+      container.innerHTML = sessions.map(s => `
+        <div class="session-card">
+          <div class="session-card-header">
+            <span class="session-card-title">${s.name}</span>
+            <span class="session-card-idx">${s.timestamp}</span>
+          </div>
+          <div class="session-card-stats">
+            <div><span>Records:</span><span>${s.records}</span></div>
+            <div><span class="state-chip consolidated">CONS</span><span>${s.states.CONSOLIDATED}</span></div>
+            <div><span class="state-chip partial">PART</span><span>${s.states.PARTIAL}</span></div>
+            <div><span class="state-chip waiting">WAIT</span><span>${s.states.WAITING}</span></div>
+            <div><span class="state-chip blocked">BLCK</span><span>${s.states.BLOCKED}</span></div>
+            ${s.reconsolidated > 0 ? `<div style="color: #2e7d32; font-weight: 500;"><span>Reconsolidated:</span><span>+${s.reconsolidated}</span></div>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function generateStreamSemanticsMarkdown() {
+      const states = computeRecordStates();
+      const sessions = simulateSessions();
+      const total = Object.values(states).reduce((a, b) => a + b, 0);
+      
+      let md = `# Stream Semantics Model\n\n`;
+      md += `## Overview\n\n`;
+      md += `This document describes the conceptual streaming model for continuous data processing.\n\n`;
+      
+      md += `## Never-Stop Flow (Open Faucet Model)\n\n`;
+      md += `Records flow continuously through the pipeline:\n`;
+      md += `- **CONSOLIDATED** records pass through immediately\n`;
+      md += `- **PARTIAL** records are usable but flagged for completion\n`;
+      md += `- **WAITING** records are held until missing data arrives\n`;
+      md += `- **BLOCKED** records require manual intervention\n\n`;
+      md += `This prevents backlogs by isolating issues rather than stopping the entire pipeline.\n\n`;
+      
+      md += `## Current State Distribution\n\n`;
+      md += `| State | Count | Percentage |\n`;
+      md += `|-------|-------|------------|\n`;
+      md += `| CONSOLIDATED | ${states.CONSOLIDATED} | ${total > 0 ? Math.round(states.CONSOLIDATED / total * 100) : 0}% |\n`;
+      md += `| PARTIAL | ${states.PARTIAL} | ${total > 0 ? Math.round(states.PARTIAL / total * 100) : 0}% |\n`;
+      md += `| WAITING | ${states.WAITING} | ${total > 0 ? Math.round(states.WAITING / total * 100) : 0}% |\n`;
+      md += `| BLOCKED | ${states.BLOCKED} | ${total > 0 ? Math.round(states.BLOCKED / total * 100) : 0}% |\n`;
+      md += `| **Total** | ${total} | 100% |\n\n`;
+      
+      md += `## Reconsolidation Rules\n\n`;
+      md += `| From State | Condition | To State |\n`;
+      md += `|------------|-----------|----------|\n`;
+      md += `| PARTIAL | Warnings resolved | CONSOLIDATED |\n`;
+      md += `| WAITING | Missing data arrives | PARTIAL or CONSOLIDATED |\n`;
+      md += `| BLOCKED | Manual fix + re-submit | CONSOLIDATED |\n`;
+      md += `| CONSOLIDATED | New blocking issue | BLOCKED |\n\n`;
+      
+      if (sessions.length > 0) {
+        md += `## Simulated Session Timeline\n\n`;
+        md += `| Session | Timestamp | Records | Consolidated | Partial | Waiting | Blocked | Reconsolidated |\n`;
+        md += `|---------|-----------|---------|--------------|---------|---------|---------|----------------|\n`;
+        sessions.forEach(s => {
+          md += `| ${s.name} | ${s.timestamp} | ${s.records} | ${s.states.CONSOLIDATED} | ${s.states.PARTIAL} | ${s.states.WAITING} | ${s.states.BLOCKED} | ${s.reconsolidated > 0 ? '+' + s.reconsolidated : '-'} |\n`;
+        });
+        md += `\n`;
+      }
+      
+      md += `## Key Benefits\n\n`;
+      md += `1. **No Backlogs**: Problems don't stop the entire pipeline\n`;
+      md += `2. **Async Resolution**: Issues are resolved in parallel\n`;
+      md += `3. **Deterministic States**: State transitions are rule-based and auditable\n`;
+      md += `4. **Visibility**: Operators can see exactly where records are in the flow\n`;
+      
+      return md;
+    }
+
+    document.getElementById('copy-stream-semantics').addEventListener('click', async () => {
+      const md = generateStreamSemanticsMarkdown();
+      const success = await copyToClipboard(md);
+      const btn = document.getElementById('copy-stream-semantics');
+      const orig = btn.textContent;
+      btn.textContent = success ? 'Copied!' : 'Failed';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+
+    document.getElementById('simulate-sessions').addEventListener('click', () => {
+      renderRecordStateSummary();
+      renderSessionTimeline();
+    });
 
     document.getElementById('config-inspector-toggle').addEventListener('click', () => {
       const body = document.getElementById('config-inspector-body');

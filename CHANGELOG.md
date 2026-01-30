@@ -1,5 +1,26 @@
 # CHANGELOG
 
+## Version: v0.9.0
+Date: 2026-01-30
+
+### Added
+- Viewer v0.9 Session + Stream Model (Conceptual Bridge)
+  - Session Timeline Panel: Models ordered sessions (ingest waves) as UI-only JSON
+  - Record State Model: CONSOLIDATED | PARTIAL | WAITING | BLOCKED derived from issues
+  - Never-Stop Flow Visualization: Explains open faucet concept for continuous processing
+  - Reconsolidation Rules Table: Shows how partial records upgrade to consolidated
+  - Copy Stream Semantics Markdown: One-click PR-ready explanation export
+  - Why: Lay semantic groundwork for future streaming without runtime execution.
+- docs/14_stream_semantics.md: Governance-only explanation of stream model
+
+### Technical Details
+- Record state derived deterministically from issue severity and type
+- Session simulation based on loaded artifact data
+- All computations performed offline in the browser
+- No actual streaming, async processing, or runtime changes
+
+---
+
 ## Version: v0.8.0
 Date: 2026-01-30
 

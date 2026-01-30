@@ -3,7 +3,7 @@
 ## Overview
 A read-only, single-file HTML viewer for sf_packet artifacts. No build step, no dependencies, no external network requests.
 
-**Version:** 0.8
+**Version:** 0.9
 
 ## How to Open
 
@@ -390,8 +390,57 @@ Changes are sorted by:
 
 ## Version History
 
+### Session + Stream Model (v0.9)
+
+Conceptual UI-only model for future continuous/streaming pipeline semantics.
+
+**Session Timeline Panel:**
+Click "Show" in the Session + Stream Model panel to view:
+
+**Never-Stop Flow Concept:**
+Explains the "open faucet" model where:
+- Good records (CONSOLIDATED) flow through immediately
+- Partial records wait until missing data arrives
+- Blocked records require manual intervention
+- No backlogs - issues are isolated, not blocking
+
+**Record State Model:**
+| State | Condition | Flow Behavior |
+|-------|-----------|---------------|
+| CONSOLIDATED | No blocking/warning issues | Passes through |
+| PARTIAL | Has warnings only | Usable but incomplete |
+| WAITING | Missing data warnings | Held for later |
+| BLOCKED | Blocking issues | Manual fix required |
+
+**State Derivation:**
+States are computed deterministically from issues:
+1. If any blocking issue → BLOCKED
+2. Else if missing data + warning → WAITING
+3. Else if any warning → PARTIAL
+4. Else → CONSOLIDATED
+
+**Session Timeline:**
+Simulates how records would arrive in ordered ingest waves:
+- Session index and timestamp
+- Record count and state distribution
+- Reconsolidation count from previous sessions
+
+**Reconsolidation Rules:**
+| From | Condition | To |
+|------|-----------|-----|
+| PARTIAL | Warnings resolved | CONSOLIDATED |
+| WAITING | Data arrives | PARTIAL/CONSOLIDATED |
+| BLOCKED | Manual fix | CONSOLIDATED |
+| CONSOLIDATED | New blocking issue | BLOCKED |
+
+**Copy Stream Semantics Markdown:**
+Click to copy a PR-ready explanation of the stream model.
+
+## Version History
+
 | Version | Features |
 |---------|----------|
+| 0.9 | Session + Stream Model (Session Timeline, Record States, Never-Stop Flow, Reconsolidation Rules, Copy Stream Semantics) |
 | 0.8 | Config + Patch Inspector (Ruleset Loader, Patch Summary, Version Match, Changes Table, Ruleset Delta Counts, Copy Ruleset Delta Markdown, Preflight Integration) |
 | 0.7 | Comparison Mode (Session Loader, Delta Summary Cards, row-level change indicators, Copy Delta Summary) |
 | 0.6 | Preflight Gate (4-step validation checklist, paste-in evidence parsing, PR Summary with Evidence section, localStorage persistence for preflight + patch draft) |

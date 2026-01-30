@@ -81,6 +81,25 @@ Join strategy (global): contract_key → file_url → file_name. No fabricated i
 
 Primary navigation: see docs/INDEX.md.
 
+## Control Board Viewer (v0.9)
+
+A single-file, zero-dependency HTML viewer for sf_packet artifacts. See `ui/viewer/README.md` for details.
+
+**Features:**
+- **v0.9**: Session + Stream Model (conceptual streaming semantics, record states, reconsolidation rules)
+- **v0.8**: Config + Patch Inspector (ruleset loader, version match, changes table)
+- **v0.7**: Comparison Mode (delta summary, row-level change indicators)
+- **v0.6**: Preflight Gate (4-step validation checklist)
+- **v0.5**: Patch Studio Lite (selectable records, grouped rule builder)
+- **v0.4**: Universal drilldown, Copy PR Kit
+- **v0.3**: Record Workbench with tabbed drawer
+
+**Open in browser:**
+```
+# Replit: see Webview panel
+# Local: python3 -m http.server 5000 && open http://localhost:5000/ui/viewer/index.html
+```
+
 ### Smoke Test Verification
 After running `bash scripts/replit_smoke.sh`, compare `out/sf_packet.preview.json` against `examples/expected_outputs/sf_packet.example.json`. Any differences must be resolved (code determinism/schema) or justified (update expected output + changelog).
 
