@@ -5683,8 +5683,10 @@
       document.querySelectorAll('.nav-item[data-page]').forEach(item => {
         item.addEventListener('click', (e) => {
           e.preventDefault();
+          e.stopPropagation();
           const page = item.dataset.page;
           const queue = item.dataset.queue;
+          console.log('[Router] Click on nav-item, page:', page, 'queue:', queue);
           navigateTo(page);
           if (queue) {
             setActiveQueue(queue);
@@ -5700,7 +5702,11 @@
       
       window.addEventListener('hashchange', () => {
         const hash = window.location.hash.replace('#/', '') || 'triage';
-        navigateTo(hash);
+        // Prevent duplicate navigation if we're already on this page
+        if (currentPage !== hash) {
+          console.log('[Router] Hashchange to:', hash);
+          navigateTo(hash);
+        }
       });
       
       // Load user settings and check for first run
