@@ -1,4 +1,4 @@
-# Kiwi Semantic Control Board (v1.2)
+# Kiwi Semantic Control Board (v1.2.1)
 
 ## Overview
 
@@ -17,6 +17,12 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - Session management: Data Sources, Evidence Status, Reset Session
 - First-Run Configure Wizard: Multi-step setup for data sources and workflow defaults
 - Admin Config Flows: Workflow-ordered view of config artifacts with Plain-English, Payload, Master tabs
+
+**v1.2.1 Phase 2 Features (D1-D4):**
+- D1 Masterline Autoload: Dev toggle in Admin, artifact registry with Loaded/Missing status chips, localStorage persistence
+- D2 Admin Workflow Map: 8-stage vertical pipeline with clickable nodes (Load Data → PR Ready)
+- D3 Standardizer: CSV parsing with delimiter inference, header normalization, merged_dataset.json output, error model
+- D4 Tooltips & Plain English: NOMENCLATURE maps, info icons with tooltips, humanLabel()/getTooltip() helpers
 
 **What This Is NOT:**
 - Not a runtime system

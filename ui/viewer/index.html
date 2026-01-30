@@ -565,6 +565,55 @@
     .state-chip.partial { background: #fff3e0; color: #e65100; }
     .state-chip.waiting { background: #e3f2fd; color: #1565c0; }
     .state-chip.blocked { background: #ffcdd2; color: #c62828; }
+    
+    /* Masterline / Artifact Registry Styles */
+    .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 22px; transition: 0.3s; }
+    .toggle-slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: 0.3s; }
+    .toggle-switch input:checked + .toggle-slider { background-color: #4caf50; }
+    .toggle-switch input:checked + .toggle-slider:before { transform: translateX(18px); }
+    
+    .masterline-status { font-size: 0.75em; font-weight: 600; padding: 2px 8px; border-radius: 10px; }
+    .masterline-status.on { background: #c8e6c9; color: #2e7d32; }
+    .masterline-status.off { background: #e0e0e0; color: #666; }
+    
+    .artifact-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+    .artifact-table th { text-align: left; padding: 10px 12px; background: #f5f5f5; border-bottom: 2px solid #ddd; font-weight: 600; color: #333; }
+    .artifact-table td { padding: 10px 12px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    .artifact-table tr:hover { background: #fafafa; }
+    
+    .artifact-status { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+    .artifact-status.status-loaded { background: #c8e6c9; color: #2e7d32; }
+    .artifact-status.status-missing { background: #ffcdd2; color: #c62828; }
+    .artifact-status.status-unknown { background: #e0e0e0; color: #666; }
+    
+    .rebound-badge { font-size: 0.7em; background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 8px; margin-left: 6px; }
+    
+    .artifact-path { font-family: monospace; font-size: 0.85em; color: #666; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    
+    .rebind-btn { padding: 4px 10px; font-size: 0.8em; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; }
+    .rebind-btn:hover { background: #e3f2fd; border-color: #90caf9; }
+    
+    .info-icon { display: inline-block; width: 16px; height: 16px; line-height: 16px; text-align: center; font-size: 12px; color: #90a4ae; cursor: help; margin-left: 4px; vertical-align: middle; }
+    .info-icon:hover { color: #1976d2; }
+    
+    .json-header { font-size: 0.75em; color: #78909c; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; font-weight: 600; }
+    
+    /* Workflow Map Styles */
+    .workflow-map { display: flex; flex-direction: column; gap: 0; }
+    .workflow-node { display: flex; align-items: flex-start; gap: 15px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 0; background: #fafafa; cursor: pointer; transition: all 0.2s ease; position: relative; }
+    .workflow-node:hover { background: #e3f2fd; border-color: #90caf9; }
+    .workflow-node:not(:last-child)::after { content: ''; position: absolute; left: 28px; bottom: -12px; width: 2px; height: 12px; background: #90caf9; z-index: 1; }
+    .workflow-node-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: #e3f2fd; border-radius: 50%; font-size: 1em; flex-shrink: 0; }
+    .workflow-node-content { flex: 1; min-width: 0; }
+    .workflow-node-title { font-weight: 600; color: #333; margin-bottom: 4px; font-size: 0.95em; }
+    .workflow-node-desc { font-size: 0.8em; color: #666; margin-bottom: 8px; }
+    .workflow-node-artifacts { display: flex; flex-wrap: wrap; gap: 6px; }
+    .workflow-artifact { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 12px; font-size: 0.75em; background: #e8f5e9; color: #2e7d32; }
+    .workflow-artifact.missing { background: #ffebee; color: #c62828; }
+    .workflow-artifact.unknown { background: #f5f5f5; color: #666; }
+    .workflow-connector { height: 12px; margin-left: 27px; border-left: 2px solid #90caf9; }
 
     .state-legend { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
     .state-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8em; }
@@ -911,6 +960,34 @@
           <p class="page-desc">View audit trails, manage baselines, and configure governance policies.</p>
         </div>
 
+        <!-- Masterline / Artifact Registry Section -->
+        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0; font-size: 1.1em; color: #333;">Artifact Registry <span class="info-icon" title="Manage the master artifacts that drive the semantic control board. When Dev Masterline is enabled, artifacts are auto-loaded from repository paths.">&#9432;</span></h3>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <label class="toggle-label" style="font-size: 0.85em; color: #666;">Dev Masterline</label>
+              <label class="toggle-switch">
+                <input type="checkbox" id="dev-masterline-toggle" onchange="toggleDevMasterline()">
+                <span class="toggle-slider"></span>
+              </label>
+              <span id="dev-masterline-status" class="masterline-status on">ON</span>
+            </div>
+          </div>
+          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">When enabled, master artifacts are auto-loaded from repository on startup. Rebind paths if files are in different locations.</p>
+          <div id="artifact-registry-table"></div>
+          <div style="margin-top: 15px; display: flex; gap: 10px;">
+            <button class="toolbar-btn" onclick="checkAllArtifacts()">Refresh Status</button>
+            <button class="toolbar-btn" onclick="masterlineAutoload()">Reload All</button>
+          </div>
+        </div>
+
+        <!-- Workflow Map Section -->
+        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Workflow Map <span class="info-icon" title="Visual overview of the semantic governance pipeline. Each step shows required artifacts and their status.">&#9432;</span></h3>
+          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Understand the end-to-end governance pipeline at a glance. Click any step to navigate.</p>
+          <div id="workflow-map" class="workflow-map"></div>
+        </div>
+
         <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Version & Baseline</h3>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
@@ -937,6 +1014,48 @@
             <div class="state-chip pending">Conflicts: Pending</div>
             <div class="state-chip pending">Smoke Baseline: Pending</div>
             <div class="state-chip pending">Smoke Edge: Pending</div>
+          </div>
+        </div>
+
+        <!-- Standardizer Section -->
+        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Standardizer <span class="info-icon" title="Convert CSV data into the canonical merged_dataset.json format. Headers are normalized and issues are tracked.">&#9432;</span></h3>
+          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Upload or paste CSV data to normalize into the standard merged dataset format.</p>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
+            <div>
+              <label style="font-size: 0.8em; color: #666; display: block; margin-bottom: 6px;">Paste CSV</label>
+              <textarea id="standardizer-csv-input" placeholder="Paste CSV data here..." style="width: 100%; height: 120px; font-family: monospace; font-size: 0.85em; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"></textarea>
+            </div>
+            <div>
+              <label style="font-size: 0.8em; color: #666; display: block; margin-bottom: 6px;">Upload CSV File</label>
+              <div id="standardizer-drop-zone" class="drop-zone" style="height: 120px; display: flex; align-items: center; justify-content: center; border: 2px dashed #ccc; border-radius: 6px; cursor: pointer; background: #fafafa;">
+                <span id="standardizer-drop-text" style="color: #888; font-size: 0.85em;">Drop CSV here or click to browse</span>
+              </div>
+              <input type="file" id="standardizer-file-input" accept=".csv,.txt" style="display: none;">
+            </div>
+          </div>
+          
+          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button class="toolbar-btn" onclick="runStandardizer()">Run Standardizer</button>
+            <button class="toolbar-btn" onclick="generateSampleCSV()">Generate Sample CSV</button>
+            <button class="toolbar-btn" onclick="clearStandardizer()">Clear</button>
+          </div>
+          
+          <div id="standardizer-status" style="display: none; padding: 10px; border-radius: 6px; margin-bottom: 15px;"></div>
+          
+          <div id="standardizer-output" style="display: none;">
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+              <button class="tab-btn active" data-std-tab="summary" onclick="showStandardizerTab('summary')">Summary</button>
+              <button class="tab-btn" data-std-tab="dataset" onclick="showStandardizerTab('dataset')">Merged Dataset</button>
+              <button class="tab-btn" data-std-tab="issues" onclick="showStandardizerTab('issues')">Issues</button>
+              <button class="tab-btn" data-std-tab="changelog" onclick="showStandardizerTab('changelog')">Change Log</button>
+            </div>
+            <div id="standardizer-tab-content" style="background: #263238; color: #eceff1; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.8em; max-height: 300px; overflow-y: auto;"></div>
+            <div style="margin-top: 10px; display: flex; gap: 10px;">
+              <button class="toolbar-btn" onclick="copyStandardizerOutput('dataset')">Copy Merged Dataset</button>
+              <button class="toolbar-btn" onclick="copyStandardizerOutput('issues')">Copy Issues</button>
+            </div>
           </div>
         </div>
 
@@ -1494,6 +1613,644 @@
     };
     
     const STORAGE_KEY_SESSION = 'controlboard_session_v11';
+    const ARTIFACT_REGISTRY_KEY = 'orchestrateos.artifacts.v1';
+    
+    // ========== NOMENCLATURE PACK (D4) ==========
+    // Maps internal tokens to human-readable labels
+    const NOMENCLATURE = {
+      labels: {
+        'sf_packet': 'Preview Packet',
+        'sf_summary': 'Summary',
+        'sf_contract_results': 'Contract Results',
+        'sf_issues': 'Issues',
+        'sf_field_actions': 'Field Actions',
+        'config_pack_base': 'Truth Config',
+        'config_pack_patch': 'Proposed Changes',
+        'standardized_dataset': 'Standardized Dataset',
+        'expected_output': 'Reference Expected',
+        'merged_dataset': 'Merged Dataset',
+        'contract_key': 'Contract Key',
+        'file_url': 'File URL',
+        'file_name': 'File Name',
+        'detected_subtype': 'Detected Subtype',
+        'sf_contract_status': 'Status'
+      },
+      tooltips: {
+        'Preview Packet': 'The output from running the semantic rules against your data. Contains issues, field actions, and contract statuses.',
+        'Truth Config': 'The versioned baseline configuration containing all semantic rules. This is the source of truth.',
+        'Proposed Changes': 'A patch file containing rule additions or modifications pending review.',
+        'Standardized Dataset': 'Input data that has been normalized to a consistent format for processing.',
+        'Reference Expected': 'Golden file outputs used to verify deterministic behavior.',
+        'Merged Dataset': 'Combined and normalized data from multiple input sources.',
+        'Contract Key': 'Primary identifier linking records across the system.',
+        'File URL': 'Secondary identifier based on source file location.',
+        'File Name': 'Tertiary identifier based on source file name.',
+        'Identity Keys': 'The three-part join identity: Contract Key, File URL, and File Name. Used to match records deterministically.'
+      }
+    };
+    
+    // ========== MASTERLINE ARTIFACT REGISTRY (D1) ==========
+    const DEFAULT_ARTIFACT_PATHS = {
+      truth_config: '../../config/config_pack.base.json',
+      proposed_changes: '../../config/config_pack.example.patch.json',
+      reference_expected: '../../examples/expected_outputs/sf_packet.example.json',
+      standardized_dataset: '../../examples/standardized_dataset.example.json',
+      preview_packet: '../../out/sf_packet.preview.json'
+    };
+    
+    const ARTIFACT_LABELS = {
+      truth_config: 'Truth Config',
+      proposed_changes: 'Proposed Changes',
+      reference_expected: 'Reference Expected',
+      standardized_dataset: 'Standardized Dataset',
+      preview_packet: 'Preview Packet'
+    };
+    
+    let artifactRegistry = {
+      devMasterlineEnabled: true,
+      bindings: {}
+    };
+    
+    // Helper: Get human label for internal token
+    function humanLabel(token) {
+      return NOMENCLATURE.labels[token] || token;
+    }
+    
+    // Helper: Get tooltip for a label
+    function getTooltip(label) {
+      return NOMENCLATURE.tooltips[label] || '';
+    }
+    
+    // Helper: Create info icon with tooltip
+    function infoIcon(label) {
+      var tip = getTooltip(label);
+      if (!tip) return '';
+      return '<span class="info-icon" title="' + escapeHtml(tip) + '">&#9432;</span>';
+    }
+    
+    // Load artifact registry from localStorage
+    function loadArtifactRegistry() {
+      try {
+        var saved = localStorage.getItem(ARTIFACT_REGISTRY_KEY);
+        if (saved) {
+          var parsed = JSON.parse(saved);
+          artifactRegistry = Object.assign({}, artifactRegistry, parsed);
+        }
+      } catch (e) {
+        console.warn('Could not load artifact registry:', e);
+      }
+      // Ensure default bindings exist
+      Object.keys(DEFAULT_ARTIFACT_PATHS).forEach(function(key) {
+        if (!artifactRegistry.bindings[key]) {
+          artifactRegistry.bindings[key] = {
+            path: DEFAULT_ARTIFACT_PATHS[key],
+            status: 'unknown',
+            lastChecked: null,
+            rebound: false
+          };
+        }
+      });
+    }
+    
+    // Save artifact registry to localStorage
+    function saveArtifactRegistry() {
+      try {
+        localStorage.setItem(ARTIFACT_REGISTRY_KEY, JSON.stringify(artifactRegistry));
+      } catch (e) {
+        console.warn('Could not save artifact registry:', e);
+      }
+    }
+    
+    // Check if an artifact exists at its path
+    async function checkArtifactStatus(key) {
+      var binding = artifactRegistry.bindings[key];
+      if (!binding) return 'missing';
+      try {
+        var response = await fetch(binding.path, { method: 'HEAD' });
+        binding.status = response.ok ? 'loaded' : 'missing';
+      } catch (e) {
+        binding.status = 'missing';
+      }
+      binding.lastChecked = new Date().toISOString();
+      return binding.status;
+    }
+    
+    // Check all artifacts and update registry
+    async function checkAllArtifacts() {
+      var keys = Object.keys(artifactRegistry.bindings);
+      await Promise.all(keys.map(function(key) {
+        return checkArtifactStatus(key);
+      }));
+      saveArtifactRegistry();
+      renderArtifactRegistryTable();
+      renderWorkflowMap();
+    }
+    
+    // Masterline autoload on boot
+    async function masterlineAutoload() {
+      if (!artifactRegistry.devMasterlineEnabled) return;
+      
+      await checkAllArtifacts();
+      
+      // If Preview Packet exists, load it into the main data
+      var previewBinding = artifactRegistry.bindings.preview_packet;
+      if (previewBinding && previewBinding.status === 'loaded') {
+        try {
+          var response = await fetch(previewBinding.path);
+          if (response.ok) {
+            var data = await response.json();
+            if (data.sf_summary || data.sf_contract_results) {
+              allData.contractResults = data.sf_contract_results || [];
+              allData.issues = data.sf_issues || [];
+              allData.fieldActions = data.sf_field_actions || [];
+              allData.summary = data.sf_summary || {};
+              allData.changeLog = data.changelog || [];
+              dataLoaded = true;
+              sessionState.status = 'loaded';
+              sessionState.sourceType = 'masterline';
+              sessionState.loadedAt = new Date().toISOString();
+              currentArtifactPath = previewBinding.path;
+              updateUIForDataState();
+              renderSummary();
+              renderAllTables();
+              updateQueueCounts();
+              updateSessionChip();
+            }
+          }
+        } catch (e) {
+          console.warn('Masterline: Could not load Preview Packet:', e);
+        }
+      }
+      
+      // Load Truth Config if exists
+      var truthBinding = artifactRegistry.bindings.truth_config;
+      if (truthBinding && truthBinding.status === 'loaded') {
+        try {
+          var response = await fetch(truthBinding.path);
+          if (response.ok) {
+            loadedBaseConfig = await response.json();
+          }
+        } catch (e) {
+          console.warn('Masterline: Could not load Truth Config:', e);
+        }
+      }
+      
+      // Load Proposed Changes if exists
+      var patchBinding = artifactRegistry.bindings.proposed_changes;
+      if (patchBinding && patchBinding.status === 'loaded') {
+        try {
+          var response = await fetch(patchBinding.path);
+          if (response.ok) {
+            loadedPatch = await response.json();
+          }
+        } catch (e) {
+          console.warn('Masterline: Could not load Proposed Changes:', e);
+        }
+      }
+    }
+    
+    // Render artifact registry table in Admin panel
+    function renderArtifactRegistryTable() {
+      var container = document.getElementById('artifact-registry-table');
+      if (!container) return;
+      
+      var rows = Object.keys(ARTIFACT_LABELS).map(function(key) {
+        var binding = artifactRegistry.bindings[key] || {};
+        var label = ARTIFACT_LABELS[key];
+        var status = binding.status || 'unknown';
+        var statusClass = status === 'loaded' ? 'status-loaded' : status === 'missing' ? 'status-missing' : 'status-unknown';
+        var statusText = status === 'loaded' ? 'Loaded' : status === 'missing' ? 'Missing' : 'Unknown';
+        var reboundBadge = binding.rebound ? ' <span class="rebound-badge">Rebound</span>' : '';
+        var path = binding.path || DEFAULT_ARTIFACT_PATHS[key];
+        
+        return '<tr>' +
+          '<td>' + label + ' ' + infoIcon(label) + '</td>' +
+          '<td><span class="artifact-status ' + statusClass + '">' + statusText + '</span>' + reboundBadge + '</td>' +
+          '<td class="artifact-path" title="' + escapeHtml(path) + '">' + escapeHtml(path.split('/').pop()) + '</td>' +
+          '<td><button class="rebind-btn" onclick="rebindArtifact(\'' + key + '\')">Rebind</button></td>' +
+          '</tr>';
+      }).join('');
+      
+      container.innerHTML = '<table class="artifact-table">' +
+        '<thead><tr><th>Artifact</th><th>Status</th><th>File</th><th>Action</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table>';
+    }
+    
+    // Rebind artifact path
+    function rebindArtifact(key) {
+      var binding = artifactRegistry.bindings[key];
+      var currentPath = binding ? binding.path : DEFAULT_ARTIFACT_PATHS[key];
+      var newPath = prompt('Enter new path for ' + ARTIFACT_LABELS[key] + ':', currentPath);
+      if (newPath && newPath !== currentPath) {
+        artifactRegistry.bindings[key] = {
+          path: newPath,
+          status: 'unknown',
+          lastChecked: null,
+          rebound: true
+        };
+        saveArtifactRegistry();
+        checkArtifactStatus(key).then(function() {
+          saveArtifactRegistry();
+          renderArtifactRegistryTable();
+        });
+      }
+    }
+    
+    // Toggle Dev Masterline mode
+    function toggleDevMasterline() {
+      artifactRegistry.devMasterlineEnabled = !artifactRegistry.devMasterlineEnabled;
+      saveArtifactRegistry();
+      updateDevMasterlineUI();
+      if (artifactRegistry.devMasterlineEnabled) {
+        masterlineAutoload();
+      }
+    }
+    
+    // Update Dev Masterline toggle UI
+    function updateDevMasterlineUI() {
+      var toggle = document.getElementById('dev-masterline-toggle');
+      var status = document.getElementById('dev-masterline-status');
+      if (toggle) {
+        toggle.checked = artifactRegistry.devMasterlineEnabled;
+      }
+      if (status) {
+        status.textContent = artifactRegistry.devMasterlineEnabled ? 'ON' : 'OFF';
+        status.className = 'masterline-status ' + (artifactRegistry.devMasterlineEnabled ? 'on' : 'off');
+      }
+    }
+    
+    // ========== WORKFLOW MAP (D2) ==========
+    const WORKFLOW_STAGES = [
+      {
+        id: 'load',
+        title: 'Load Data',
+        desc: 'Load Preview Packet and reference data into the session.',
+        icon: '📥',
+        artifacts: ['preview_packet', 'reference_expected'],
+        action: function() { openDataSourceDrawer(); }
+      },
+      {
+        id: 'config',
+        title: 'Configuration',
+        desc: 'Truth Config and Proposed Changes define semantic rules.',
+        icon: '⚙',
+        artifacts: ['truth_config', 'proposed_changes'],
+        action: function() { openConfigFlows(); }
+      },
+      {
+        id: 'standardize',
+        title: 'Standardize',
+        desc: 'Normalize input data format (CSV/XLSX to merged dataset).',
+        icon: '📋',
+        artifacts: ['standardized_dataset'],
+        action: function() { if (currentMode === 'admin') openConfigFlows(); }
+      },
+      {
+        id: 'preview',
+        title: 'Preview',
+        desc: 'Generated Preview Packet with issues and field actions.',
+        icon: '👁',
+        artifacts: ['preview_packet'],
+        action: function() { navigateTo('triage'); }
+      },
+      {
+        id: 'triage',
+        title: 'Triage',
+        desc: 'Review contracts by queue, filter by severity/status.',
+        icon: '📊',
+        artifacts: [],
+        action: function() { navigateTo('triage'); }
+      },
+      {
+        id: 'patch',
+        title: 'Patch Draft',
+        desc: 'Build rule patches from selected issues and actions.',
+        icon: '✏',
+        artifacts: [],
+        action: function() { navigateTo('patch'); }
+      },
+      {
+        id: 'evidence',
+        title: 'Evidence',
+        desc: 'Paste validation and smoke test results as evidence.',
+        icon: '✓',
+        artifacts: [],
+        action: function() { showEvidenceStatus(); }
+      },
+      {
+        id: 'export',
+        title: 'PR Ready',
+        desc: 'Export patch bundle and PR summary for review.',
+        icon: '📤',
+        artifacts: [],
+        action: function() { navigateTo('patch'); }
+      }
+    ];
+    
+    // ========== STANDARDIZER (D3) ==========
+    let standardizerResult = {
+      mergedDataset: null,
+      issues: [],
+      changeLog: [],
+      currentTab: 'summary'
+    };
+    
+    // Infer CSV delimiter
+    function inferDelimiter(csvText) {
+      var firstLine = csvText.split('\n')[0] || '';
+      var counts = { ',': 0, '\t': 0, ';': 0, '|': 0 };
+      for (var i = 0; i < firstLine.length; i++) {
+        if (counts.hasOwnProperty(firstLine[i])) counts[firstLine[i]]++;
+      }
+      var best = ',';
+      var max = 0;
+      Object.keys(counts).forEach(function(d) {
+        if (counts[d] > max) { max = counts[d]; best = d; }
+      });
+      return best;
+    }
+    
+    // Parse CSV to array of objects
+    function parseCSV(csvText, delimiter) {
+      delimiter = delimiter || inferDelimiter(csvText);
+      var lines = csvText.trim().split('\n');
+      if (lines.length < 2) return { headers: [], rows: [], delimiter: delimiter };
+      
+      var headers = lines[0].split(delimiter).map(function(h) { return h.trim().replace(/^"|"$/g, ''); });
+      var rows = [];
+      for (var i = 1; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line) continue;
+        var values = line.split(delimiter).map(function(v) { return v.trim().replace(/^"|"$/g, ''); });
+        var row = {};
+        headers.forEach(function(h, idx) {
+          row[h] = values[idx] !== undefined ? values[idx] : null;
+        });
+        rows.push(row);
+      }
+      return { headers: headers, rows: rows, delimiter: delimiter };
+    }
+    
+    // Normalize header name
+    function normalizeHeader(header) {
+      return header
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+    }
+    
+    // Standard canonical headers
+    var CANONICAL_HEADERS = ['contract_key', 'file_url', 'file_name', 'sheet', 'field', 'value', 'status', 'subtype'];
+    
+    // Run the standardizer
+    function runStandardizer() {
+      var csvInput = document.getElementById('standardizer-csv-input');
+      var csvText = csvInput.value.trim();
+      
+      if (!csvText) {
+        showStandardizerStatus('Please enter or upload CSV data.', 'error');
+        return;
+      }
+      
+      var parsed = parseCSV(csvText);
+      if (parsed.rows.length === 0) {
+        showStandardizerStatus('No data rows found in CSV.', 'error');
+        return;
+      }
+      
+      var issues = [];
+      var changeLog = [];
+      var headerMap = {};
+      var normalizedHeaders = [];
+      var missingAnchors = [];
+      
+      // Normalize headers
+      parsed.headers.forEach(function(original) {
+        var normalized = normalizeHeader(original);
+        if (normalized !== original.toLowerCase()) {
+          changeLog.push({ type: 'header_renamed', original: original, normalized: normalized });
+        }
+        headerMap[original] = normalized;
+        normalizedHeaders.push(normalized);
+      });
+      
+      // Check for canonical headers
+      CANONICAL_HEADERS.forEach(function(anchor) {
+        var found = normalizedHeaders.some(function(h) { return h === anchor || h.includes(anchor); });
+        if (!found && (anchor === 'contract_key' || anchor === 'file_url' || anchor === 'file_name')) {
+          issues.push({
+            type: 'missing_required_anchor',
+            severity: 'blocking',
+            anchor: anchor,
+            message: 'Required anchor header "' + anchor + '" not found in input.'
+          });
+          missingAnchors.push(anchor);
+        }
+      });
+      
+      // Check for ambiguous columns
+      var normalizedCounts = {};
+      normalizedHeaders.forEach(function(h) {
+        normalizedCounts[h] = (normalizedCounts[h] || 0) + 1;
+      });
+      Object.keys(normalizedCounts).forEach(function(h) {
+        if (normalizedCounts[h] > 1) {
+          issues.push({
+            type: 'ambiguous_columns',
+            severity: 'warning',
+            header: h,
+            count: normalizedCounts[h],
+            message: 'Header "' + h + '" appears ' + normalizedCounts[h] + ' times after normalization.'
+          });
+        }
+      });
+      
+      // Build normalized rows
+      var normalizedRows = parsed.rows.map(function(row, idx) {
+        var newRow = { _row_index: idx };
+        parsed.headers.forEach(function(original) {
+          var normalized = headerMap[original];
+          newRow[normalized] = row[original] !== '' ? row[original] : null;
+        });
+        return newRow;
+      });
+      
+      // Sort rows deterministically by canonical keys
+      normalizedRows.sort(function(a, b) {
+        var keys = ['contract_key', 'file_url', 'file_name', 'sheet', 'field'];
+        for (var i = 0; i < keys.length; i++) {
+          var k = keys[i];
+          var av = (a[k] || '').toString();
+          var bv = (b[k] || '').toString();
+          if (av < bv) return -1;
+          if (av > bv) return 1;
+        }
+        return 0;
+      });
+      
+      // Build merged dataset
+      var mergedDataset = {
+        version: '1.0.0',
+        generated_at: new Date().toISOString(),
+        source: 'standardizer',
+        delimiter_detected: parsed.delimiter,
+        schema: {
+          original_headers: parsed.headers,
+          normalized_headers: normalizedHeaders,
+          header_mapping: headerMap
+        },
+        data: {
+          rows: normalizedRows,
+          row_count: normalizedRows.length
+        }
+      };
+      
+      standardizerResult.mergedDataset = mergedDataset;
+      standardizerResult.issues = issues;
+      standardizerResult.changeLog = changeLog;
+      
+      var hasBlocking = issues.some(function(i) { return i.severity === 'blocking'; });
+      var status = hasBlocking ? 'Completed with blocking issues' : 'Completed successfully';
+      var statusType = hasBlocking ? 'warning' : 'success';
+      showStandardizerStatus(status + ': ' + normalizedRows.length + ' rows, ' + issues.length + ' issues.', statusType);
+      
+      document.getElementById('standardizer-output').style.display = 'block';
+      showStandardizerTab('summary');
+    }
+    
+    function showStandardizerStatus(message, type) {
+      var el = document.getElementById('standardizer-status');
+      el.textContent = message;
+      el.style.display = 'block';
+      el.style.background = type === 'error' ? '#ffebee' : type === 'warning' ? '#fff3e0' : '#e8f5e9';
+      el.style.color = type === 'error' ? '#c62828' : type === 'warning' ? '#e65100' : '#2e7d32';
+    }
+    
+    function showStandardizerTab(tab) {
+      standardizerResult.currentTab = tab;
+      document.querySelectorAll('[data-std-tab]').forEach(function(btn) {
+        btn.classList.toggle('active', btn.dataset.stdTab === tab);
+      });
+      
+      var content = document.getElementById('standardizer-tab-content');
+      var ds = standardizerResult.mergedDataset;
+      var issues = standardizerResult.issues;
+      var log = standardizerResult.changeLog;
+      
+      if (tab === 'summary') {
+        content.innerHTML = '<div class="json-header">Summary</div>' +
+          '<div>Rows: ' + (ds ? ds.data.row_count : 0) + '</div>' +
+          '<div>Original Headers: ' + (ds ? ds.schema.original_headers.length : 0) + '</div>' +
+          '<div>Issues: ' + issues.length + ' (' + issues.filter(function(i){return i.severity==='blocking';}).length + ' blocking)</div>' +
+          '<div>Changes: ' + log.length + '</div>';
+      } else if (tab === 'dataset') {
+        content.innerHTML = '<div class="json-header">Internal JSON (advanced)</div><pre>' + 
+          (ds ? escapeHtml(JSON.stringify(ds, null, 2)) : 'No data') + '</pre>';
+      } else if (tab === 'issues') {
+        content.innerHTML = '<div class="json-header">Standardization Issues</div><pre>' + 
+          escapeHtml(JSON.stringify(issues, null, 2)) + '</pre>';
+      } else if (tab === 'changelog') {
+        content.innerHTML = '<div class="json-header">Change Log</div><pre>' + 
+          escapeHtml(JSON.stringify(log, null, 2)) + '</pre>';
+      }
+    }
+    
+    function generateSampleCSV() {
+      var sample = 'Contract Key,File Name,File URL,Sheet,Field,Value,Status\n' +
+        'CK001,a.pdf,https://example.org/a.pdf,Sheet1,title,Sample Title,ready\n' +
+        'CK002,b.pdf,https://example.org/b.pdf,Sheet1,title,Another Title,needs_review\n' +
+        'CK003,c.xlsx,https://example.org/c.xlsx,Data,amount,1500.00,ready\n';
+      document.getElementById('standardizer-csv-input').value = sample;
+      showStandardizerStatus('Sample CSV generated. Click "Run Standardizer" to process.', 'success');
+    }
+    
+    function clearStandardizer() {
+      document.getElementById('standardizer-csv-input').value = '';
+      document.getElementById('standardizer-status').style.display = 'none';
+      document.getElementById('standardizer-output').style.display = 'none';
+      document.getElementById('standardizer-drop-text').textContent = 'Drop CSV here or click to browse';
+      standardizerResult = { mergedDataset: null, issues: [], changeLog: [], currentTab: 'summary' };
+    }
+    
+    function copyStandardizerOutput(type) {
+      var text = '';
+      if (type === 'dataset' && standardizerResult.mergedDataset) {
+        text = JSON.stringify(standardizerResult.mergedDataset, null, 2);
+      } else if (type === 'issues') {
+        text = JSON.stringify(standardizerResult.issues, null, 2);
+      }
+      navigator.clipboard.writeText(text).then(function() {
+        showToast('Copied to clipboard!', 'success');
+      });
+    }
+    
+    // Setup standardizer drop zone
+    function setupStandardizerDropZone() {
+      var dropZone = document.getElementById('standardizer-drop-zone');
+      var fileInput = document.getElementById('standardizer-file-input');
+      if (!dropZone || !fileInput) return;
+      
+      dropZone.addEventListener('click', function() { fileInput.click(); });
+      dropZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropZone.style.borderColor = '#1976d2';
+        dropZone.style.background = '#e3f2fd';
+      });
+      dropZone.addEventListener('dragleave', function() {
+        dropZone.style.borderColor = '#ccc';
+        dropZone.style.background = '#fafafa';
+      });
+      dropZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropZone.style.borderColor = '#ccc';
+        dropZone.style.background = '#fafafa';
+        var file = e.dataTransfer.files[0];
+        if (file) handleStandardizerFile(file);
+      });
+      fileInput.addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (file) handleStandardizerFile(file);
+      });
+    }
+    
+    function handleStandardizerFile(file) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('standardizer-csv-input').value = e.target.result;
+        document.getElementById('standardizer-drop-text').textContent = file.name;
+        showStandardizerStatus('File loaded: ' + file.name + '. Click "Run Standardizer" to process.', 'success');
+      };
+      reader.readAsText(file);
+    }
+
+    function renderWorkflowMap() {
+      var container = document.getElementById('workflow-map');
+      if (!container) return;
+      
+      var html = WORKFLOW_STAGES.map(function(stage, idx) {
+        var artifactChips = stage.artifacts.map(function(artifactKey) {
+          var binding = artifactRegistry.bindings[artifactKey];
+          var status = binding ? binding.status : 'unknown';
+          var statusClass = status === 'loaded' ? '' : status === 'missing' ? 'missing' : 'unknown';
+          var label = ARTIFACT_LABELS[artifactKey] || artifactKey;
+          var statusIcon = status === 'loaded' ? '✓' : status === 'missing' ? '✗' : '?';
+          return '<span class="workflow-artifact ' + statusClass + '">' + statusIcon + ' ' + label + '</span>';
+        }).join('');
+        
+        var connector = idx < WORKFLOW_STAGES.length - 1 ? '<div class="workflow-connector"></div>' : '';
+        
+        return '<div class="workflow-node" onclick="WORKFLOW_STAGES[' + idx + '].action()">' +
+          '<div class="workflow-node-icon">' + stage.icon + '</div>' +
+          '<div class="workflow-node-content">' +
+            '<div class="workflow-node-title">' + stage.title + '</div>' +
+            '<div class="workflow-node-desc">' + stage.desc + '</div>' +
+            (artifactChips ? '<div class="workflow-node-artifacts">' + artifactChips + '</div>' : '') +
+          '</div>' +
+        '</div>' + connector;
+      }).join('');
+      
+      container.innerHTML = html;
+    }
     
     function updateSessionChip() {
       const chip = document.getElementById('session-chip');
@@ -3032,6 +3789,7 @@
     }
 
     function renderSummary(summary) {
+      summary = summary || allData.summary || {};
       const container = document.getElementById('summary-container');
       container.innerHTML = `
         <h2>Summary</h2>
@@ -3053,7 +3811,11 @@
         return;
       }
       
-      const headers = columns.map(c => `<th>${c.label}</th>`).join('');
+      const headers = columns.map(c => {
+        var tooltip = getTooltip(humanLabel(c.key)) || getTooltip(c.label);
+        var icon = tooltip ? ' <span class="info-icon" title="' + escapeHtml(tooltip) + '">&#9432;</span>' : '';
+        return '<th>' + c.label + icon + '</th>';
+      }).join('');
       const changes = rowChanges[type] || {};
       
       const rows = filtered.map((row, idx) => {
@@ -3169,7 +3931,7 @@
           : allData.contractResults.find(r => joinIdentityEquals(getJoinIdentity(r), identity));
         if (contract) {
           jsonData = contract;
-          content = `<pre class="drawer-json">${JSON.stringify(contract, null, 2)}</pre>`;
+          content = `<div class="json-header">Internal JSON (advanced)</div><pre class="drawer-json">${JSON.stringify(contract, null, 2)}</pre>`;
         } else {
           content = '<div class="drawer-empty">No contract record found for this join identity.</div>';
         }
@@ -5185,7 +5947,21 @@ Add any additional notes here.
     initRouter();
     loadCommands();
     setupLoaderHandlers();
-    loadData();
+    
+    // Initialize Masterline Artifact Registry
+    loadArtifactRegistry();
+    updateDevMasterlineUI();
+    renderArtifactRegistryTable();
+    renderWorkflowMap();
+    setupStandardizerDropZone();
+    
+    // If Dev Masterline is enabled, auto-load artifacts instead of default loadData
+    if (artifactRegistry.devMasterlineEnabled) {
+      masterlineAutoload();
+    } else {
+      loadData();
+    }
+    
     restorePreflightEvidence();
     restorePatchDraft();
     updateUIForDataState();

@@ -1,5 +1,46 @@
 # CHANGELOG
 
+## Version: v1.2.1
+Date: 2026-01-30
+
+### Added (Phase 2: D1-D4 Deliverables)
+- D1 Masterline Autoload
+  - Dev Masterline toggle in Admin panel for auto-loading master artifacts
+  - Artifact Registry table showing all artifacts with status chips (Loaded/Missing/Unknown)
+  - Rebind functionality for custom artifact paths
+  - localStorage persistence under 'orchestrateos.artifacts.v1'
+  - Refresh Status and Reload All controls
+
+- D2 Admin Workflow Map
+  - Visual vertical pipeline with 8 clickable stages
+  - Each node shows: Load Data → Configuration → Standardize → Preview → Triage → Patch Draft → Evidence → PR Ready
+  - Artifact status chips on relevant stages
+  - Click-to-navigate to relevant panel/drawer
+
+- D3 Standardizer JSON Canon
+  - CSV input via paste or file upload
+  - Delimiter inference (comma, tab, semicolon, pipe)
+  - Header normalization with canonical mapping
+  - merged_dataset.json deterministic output format
+  - Error model: missing_required_anchor (blocking), ambiguous_columns (warning)
+  - Tabbed output viewer: Summary, Dataset, Issues, Change Log
+  - Generate Sample CSV for testing
+  - Copy-only exports
+
+- D4 Tooltips & Plain English
+  - NOMENCLATURE labels and tooltips maps
+  - Info icons (ⓘ) on table headers with hover tooltips
+  - humanLabel() and getTooltip() helper functions
+  - "Internal JSON (advanced)" headers on raw JSON displays
+  - All user-facing text uses "Preview Packet" not "sf_packet"
+
+### Changed
+- renderTable() now adds info icons to headers with tooltips
+- checkAllArtifacts() re-renders workflow map after status update
+- Initialization sequence updated to load Masterline, render Workflow Map, setup Standardizer
+
+---
+
 ## Version: v1.2.0
 Date: 2026-01-30
 
