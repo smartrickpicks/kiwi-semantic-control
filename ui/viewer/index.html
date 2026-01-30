@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Board Viewer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 20px; }
+    h1 { margin-bottom: 10px; color: #1a1a2e; }
+    h2 { margin: 20px 0 10px; color: #16213e; border-bottom: 2px solid #0f3460; padding-bottom: 5px; }
+    .subtitle { color: #666; margin-bottom: 20px; font-size: 0.9em; }
+    .summary { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+    .summary-card { background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; min-width: 100px; }
+    .summary-card .count { font-size: 2em; font-weight: bold; }
+    .summary-card .label { font-size: 0.85em; color: #666; text-transform: uppercase; }
+    .ready .count { color: #2e7d32; }
+    .needs-review .count { color: #f57c00; }
+    .blocked .count { color: #c62828; }
+    .contracts .count { color: #1565c0; }
+    table { width: 100%; border-collapse: collapse; background: white; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9em; }
+    th { background: #1a1a2e; color: white; font-weight: 600; }
+    tr:hover { background: #f9f9f9; }
+    tr:last-child td { border-bottom: none; }
+    .severity-blocking { background: #ffebee; color: #c62828; font-weight: bold; }
+    .severity-warning { background: #fff3e0; color: #e65100; }
+    .severity-info { background: #e3f2fd; color: #1565c0; }
+    .status-ready { color: #2e7d32; font-weight: bold; }
+    .status-needs_review { color: #f57c00; font-weight: bold; }
+    .status-blocked { color: #c62828; font-weight: bold; }
+    .diff-pane { background: #263238; color: #eceff1; padding: 20px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 0.85em; white-space: pre-wrap; margin-bottom: 20px; }
+    .diff-pane code { display: block; background: #37474f; padding: 10px; border-radius: 4px; margin: 10px 0; }
+    .error { background: #ffebee; color: #c62828; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .info { background: #e3f2fd; color: #1565c0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .source-info { font-size: 0.8em; color: #666; margin-bottom: 20px; }
+    .null-value { color: #999; font-style: italic; }
+    .table-container { overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Control Board Viewer</h1>
+  <p class="subtitle">Governance-only | Offline-first | Read-only preview of sf_packet artifacts</p>
+  
+  <div id="source-info" class="source-info"></div>
+  <div id="error-container"></div>
+  
+  <div id="summary-container"></div>
+  
+  <div id="diff-container">
+    <h2>Diff Verification</h2>
+    <div class="diff-pane">
+To verify determinism, run the smoke test in your terminal:
+<code>bash scripts/replit_smoke.sh</code>
+This compares out/sf_packet.preview.json against expected output.
+If differences are found, the script will show a unified diff.
+
+Note: This viewer does NOT execute any commands automatically.
+    </div>
+  </div>
+  
+  <div id="contract-results-container"></div>
+  <div id="issues-container"></div>
+  <div id="field-actions-container"></div>
+
+  <script>
+    const PRIMARY_PATH = 'out/sf_packet.preview.json';
+    const FALLBACK_PATH = 'examples/expected_outputs/sf_packet.example.json';
+    const RELATIVE_PRIMARY = '../../out/sf_packet.preview.json';
+    const RELATIVE_FALLBACK = '../../examples/expected_outputs/sf_packet.example.json';
+
+    function normCmp(v) {
+      if (v === null || v === undefined) return '';
+      return String(v).trim().toLowerCase();
+    }
+
+    function isNullOrEmpty(v) {
+      return v === null || v === undefined || String(v).trim() === '';
+    }
+
+    function compareNullsLast(aVal, bVal) {
+      const aEmpty = isNullOrEmpty(aVal);
+      const bEmpty = isNullOrEmpty(bVal);
+      if (aEmpty && bEmpty) return 0;
+      if (aEmpty) return 1;
+      if (bEmpty) return -1;
+      return normCmp(aVal).localeCompare(normCmp(bVal));
+    }
+
+    function sortByJoinTriplet(arr, extraKeys = []) {
+      return [...arr].sort((a, b) => {
+        const ck = compareNullsLast(a.contract_key, b.contract_key);
+        if (ck !== 0) return ck;
+        const fu = compareNullsLast(a.file_url, b.file_url);
+        if (fu !== 0) return fu;
+        const fn = compareNullsLast(a.file_name, b.file_name);
+        if (fn !== 0) return fn;
+        
+        for (const key of extraKeys) {
+          const cmp = normCmp(a[key]).localeCompare(normCmp(b[key]));
+          if (cmp !== 0) return cmp;
+        }
+        return 0;
+      });
+    }
+
+    function sortBySeverity(arr) {
+      const sevOrder = { blocking: 0, warning: 1, info: 2 };
+      return [...arr].sort((a, b) => {
+        const ck = compareNullsLast(a.contract_key, b.contract_key);
+        if (ck !== 0) return ck;
+        const fu = compareNullsLast(a.file_url, b.file_url);
+        if (fu !== 0) return fu;
+        const fn = compareNullsLast(a.file_name, b.file_name);
+        if (fn !== 0) return fn;
+        const aOrd = sevOrder[a.severity] ?? 3;
+        const bOrd = sevOrder[b.severity] ?? 3;
+        if (aOrd !== bOrd) return aOrd - bOrd;
+        const sh = normCmp(a.sheet).localeCompare(normCmp(b.sheet));
+        if (sh !== 0) return sh;
+        return normCmp(a.field).localeCompare(normCmp(b.field));
+      });
+    }
+
+    function formatValue(v) {
+      if (v === null || v === undefined) return '<span class="null-value">null</span>';
+      if (typeof v === 'object') return JSON.stringify(v);
+      return String(v);
+    }
+
+    function renderSummary(summary) {
+      const container = document.getElementById('summary-container');
+      container.innerHTML = `
+        <h2>Summary</h2>
+        <div class="summary">
+          <div class="summary-card contracts"><div class="count">${summary.contracts || 0}</div><div class="label">Contracts</div></div>
+          <div class="summary-card ready"><div class="count">${summary.ready || 0}</div><div class="label">Ready</div></div>
+          <div class="summary-card needs-review"><div class="count">${summary.needs_review || 0}</div><div class="label">Needs Review</div></div>
+          <div class="summary-card blocked"><div class="count">${summary.blocked || 0}</div><div class="label">Blocked</div></div>
+        </div>
+      `;
+    }
+
+    function renderTable(containerId, title, data, columns) {
+      const container = document.getElementById(containerId);
+      if (!data || data.length === 0) {
+        container.innerHTML = `<h2>${title}</h2><div class="info">No data</div>`;
+        return;
+      }
+      
+      const headers = columns.map(c => `<th>${c.label}</th>`).join('');
+      const rows = data.map(row => {
+        const cells = columns.map(c => {
+          let val = formatValue(row[c.key]);
+          let cls = '';
+          if (c.key === 'severity') cls = `severity-${row.severity}`;
+          if (c.key === 'sf_contract_status') cls = `status-${row.sf_contract_status?.toLowerCase()}`;
+          return `<td class="${cls}">${val}</td>`;
+        }).join('');
+        return `<tr>${cells}</tr>`;
+      }).join('');
+      
+      container.innerHTML = `
+        <h2>${title} (${data.length})</h2>
+        <div class="table-container">
+          <table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>
+        </div>
+      `;
+    }
+
+    async function loadData() {
+      const errorContainer = document.getElementById('error-container');
+      const sourceInfo = document.getElementById('source-info');
+      
+      let data = null;
+      let source = '';
+      
+      try {
+        const resp = await fetch(RELATIVE_PRIMARY);
+        if (resp.ok) {
+          data = await resp.json();
+          source = PRIMARY_PATH;
+        }
+      } catch (e) {}
+      
+      if (!data) {
+        try {
+          const resp = await fetch(RELATIVE_FALLBACK);
+          if (resp.ok) {
+            data = await resp.json();
+            source = FALLBACK_PATH + ' (fallback)';
+          }
+        } catch (e) {}
+      }
+      
+      if (!data) {
+        errorContainer.innerHTML = `<div class="error">Could not load sf_packet data. Ensure you are serving this file from the repository root or the JSON files exist at the expected paths.</div>`;
+        return;
+      }
+      
+      sourceInfo.textContent = `Data source: ${source}`;
+      
+      renderSummary(data.sf_summary || {});
+      
+      const contractResults = sortByJoinTriplet(data.sf_contract_results || []);
+      renderTable('contract-results-container', 'Contract Results', contractResults, [
+        { key: 'contract_key', label: 'Contract Key' },
+        { key: 'file_name', label: 'File Name' },
+        { key: 'file_url', label: 'File URL' },
+        { key: 'detected_subtype', label: 'Subtype' },
+        { key: 'sf_contract_status', label: 'Status' },
+        { key: 'notes', label: 'Notes' }
+      ]);
+      
+      const issues = sortBySeverity(data.sf_issues || []);
+      renderTable('issues-container', 'Issues', issues, [
+        { key: 'severity', label: 'Severity' },
+        { key: 'contract_key', label: 'Contract Key' },
+        { key: 'file_name', label: 'File Name' },
+        { key: 'sheet', label: 'Sheet' },
+        { key: 'field', label: 'Field' },
+        { key: 'issue_type', label: 'Issue Type' },
+        { key: 'details', label: 'Details' }
+      ]);
+      
+      const fieldActions = sortBySeverity(data.sf_field_actions || []);
+      renderTable('field-actions-container', 'Field Actions', fieldActions, [
+        { key: 'severity', label: 'Severity' },
+        { key: 'contract_key', label: 'Contract Key' },
+        { key: 'file_name', label: 'File Name' },
+        { key: 'sheet', label: 'Sheet' },
+        { key: 'field', label: 'Field' },
+        { key: 'action', label: 'Action' },
+        { key: 'proposed_value', label: 'Proposed Value' },
+        { key: 'reason_text', label: 'Reason' }
+      ]);
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

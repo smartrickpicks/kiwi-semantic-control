@@ -1,0 +1,25 @@
+{
+  "description": "Paths the Control Board Viewer expects. Operators can swap these to view different artifacts.",
+  "primary": {
+    "path": "out/sf_packet.preview.json",
+    "relative_from_viewer": "../../out/sf_packet.preview.json",
+    "description": "Generated preview output from local_runner/run_local.py"
+  },
+  "fallback": {
+    "path": "examples/expected_outputs/sf_packet.example.json",
+    "relative_from_viewer": "../../examples/expected_outputs/sf_packet.example.json",
+    "description": "Example sf_packet for reference when no preview exists"
+  },
+  "smoke_test": {
+    "path": "scripts/replit_smoke.sh",
+    "description": "Run this script to verify determinism and generate diff"
+  },
+  "config": {
+    "base": "config/config_pack.base.json",
+    "patch": "config/config_pack.example.patch.json"
+  },
+  "dataset": {
+    "path": "examples/standardized_dataset.example.json",
+    "description": "Input dataset for preview generation"
+  }
+}
