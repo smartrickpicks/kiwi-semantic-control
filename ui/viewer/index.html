@@ -5882,8 +5882,10 @@
       savePatchDraft();
     });
 
-    document.getElementById('open-patch-studio')?.addEventListener('click', () => {
-      document.getElementById('patch-studio').classList.add('active');
+    document.querySelectorAll('#open-patch-studio').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('patch-studio').classList.add('active');
+      });
     });
 
     document.getElementById('patch-studio-close')?.addEventListener('click', closePatchStudio);
