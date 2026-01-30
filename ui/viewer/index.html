@@ -7188,16 +7188,20 @@ Add any additional notes here.
       setTimeout(() => btn.textContent = orig, 1500);
     });
 
-    document.querySelector('.patch-studio-tabs').addEventListener('click', e => {
-      const tab = e.target.closest('.patch-studio-tab');
-      if (!tab) return;
-      const panelName = tab.dataset.panel;
-      document.querySelectorAll('.patch-studio-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      document.querySelectorAll('.patch-studio-panel').forEach(p => p.classList.remove('active'));
-      document.getElementById(`panel-${panelName}`).classList.add('active');
-      if (panelName === 'preflight') renderPreflightChecklist();
-    });
+    var patchStudioTabs = document.querySelector('.patch-studio-tabs');
+    if (patchStudioTabs) {
+      patchStudioTabs.addEventListener('click', function(e) {
+        var tab = e.target.closest('.patch-studio-tab');
+        if (!tab) return;
+        var panelName = tab.dataset.panel;
+        document.querySelectorAll('.patch-studio-tab').forEach(function(t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        document.querySelectorAll('.patch-studio-panel').forEach(function(p) { p.classList.remove('active'); });
+        var panelEl = document.getElementById('panel-' + panelName);
+        if (panelEl) panelEl.classList.add('active');
+        if (panelName === 'preflight') renderPreflightChecklist();
+      });
+    }
 
     function parseBaseVersion(input) {
       const trimmed = input.trim();

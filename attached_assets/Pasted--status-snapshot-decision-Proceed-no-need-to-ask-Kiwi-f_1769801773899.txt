@@ -1,0 +1,81 @@
+{
+  "status_snapshot": {
+    "decision": "Proceed (no need to ask Kiwi for this one). This was a viewer routing/UX reliability fix, and Replit already implemented + verified it.",
+    "build_version_reported_by_replit": "v1.2.8",
+    "what_changed": [
+      "Route guards now use a simple dataLoaded flag instead of active_bundle_present/getCurrentBundle() dependency.",
+      "Debug HUD added (top-right): Route | Data | Mode.",
+      "Per-page label added: PAGE: <route> | BUILD v1.2.8.",
+      "Loader page UX updated: Import CSV is primary; Load Sample Dataset is secondary; Continue panel appears when data already loaded.",
+      "Fixed JS syntax error in updateLoaderSummary + removed orphaned code.",
+      "Replit reports: no console errors, smoke test passes, viewer running."
+    ],
+    "what_to_verify_now": [
+      {
+        "check": "Refresh always lands on Step 1 (Loader)",
+        "expected": "Route shows loader in HUD; page label says PAGE: LOADER; BUILD v1.2.8",
+        "pass_fail_notes": "Hard refresh (Cmd+Shift+R) from any page should go back to Loader without getting stuck."
+      },
+      {
+        "check": "No more 'stuck' navigation",
+        "expected": "Sidebar navigation continues to respond after 10+ route switches; HUD updates each time.",
+        "pass_fail_notes": "Try rapid switching: Loader → To Do → Patch Studio → Evidence Status → Loader."
+      },
+      {
+        "check": "Route guard behavior with no data",
+        "expected": "If dataLoaded=false, routes that require data should redirect to Loader (not hang).",
+        "pass_fail_notes": "Click a queue with no data; should auto-route to Loader."
+      },
+      {
+        "check": "Route guard behavior with data",
+        "expected": "If dataLoaded=true, queues + tools should be accessible; no unexpected redirect loops.",
+        "pass_fail_notes": "Load sample dataset, then navigate all pages."
+      },
+      {
+        "check": "Console clean",
+        "expected": "No red errors; logs are acceptable.",
+        "pass_fail_notes": "Open DevTools console and confirm no syntax/runtime errors."
+      }
+    ],
+    "next_move_recommendation": {
+      "do_next": "Move on to Patch Request Queue + comment→patch flow (Admin pipeline) now that routing is stable.",
+      "why": "This is the missing functional block you called out; everything else (masterline, tooltips, workflow map, standardizer) is already in place."
+    }
+  },
+  "next_prompt": {
+    "to": "Kiwi",
+    "purpose": "Lock the Patch Request Queue + comment→patch flow into a canonical spec that Replit can implement deterministically (offline-first, copy-only).",
+    "prompt_json": {
+      "task": "Define Patch Request Queue + Comment→Patch Flow for Orchestrate OS",
+      "context": {
+        "current_state": "Viewer v1.2.8 has stable routing, loader step-1 behavior, and admin panels (workflow map, artifact registry, gates, standardizer). Missing: Patch Request Queue + comment→patch pipeline.",
+        "constraints": [
+          "Offline-first",
+          "Deterministic sorting + IDs",
+          "No network calls",
+          "Copy-only export (no file writes)",
+          "Roles: Analyst, Reviewer, Admin"
+        ]
+      },
+      "required_output": {
+        "deliverables": [
+          "patch_request_storage_model (local-only): schema + storage key names + deterministic ID strategy",
+          "patch_request_queues: New / Needs Review / Approved / Sent to Kiwi / Applied / Rejected (membership + columns + sort)",
+          "comment_to_patch_flow: Analyst comment → Reviewer refine/approve → Admin send-to-Kiwi stub → Kiwi payload intake stub → Admin apply/merge workflow",
+          "ui_surfaces: where this lives in Admin (tabs/sections) + how Analyst/Reviewer see/submit comments from record view",
+          "nomenclature: plain-English labels/tooltips for Patch Request concepts"
+        ],
+        "format": "Return as JSON only (no prose outside JSON)."
+      },
+      "specific_questions": [
+        "Deterministic request_id generation: choose one approach (uuid v4 ok, but prefer monotonic+hash option if you think better).",
+        "Minimum viable fields for an Analyst-created Patch Request (what can be optional without breaking review?).",
+        "How to link a Patch Request back to Preview Packet issues/actions (path strategy)."
+      ]
+    }
+  },
+  "if_you_prefer_replit_first_instead": {
+    "to": "Replit",
+    "one_line_goal": "Implement Patch Request Queue + comment→patch flow UI stubs using Kiwi’s patch_request_schema_json + state machine + queue defs (localStorage-backed; copy-only export; no network)."
+  }
+}
