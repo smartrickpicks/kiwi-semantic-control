@@ -1422,6 +1422,21 @@
       </div>
     </div>
   </div>
+  
+  <!-- Patch Request Detail Drawer -->
+  <div class="drawer-overlay" id="patch-detail-drawer">
+    <div class="drawer" style="width: 550px;">
+      <div class="drawer-header" style="background: #7b1fa2; color: white;">
+        <h3 id="patch-detail-title">Patch Request Details</h3>
+        <button class="drawer-close" onclick="closePatchDetailDrawer()" style="color: white;">&times;</button>
+      </div>
+      <div class="drawer-body" id="patch-detail-content" style="padding: 20px;">
+        <p style="color: #666;">Select a patch request to view details.</p>
+      </div>
+      <div class="drawer-footer" id="patch-detail-footer" style="border-top: 1px solid #eee; padding: 15px;">
+      </div>
+    </div>
+  </div>
 
   <!-- Ruleset Modal -->
   <div class="modal-overlay" id="ruleset-modal">
@@ -2921,25 +2936,149 @@
       });
     }
     
+    var currentPatchDetailId = null;
+    
     function viewPatchRequestDetail(requestId) {
       var request = getPatchRequest(requestId);
       if (!request) return;
       
-      // For now, show in an alert - will be replaced by drawer in Stage 6
+      currentPatchDetailId = requestId;
       var intent = request.proposed_change.intent;
-      var detail = 'Patch Request: ' + request.request_id + '\n\n' +
-        'Status: ' + request.status + '\n' +
-        'Target: ' + request.target_scope.target + '\n\n' +
-        'WHEN: ' + (intent.when || 'N/A') + '\n' +
-        'THEN: ' + (intent.then || 'N/A') + '\n' +
-        'BECAUSE: ' + (intent.because || 'N/A') + '\n\n' +
-        'Rationale: ' + (request.proposed_change.rationale || 'N/A');
+      var statusClass = getStatusClass(request.status);
       
-      if (request.kiwi_return) {
-        detail += '\n\n--- KIWI RETURN ---\n' + JSON.stringify(request.kiwi_return, null, 2);
+      var html = '';
+      
+      // Status and ID header
+      html += '<div style="margin-bottom: 20px;">' +
+        '<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">' +
+        '<span class="patch-status-chip ' + statusClass + '" style="font-size: 0.85em;">' + escapeHtml(request.status) + '</span>' +
+        '<span style="font-family: monospace; font-size: 0.8em; color: #666;">' + escapeHtml(request.request_id) + '</span>' +
+        '</div>' +
+        '<div style="font-size: 0.85em; color: #666;">Created: ' + new Date(request.created_at_utc).toLocaleString() + '</div>' +
+        '</div>';
+      
+      // Plain-English Intent section
+      html += '<div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">' +
+        '<h4 style="margin: 0 0 12px 0; font-size: 0.9em; text-transform: uppercase; color: #333;">Plain-English Intent</h4>' +
+        '<div style="margin-bottom: 10px;">' +
+        '<span style="color: #1976d2; font-weight: 600;">WHEN:</span> ' + escapeHtml(intent.when || 'N/A') +
+        '</div>' +
+        '<div style="margin-bottom: 10px;">' +
+        '<span style="color: #388e3c; font-weight: 600;">THEN:</span> ' + escapeHtml(intent.then || 'N/A') +
+        '</div>' +
+        '<div>' +
+        '<span style="color: #e65100; font-weight: 600;">BECAUSE:</span> ' + escapeHtml(intent.because || 'N/A') +
+        '</div>' +
+        '</div>';
+      
+      // Target Artifact section
+      html += '<div style="margin-bottom: 20px;">' +
+        '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: #333;">Target Artifact</h4>' +
+        '<table style="width: 100%; font-size: 0.9em;">' +
+        '<tr><td style="padding: 4px 0; color: #666; width: 100px;">Type</td><td>' + escapeHtml(humanLabel(request.target_scope.target) || 'N/A') + '</td></tr>' +
+        '<tr><td style="padding: 4px 0; color: #666;">Target ID</td><td style="font-family: monospace;">' + escapeHtml(request.target_scope.target_id || 'N/A') + '</td></tr>' +
+        '</table>' +
+        '</div>';
+      
+      // Rationale
+      if (request.proposed_change.rationale) {
+        html += '<div style="margin-bottom: 20px;">' +
+          '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: #333;">Rationale</h4>' +
+          '<p style="margin: 0; font-size: 0.9em; color: #555;">' + escapeHtml(request.proposed_change.rationale) + '</p>' +
+          '</div>';
       }
       
-      alert(detail);
+      // Kiwi Payload section (if sent or returned)
+      if (request.status === 'SentToKiwi' || request.status === 'KiwiReturned' || request.status === 'Applied') {
+        html += '<div style="margin-bottom: 20px; border-top: 1px solid #e0e0e0; padding-top: 15px;">' +
+          '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: #7b1fa2;">Kiwi Integration</h4>';
+        
+        if (request.kiwi_sent_at_utc) {
+          html += '<div style="font-size: 0.85em; margin-bottom: 8px;"><strong>Sent to Kiwi:</strong> ' + new Date(request.kiwi_sent_at_utc).toLocaleString() + '</div>';
+        }
+        
+        if (request.kiwi_return) {
+          html += '<div style="font-size: 0.85em; margin-bottom: 8px;"><strong>Returned:</strong> ' + new Date(request.kiwi_returned_at_utc).toLocaleString() + '</div>' +
+            '<div style="margin-top: 10px;">' +
+            '<details style="background: #f9f9f9; padding: 10px; border-radius: 6px;">' +
+            '<summary style="cursor: pointer; font-weight: 500; font-size: 0.9em;">View Kiwi Return Payload</summary>' +
+            '<pre style="margin: 10px 0 0 0; font-size: 0.8em; overflow-x: auto; white-space: pre-wrap;">' + escapeHtml(JSON.stringify(request.kiwi_return, null, 2)) + '</pre>' +
+            '</details>' +
+            '</div>';
+        }
+        
+        html += '</div>';
+      }
+      
+      // Apply Checklist (for KiwiReturned status)
+      if (request.status === 'KiwiReturned') {
+        html += '<div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">' +
+          '<h4 style="margin: 0 0 12px 0; font-size: 0.9em; text-transform: uppercase; color: #2e7d32;">Apply Checklist</h4>' +
+          '<label style="display: flex; align-items: center; gap: 8px; font-size: 0.9em; margin-bottom: 8px;">' +
+          '<input type="checkbox" id="apply-check-1"> Kiwi return payload validated' +
+          '</label>' +
+          '<label style="display: flex; align-items: center; gap: 8px; font-size: 0.9em; margin-bottom: 8px;">' +
+          '<input type="checkbox" id="apply-check-2"> Changes copied to config pack' +
+          '</label>' +
+          '<label style="display: flex; align-items: center; gap: 8px; font-size: 0.9em;">' +
+          '<input type="checkbox" id="apply-check-3"> Smoke test passed' +
+          '</label>' +
+          '</div>';
+      }
+      
+      document.getElementById('patch-detail-title').textContent = 'Patch Request';
+      document.getElementById('patch-detail-content').innerHTML = html;
+      
+      // Footer actions based on status
+      var footerHtml = '<div style="display: flex; gap: 10px; justify-content: flex-end;">';
+      if (request.status === 'Draft') {
+        footerHtml += '<button class="toolbar-btn" onclick="submitPatchForReview(\'' + requestId + '\')" style="background: #1976d2;">Submit for Review</button>';
+      } else if (request.status === 'ReviewerApproved' || request.status === 'AdminApproved') {
+        footerHtml += '<button class="toolbar-btn" onclick="copyPatchForKiwi(\'' + requestId + '\')" style="background: #7b1fa2;">Copy for Kiwi</button>';
+      } else if (request.status === 'KiwiReturned') {
+        footerHtml += '<button class="toolbar-btn" onclick="copyCommitPack(\'' + requestId + '\')">Copy Commit Pack</button>';
+        footerHtml += '<button class="toolbar-btn" onclick="markSingleApplied(\'' + requestId + '\')" style="background: #388e3c;">Mark Applied</button>';
+      }
+      footerHtml += '<button class="toolbar-btn" onclick="closePatchDetailDrawer()">Close</button>';
+      footerHtml += '</div>';
+      document.getElementById('patch-detail-footer').innerHTML = footerHtml;
+      
+      document.getElementById('patch-detail-drawer').classList.add('active');
+    }
+    
+    function closePatchDetailDrawer() {
+      document.getElementById('patch-detail-drawer').classList.remove('active');
+      currentPatchDetailId = null;
+    }
+    
+    function submitPatchForReview(requestId) {
+      var author = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+      submitForReview(requestId, author, author);
+      closePatchDetailDrawer();
+      renderPatchConsoleTable();
+      showToast('Patch request submitted for review', 'success');
+    }
+    
+    function copyPatchForKiwi(requestId) {
+      var exportJson = exportPatchRequestsForKiwi([requestId]);
+      navigator.clipboard.writeText(exportJson).then(function() {
+        showToast('Copied patch request to clipboard for Kiwi', 'success');
+      });
+    }
+    
+    function copyCommitPack(requestId) {
+      var commitPack = exportBatchCommitPack([requestId]);
+      navigator.clipboard.writeText(commitPack).then(function() {
+        showToast('Commit pack copied to clipboard', 'success');
+      });
+    }
+    
+    function markSingleApplied(requestId) {
+      var author = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+      markApplied([requestId], author, author);
+      closePatchDetailDrawer();
+      renderPatchConsoleTable();
+      showToast('Marked as Applied', 'success');
     }
     
     // Initialize patch console when admin view loads
@@ -3025,21 +3164,19 @@
       
       var author = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
       
-      var targetScope = {
+      var patchRequest = createPatchRequest({
         target: comment.target_type,
-        target_id: comment.target_id
-      };
-      
-      var proposedChange = {
-        intent: {
-          when: intentWhen || 'N/A',
-          then: intentThen,
-          because: intentBecause || comment.content
-        },
-        rationale: 'Elevated from comment: ' + comment.content
-      };
-      
-      var patchRequest = createPatchRequest(targetScope, proposedChange, author, author);
+        contract_key: comment.record_identity.contract_key,
+        file_url: comment.record_identity.file_url,
+        file_name: comment.record_identity.file_name,
+        when: intentWhen || 'N/A',
+        then: intentThen,
+        because: intentBecause || comment.content,
+        rationale: 'Elevated from comment: ' + comment.content,
+        author: author,
+        author_role: author,
+        linked_comment_id: commentId
+      });
       elevateToRequest(commentId, patchRequest.request_id, author, author);
       
       closeElevateToPatchModal();
@@ -6950,6 +7087,11 @@ Add any additional notes here.
     // Record drawer events
     document.getElementById('record-drawer')?.addEventListener('click', e => {
       if (e.target.id === 'record-drawer') closeRecordDrawer();
+    });
+    
+    // Patch detail drawer events
+    document.getElementById('patch-detail-drawer')?.addEventListener('click', e => {
+      if (e.target.id === 'patch-detail-drawer') closePatchDetailDrawer();
     });
     
     // Config Flows drawer events

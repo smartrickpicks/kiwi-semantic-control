@@ -1,4 +1,4 @@
-# Kiwi Semantic Control Board (v1.2.1)
+# Kiwi Semantic Control Board (v1.2.2)
 
 ## Overview
 
@@ -23,6 +23,13 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - D2 Admin Workflow Map: 8-stage vertical pipeline with clickable nodes (Load Data → PR Ready)
 - D3 Standardizer: CSV parsing with delimiter inference, header normalization, merged_dataset.json output, error model
 - D4 Tooltips & Plain English: NOMENCLATURE maps, info icons with tooltips, humanLabel()/getTooltip() helpers
+
+**v1.2.2 Patch Queue as Admin Status Pipeline:**
+- Comment (RFI) System: 5-status lifecycle (Open → Resolved → ElevatedToPatchRequest), localStorage persistence
+- Patch Request Pipeline: 11-status lifecycle with Kiwi handshake (SentToKiwi → KiwiReturned → Applied)
+- Admin Patch Console: 7 queue tabs with live counts, batch selection, export/import actions
+- Patch Request Detail Drawer: Plain-English Intent, Kiwi Payload viewer, Apply Checklist
+- Comment UI: Add Comment modal, Elevate to Patch Request flow, Comments panel in Record Drawer
 
 **What This Is NOT:**
 - Not a runtime system

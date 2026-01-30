@@ -1,5 +1,48 @@
 # CHANGELOG
 
+## Version: v1.2.2
+Date: 2026-01-30
+
+### Added (Patch Queue as Admin Status Pipeline)
+- Comment (RFI) System
+  - Comment object schema with 5-status lifecycle: Open → ReviewerResponded → Resolved → ElevatedToPatchRequest/Closed
+  - localStorage persistence under 'orchestrate.comments.v1'
+  - CRUD functions: createComment, getComment, updateComment, resolveComment, elevateToRequest
+  - Comments panel in Record Detail Drawer with Add Comment button
+  - Resolve and Elevate to Patch Request actions on comments
+
+- Patch Request Pipeline Extensions
+  - Extended status lifecycle: Draft → Submitted → ReviewerApproved → AdminApproved → SentToKiwi → KiwiReturned → Applied
+  - Kiwi handshake functions: markSentToKiwi, applyKiwiReturn, markApplied
+  - Batch selection support with selectAllInQueue, clearPatchRequestSelection
+  - Export functions: exportPatchRequestsForKiwi, exportBatchCommitPack, formatPatchRequestMarkdown
+
+- Admin Patch Console UI
+  - 7 queue tabs: New, Needs Review, Approved, Sent to Kiwi, Kiwi Returned, Applied, Rejected
+  - Live count badges on each queue tab
+  - Compact table with batch selection checkboxes
+  - Batch actions: Export to Kiwi (Copy), Paste Kiwi Return, Mark Applied, Copy Batch Commit Pack
+  - Kiwi Return Inbox modal for parsing returned JSON
+
+- Patch Request Detail Drawer
+  - Plain-English Intent display (WHEN/THEN/BECAUSE)
+  - Target Artifact preview
+  - Kiwi Integration section with sent/returned timestamps
+  - Collapsible Kiwi Return Payload viewer
+  - Apply Checklist for KiwiReturned requests
+  - Context-sensitive footer actions
+
+- Comment UI Entry Points
+  - Add Comment modal with target and content fields
+  - Elevate to Patch Request modal with intent fields
+  - Comments section in Record Detail Drawer
+
+### Changed
+- Record Detail Drawer now includes Comments section with live updates
+- Admin Status tab restructured as "Patch Console" with queue-centric navigation
+
+---
+
 ## Version: v1.2.1
 Date: 2026-01-30
 
