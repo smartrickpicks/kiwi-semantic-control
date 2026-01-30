@@ -3,11 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Board Viewer v0.9</title>
+  <title>Control Board Viewer v1.0</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 20px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; margin: 0; padding: 0; }
     h1 { margin-bottom: 10px; color: #1a1a2e; }
+
+    .app-layout { display: flex; min-height: 100vh; }
+    .nav-sidebar { width: 200px; background: #1a1a2e; color: white; flex-shrink: 0; display: flex; flex-direction: column; }
+    .nav-header { padding: 20px; border-bottom: 1px solid #2d2d4a; }
+    .nav-header h1 { font-size: 1.1em; color: white; margin: 0; }
+    .nav-header .version { font-size: 0.75em; color: #888; margin-top: 4px; }
+    .nav-menu { flex-grow: 1; padding: 15px 0; }
+    .nav-item { display: flex; align-items: center; padding: 12px 20px; color: #aaa; text-decoration: none; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
+    .nav-item:hover { background: #2d2d4a; color: white; }
+    .nav-item.active { background: #0f3460; color: white; border-left-color: #1565c0; }
+    .nav-icon { width: 20px; margin-right: 12px; text-align: center; }
+    .nav-label { font-size: 0.9em; }
+    .nav-mode-section { padding: 15px 20px; border-top: 1px solid #2d2d4a; }
+    .nav-mode-label { font-size: 0.7em; color: #888; text-transform: uppercase; margin-bottom: 8px; }
+    .mode-toggle { display: flex; gap: 5px; flex-wrap: wrap; }
+    .mode-btn { padding: 5px 10px; font-size: 0.75em; border: 1px solid #555; background: transparent; color: #aaa; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+    .mode-btn:hover { border-color: #888; color: white; }
+    .mode-btn.active { background: #1565c0; border-color: #1565c0; color: white; }
+    .mode-btn.mode-operator { }
+    .mode-btn.mode-reviewer { }
+    .mode-btn.mode-analyst { }
+
+    .main-content { flex-grow: 1; padding: 20px; overflow-y: auto; max-height: 100vh; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .page-header { margin-bottom: 20px; }
+    .page-header h2 { color: #1a1a2e; font-size: 1.4em; margin-bottom: 5px; }
+    .page-header .page-desc { color: #666; font-size: 0.9em; }
+
+    .mode-hidden { display: none !important; }
+    .mode-dimmed { opacity: 0.5; pointer-events: none; }
     h2 { margin: 20px 0 10px; color: #16213e; border-bottom: 2px solid #0f3460; padding-bottom: 5px; }
     .subtitle { color: #666; margin-bottom: 20px; font-size: 0.9em; }
     .summary { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -374,10 +405,78 @@
   </style>
 </head>
 <body>
-  <h1>Control Board Viewer</h1>
-  <p class="subtitle">v0.9 | Governance-only | Offline-first | Stream Model</p>
+  <div class="app-layout">
+    <nav class="nav-sidebar">
+      <div class="nav-header">
+        <h1>Control Board</h1>
+        <div class="version">v1.0 | Governance-only</div>
+      </div>
+      <div class="nav-menu">
+        <a class="nav-item active" data-page="run" href="#/run">
+          <span class="nav-icon">▶</span>
+          <span class="nav-label">Run</span>
+        </a>
+        <a class="nav-item" data-page="triage" href="#/triage">
+          <span class="nav-icon">⚡</span>
+          <span class="nav-label">Triage</span>
+        </a>
+        <a class="nav-item" data-page="patch" href="#/patch">
+          <span class="nav-icon">✎</span>
+          <span class="nav-label">Patch Studio</span>
+        </a>
+        <a class="nav-item" data-page="review" href="#/review">
+          <span class="nav-icon">✓</span>
+          <span class="nav-label">Review</span>
+        </a>
+      </div>
+      <div class="nav-mode-section">
+        <div class="nav-mode-label">View Mode</div>
+        <div class="mode-toggle">
+          <button class="mode-btn mode-operator active" data-mode="operator">Operator</button>
+          <button class="mode-btn mode-reviewer" data-mode="reviewer">Reviewer</button>
+          <button class="mode-btn mode-analyst" data-mode="analyst">Analyst</button>
+        </div>
+      </div>
+    </nav>
 
-  <div class="stream-panel" id="stream-panel">
+    <main class="main-content">
+      <!-- RUN PAGE -->
+      <div class="page active" id="page-run">
+        <div class="page-header">
+          <h2>Run</h2>
+          <p class="page-desc">Execute validation and preview commands, view dataset paths and last-run status.</p>
+        </div>
+
+        <div class="toolbar" id="toolbar">
+          <button class="toolbar-btn" data-cmd="validate">Validate</button>
+          <button class="toolbar-btn" data-cmd="preview_baseline">Preview Baseline</button>
+          <button class="toolbar-btn" data-cmd="preview_edge">Preview Edge</button>
+          <button class="toolbar-btn" data-cmd="smoke_baseline">Smoke Baseline</button>
+          <button class="toolbar-btn" data-cmd="smoke_edge">Smoke Edge</button>
+          <div class="toolbar-confirm">
+            <input type="checkbox" id="confirm-run">
+            <label for="confirm-run">I CONFIRM RUN</label>
+          </div>
+        </div>
+
+        <div id="source-info" class="source-info"></div>
+        <div id="error-container"></div>
+        
+        <div id="run-summary-container"></div>
+
+        <div id="diff-container">
+          <h2>Diff Verification</h2>
+          <div class="diff-pane">
+To verify determinism, run the smoke test in your terminal:
+<code>bash scripts/replit_smoke.sh</code>
+This compares out/sf_packet.preview.json against expected output.
+If differences are found, the script will show a unified diff.
+
+Note: This viewer does NOT execute any commands automatically.
+          </div>
+        </div>
+
+        <div class="stream-panel" id="stream-panel">
     <div class="stream-panel-header">
       <h3>Session + Stream Model (Conceptual)</h3>
       <button class="stream-panel-toggle" id="stream-panel-toggle">Show</button>
@@ -486,8 +585,129 @@
       </div>
     </div>
   </div>
+      </div><!-- end page-run -->
 
-  <div class="config-inspector" id="config-inspector">
+      <!-- TRIAGE PAGE -->
+      <div class="page" id="page-triage">
+        <div class="page-header">
+          <h2>Triage</h2>
+          <p class="page-desc">View summary cards, filter issues by severity/status, and drill down into records.</p>
+        </div>
+
+        <div class="filters" id="filters">
+          <div class="filters-row">
+            <div class="filter-group">
+              <label>Search</label>
+              <input type="text" class="filter-search" id="filter-search" placeholder="Search all fields...">
+            </div>
+            <div class="filter-group">
+              <label>Severity</label>
+              <div class="filter-chips" id="severity-chips">
+                <span class="filter-chip severity-blocking" data-severity="blocking">Blocking</span>
+                <span class="filter-chip severity-warning" data-severity="warning">Warning</span>
+                <span class="filter-chip severity-info" data-severity="info">Info</span>
+              </div>
+            </div>
+            <div class="filter-group">
+              <label>Status</label>
+              <div class="filter-chips" id="status-chips">
+                <span class="filter-chip status-ready" data-status="ready">Ready</span>
+                <span class="filter-chip status-needs_review" data-status="needs_review">Needs Review</span>
+                <span class="filter-chip status-blocked" data-status="blocked">Blocked</span>
+              </div>
+            </div>
+            <div class="filter-group">
+              <label>Subtype</label>
+              <select class="filter-select" id="filter-subtype">
+                <option value="">All Subtypes</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="delta-container" style="display: none;"></div>
+        <div id="summary-container"></div>
+        <div id="contract-results-container"></div>
+        <div id="issues-container"></div>
+        <div id="field-actions-container"></div>
+      </div><!-- end page-triage -->
+
+      <!-- PATCH STUDIO PAGE -->
+      <div class="page" id="page-patch">
+        <div class="page-header">
+          <h2>Patch Studio</h2>
+          <p class="page-desc">Select records, build rule patches, validate with preflight gate, and export.</p>
+        </div>
+
+        <div class="preflight-gate" id="preflight-gate">
+          <div class="preflight-header">
+            <h3>Preflight Gate (PR Checklist)</h3>
+            <button class="preflight-toggle" id="preflight-toggle">Show</button>
+          </div>
+          <div class="preflight-body" id="preflight-body">
+            <div class="preflight-checklist">
+              <div class="preflight-item" data-step="1">
+                <div class="preflight-checkbox"></div>
+                <div class="preflight-content">
+                  <div class="preflight-label">Step 1: Validate Config</div>
+                  <div class="preflight-evidence" id="evidence-1"></div>
+                </div>
+              </div>
+              <div class="preflight-item" data-step="2">
+                <div class="preflight-checkbox"></div>
+                <div class="preflight-content">
+                  <div class="preflight-label">Step 2: Preview Baseline</div>
+                  <div class="preflight-evidence" id="evidence-2"></div>
+                </div>
+              </div>
+              <div class="preflight-item" data-step="3">
+                <div class="preflight-checkbox"></div>
+                <div class="preflight-content">
+                  <div class="preflight-label">Step 3: Smoke Baseline</div>
+                  <div class="preflight-evidence" id="evidence-3"></div>
+                </div>
+              </div>
+              <div class="preflight-item" data-step="4">
+                <div class="preflight-checkbox"></div>
+                <div class="preflight-content">
+                  <div class="preflight-label">Step 4: Smoke Edge</div>
+                  <div class="preflight-evidence" id="evidence-4"></div>
+                </div>
+              </div>
+            </div>
+            <div class="preflight-paste">
+              <label>Paste Terminal Output (auto-parses evidence)</label>
+              <textarea id="preflight-paste-area" placeholder="Paste terminal output here to auto-extract evidence..."></textarea>
+              <button class="preflight-parse-btn" id="preflight-parse">Parse Evidence</button>
+            </div>
+            <div class="preflight-actions">
+              <button class="preflight-btn preflight-btn-secondary" id="preflight-reset">Reset All</button>
+              <button class="preflight-btn preflight-btn-primary" id="preflight-copy-evidence">Copy Evidence Summary</button>
+            </div>
+            <div class="preflight-summary" id="preflight-summary"></div>
+          </div>
+        </div>
+
+        <div class="patch-studio-inline" id="patch-studio-inline">
+          <h3>Patch Draft Builder</h3>
+          <p class="page-desc">Open Record Workbench from Triage page to select records and add rules.</p>
+          <div id="patch-draft-summary"></div>
+          <div class="patch-studio-inline-actions">
+            <button class="toolbar-btn" id="open-patch-studio">Open Full Patch Studio</button>
+            <button class="toolbar-btn" id="copy-patch-json">Copy Patch JSON</button>
+            <button class="toolbar-btn" id="copy-pr-summary">Copy PR Summary</button>
+          </div>
+        </div>
+      </div><!-- end page-patch -->
+
+      <!-- REVIEW PAGE -->
+      <div class="page" id="page-review">
+        <div class="page-header">
+          <h2>Review</h2>
+          <p class="page-desc">Inspect config deltas, compare artifact versions, and generate evidence summaries.</p>
+        </div>
+
+        <div class="config-inspector" id="config-inspector">
     <div class="config-inspector-header">
       <h3>Config + Patch Inspector (Ruleset Delta)</h3>
       <button class="config-inspector-toggle" id="config-inspector-toggle">Show</button>
@@ -545,70 +765,13 @@
     </div>
   </div>
 
-  <div class="toolbar" id="toolbar">
-    <button class="toolbar-btn" data-cmd="validate">Validate</button>
-    <button class="toolbar-btn" data-cmd="preview_baseline">Preview Baseline</button>
-    <button class="toolbar-btn" data-cmd="preview_edge">Preview Edge</button>
-    <button class="toolbar-btn" data-cmd="smoke_baseline">Smoke Baseline</button>
-    <button class="toolbar-btn" data-cmd="smoke_edge">Smoke Edge</button>
-    <div class="toolbar-confirm">
-      <input type="checkbox" id="confirm-run">
-      <label for="confirm-run">I CONFIRM RUN</label>
-    </div>
-  </div>
+        <div id="review-evidence-summary" class="evidence-summary-panel"></div>
+      </div><!-- end page-review -->
 
-  <div class="filters" id="filters">
-    <div class="filters-row">
-      <div class="filter-group">
-        <label>Search</label>
-        <input type="text" class="filter-search" id="filter-search" placeholder="Search all fields...">
-      </div>
-      <div class="filter-group">
-        <label>Severity</label>
-        <div class="filter-chips" id="severity-chips">
-          <span class="filter-chip severity-blocking" data-severity="blocking">Blocking</span>
-          <span class="filter-chip severity-warning" data-severity="warning">Warning</span>
-          <span class="filter-chip severity-info" data-severity="info">Info</span>
-        </div>
-      </div>
-      <div class="filter-group">
-        <label>Status</label>
-        <div class="filter-chips" id="status-chips">
-          <span class="filter-chip status-ready" data-status="ready">Ready</span>
-          <span class="filter-chip status-needs_review" data-status="needs_review">Needs Review</span>
-          <span class="filter-chip status-blocked" data-status="blocked">Blocked</span>
-        </div>
-      </div>
-      <div class="filter-group">
-        <label>Subtype</label>
-        <select class="filter-select" id="filter-subtype">
-          <option value="">All Subtypes</option>
-        </select>
-      </div>
-    </div>
-  </div>
-  
-  <div id="source-info" class="source-info"></div>
-  <div id="error-container"></div>
-  <div id="delta-container" style="display: none;"></div>
-  <div id="summary-container"></div>
-  
-  <div id="diff-container">
-    <h2>Diff Verification</h2>
-    <div class="diff-pane">
-To verify determinism, run the smoke test in your terminal:
-<code>bash scripts/replit_smoke.sh</code>
-This compares out/sf_packet.preview.json against expected output.
-If differences are found, the script will show a unified diff.
+    </main><!-- end main-content -->
+  </div><!-- end app-layout -->
 
-Note: This viewer does NOT execute any commands automatically.
-    </div>
-  </div>
-  
-  <div id="contract-results-container"></div>
-  <div id="issues-container"></div>
-  <div id="field-actions-container"></div>
-
+  <!-- Global Modals and Drawers (outside pages) -->
   <div class="modal-overlay" id="command-modal">
     <div class="modal">
       <div class="modal-header">
@@ -772,9 +935,9 @@ Note: This viewer does NOT execute any commands automatically.
     const RELATIVE_PRIMARY = '../../out/sf_packet.preview.json';
     const RELATIVE_FALLBACK = '../../examples/expected_outputs/sf_packet.example.json';
     const COMMANDS_PATH = 'run_commands.json';
-    const STORAGE_KEY = 'viewer_selection_v09';
-    const PREFLIGHT_STORAGE_KEY = 'viewer_preflight_v09';
-    const PATCH_STORAGE_KEY = 'viewer_patch_v09';
+    const STORAGE_KEY = 'viewer_selection_v10';
+    const PREFLIGHT_STORAGE_KEY = 'viewer_preflight_v10';
+    const PATCH_STORAGE_KEY = 'viewer_patch_v10';
     const COMPARISON_PATH = '../../out/sf_packet.preview.prev.json';
 
     let loadedBaseConfig = null;
@@ -798,6 +961,80 @@ Note: This viewer does NOT execute any commands automatically.
       smokeEdge: { raw: '', parsed: null, status: 'pending' },
       sha256: ''
     };
+
+    let currentMode = 'operator';
+
+    function navigateTo(page) {
+      const pages = ['run', 'triage', 'patch', 'review'];
+      if (!pages.includes(page)) page = 'run';
+      
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      
+      const pageEl = document.getElementById(`page-${page}`);
+      const navEl = document.querySelector(`.nav-item[data-page="${page}"]`);
+      
+      if (pageEl) pageEl.classList.add('active');
+      if (navEl) navEl.classList.add('active');
+      
+      window.location.hash = `#/${page}`;
+    }
+
+    function setMode(mode) {
+      const modes = ['operator', 'reviewer', 'analyst'];
+      if (!modes.includes(mode)) mode = 'operator';
+      currentMode = mode;
+      
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      const modeBtn = document.querySelector(`.mode-btn[data-mode="${mode}"]`);
+      if (modeBtn) modeBtn.classList.add('active');
+      
+      applyModeVisibility(mode);
+      localStorage.setItem('viewer_mode_v10', mode);
+    }
+
+    function applyModeVisibility(mode) {
+      const opElements = document.querySelectorAll('[data-mode-operator]');
+      const revElements = document.querySelectorAll('[data-mode-reviewer]');
+      const anlElements = document.querySelectorAll('[data-mode-analyst]');
+      
+      opElements.forEach(el => {
+        el.classList.toggle('mode-hidden', mode !== 'operator' && !el.dataset.modeReviewer && !el.dataset.modeAnalyst);
+      });
+      revElements.forEach(el => {
+        el.classList.toggle('mode-hidden', mode !== 'reviewer' && !el.dataset.modeOperator && !el.dataset.modeAnalyst);
+      });
+      anlElements.forEach(el => {
+        el.classList.toggle('mode-hidden', mode !== 'analyst' && !el.dataset.modeOperator && !el.dataset.modeReviewer);
+      });
+    }
+
+    function initRouter() {
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          const page = item.dataset.page;
+          navigateTo(page);
+        });
+      });
+      
+      document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          setMode(btn.dataset.mode);
+        });
+      });
+      
+      window.addEventListener('hashchange', () => {
+        const hash = window.location.hash.replace('#/', '') || 'run';
+        navigateTo(hash);
+      });
+      
+      const savedMode = localStorage.getItem('viewer_mode_v10');
+      if (savedMode) setMode(savedMode);
+      
+      const hash = window.location.hash.replace('#/', '') || 'run';
+      navigateTo(hash);
+    }
 
     function getRecordHash(record) {
       const sorted = sortObjectKeys(record);
@@ -3057,6 +3294,7 @@ Add any additional notes here.
       document.getElementById('source-info').textContent = `Data source: ${document.getElementById('primary-path').value || 'out/sf_packet.preview.json'}`;
     });
 
+    initRouter();
     loadCommands();
     loadData();
     restorePreflightEvidence();
