@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## Version: v1.1.1
+Date: 2026-01-30
+
+### Added
+- Viewer v1.1.1 Loader Simulation for Upload-First UX
+  - Three input modes in Load Data modal: Paste JSON, Drag-and-drop file, Path hint (read-only label)
+  - Session status chip in top toolbar: NOT LOADED / LOADED / FALLBACK
+  - Session metadata display: source type (paste/drop/example), loaded timestamp
+  - LocalStorage persistence with opt-in "Remember in this browser" toggle
+  - Reset Session action that clears artifacts but preserves patch draft
+  - Triage page shows active artifact source: memory(paste/drop) vs fallback(example) vs none
+
+### Technical Details
+- Product renamed to "Orchestrate OS" (internal title update)
+- No external dependencies added
+- Copy-to-clipboard only (no file writes)
+- Deterministic sorting unchanged
+
+---
+
 ## Version: v1.1.0
 Date: 2026-01-30
 

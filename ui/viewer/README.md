@@ -3,7 +3,7 @@
 ## Overview
 A read-only, single-file HTML viewer for sf_packet artifacts. No build step, no dependencies, no external network requests.
 
-**Version:** 1.1
+**Version:** 1.1.1
 
 ## How to Open
 
@@ -390,6 +390,39 @@ Changes are sorted by:
 
 ## Version History
 
+### How to Load Data in Static Mode (v1.1.1)
+
+Since the viewer runs entirely in the browser with no backend, you need to provide data via one of these methods:
+
+**Method 1: Paste JSON**
+1. Click "Load Data" to open the modal
+2. Select the "Paste JSON" tab
+3. Copy your sf_packet JSON and paste it into the textarea
+4. Click "Load from Paste"
+
+**Method 2: Drag-and-Drop File**
+1. Click "Load Data" to open the modal
+2. Select the "Drop File" tab
+3. Drag your sf_packet.json file onto the drop zone (or click to browse)
+4. Click "Load from File"
+
+**Method 3: Path Hint (Reference Only)**
+- The "Path Hint" tab shows a path input but cannot actually load files in static mode
+- Use this to document which path you're working with
+- A warning reminds you to use Paste or Drop for actual data
+
+**Session Persistence:**
+- Enable "Remember in this browser" to persist loaded data to localStorage
+- Data is restored automatically on next visit
+- Use "Reset Session" to clear artifacts (patch draft is preserved)
+
+**Session Status Chip:**
+| Status | Meaning |
+|--------|---------|
+| NOT LOADED | No data in memory |
+| LOADED | Data loaded via paste/drop |
+| FALLBACK | Using bundled example data |
+
 ### Upload-First Flow + Modal Wizards (v1.1)
 
 The viewer now starts with a clear "Load Data" action and uses modal wizards for configuration, giving a more product-like feel.
@@ -478,6 +511,7 @@ Click to copy a PR-ready explanation of the stream model.
 
 | Version | Features |
 |---------|----------|
+| 1.1.1 | Loader Simulation (Paste JSON, Drag-drop file, Path hint; Session status chip; localStorage persistence; Reset Session) |
 | 1.1 | Upload-First Flow + Modal Wizards (Load Data CTA, Data Source/Ruleset/Compare/Run modals, triage-first landing, contextual patching) |
 | 1.0 | Multi-Page Navigation + Mode Toggle (Run/Triage/Patch Studio/Review pages, Operator/Reviewer/Analyst modes) |
 | 0.9 | Session + Stream Model (Session Timeline, Record States, Never-Stop Flow, Reconsolidation Rules, Copy Stream Semantics) |

@@ -1,0 +1,52 @@
+{
+  "type": "TASK",
+  "target": "REPLIT",
+  "title": "Simulate loader workflow (local-only) for Upload-First UX",
+  "context": {
+    "product_name": "Orchestrate OS (formerly Control Board Viewer)",
+    "constraints": [
+      "single-file vanilla HTML+JS",
+      "no dependencies",
+      "no network calls",
+      "no file writes",
+      "copy-to-clipboard only",
+      "offline-first"
+    ],
+    "problem": "The Upload/Load Data UI exists, but selecting/clicking does not trigger a meaningful local workflow. We need a loader simulation that matches our actual harness flow while staying local-only."
+  },
+  "acceptance_criteria": [
+    "Load Data modal supports THREE input modes: (1) Paste JSON, (2) Drag-and-drop JSON file, (3) Path hint (read-only label; no fetch).",
+    "When data is provided via Paste or Drag-drop, viewer loads it immediately (in-memory) and updates a 'Data Loaded' status chip + timestamp.",
+    "If user uses Path hint only, UI shows clear message: 'Path is a hint only in static mode. Paste or drop file to load.'",
+    "Persist last loaded artifact JSON + metadata to localStorage (opt-in toggle 'Remember in this browser').",
+    "Expose a 'Reset Session' action that clears only loaded preview/expected/compare artifacts (keeps patch draft).",
+    "Triage page displays the active artifact source: memory(paste/drop) vs fallback(example) vs none.",
+    "No regressions: deterministic sorting stays intact; smoke commands remain copy-only."
+  ],
+  "ui_details": {
+    "data_source_modal": {
+      "sections": [
+        "Preview Evidence (required)",
+        "Reference Expected (optional)",
+        "Comparison Artifact (optional)"
+      ],
+      "each_section_controls": [
+        "Paste JSON textarea + Load button",
+        "Drag-and-drop zone + file name display + Load button",
+        "Path hint input (non-functional) + tooltip explaining static limitation"
+      ]
+    },
+    "session_state": {
+      "display": [
+        "Status chip: NOT LOADED / LOADED / FALLBACK",
+        "Loaded at timestamp",
+        "Source type: paste | drop | example"
+      ]
+    }
+  },
+  "deliverables": [
+    "Update ui/viewer/index.html implementing the loader simulation behavior",
+    "Update ui/viewer/README.md with 'How to load data in static mode' instructions",
+    "Update CHANGELOG.md entry for v1.1.x describing paste/drop loader behavior"
+  ]
+}
