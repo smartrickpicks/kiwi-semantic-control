@@ -3488,7 +3488,7 @@
     }
     
     function submitPatchForReview(requestId) {
-      var author = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+      var author = currentMode.charAt(0).toUpperCase() + currentMode.slice(1);
       submitForReview(requestId, author, author);
       closePatchDetailDrawer();
       renderPatchConsoleTable();
@@ -3690,7 +3690,7 @@
         return;
       }
       
-      var author = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+      var author = currentMode.charAt(0).toUpperCase() + currentMode.slice(1);
       createComment(targetType, targetId, content, author, author);
       closeAddCommentModal();
       showToast('Comment added', 'success');
@@ -3703,7 +3703,7 @@
     }
     
     function resolveCommentById(commentId) {
-      var author = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+      var author = currentMode.charAt(0).toUpperCase() + currentMode.slice(1);
       resolveComment(commentId, author, author);
       renderRecordDrawer();
       updatePatchQueueCounts();
@@ -3742,7 +3742,7 @@
         return;
       }
       
-      var author = currentRole.charAt(0).toUpperCase() + currentRole.slice(1);
+      var author = currentMode.charAt(0).toUpperCase() + currentMode.slice(1);
       
       var patchRequest = createPatchRequest({
         target: comment.target_type,
