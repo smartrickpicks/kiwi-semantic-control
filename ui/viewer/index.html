@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control Board Viewer</title>
+  <title>Control Board Viewer v0.2</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; padding: 20px; }
@@ -21,7 +21,7 @@
     table { width: 100%; border-collapse: collapse; background: white; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
     th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9em; }
     th { background: #1a1a2e; color: white; font-weight: 600; }
-    tr:hover { background: #f9f9f9; }
+    tr:hover { background: #e8f4fd; cursor: pointer; }
     tr:last-child td { border-bottom: none; }
     .severity-blocking { background: #ffebee; color: #c62828; font-weight: bold; }
     .severity-warning { background: #fff3e0; color: #e65100; }
@@ -36,15 +36,117 @@
     .source-info { font-size: 0.8em; color: #666; margin-bottom: 20px; }
     .null-value { color: #999; font-style: italic; }
     .table-container { overflow-x: auto; }
+    .hidden-row { display: none; }
+
+    .toolbar { background: #1a1a2e; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .toolbar-btn { background: #0f3460; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 0.9em; transition: background 0.2s; }
+    .toolbar-btn:hover { background: #1565c0; }
+    .toolbar-confirm { display: flex; align-items: center; gap: 8px; color: #ffeb3b; font-size: 0.85em; margin-left: auto; }
+    .toolbar-confirm input { width: 18px; height: 18px; cursor: pointer; }
+    .toolbar-confirm label { cursor: pointer; }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: white; border-radius: 8px; max-width: 700px; width: 90%; max-height: 80vh; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+    .modal-header { background: #1a1a2e; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h3 { margin: 0; }
+    .modal-close { background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; line-height: 1; }
+    .modal-body { padding: 20px; overflow-y: auto; max-height: calc(80vh - 60px); }
+    .modal-command { background: #263238; color: #eceff1; padding: 15px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 0.9em; word-break: break-all; margin-bottom: 15px; }
+    .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .modal-btn { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.9em; }
+    .modal-btn-primary { background: #1565c0; color: white; }
+    .modal-btn-primary:hover { background: #1976d2; }
+    .modal-btn-secondary { background: #e0e0e0; color: #333; }
+    .modal-btn-secondary:hover { background: #bdbdbd; }
+    .modal-btn-danger { background: #c62828; color: white; }
+    .modal-btn-danger:hover { background: #d32f2f; }
+    .modal-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .modal-status { margin-top: 15px; padding: 10px; border-radius: 4px; font-size: 0.85em; }
+    .modal-status.success { background: #e8f5e9; color: #2e7d32; }
+    .modal-status.error { background: #ffebee; color: #c62828; }
+    .modal-status.info { background: #e3f2fd; color: #1565c0; }
+
+    .filters { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .filters-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+    .filter-group { display: flex; flex-direction: column; gap: 5px; }
+    .filter-group label { font-size: 0.75em; color: #666; text-transform: uppercase; font-weight: 600; }
+    .filter-search { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em; width: 250px; }
+    .filter-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-chip { padding: 6px 12px; border-radius: 20px; font-size: 0.8em; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
+    .filter-chip.severity-blocking { background: #ffcdd2; border-color: #c62828; }
+    .filter-chip.severity-warning { background: #ffe0b2; border-color: #e65100; }
+    .filter-chip.severity-info { background: #bbdefb; border-color: #1565c0; }
+    .filter-chip.status-ready { background: #c8e6c9; border-color: #2e7d32; }
+    .filter-chip.status-needs_review { background: #ffe0b2; border-color: #f57c00; }
+    .filter-chip.status-blocked { background: #ffcdd2; border-color: #c62828; }
+    .filter-chip.inactive { opacity: 0.4; }
+    .filter-chip:hover { opacity: 1; }
+    .filter-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em; min-width: 150px; }
+
+    .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); display: none; z-index: 900; }
+    .drawer-overlay.active { display: block; }
+    .drawer { position: fixed; top: 0; right: -450px; width: 450px; height: 100vh; background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.2); z-index: 901; transition: right 0.3s ease; display: flex; flex-direction: column; }
+    .drawer.active { right: 0; }
+    .drawer-header { background: #1a1a2e; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    .drawer-header h3 { margin: 0; font-size: 1em; }
+    .drawer-close { background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; line-height: 1; }
+    .drawer-body { padding: 20px; overflow-y: auto; flex-grow: 1; }
+    .drawer-json { background: #263238; color: #eceff1; padding: 15px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap; word-break: break-all; max-height: 60vh; overflow-y: auto; }
+    .drawer-actions { padding: 15px 20px; border-top: 1px solid #eee; flex-shrink: 0; }
+    .drawer-btn { width: 100%; padding: 12px; background: #1565c0; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9em; }
+    .drawer-btn:hover { background: #1976d2; }
   </style>
 </head>
 <body>
   <h1>Control Board Viewer</h1>
-  <p class="subtitle">Governance-only | Offline-first | Read-only preview of sf_packet artifacts</p>
+  <p class="subtitle">v0.2 | Governance-only | Offline-first | Read-only preview</p>
+
+  <div class="toolbar" id="toolbar">
+    <button class="toolbar-btn" data-cmd="validate">Validate</button>
+    <button class="toolbar-btn" data-cmd="preview_baseline">Preview Baseline</button>
+    <button class="toolbar-btn" data-cmd="preview_edge">Preview Edge</button>
+    <button class="toolbar-btn" data-cmd="smoke_baseline">Smoke Baseline</button>
+    <button class="toolbar-btn" data-cmd="smoke_edge">Smoke Edge</button>
+    <div class="toolbar-confirm">
+      <input type="checkbox" id="confirm-run">
+      <label for="confirm-run">I CONFIRM RUN</label>
+    </div>
+  </div>
+
+  <div class="filters" id="filters">
+    <div class="filters-row">
+      <div class="filter-group">
+        <label>Search</label>
+        <input type="text" class="filter-search" id="filter-search" placeholder="Search all fields...">
+      </div>
+      <div class="filter-group">
+        <label>Severity</label>
+        <div class="filter-chips" id="severity-chips">
+          <span class="filter-chip severity-blocking" data-severity="blocking">Blocking</span>
+          <span class="filter-chip severity-warning" data-severity="warning">Warning</span>
+          <span class="filter-chip severity-info" data-severity="info">Info</span>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Status</label>
+        <div class="filter-chips" id="status-chips">
+          <span class="filter-chip status-ready" data-status="ready">Ready</span>
+          <span class="filter-chip status-needs_review" data-status="needs_review">Needs Review</span>
+          <span class="filter-chip status-blocked" data-status="blocked">Blocked</span>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Subtype</label>
+        <select class="filter-select" id="filter-subtype">
+          <option value="">All Subtypes</option>
+        </select>
+      </div>
+    </div>
+  </div>
   
   <div id="source-info" class="source-info"></div>
   <div id="error-container"></div>
-  
   <div id="summary-container"></div>
   
   <div id="diff-container">
@@ -63,11 +165,49 @@ Note: This viewer does NOT execute any commands automatically.
   <div id="issues-container"></div>
   <div id="field-actions-container"></div>
 
+  <div class="modal-overlay" id="command-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">Command</h3>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="modal-description" style="margin-bottom: 15px; color: #666;"></p>
+        <div class="modal-command" id="modal-command"></div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-primary" id="modal-copy">Copy to Clipboard</button>
+          <button class="modal-btn modal-btn-danger" id="modal-run" disabled>Run (Confirm Required)</button>
+          <button class="modal-btn modal-btn-secondary" id="modal-cancel">Cancel</button>
+        </div>
+        <div class="modal-status" id="modal-status" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+  <div class="drawer" id="drawer">
+    <div class="drawer-header">
+      <h3>Record Details</h3>
+      <button class="drawer-close" id="drawer-close">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <pre class="drawer-json" id="drawer-json"></pre>
+    </div>
+    <div class="drawer-actions">
+      <button class="drawer-btn" id="drawer-copy">Copy JSON</button>
+    </div>
+  </div>
+
   <script>
     const PRIMARY_PATH = 'out/sf_packet.preview.json';
     const FALLBACK_PATH = 'examples/expected_outputs/sf_packet.example.json';
     const RELATIVE_PRIMARY = '../../out/sf_packet.preview.json';
     const RELATIVE_FALLBACK = '../../examples/expected_outputs/sf_packet.example.json';
+    const COMMANDS_PATH = 'run_commands.json';
+
+    let commands = {};
+    let allData = { contractResults: [], issues: [], fieldActions: [] };
+    let activeFilters = { search: '', severities: ['blocking', 'warning', 'info'], statuses: ['ready', 'needs_review', 'blocked'], subtype: '' };
 
     function normCmp(v) {
       if (v === null || v === undefined) return '';
@@ -95,7 +235,6 @@ Note: This viewer does NOT execute any commands automatically.
         if (fu !== 0) return fu;
         const fn = compareNullsLast(a.file_name, b.file_name);
         if (fn !== 0) return fn;
-        
         for (const key of extraKeys) {
           const cmp = normCmp(a[key]).localeCompare(normCmp(b[key]));
           if (cmp !== 0) return cmp;
@@ -128,6 +267,30 @@ Note: This viewer does NOT execute any commands automatically.
       return String(v);
     }
 
+    function matchesSearch(row, search) {
+      if (!search) return true;
+      const lowerSearch = search.toLowerCase();
+      return Object.values(row).some(v => {
+        if (v === null || v === undefined) return false;
+        return String(v).toLowerCase().includes(lowerSearch);
+      });
+    }
+
+    function filterData(data, type) {
+      return data.filter(row => {
+        if (!matchesSearch(row, activeFilters.search)) return false;
+        if (type === 'issues' || type === 'fieldActions') {
+          if (!activeFilters.severities.includes(row.severity)) return false;
+        }
+        if (type === 'contractResults') {
+          const status = (row.sf_contract_status || '').toLowerCase();
+          if (!activeFilters.statuses.includes(status)) return false;
+          if (activeFilters.subtype && row.detected_subtype !== activeFilters.subtype) return false;
+        }
+        return true;
+      });
+    }
+
     function renderSummary(summary) {
       const container = document.getElementById('summary-container');
       container.innerHTML = `
@@ -141,31 +304,148 @@ Note: This viewer does NOT execute any commands automatically.
       `;
     }
 
-    function renderTable(containerId, title, data, columns) {
+    function renderTable(containerId, title, data, columns, type) {
       const container = document.getElementById(containerId);
+      const filtered = filterData(data, type);
+      
       if (!data || data.length === 0) {
         container.innerHTML = `<h2>${title}</h2><div class="info">No data</div>`;
         return;
       }
       
       const headers = columns.map(c => `<th>${c.label}</th>`).join('');
-      const rows = data.map(row => {
+      const rows = filtered.map((row, idx) => {
         const cells = columns.map(c => {
           let val = formatValue(row[c.key]);
           let cls = '';
           if (c.key === 'severity') cls = `severity-${row.severity}`;
-          if (c.key === 'sf_contract_status') cls = `status-${row.sf_contract_status?.toLowerCase()}`;
+          if (c.key === 'sf_contract_status') cls = `status-${(row.sf_contract_status || '').toLowerCase()}`;
           return `<td class="${cls}">${val}</td>`;
         }).join('');
-        return `<tr>${cells}</tr>`;
+        return `<tr data-type="${type}" data-idx="${data.indexOf(row)}">${cells}</tr>`;
       }).join('');
       
       container.innerHTML = `
-        <h2>${title} (${data.length})</h2>
+        <h2>${title} (${filtered.length}/${data.length})</h2>
         <div class="table-container">
           <table><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>
         </div>
       `;
+      
+      container.querySelectorAll('tbody tr').forEach(tr => {
+        tr.addEventListener('click', () => openDrawer(type, parseInt(tr.dataset.idx)));
+      });
+    }
+
+    function renderAllTables() {
+      renderTable('contract-results-container', 'Contract Results', allData.contractResults, [
+        { key: 'contract_key', label: 'Contract Key' },
+        { key: 'file_name', label: 'File Name' },
+        { key: 'file_url', label: 'File URL' },
+        { key: 'detected_subtype', label: 'Subtype' },
+        { key: 'sf_contract_status', label: 'Status' },
+        { key: 'notes', label: 'Notes' }
+      ], 'contractResults');
+      
+      renderTable('issues-container', 'Issues', allData.issues, [
+        { key: 'severity', label: 'Severity' },
+        { key: 'contract_key', label: 'Contract Key' },
+        { key: 'file_name', label: 'File Name' },
+        { key: 'sheet', label: 'Sheet' },
+        { key: 'field', label: 'Field' },
+        { key: 'issue_type', label: 'Issue Type' },
+        { key: 'details', label: 'Details' }
+      ], 'issues');
+      
+      renderTable('field-actions-container', 'Field Actions', allData.fieldActions, [
+        { key: 'severity', label: 'Severity' },
+        { key: 'contract_key', label: 'Contract Key' },
+        { key: 'file_name', label: 'File Name' },
+        { key: 'sheet', label: 'Sheet' },
+        { key: 'field', label: 'Field' },
+        { key: 'action', label: 'Action' },
+        { key: 'proposed_value', label: 'Proposed Value' },
+        { key: 'reason_text', label: 'Reason' }
+      ], 'fieldActions');
+    }
+
+    function populateSubtypeDropdown() {
+      const subtypes = [...new Set(allData.contractResults.map(r => r.detected_subtype).filter(Boolean))].sort();
+      const select = document.getElementById('filter-subtype');
+      select.innerHTML = '<option value="">All Subtypes</option>' + 
+        subtypes.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    function openDrawer(type, idx) {
+      const dataMap = { contractResults: allData.contractResults, issues: allData.issues, fieldActions: allData.fieldActions };
+      const record = dataMap[type][idx];
+      if (!record) return;
+      
+      document.getElementById('drawer-json').textContent = JSON.stringify(record, null, 2);
+      document.getElementById('drawer').classList.add('active');
+      document.getElementById('drawer-overlay').classList.add('active');
+    }
+
+    function closeDrawer() {
+      document.getElementById('drawer').classList.remove('active');
+      document.getElementById('drawer-overlay').classList.remove('active');
+    }
+
+    function openCommandModal(cmdKey) {
+      const cmd = commands.commands?.[cmdKey];
+      const desc = commands.descriptions?.[cmdKey] || '';
+      if (!cmd) return;
+      
+      document.getElementById('modal-title').textContent = cmdKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      document.getElementById('modal-description').textContent = desc;
+      document.getElementById('modal-command').textContent = cmd;
+      document.getElementById('modal-status').style.display = 'none';
+      updateRunButton();
+      document.getElementById('command-modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('command-modal').classList.remove('active');
+    }
+
+    function updateRunButton() {
+      const confirmChecked = document.getElementById('confirm-run').checked;
+      const runBtn = document.getElementById('modal-run');
+      runBtn.disabled = !confirmChecked;
+      runBtn.textContent = confirmChecked ? 'Run Command' : 'Run (Confirm Required)';
+    }
+
+    function showModalStatus(message, type) {
+      const status = document.getElementById('modal-status');
+      status.textContent = message;
+      status.className = 'modal-status ' + type;
+      status.style.display = 'block';
+    }
+
+    async function copyToClipboard(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (e) {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        return true;
+      }
+    }
+
+    async function loadCommands() {
+      try {
+        const resp = await fetch(COMMANDS_PATH);
+        if (resp.ok) {
+          commands = await resp.json();
+        }
+      } catch (e) {
+        console.warn('Could not load run_commands.json');
+      }
     }
 
     async function loadData() {
@@ -202,40 +482,104 @@ Note: This viewer does NOT execute any commands automatically.
       
       renderSummary(data.sf_summary || {});
       
-      const contractResults = sortByJoinTriplet(data.sf_contract_results || []);
-      renderTable('contract-results-container', 'Contract Results', contractResults, [
-        { key: 'contract_key', label: 'Contract Key' },
-        { key: 'file_name', label: 'File Name' },
-        { key: 'file_url', label: 'File URL' },
-        { key: 'detected_subtype', label: 'Subtype' },
-        { key: 'sf_contract_status', label: 'Status' },
-        { key: 'notes', label: 'Notes' }
-      ]);
+      allData.contractResults = sortByJoinTriplet(data.sf_contract_results || []);
+      allData.issues = sortBySeverity(data.sf_issues || []);
+      allData.fieldActions = sortBySeverity(data.sf_field_actions || []);
       
-      const issues = sortBySeverity(data.sf_issues || []);
-      renderTable('issues-container', 'Issues', issues, [
-        { key: 'severity', label: 'Severity' },
-        { key: 'contract_key', label: 'Contract Key' },
-        { key: 'file_name', label: 'File Name' },
-        { key: 'sheet', label: 'Sheet' },
-        { key: 'field', label: 'Field' },
-        { key: 'issue_type', label: 'Issue Type' },
-        { key: 'details', label: 'Details' }
-      ]);
-      
-      const fieldActions = sortBySeverity(data.sf_field_actions || []);
-      renderTable('field-actions-container', 'Field Actions', fieldActions, [
-        { key: 'severity', label: 'Severity' },
-        { key: 'contract_key', label: 'Contract Key' },
-        { key: 'file_name', label: 'File Name' },
-        { key: 'sheet', label: 'Sheet' },
-        { key: 'field', label: 'Field' },
-        { key: 'action', label: 'Action' },
-        { key: 'proposed_value', label: 'Proposed Value' },
-        { key: 'reason_text', label: 'Reason' }
-      ]);
+      populateSubtypeDropdown();
+      renderAllTables();
     }
 
+    document.getElementById('toolbar').addEventListener('click', async e => {
+      const btn = e.target.closest('.toolbar-btn');
+      if (btn) {
+        const cmdKey = btn.dataset.cmd;
+        const cmd = commands.commands?.[cmdKey];
+        if (cmd) {
+          const success = await copyToClipboard(cmd);
+          openCommandModal(cmdKey);
+          showModalStatus(success ? 'Command copied to clipboard!' : 'Could not auto-copy', success ? 'success' : 'error');
+        }
+      }
+    });
+
+    document.getElementById('modal-close').addEventListener('click', closeModal);
+    document.getElementById('modal-cancel').addEventListener('click', closeModal);
+    document.getElementById('command-modal').addEventListener('click', e => {
+      if (e.target.id === 'command-modal') closeModal();
+    });
+
+    document.getElementById('modal-copy').addEventListener('click', async () => {
+      const cmd = document.getElementById('modal-command').textContent;
+      const success = await copyToClipboard(cmd);
+      showModalStatus(success ? 'Copied to clipboard!' : 'Copy failed', success ? 'success' : 'error');
+    });
+
+    document.getElementById('modal-run').addEventListener('click', () => {
+      showModalStatus('Execution is not available in browser environment. Please run the copied command in your terminal.', 'info');
+    });
+
+    document.getElementById('confirm-run').addEventListener('change', updateRunButton);
+
+    document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+    document.getElementById('drawer-overlay').addEventListener('click', closeDrawer);
+    document.getElementById('drawer-copy').addEventListener('click', async () => {
+      const json = document.getElementById('drawer-json').textContent;
+      const success = await copyToClipboard(json);
+      const btn = document.getElementById('drawer-copy');
+      const orig = btn.textContent;
+      btn.textContent = success ? 'Copied!' : 'Failed';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+
+    document.getElementById('filter-search').addEventListener('input', e => {
+      activeFilters.search = e.target.value;
+      renderAllTables();
+    });
+
+    document.getElementById('severity-chips').addEventListener('click', e => {
+      const chip = e.target.closest('.filter-chip');
+      if (!chip) return;
+      const sev = chip.dataset.severity;
+      const idx = activeFilters.severities.indexOf(sev);
+      if (idx >= 0) {
+        activeFilters.severities.splice(idx, 1);
+        chip.classList.add('inactive');
+      } else {
+        activeFilters.severities.push(sev);
+        chip.classList.remove('inactive');
+      }
+      renderAllTables();
+    });
+
+    document.getElementById('status-chips').addEventListener('click', e => {
+      const chip = e.target.closest('.filter-chip');
+      if (!chip) return;
+      const status = chip.dataset.status;
+      const idx = activeFilters.statuses.indexOf(status);
+      if (idx >= 0) {
+        activeFilters.statuses.splice(idx, 1);
+        chip.classList.add('inactive');
+      } else {
+        activeFilters.statuses.push(status);
+        chip.classList.remove('inactive');
+      }
+      renderAllTables();
+    });
+
+    document.getElementById('filter-subtype').addEventListener('change', e => {
+      activeFilters.subtype = e.target.value;
+      renderAllTables();
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        closeModal();
+        closeDrawer();
+      }
+    });
+
+    loadCommands();
     loadData();
   </script>
 </body>

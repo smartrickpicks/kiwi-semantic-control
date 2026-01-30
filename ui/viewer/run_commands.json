@@ -1,0 +1,17 @@
+{
+  "version": "0.2",
+  "commands": {
+    "validate": "python3 local_runner/validate_config.py --base config/config_pack.base.json --patch config/config_pack.example.patch.json",
+    "preview_baseline": "python3 local_runner/run_local.py --base config/config_pack.base.json --patch config/config_pack.example.patch.json --standardized examples/standardized_dataset.example.json --out out/sf_packet.preview.json",
+    "preview_edge": "python3 local_runner/run_local.py --base config/config_pack.base.json --patch config/config_pack.example.patch.json --standardized examples/standardized_dataset.edge_cases.json --out out/sf_packet.preview.json",
+    "smoke_baseline": "bash scripts/replit_smoke.sh",
+    "smoke_edge": "bash scripts/replit_smoke.sh --edge"
+  },
+  "descriptions": {
+    "validate": "Validate configuration files (base + patch)",
+    "preview_baseline": "Generate preview with baseline example data",
+    "preview_edge": "Generate preview with edge case data",
+    "smoke_baseline": "Run smoke test against baseline expected output",
+    "smoke_edge": "Run smoke test against edge expected output"
+  }
+}
