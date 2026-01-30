@@ -1,0 +1,150 @@
+{
+  "status_check": {
+    "what_changed": "Docs rename + nomenclature alignment to Orchestrate OS (docs-only; semantics unchanged).",
+    "what_this_unlocks": "We can now proceed with the build tasks that depend on stable naming + admin-facing labels (without waiting on Kiwi).",
+    "do_we_need_kiwi_right_now": false,
+    "why": "Kiwi already delivered/you already merged the naming+README updates. Any new Kiwi work should be only for NEW semantics/features (not re-verifying a completed rename)."
+  },
+  "next_move": {
+    "owner": "REPLIT",
+    "task_id": "D1_MASTERLINE_AUTOLOAD_DEV_TOGGLE",
+    "goal": "Make dev/testing frictionless by auto-binding the repo ‘master artifacts’ into the UI (without changing offline-first or determinism).",
+    "why_this_is_first": [
+      "It immediately improves velocity (no more manual paste every session)",
+      "It reduces operator confusion (defaults always load the correct masters)",
+      "It creates the foundation for Admin workflow-map + JSON tree editor because paths are now stable and present"
+    ]
+  },
+  "first_prompt_to_send": {
+    "recipient": "REPLIT",
+    "prompt_type": "implementation_instruction",
+    "prompt": {
+      "title": "Implement Dev Masterline Autoload + Configure Wizard (non-invasive)",
+      "constraints": [
+        "Keep offline-first (no network calls)",
+        "Do NOT remove existing manual load flows (paste/drop/path hint stay)",
+        "Do NOT change semantics of any artifacts",
+        "UI may read repo files in dev mode only (fetch local relative paths is allowed in dev)",
+        "Exports remain copy-only"
+      ],
+      "acceptance_criteria": [
+        "A single Admin toggle enables/disables Dev Masterline Autoload",
+        "When enabled, the UI auto-binds master artifacts into their respective slots on launch",
+        "If any artifact is missing, show a 'Missing' chip + do not crash",
+        "User can still override bindings via Data Sources drawer / Ruleset drawer"
+      ],
+      "implementation_details": {
+        "new_admin_setting": {
+          "key": "dev_masterline_autoload",
+          "default": true,
+          "storage": "localStorage",
+          "ui_location": "Admin → Settings (or Session section) with a clear badge: DEV ONLY"
+        },
+        "master_artifact_bindings": [
+          {
+            "slot": "Truth Config",
+            "human_label": "Truth Config",
+            "internal_key": "truth_config_path",
+            "default_path_candidates": [
+              "config/config_pack.base.json",
+              "config/config_pack.base.jsonc",
+              "config/config_pack.base.json.txt"
+            ]
+          },
+          {
+            "slot": "Proposed Changes",
+            "human_label": "Proposed Changes",
+            "internal_key": "proposed_patch_path",
+            "default_path_candidates": [
+              "config/config_pack.v0.1.3.patch.json",
+              "config/config_pack.patch.json",
+              "config/config_pack.example.patch.json"
+            ]
+          },
+          {
+            "slot": "Reference Expected",
+            "human_label": "Reference Expected",
+            "internal_key": "reference_expected_path",
+            "default_path_candidates": [
+              "examples/expected_outputs/sf_packet.example.json",
+              "examples/expected_outputs/sf_packet.edge_cases.json"
+            ]
+          },
+          {
+            "slot": "Standardized Dataset Example",
+            "human_label": "Standardized Dataset (Example)",
+            "internal_key": "standardized_dataset_example_path",
+            "default_path_candidates": [
+              "examples/standardized_dataset.example.json",
+              "examples/standardized_dataset.edge_cases.json"
+            ]
+          }
+        ],
+        "boot_behavior": {
+          "when": "On app init AFTER UI shell mounts",
+          "logic": [
+            "If dev_masterline_autoload=false → do nothing",
+            "Else attempt to fetch first-resolving path for each binding (relative fetch)",
+            "Parse JSON; store in the same in-memory structure used by manual load",
+            "Update UI chips: Loaded / Missing",
+            "Do not mark Evidence gates as satisfied (evidence remains paste-only)"
+          ]
+        },
+        "configure_wizard": {
+          "trigger": "If any required master binding missing OR first-run with no localStorage config",
+          "ui": "A small 'Configure' CTA in the Session section that opens a stepper in a right-side drawer",
+          "steps": [
+            "Step 1: Bind Truth Config",
+            "Step 2: Bind Proposed Changes",
+            "Step 3: Bind Reference Expected",
+            "Step 4: Finish (saves to localStorage)"
+          ],
+          "note": "This is UI-only binding; it does not edit any files."
+        },
+        "ui_copy_rules": [
+          "Never show 'sf_packet' in UI — use 'Preview Packet'",
+          "Call these 'Master Artifacts (Dev)'",
+          "Add a tooltip: 'These are loaded from repo paths to speed up development. In production you’ll load artifacts explicitly.'"
+        ]
+      },
+      "definition_of_done": [
+        "Dev Masterline Autoload works",
+        "No regressions in existing paste/drop/path load flows",
+        "No console errors",
+        "Missing files handled gracefully"
+      ]
+    }
+  },
+  "after_D1_next_tasks_in_order": [
+    {
+      "task_id": "D4_TOOLTIPS_PLAIN_ENGLISH_SWEEP",
+      "owner": "REPLIT",
+      "why_next": "Once bindings are stable, we should eliminate internal jargon everywhere to reduce training cost.",
+      "deliverable": "Apply nomenclature pack labels + tooltips to all surfaces (sidebar, drawers, tables, modals)."
+    },
+    {
+      "task_id": "D2_ADMIN_WORKFLOW_MAP_CONTEXT_LAYERS",
+      "owner": "REPLIT",
+      "why_next": "This implements the UI illustration you liked: a nested, inspectable context layer tree.",
+      "deliverable": "Admin page that renders a tree view of config artifacts + order-of-operations + raw JSON toggle (read-only by default)."
+    },
+    {
+      "task_id": "PRD_PATCH_QUEUE_AND_PATCH_LIFECYCLE",
+      "owner": "KIWI",
+      "why_next": "This is a NEW feature (patch comment queue + lifecycle + blacklists), so it needs a canonical PRD/spec before Replit builds it.",
+      "deliverable": "PRD + schema for Patch Queue items, statuses, roles, and gating rules."
+    },
+    {
+      "task_id": "D3_STANDARDIZER_JSON_CANON",
+      "owner": "KIWI_then_REPLIT",
+      "why": "Standardizer touches semantics and determinism; Kiwi should define the canonical merged_dataset JSON contract, then Replit implements.",
+      "deliverable": "CSV/XLSX import → merged_dataset.json with deterministic ordering and an issue model."
+    }
+  ],
+  "what_i_need_from_you_right_now": {
+    "action": "Send the Replit prompt above exactly as-is.",
+    "optional_if_replit_blocks_on_paths": [
+      "If Replit says paths differ, paste your repo tree for /config and /examples (just file names) and we’ll update the default_path_candidates."
+    ]
+  }
+}
