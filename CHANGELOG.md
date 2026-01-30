@@ -48,3 +48,23 @@ Date: 2026-01-29
 ### Deprecated
 - None
   - Why: Non-breaking governance-surface enhancements only.
+
+---
+
+## Version: v0.1.2
+Date: 2026-01-30
+
+### Changed
+- Local preview harness: deterministic output ordering fix
+  - Why: Ensure entries with contract_key sort before entries without, providing consistent array ordering across sf_contract_results, sf_field_actions, sf_issues, and sf_change_log.
+  - Impact: Smoke test now passes with strict diff comparison.
+
+### Verification
+- Replit golden run verified — see docs/replit_baseline.md
+  - Python 3.12.12, Linux-6.14.11-x86_64-with-glibc2.40
+  - out/sf_packet.preview.json SHA256: bea0af0e24f3994b80ac84bfdf6aaa4241b18ed045c0d1ef691bee8c55679452
+  - examples/expected_outputs/sf_packet.example.json SHA256: f37d2dfe25829da2064b63c1012bb51d31f52ec7672098d20c8943d9dc2c8105
+
+### Deprecated
+- None
+  - Why: Bug fix only; no semantic changes.

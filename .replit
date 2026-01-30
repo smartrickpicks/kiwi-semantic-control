@@ -8,3 +8,26 @@ channel = "stable-25_05"
 
 [agent]
 expertMode = true
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Smoke Test"
+
+[[workflows.workflow]]
+name = "Smoke Test"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "bash scripts/replit_smoke.sh"
+
+[workflows.workflow.metadata]
+outputType = "console"

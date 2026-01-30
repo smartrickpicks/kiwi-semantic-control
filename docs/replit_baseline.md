@@ -9,17 +9,17 @@ Scope
 - No secrets. Record placeholders if sensitive values are involved elsewhere.
 
 Checklist (complete in order)
-- [ ] TASK-18 strict smoke test passed (no `--allow-diff`)
-- [ ] `out/sf_packet.preview.json` created
-- [ ] SHA256 recorded
-- [ ] Environment details recorded
+- [x] TASK-18 strict smoke test passed (no `--allow-diff`)
+- [x] `out/sf_packet.preview.json` created
+- [x] SHA256 recorded
+- [x] Environment details recorded
 
 Environment Details
-- Date (UTC): <fill>
-- Replit workspace type: <fill>  (e.g., “Default Nix Python”)
-- Python version: <paste output of `python3 --version`>
-- Platform: <paste `python3 -c "import platform; print(platform.platform())"`>
-- Repo commit (short SHA): <fill>
+- Date (UTC): 2026-01-30 00:23 UTC
+- Replit workspace type: Default Nix Python
+- Python version: Python 3.12.12
+- Platform: Linux-6.14.11-x86_64-with-glibc2.40
+- Repo commit (short SHA): b78930f
 
 Config Versions
 - base.version: v0.1.0
@@ -47,9 +47,9 @@ shasum -a 256 out/sf_packet.preview.json | awk '{print $1}'
 ```
 
 Recorded Hashes
-- out/sf_packet.preview.json (SHA256): <fill>
-- examples/expected_outputs/sf_packet.example.json (SHA256): <fill, optional>
+- out/sf_packet.preview.json (SHA256): bea0af0e24f3994b80ac84bfdf6aaa4241b18ed045c0d1ef691bee8c55679452
+- examples/expected_outputs/sf_packet.example.json (SHA256): f37d2dfe25829da2064b63c1012bb51d31f52ec7672098d20c8943d9dc2c8105
 
 Result
 - Status: PASS
-- Notes: <any relevant observations; keep concise>
+- Notes: Deterministic output ordering fix applied (v0.1.2). Entries with contract_key now sort before entries without.
