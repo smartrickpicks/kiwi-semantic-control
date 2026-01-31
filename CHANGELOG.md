@@ -1,5 +1,54 @@
 # CHANGELOG
 
+## Version: v1.4.0
+Date: 2026-01-31
+
+### Added (DataDash V1 Operator Ergonomics)
+
+- All-Data Grid Page (#/grid)
+  - Dense spreadsheet-style view of standardized dataset
+  - Sheet selector dropdown (multi-sheet aware, deterministic ordering)
+  - Horizontal scroll with sticky header
+  - Column toggle menu for visibility control
+  - Search input for full-text filtering
+  - Status filter chips: All, Flagged, Needs Review, Blocked, Finalized
+
+- Deterministic Grid Filtering with Deep Links
+  - Query params: f=<status>, sheet=<name>, q=<search>
+  - Filter order: sheet -> status -> search
+  - Sorting: severity (blocking > warning > info) -> identity triplet -> row index
+  - Examples: #/grid?f=flagged, #/grid?sheet=Contracts&f=needs_review&q=sony
+
+- Row Review Route (#/row/:id)
+  - Opens record detail drawer from Grid or Triage
+  - Consistent entry point for single-row review
+
+### Changed
+
+- Triage Converted to Alert Lens
+  - Summary cards now clickable - navigate to filtered grid views
+  - Click Contracts -> #/grid?f=all
+  - Click Ready -> #/grid?f=ready
+  - Click Needs Review -> #/grid?f=needs_review
+  - Click Blocked -> #/grid?f=blocked
+
+- Default Route Logic
+  - If dataset loaded: default route is #/grid
+  - If no dataset: default route is #/triage
+
+- Sidebar Navigation
+  - Added "Views" section with All-Data Grid link
+  - Queues section remains for Triage alert lens
+
+### Preserved
+
+- RBAC route guards (admin UI only under #/admin/*)
+- Loader remains drawer-only (not routable)
+- Offline-first, deterministic behavior
+- No new dependencies
+
+---
+
 ## Version: v1.3.1
 Date: 2026-01-31
 

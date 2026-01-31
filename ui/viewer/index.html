@@ -57,6 +57,8 @@
     .summary-card { background: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; min-width: 100px; }
     .summary-card .count { font-size: 2em; font-weight: bold; }
     .summary-card .label { font-size: 0.85em; color: #666; text-transform: uppercase; }
+    .summary-card.clickable { cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
+    .summary-card.clickable:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
     .ready .count { color: #2e7d32; }
     .needs-review .count { color: #f57c00; }
     .blocked .count { color: #c62828; }
@@ -328,6 +330,21 @@
     .filter-chip.status-blocked { background: #ffcdd2; border-color: #c62828; }
     .filter-chip.inactive { opacity: 0.4; }
     .filter-chip:hover { opacity: 1; }
+    .filter-chip.active { background: #1976d2; color: white; border-color: #1565c0; }
+
+    /* Grid Table Styles */
+    .grid-table { min-width: 800px; }
+    .grid-table th, .grid-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e0e0e0; white-space: nowrap; }
+    .grid-table th { font-weight: 600; color: #333; background: #f5f5f5; border-bottom: 2px solid #ddd; }
+    .grid-table tr:hover { background: #f8f9fa; }
+    .grid-table tr.clickable { cursor: pointer; }
+    .grid-table td.status-ready { color: #2e7d32; }
+    .grid-table td.status-needs_review { color: #f57c00; }
+    .grid-table td.status-blocked { color: #c62828; }
+    .grid-table td.status-finalized { color: #1565c0; }
+    .grid-table td.status-flagged { color: #7b1fa2; }
+    .grid-table td.truncated { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+    .grid-table .row-index { color: #999; font-size: 0.8em; }
     .filter-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em; min-width: 150px; }
 
     .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); display: none; z-index: 900; }
@@ -710,8 +727,16 @@
         <div class="nav-divider"></div>
 
         <div class="nav-section">
+          <div class="nav-section-header">Views</div>
+          <a class="nav-item" data-page="grid" href="#/grid">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">All-Data Grid</span>
+          </a>
+        </div>
+
+        <div class="nav-section">
           <div class="nav-section-header">Queues</div>
-          <a class="nav-item queue-item active" data-page="triage" data-queue="todo" href="#/triage">
+          <a class="nav-item queue-item" data-page="triage" data-queue="todo" href="#/triage">
             <span class="nav-icon">📋</span>
             <span class="nav-label">To Do</span>
             <span class="nav-count" id="queue-count-todo">0</span>
@@ -912,9 +937,9 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Triage</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.3.1</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.4.0</span>
           </div>
-          <p class="page-desc">View summary cards, filter issues by severity/status, and drill down into records.</p>
+          <p class="page-desc">Alert summary view. Click status cards to open filtered grid views.</p>
           <div class="triage-session-info" id="triage-session-info" style="margin-top: 10px; font-size: 0.85em; color: #666;"></div>
         </div>
 
@@ -956,12 +981,65 @@
         <div id="field-actions-container"></div>
       </div><!-- end page-triage -->
 
+      <!-- ALL-DATA GRID PAGE -->
+      <div class="page" id="page-grid">
+        <div class="page-header">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <h2>All-Data Grid</h2>
+            <span style="font-size: 0.7em; color: #999;">PAGE: GRID | BUILD v1.4.0</span>
+          </div>
+          <p class="page-desc">Dense spreadsheet view of all records with filtering and search.</p>
+        </div>
+
+        <!-- Grid Controls -->
+        <div class="grid-controls" style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label style="font-size: 0.85em; color: #666;">Sheet:</label>
+            <select id="grid-sheet-selector" class="filter-select" style="min-width: 160px;">
+              <option value="">All Sheets</option>
+            </select>
+          </div>
+          <div style="flex: 1; min-width: 200px;">
+            <input type="text" id="grid-search" class="filter-search" placeholder="Search all fields..." style="width: 100%;">
+          </div>
+          <div class="filter-chips" id="grid-status-chips" style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <span class="filter-chip active" data-filter="all" onclick="setGridFilter('all')">All</span>
+            <span class="filter-chip status-ready" data-filter="ready" onclick="setGridFilter('ready')">Ready</span>
+            <span class="filter-chip status-needs_review" data-filter="needs_review" onclick="setGridFilter('needs_review')">Needs Review</span>
+            <span class="filter-chip status-blocked" data-filter="blocked" onclick="setGridFilter('blocked')">Blocked</span>
+          </div>
+          <button class="top-toolbar-btn" id="grid-column-toggle" onclick="toggleColumnMenu()" title="Toggle columns">Columns</button>
+        </div>
+
+        <!-- Column Toggle Menu (hidden by default) -->
+        <div id="grid-column-menu" style="display: none; position: fixed; top: 120px; right: 40px; background: white; border: 1px solid #ddd; border-radius: 8px; padding: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; max-height: 300px; overflow-y: auto;">
+          <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Visible Columns</div>
+          <div id="grid-column-checkboxes"></div>
+        </div>
+
+        <!-- Dense Grid Table -->
+        <div class="grid-table-container" style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px;">
+          <table class="grid-table" id="grid-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+            <thead id="grid-thead" style="position: sticky; top: 0; background: #f5f5f5; z-index: 10;">
+              <tr id="grid-header-row"></tr>
+            </thead>
+            <tbody id="grid-tbody"></tbody>
+          </table>
+        </div>
+
+        <!-- Grid Footer -->
+        <div class="grid-footer" style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; color: #666; font-size: 0.85em;">
+          <span id="grid-row-count">0 records</span>
+          <span id="grid-filter-info"></span>
+        </div>
+      </div><!-- end page-grid -->
+
       <!-- PATCH STUDIO PAGE -->
       <div class="page" id="page-patch">
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Patch Studio</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH-STUDIO | BUILD v1.3.1</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH-STUDIO | BUILD v1.4.0</span>
           </div>
           <p class="page-desc">Select records, build rule patches, validate with preflight gate, and export.</p>
         </div>
@@ -1031,7 +1109,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Review</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: CONFIG-INSPECTOR | BUILD v1.3.1</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: CONFIG-INSPECTOR | BUILD v1.4.0</span>
           </div>
           <p class="page-desc">Inspect config deltas, compare artifact versions, and generate evidence summaries.</p>
         </div>
@@ -1102,7 +1180,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Admin Console</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-CONSOLE | BUILD v1.3.1</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-CONSOLE | BUILD v1.4.0</span>
           </div>
           <p class="page-desc">Centralized admin tools for governance, config, standardization, and patch management.</p>
         </div>
@@ -4725,8 +4803,14 @@
       options = options || {};
       // Loader is now a drawer, not a page - redirect loader requests to triage
       if (page === 'loader') page = 'triage';
-      var pages = ['triage', 'patch', 'review', 'admin'];
-      if (!pages.includes(page)) page = 'triage';
+      var pages = ['triage', 'grid', 'patch', 'review', 'admin', 'row'];
+      // Handle row/:id routes
+      if (page.startsWith('row/')) {
+        var rowId = page.split('/')[1];
+        openRowReviewDrawer(rowId);
+        return;
+      }
+      if (!pages.includes(page)) page = dataLoaded ? 'grid' : 'triage';
       
       console.log('[Navigate] Attempting navigation to: ' + page + ', dataLoaded: ' + dataLoaded);
       
@@ -4808,18 +4892,47 @@
         switchAdminTab(adminTab);
       }
       
-      // Update hash (include tab for admin deep-links)
+      // If navigating to grid, initialize grid
+      if (page === 'grid') {
+        setTimeout(function() { initGrid(); }, 0);
+      }
+      
+      // Update hash (include tab for admin deep-links, preserve grid query params)
       if (page === 'admin' && adminTab && adminTab !== 'governance') {
         window.location.hash = '#/admin/' + adminTab;
+      } else if (page === 'grid' && options.queryParams) {
+        window.location.hash = '#/grid?' + options.queryParams;
       } else {
         window.location.hash = '#/' + page;
       }
     }
     
+    // Navigate to grid with filter (for Triage alert lens)
+    function navigateToGridFiltered(filter, sheet) {
+      var params = [];
+      if (filter && filter !== 'all') params.push('f=' + encodeURIComponent(filter));
+      if (sheet) params.push('sheet=' + encodeURIComponent(sheet));
+      navigateTo('grid', { queryParams: params.join('&') });
+    }
+    
     function recoverNavigation() {
-      var currentHash = window.location.hash.replace('#/', '') || 'triage';
-      // Loader is now a drawer, redirect to triage
-      if (currentHash === 'loader') currentHash = 'triage';
+      var currentHash = window.location.hash.replace('#/', '') || (dataLoaded ? 'grid' : 'triage');
+      // Loader is now a drawer, redirect appropriately
+      if (currentHash === 'loader') currentHash = dataLoaded ? 'grid' : 'triage';
+      // Handle grid query params
+      if (currentHash.startsWith('grid?')) {
+        var queryPart = currentHash.split('?')[1];
+        gridState.filter = 'all';
+        gridState.sheet = '';
+        gridState.search = '';
+        if (queryPart) {
+          var params = new URLSearchParams(queryPart);
+          gridState.filter = params.get('f') || 'all';
+          gridState.sheet = params.get('sheet') || '';
+          gridState.search = params.get('q') || '';
+        }
+        currentHash = 'grid';
+      }
       console.log('[RecoverNav] Recovering to: ' + currentHash);
       navigateTo(currentHash);
       return true;
@@ -4991,6 +5104,279 @@
       document.getElementById('loader-drawer').classList.remove('active');
     }
     
+    // ============================================================
+    // GRID FUNCTIONS (v1.4.0)
+    // ============================================================
+    var gridState = {
+      filter: 'all',
+      sheet: '',
+      search: '',
+      visibleColumns: [],
+      allColumns: []
+    };
+
+    function initGrid() {
+      // Parse query params from URL
+      var hash = window.location.hash;
+      var queryMatch = hash.match(/\?(.+)$/);
+      if (queryMatch) {
+        var params = new URLSearchParams(queryMatch[1]);
+        gridState.filter = params.get('f') || 'all';
+        gridState.sheet = params.get('sheet') || '';
+        gridState.search = params.get('q') || '';
+      }
+      
+      // Apply state to UI
+      var searchInput = document.getElementById('grid-search');
+      if (searchInput) searchInput.value = gridState.search;
+      
+      var sheetSelector = document.getElementById('grid-sheet-selector');
+      if (sheetSelector) sheetSelector.value = gridState.sheet;
+      
+      updateGridFilterChips();
+      populateGridSheetSelector();
+      renderGrid();
+    }
+
+    function populateGridSheetSelector() {
+      var selector = document.getElementById('grid-sheet-selector');
+      if (!selector || !currentDataset) return;
+      
+      selector.innerHTML = '<option value="">All Sheets</option>';
+      var sheets = new Set();
+      
+      // Collect unique sheet names from dataset
+      if (currentDataset.sf_contract_results) {
+        currentDataset.sf_contract_results.forEach(function(r) {
+          if (r.sheet) sheets.add(r.sheet);
+        });
+      }
+      
+      // Sort deterministically
+      Array.from(sheets).sort().forEach(function(sheet) {
+        var opt = document.createElement('option');
+        opt.value = sheet;
+        opt.textContent = sheet;
+        if (sheet === gridState.sheet) opt.selected = true;
+        selector.appendChild(opt);
+      });
+      
+      // Attach change handler
+      selector.onchange = function() {
+        gridState.sheet = selector.value;
+        updateGridURL();
+        renderGrid();
+      };
+    }
+
+    function setGridFilter(filter) {
+      gridState.filter = filter;
+      updateGridFilterChips();
+      updateGridURL();
+      renderGrid();
+    }
+
+    function updateGridFilterChips() {
+      var chips = document.querySelectorAll('#grid-status-chips .filter-chip');
+      chips.forEach(function(chip) {
+        if (chip.dataset.filter === gridState.filter) {
+          chip.classList.add('active');
+        } else {
+          chip.classList.remove('active');
+        }
+      });
+    }
+
+    function updateGridURL() {
+      var params = [];
+      if (gridState.filter && gridState.filter !== 'all') params.push('f=' + encodeURIComponent(gridState.filter));
+      if (gridState.sheet) params.push('sheet=' + encodeURIComponent(gridState.sheet));
+      if (gridState.search) params.push('q=' + encodeURIComponent(gridState.search));
+      
+      var newHash = '#/grid' + (params.length > 0 ? '?' + params.join('&') : '');
+      if (window.location.hash !== newHash) {
+        history.replaceState(null, '', newHash);
+      }
+    }
+
+    function renderGrid() {
+      if (!dataLoaded || !currentDataset) {
+        document.getElementById('grid-tbody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">No data loaded</td></tr>';
+        document.getElementById('grid-row-count').textContent = '0 records';
+        return;
+      }
+      
+      var records = currentDataset.sf_contract_results || [];
+      
+      // Apply filters: sheet -> status -> search
+      var filtered = records;
+      
+      // Sheet filter
+      if (gridState.sheet) {
+        filtered = filtered.filter(function(r) { return r.sheet === gridState.sheet; });
+      }
+      
+      // Status filter
+      if (gridState.filter && gridState.filter !== 'all') {
+        filtered = filtered.filter(function(r) {
+          var status = (r.status || '').toLowerCase().replace(/\s+/g, '_');
+          return status === gridState.filter;
+        });
+      }
+      
+      // Search filter
+      if (gridState.search) {
+        var searchLower = gridState.search.toLowerCase();
+        filtered = filtered.filter(function(r) {
+          return Object.values(r).some(function(v) {
+            return String(v).toLowerCase().includes(searchLower);
+          });
+        });
+      }
+      
+      // Deterministic sorting: severity -> identity triplet -> original index
+      // Assign stable indices first
+      filtered.forEach(function(r, i) { 
+        if (r._originalIdx === undefined) {
+          r._originalIdx = records.indexOf(r);
+        }
+      });
+      
+      filtered.sort(function(a, b) {
+        // Severity order: blocking > warning > info
+        var sevOrder = { blocking: 0, warning: 1, info: 2 };
+        var sevA = sevOrder[(a.severity || 'info').toLowerCase()] || 2;
+        var sevB = sevOrder[(b.severity || 'info').toLowerCase()] || 2;
+        if (sevA !== sevB) return sevA - sevB;
+        
+        // Identity triplet
+        var ckA = String(a.contract_key || '');
+        var ckB = String(b.contract_key || '');
+        if (ckA !== ckB) return ckA.localeCompare(ckB);
+        
+        var fuA = String(a.file_url || '');
+        var fuB = String(b.file_url || '');
+        if (fuA !== fuB) return fuA.localeCompare(fuB);
+        
+        var fnA = String(a.file_name || '');
+        var fnB = String(b.file_name || '');
+        if (fnA !== fnB) return fnA.localeCompare(fnB);
+        
+        // Fallback to stable original row index
+        return (a._originalIdx || 0) - (b._originalIdx || 0);
+      });
+      
+      // Determine columns
+      var columns = ['contract_key', 'file_name', 'file_url', 'status', 'subtype'];
+      if (gridState.visibleColumns.length === 0) {
+        gridState.visibleColumns = columns.slice();
+        gridState.allColumns = columns.slice();
+      }
+      
+      // Render header
+      var headerRow = document.getElementById('grid-header-row');
+      headerRow.innerHTML = '<th class="row-index">#</th>' + 
+        gridState.visibleColumns.map(function(col) {
+          return '<th>' + col.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); }) + '</th>';
+        }).join('');
+      
+      // Render body
+      var tbody = document.getElementById('grid-tbody');
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="' + (gridState.visibleColumns.length + 1) + '" style="text-align: center; padding: 40px; color: #666;">No records match filters</td></tr>';
+      } else {
+        tbody.innerHTML = filtered.map(function(r, idx) {
+          var statusClass = 'status-' + (r.status || '').toLowerCase().replace(/\s+/g, '_');
+          return '<tr class="clickable" onclick="openRowReviewDrawer(\'' + (r.contract_key || idx) + '\')">' +
+            '<td class="row-index">' + (idx + 1) + '</td>' +
+            gridState.visibleColumns.map(function(col) {
+              var val = r[col];
+              if (val === null || val === undefined) val = '';
+              if (typeof val === 'object') val = JSON.stringify(val);
+              var cellClass = col === 'status' ? statusClass : '';
+              return '<td class="' + cellClass + ' truncated" title="' + String(val).replace(/"/g, '&quot;') + '">' + String(val) + '</td>';
+            }).join('') +
+            '</tr>';
+        }).join('');
+      }
+      
+      // Update footer
+      document.getElementById('grid-row-count').textContent = filtered.length + ' of ' + records.length + ' records';
+      
+      var filterInfo = [];
+      if (gridState.sheet) filterInfo.push('Sheet: ' + gridState.sheet);
+      if (gridState.filter !== 'all') filterInfo.push('Status: ' + gridState.filter);
+      if (gridState.search) filterInfo.push('Search: "' + gridState.search + '"');
+      document.getElementById('grid-filter-info').textContent = filterInfo.join(' | ');
+    }
+
+    function toggleColumnMenu() {
+      var menu = document.getElementById('grid-column-menu');
+      if (menu.style.display === 'none') {
+        // Build checkboxes
+        var container = document.getElementById('grid-column-checkboxes');
+        container.innerHTML = gridState.allColumns.map(function(col) {
+          var checked = gridState.visibleColumns.includes(col) ? 'checked' : '';
+          return '<label style="display: block; margin: 4px 0; cursor: pointer;"><input type="checkbox" ' + checked + ' onchange="toggleGridColumn(\'' + col + '\', this.checked)"> ' + 
+            col.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); }) + '</label>';
+        }).join('');
+        menu.style.display = 'block';
+      } else {
+        menu.style.display = 'none';
+      }
+    }
+
+    function toggleGridColumn(col, visible) {
+      if (visible && !gridState.visibleColumns.includes(col)) {
+        gridState.visibleColumns.push(col);
+      } else if (!visible) {
+        gridState.visibleColumns = gridState.visibleColumns.filter(function(c) { return c !== col; });
+      }
+      renderGrid();
+    }
+
+    function openRowReviewDrawer(rowId) {
+      // Find record by contract_key or index
+      var record = null;
+      if (currentDataset && currentDataset.sf_contract_results) {
+        record = currentDataset.sf_contract_results.find(function(r) {
+          return String(r.contract_key) === String(rowId);
+        });
+        if (!record) {
+          var idx = parseInt(rowId, 10);
+          if (!isNaN(idx) && idx >= 0 && idx < currentDataset.sf_contract_results.length) {
+            record = currentDataset.sf_contract_results[idx];
+          }
+        }
+      }
+      
+      if (!record) {
+        showToast('Record not found: ' + rowId, 'warning');
+        return;
+      }
+      
+      // Open record detail drawer (reuse existing drawer if available)
+      openRecordDetailDrawer(record);
+      
+      // Update URL
+      history.pushState(null, '', '#/row/' + rowId);
+    }
+
+    // Attach Grid event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      var gridSearch = document.getElementById('grid-search');
+      if (gridSearch) {
+        gridSearch.addEventListener('input', function() {
+          gridState.search = gridSearch.value;
+          updateGridURL();
+          renderGrid();
+        });
+      }
+    });
+    // ============================================================
+    // END GRID FUNCTIONS
+    // ============================================================
+
     function updateLoaderDrawerUI() {
       var statusEl = document.getElementById('loader-drawer-status');
       var nameEl = document.getElementById('loader-drawer-dataset-name');
@@ -6209,10 +6595,10 @@
       container.innerHTML = `
         <h2>Summary</h2>
         <div class="summary">
-          <div class="summary-card contracts"><div class="count">${summary.contracts || 0}</div><div class="label">Contracts</div></div>
-          <div class="summary-card ready"><div class="count">${summary.ready || 0}</div><div class="label">Ready</div></div>
-          <div class="summary-card needs-review"><div class="count">${summary.needs_review || 0}</div><div class="label">Needs Review</div></div>
-          <div class="summary-card blocked"><div class="count">${summary.blocked || 0}</div><div class="label">Blocked</div></div>
+          <div class="summary-card contracts clickable" title="View all records" onclick="navigateToGridFiltered('all')"><div class="count">${summary.contracts || 0}</div><div class="label">Contracts</div></div>
+          <div class="summary-card ready clickable" title="View ready records" onclick="navigateToGridFiltered('ready')"><div class="count">${summary.ready || 0}</div><div class="label">Ready</div></div>
+          <div class="summary-card needs-review clickable" title="View records needing review" onclick="navigateToGridFiltered('needs_review')"><div class="count">${summary.needs_review || 0}</div><div class="label">Needs Review</div></div>
+          <div class="summary-card blocked clickable" title="View blocked records" onclick="navigateToGridFiltered('blocked')"><div class="count">${summary.blocked || 0}</div><div class="label">Blocked</div></div>
         </div>
       `;
     }

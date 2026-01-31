@@ -1,4 +1,4 @@
-# Kiwi Semantic Control Board (v1.3.1)
+# Kiwi Semantic Control Board (v1.4.0)
 
 ## Overview
 
@@ -72,6 +72,14 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - Loader as drawer-only (URL stays #/triage)
 - Analyst/Reviewer surfaces have zero admin widgets
 - Exclusive route rendering (no append/portal patterns)
+
+**v1.4.0 DataDash V1 Operator Ergonomics:**
+- All-Data Grid (#/grid): Primary operator surface with dense spreadsheet view
+- Deterministic filtering: Query params (f=, sheet=, q=) with stable sort order
+- Triage as Alert Lens: Summary cards navigate to filtered grid views
+- Row Review (#/row/:id): Consistent entry point for single-row review
+- Default route: #/grid when dataset loaded, #/triage otherwise
+- RBAC preserved: Admin UI only under #/admin/*
 
 **What This Is NOT:**
 - Not a runtime system
