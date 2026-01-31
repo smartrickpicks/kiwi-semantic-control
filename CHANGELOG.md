@@ -1,5 +1,30 @@
 # CHANGELOG
 
+## Version: v1.4.1
+Date: 2026-01-31
+
+### Changed (Loader Modal)
+
+- Loader UI converted from right-side drawer to centered modal overlay
+  - Modal appears centered with backdrop darkening
+  - ESC key closes modal
+  - Click outside modal closes modal
+  - X button in header closes modal
+  - Focus trapped inside modal while open
+  - Focus returns to trigger button on close
+  - Background scroll disabled while modal open
+- URL does not change when modal opens/closes (loader is not routable)
+- "Continue to Grid" button replaces "Continue to Triage"
+- All existing loader functionality preserved (CSV/XLSX import, sample dataset)
+
+### Preserved
+
+- RBAC unchanged (loader accessible as action, admin controls stay admin-only)
+- Offline-first, deterministic behavior
+- No new dependencies
+
+---
+
 ## Version: v1.4.0
 Date: 2026-01-31
 

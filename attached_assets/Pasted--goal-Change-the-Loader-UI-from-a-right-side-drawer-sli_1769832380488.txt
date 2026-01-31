@@ -1,0 +1,124 @@
+{
+  "goal": "Change the Loader UI from a right-side drawer/slide-over into a true modal pop-up that overlays the current page when the user clicks Load Data.",
+  "constraints": [
+    "Offline-first only; no network calls",
+    "Deterministic UI behavior; no runtime execution",
+    "Copy-only exports; no file writes from UI",
+    "No new dependencies",
+    "Loader is not a routable page",
+    "RBAC unchanged (Loader is accessible as an action, but Admin-only controls remain Admin-only)"
+  ],
+  "tasks": [
+    {
+      "id": "LOADER-MODAL-01",
+      "title": "Replace slide-over drawer with modal overlay",
+      "description": "Convert the existing Loader drawer component into a modal that appears centered with a backdrop overlay.",
+      "implementation": {
+        "ui_behavior": [
+          "Clicking 'Load Data' opens modal",
+          "Backdrop darkens the page behind modal",
+          "ESC closes modal",
+          "Clicking outside modal closes modal",
+          "Close (X) button in modal header closes modal",
+          "URL does not change when modal opens/closes"
+        ],
+        "modal_layout": [
+          "Centered panel (max-width constraint)",
+          "Scrollable modal body if content exceeds height",
+          "Header: title + close button",
+          "Footer: primary action button(s)"
+        ],
+        "state_model": {
+          "state_key": "ui.loaderModalOpen",
+          "open_action": "set ui.loaderModalOpen = true",
+          "close_action": "set ui.loaderModalOpen = false",
+          "teardown": "on close, remove event listeners and restore body scroll"
+        },
+        "accessibility": [
+          "Trap focus inside modal while open",
+          "Restore focus to the triggering button on close",
+          "Disable background scroll while modal is open"
+        ]
+      }
+    },
+    {
+      "id": "LOADER-MODAL-02",
+      "title": "Maintain existing loader content and logic",
+      "description": "Keep current loader functionality (CSV/XLSX import, demo dataset option, standardization trigger) unchanged—only change presentation from drawer to modal.",
+      "implementation": {
+        "preserve": [
+          "Existing file input and parsing logic",
+          "Existing standardization flow",
+          "Existing datasetLoaded flag updates",
+          "Existing 'demo/sample dataset' behavior (if still enabled)"
+        ],
+        "prohibit": [
+          "Do not create a new route",
+          "Do not move loader into admin-only unless it already is"
+        ]
+      }
+    },
+    {
+      "id": "LOADER-MODAL-03",
+      "title": "Ensure loader opens from both Triage and Grid",
+      "description": "The Load Data action should open the modal regardless of whether the user is on #/triage or #/grid.",
+      "implementation": {
+        "trigger_locations": [
+          "Topbar 'Load Data' button",
+          "Triage CTA if present"
+        ],
+        "router_rules": [
+          "No navigation side effects when opening loader modal"
+        ]
+      }
+    }
+  ],
+  "acceptance_tests": [
+    {
+      "name": "Loader opens as modal overlay",
+      "steps": [
+        "Navigate to #/grid (or #/triage)",
+        "Click 'Load Data'"
+      ],
+      "expected": [
+        "Modal appears centered with backdrop",
+        "URL does not change",
+        "Background is not scrollable"
+      ]
+    },
+    {
+      "name": "Close behaviors work",
+      "steps": [
+        "Open loader modal",
+        "Press ESC",
+        "Open loader modal again",
+        "Click outside the modal",
+        "Open loader modal again",
+        "Click the X close button"
+      ],
+      "expected": [
+        "Modal closes in all three cases",
+        "Focus returns to the Load Data button after close"
+      ]
+    },
+    {
+      "name": "Loader still functions",
+      "steps": [
+        "Open loader modal",
+        "Import a CSV or XLSX",
+        "Confirm standardization runs as before",
+        "Confirm datasetLoaded becomes true",
+        "Close modal"
+      ],
+      "expected": [
+        "Dataset is available in Grid/Triage as before",
+        "No JS errors introduced"
+      ]
+    }
+  ],
+  "deliverables": [
+    "UI update only (drawer -> modal)",
+    "No new dependencies",
+    "CHANGELOG entry for next version"
+  ]
+}

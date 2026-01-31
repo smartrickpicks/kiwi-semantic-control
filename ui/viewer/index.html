@@ -221,16 +221,16 @@
     .mode-reviewer .reviewer-only-content { display: block !important; }
     .mode-admin .reviewer-only-content { display: block !important; }
     
-    /* Loader Drawer */
-    .loader-drawer { position: fixed; top: 0; right: -480px; width: 460px; height: 100vh; background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.2); z-index: 1002; transition: right 0.25s ease-out; display: flex; flex-direction: column; }
-    .loader-drawer.active { right: 0; }
-    .loader-drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: none; z-index: 1001; }
-    .loader-drawer-overlay.active { display: block; }
-    .loader-drawer-header { background: #1565c0; color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-    .loader-drawer-header h3 { margin: 0; font-size: 1em; }
-    .loader-drawer-close { background: none; border: none; color: white; font-size: 1.3em; cursor: pointer; padding: 4px 8px; border-radius: 4px; }
-    .loader-drawer-close:hover { background: rgba(255,255,255,0.2); }
-    .loader-drawer-body { flex: 1; overflow-y: auto; padding: 20px; }
+    /* Loader Modal */
+    .loader-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; z-index: 1001; justify-content: center; align-items: center; }
+    .loader-modal-overlay.active { display: flex; }
+    .loader-modal { background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.25); z-index: 1002; display: flex; flex-direction: column; max-width: 520px; width: 90%; max-height: 85vh; animation: modalFadeIn 0.2s ease-out; }
+    @keyframes modalFadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    .loader-modal-header { background: #1565c0; color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; border-radius: 12px 12px 0 0; }
+    .loader-modal-header h3 { margin: 0; font-size: 1.1em; font-weight: 600; }
+    .loader-modal-close { background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; padding: 4px 10px; border-radius: 4px; line-height: 1; }
+    .loader-modal-close:hover { background: rgba(255,255,255,0.2); }
+    .loader-modal-body { flex: 1; overflow-y: auto; padding: 24px; }
 
     /* Session Status Chip */
     .session-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; }
@@ -937,7 +937,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Triage</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.4.0</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.4.1</span>
           </div>
           <p class="page-desc">Alert summary view. Click status cards to open filtered grid views.</p>
           <div class="triage-session-info" id="triage-session-info" style="margin-top: 10px; font-size: 0.85em; color: #666;"></div>
@@ -1180,7 +1180,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Admin Console</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-CONSOLE | BUILD v1.4.0</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-CONSOLE | BUILD v1.4.1</span>
           </div>
           <p class="page-desc">Centralized admin tools for governance, config, standardization, and patch management.</p>
         </div>
@@ -1539,14 +1539,14 @@
     </div>
   </div>
 
-  <!-- Loader Drawer (right-side slide-over for data loading) -->
-  <div class="loader-drawer-overlay" id="loader-drawer-overlay" onclick="closeLoaderDrawer()">
-    <div class="loader-drawer" id="loader-drawer" onclick="event.stopPropagation()">
-      <div class="loader-drawer-header">
+  <!-- Loader Modal (centered overlay for data loading) -->
+  <div class="loader-modal-overlay" id="loader-modal-overlay" onclick="closeLoaderModal(event)">
+    <div class="loader-modal" id="loader-modal" onclick="event.stopPropagation()">
+      <div class="loader-modal-header">
         <h3>Load Data</h3>
-        <button class="loader-drawer-close" onclick="closeLoaderDrawer()">&times;</button>
+        <button class="loader-modal-close" id="loader-modal-close-btn" onclick="closeLoaderModal()" aria-label="Close">&times;</button>
       </div>
-      <div class="loader-drawer-body">
+      <div class="loader-modal-body">
         <!-- Dataset Status -->
         <div id="loader-drawer-status" style="margin-bottom: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px; display: none;">
           <div style="display: flex; align-items: center; gap: 10px;">
@@ -1557,7 +1557,7 @@
             </div>
           </div>
           <div style="margin-top: 12px; display: flex; gap: 10px;">
-            <button class="top-toolbar-btn" onclick="closeLoaderDrawer(); navigateTo('triage');">Continue to Triage</button>
+            <button class="top-toolbar-btn" onclick="closeLoaderModal(); navigateTo('grid');">Continue to Grid</button>
             <button class="top-toolbar-btn" onclick="copyBundleJSON()">Copy Bundle</button>
           </div>
         </div>
@@ -1589,7 +1589,7 @@
         <div class="admin-only-content" style="border-top: 1px solid #e0e0e0; padding-top: 15px; margin-top: 15px;">
           <div style="font-weight: 600; margin-bottom: 10px; color: #888; font-size: 0.85em;">ADMIN UTILITIES</div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="top-toolbar-btn" onclick="resetDemoState(); updateLoaderDrawerUI();">Reset Demo State</button>
+            <button class="top-toolbar-btn" onclick="resetDemoState(); updateLoaderModalUI();">Reset Demo State</button>
             <button class="top-toolbar-btn" onclick="rebuildFieldIndex();">Rebuild Index</button>
           </div>
         </div>
@@ -4871,7 +4871,7 @@
       }
       
       // Update data status chip in sidebar
-      updateLoaderDrawerUI();
+      updateLoaderModalUI();
       
       // Update debug HUD
       updateDebugHUD();
@@ -5092,21 +5092,57 @@
       document.getElementById('data-source-drawer').classList.remove('active');
     }
     
-    // Loader Drawer functions
-    function openLoaderDrawer() {
-      updateLoaderDrawerUI();
-      document.getElementById('loader-drawer-overlay').classList.add('active');
-      document.getElementById('loader-drawer').classList.add('active');
+    // Loader Modal functions
+    var loaderModalTriggerEl = null;
+    
+    function openLoaderModal() {
+      loaderModalTriggerEl = document.activeElement;
+      updateLoaderModalUI();
+      document.getElementById('loader-modal-overlay').classList.add('active');
+      document.body.style.overflow = 'hidden';
+      document.addEventListener('keydown', loaderModalKeyHandler);
+      var closeBtn = document.getElementById('loader-modal-close-btn');
+      if (closeBtn) closeBtn.focus();
     }
     
-    function closeLoaderDrawer() {
-      document.getElementById('loader-drawer-overlay').classList.remove('active');
-      document.getElementById('loader-drawer').classList.remove('active');
+    function closeLoaderModal(event) {
+      if (event && event.target && event.target.id !== 'loader-modal-overlay') return;
+      document.getElementById('loader-modal-overlay').classList.remove('active');
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', loaderModalKeyHandler);
+      if (loaderModalTriggerEl && loaderModalTriggerEl.focus) {
+        loaderModalTriggerEl.focus();
+      }
+      loaderModalTriggerEl = null;
     }
+    
+    function loaderModalKeyHandler(e) {
+      if (e.key === 'Escape') {
+        closeLoaderModal();
+      }
+      if (e.key === 'Tab') {
+        var modal = document.getElementById('loader-modal');
+        var focusables = modal.querySelectorAll('button, input, select, textarea, a[href]');
+        if (focusables.length === 0) return;
+        var first = focusables[0];
+        var last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
+    
+    function openLoaderDrawer() { openLoaderModal(); }
+    function closeLoaderDrawer() { closeLoaderModal(); }
     
     // ============================================================
     // GRID FUNCTIONS (v1.4.0)
     // ============================================================
+    var currentDataset = null;
     var gridState = {
       filter: 'all',
       sheet: '',
@@ -5114,6 +5150,18 @@
       visibleColumns: [],
       allColumns: []
     };
+    
+    function getGridDataset() {
+      if (currentDataset) return currentDataset;
+      var cached = localStorage.getItem('sample_dataset');
+      if (cached) {
+        try { currentDataset = JSON.parse(cached); } catch(e) {}
+      }
+      if (!currentDataset && window.allData && window.allData.contractResults) {
+        currentDataset = { sf_contract_results: window.allData.contractResults };
+      }
+      return currentDataset;
+    }
 
     function initGrid() {
       // Parse query params from URL
@@ -5140,14 +5188,15 @@
 
     function populateGridSheetSelector() {
       var selector = document.getElementById('grid-sheet-selector');
-      if (!selector || !currentDataset) return;
+      var ds = getGridDataset();
+      if (!selector || !ds) return;
       
       selector.innerHTML = '<option value="">All Sheets</option>';
       var sheets = new Set();
       
       // Collect unique sheet names from dataset
-      if (currentDataset.sf_contract_results) {
-        currentDataset.sf_contract_results.forEach(function(r) {
+      if (ds.sf_contract_results) {
+        ds.sf_contract_results.forEach(function(r) {
           if (r.sheet) sheets.add(r.sheet);
         });
       }
@@ -5206,7 +5255,9 @@
         return;
       }
       
-      var records = currentDataset.sf_contract_results || [];
+      var ds = getGridDataset();
+      if (!ds) return;
+      var records = ds.sf_contract_results || [];
       
       // Apply filters: sheet -> status -> search
       var filtered = records;
@@ -5338,14 +5389,15 @@
     function openRowReviewDrawer(rowId) {
       // Find record by contract_key or index
       var record = null;
-      if (currentDataset && currentDataset.sf_contract_results) {
-        record = currentDataset.sf_contract_results.find(function(r) {
+      var ds = getGridDataset();
+      if (ds && ds.sf_contract_results) {
+        record = ds.sf_contract_results.find(function(r) {
           return String(r.contract_key) === String(rowId);
         });
         if (!record) {
           var idx = parseInt(rowId, 10);
-          if (!isNaN(idx) && idx >= 0 && idx < currentDataset.sf_contract_results.length) {
-            record = currentDataset.sf_contract_results[idx];
+          if (!isNaN(idx) && idx >= 0 && idx < ds.sf_contract_results.length) {
+            record = ds.sf_contract_results[idx];
           }
         }
       }
@@ -5377,7 +5429,7 @@
     // END GRID FUNCTIONS
     // ============================================================
 
-    function updateLoaderDrawerUI() {
+    function updateLoaderModalUI() {
       var statusEl = document.getElementById('loader-drawer-status');
       var nameEl = document.getElementById('loader-drawer-dataset-name');
       var sampleSection = document.getElementById('loader-drawer-sample-section');
@@ -5409,15 +5461,14 @@
       }
     }
     
-    function setupLoaderDrawerEvents() {
-      // File input
+    function setupLoaderModalEvents() {
       var fileInput = document.getElementById('loader-drawer-file');
       if (fileInput) {
         fileInput.addEventListener('change', function(e) {
           var file = e.target.files[0];
           if (file) {
             handleCSVImport(file, function() {
-              updateLoaderDrawerUI();
+              updateLoaderModalUI();
               closeLoaderDrawer();
               navigateTo('triage');
             });
@@ -5441,7 +5492,7 @@
           var file = e.dataTransfer.files[0];
           if (file) {
             handleCSVImport(file, function() {
-              updateLoaderDrawerUI();
+              updateLoaderModalUI();
               closeLoaderDrawer();
               navigateTo('triage');
             });
@@ -5454,7 +5505,7 @@
       if (sampleBtn) {
         sampleBtn.addEventListener('click', function() {
           loadSampleDataset({ autoRedirect: false });
-          updateLoaderDrawerUI();
+          updateLoaderModalUI();
           closeLoaderDrawer();
           navigateTo('triage');
         });
@@ -6260,8 +6311,8 @@
       loadUserSettings();
       checkFirstRun();
       
-      // Setup loader drawer events
-      setupLoaderDrawerEvents();
+      // Setup loader modal events
+      setupLoaderModalEvents();
       
       let savedMode = localStorage.getItem('viewer_mode_v10');
       // Convert legacy 'operator' mode to 'analyst'
@@ -6279,7 +6330,7 @@
       }
       
       // Update initial data status
-      updateLoaderDrawerUI();
+      updateLoaderModalUI();
     }
 
     function getRecordHash(record) {
