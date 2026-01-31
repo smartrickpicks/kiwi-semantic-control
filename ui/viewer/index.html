@@ -717,7 +717,7 @@
       <div class="nav-menu">
         <div class="nav-section">
           <div class="nav-section-header">Data</div>
-          <a class="nav-item" id="nav-load-data" href="#" onclick="openLoaderDrawer(); return false;">
+          <a class="nav-item" id="nav-load-data" href="#" onclick="openLoaderModal(); return false;">
             <span class="nav-icon">📥</span>
             <span class="nav-label">Load Data</span>
             <span class="nav-count" id="data-status-chip">--</span>
@@ -845,7 +845,7 @@
         <div class="empty-queue-icon">📋</div>
         <h3>No records loaded yet</h3>
         <p>Import a dataset to start working.</p>
-        <button class="empty-queue-cta" id="empty-queue-load" onclick="openLoaderDrawer()">Load Data</button>
+        <button class="empty-queue-cta" id="empty-queue-load" onclick="openLoaderModal()">Load Data</button>
       </div>
       
       <!-- Loader Page (DEPRECATED - v1.2.9 uses drawer instead) -->
@@ -937,7 +937,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Triage</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.4.4</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.4.5</span>
           </div>
           <p class="page-desc">Alert summary view. Click status cards to open filtered grid views.</p>
           <div class="triage-session-info" id="triage-session-info" style="margin-top: 10px; font-size: 0.85em; color: #666;"></div>
@@ -986,7 +986,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>All-Data Grid</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: GRID | BUILD v1.4.4</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: GRID | BUILD v1.4.5</span>
           </div>
           <p class="page-desc">Dense spreadsheet view of all records with filtering and search.</p>
         </div>
@@ -1191,7 +1191,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Admin Console</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-CONSOLE | BUILD v1.4.4</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-CONSOLE | BUILD v1.4.5</span>
           </div>
           <p class="page-desc">Centralized admin tools for governance, config, standardization, and patch management.</p>
         </div>
@@ -1576,7 +1576,7 @@
           <div class="upload-library-empty" style="text-align: center; padding: 40px 20px; color: #888; background: #f5f5f5; border-radius: 8px; border: 2px dashed #ddd;">
             <div style="font-size: 2em; margin-bottom: 10px;">📁</div>
             <p style="margin: 0 0 15px;">No datasets saved yet.</p>
-            <button class="modal-btn modal-btn-primary" onclick="closeDataSourceDrawer(); openLoaderDrawer();">Load Data</button>
+            <button class="modal-btn modal-btn-primary" onclick="closeDataSourceDrawer(); openLoaderModal();">Load Data</button>
           </div>
         </div>
         
@@ -1635,7 +1635,7 @@
         <div class="admin-only-content" style="border-top: 1px solid #e0e0e0; padding-top: 15px; margin-top: 15px;">
           <div style="font-weight: 600; margin-bottom: 10px; color: #888; font-size: 0.85em;">ADMIN UTILITIES</div>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="top-toolbar-btn" onclick="resetDemoState(); updateLoaderModalUI();">Reset Demo State</button>
+            <button class="top-toolbar-btn" onclick="resetDemoState();">Reset Demo State</button>
             <button class="top-toolbar-btn" onclick="rebuildFieldIndex();">Rebuild Index</button>
           </div>
         </div>
@@ -4973,9 +4973,6 @@
         }
       }
       
-      // Update data status chip in sidebar
-      updateLoaderModalUI();
-      
       // Update debug HUD
       updateDebugHUD();
       
@@ -5151,6 +5148,18 @@
       updateSessionChip();
       // Update queue counts
       updateQueueCounts();
+      
+      // Update data status chip in sidebar (v1.4.5)
+      var dataStatusChip = document.getElementById('data-status-chip');
+      if (dataStatusChip) {
+        if (dataLoaded && allData.contractResults && allData.contractResults.length > 0) {
+          dataStatusChip.textContent = allData.contractResults.length;
+          dataStatusChip.classList.add('has-items');
+        } else {
+          dataStatusChip.textContent = '--';
+          dataStatusChip.classList.remove('has-items');
+        }
+      }
     }
 
     function updateQueueCounts() {
@@ -5200,7 +5209,7 @@
     
     function openLoaderModal() {
       loaderModalTriggerEl = document.activeElement;
-      updateLoaderModalUI();
+      hideLoaderError(); // Clear any previous errors
       document.getElementById('loader-modal-overlay').classList.add('active');
       document.body.style.overflow = 'hidden';
       document.addEventListener('keydown', loaderModalKeyHandler);
@@ -5239,7 +5248,24 @@
       }
     }
     
+    // v1.4.5: Legacy alias removed - use openLoaderModal() directly
     function openLoaderDrawer() { openLoaderModal(); }
+    
+    // v1.4.5: Stub admin functions to prevent console errors
+    function inspectJSON(type) {
+      console.log('[Admin] inspectJSON called for:', type);
+      showToast('Inspector: ' + type + ' (not yet implemented)', 'info');
+    }
+    
+    function loadAdminConfig() {
+      console.log('[Admin] loadAdminConfig called');
+      showToast('Load Config (not yet implemented)', 'info');
+    }
+    
+    function copyInspectorJSON() {
+      console.log('[Admin] copyInspectorJSON called');
+      showToast('Copy JSON (not yet implemented)', 'info');
+    }
     function closeLoaderDrawer() { closeLoaderModal(); }
     
     // ============================================================
@@ -5880,37 +5906,7 @@
     // ============================================================
     // ============================================================
 
-    function updateLoaderModalUI() {
-      var statusEl = document.getElementById('loader-drawer-status');
-      var nameEl = document.getElementById('loader-drawer-dataset-name');
-      var sampleSection = document.getElementById('loader-drawer-sample-section');
-      var dataStatusChip = document.getElementById('data-status-chip');
-      
-      if (dataLoaded && allData.contractResults && allData.contractResults.length > 0) {
-        statusEl.style.display = 'block';
-        var activeDataset = localStorage.getItem(STORAGE_KEY_ACTIVE_DATASET);
-        var datasetName = 'Active Dataset';
-        if (activeDataset) {
-          try {
-            var parsed = JSON.parse(activeDataset);
-            datasetName = parsed && parsed.filename ? parsed.filename : activeDataset;
-          } catch (e) {
-            datasetName = activeDataset;
-          }
-        }
-        nameEl.textContent = datasetName;
-        if (dataStatusChip) {
-          dataStatusChip.textContent = allData.contractResults.length;
-          dataStatusChip.classList.add('has-items');
-        }
-      } else {
-        statusEl.style.display = 'none';
-        if (dataStatusChip) {
-          dataStatusChip.textContent = '--';
-          dataStatusChip.classList.remove('has-items');
-        }
-      }
-    }
+    // v1.4.5: updateLoaderModalUI removed - logic moved to updateUIForDataState()
     
     function setupLoaderModalEvents() {
       var fileInput = document.getElementById('loader-drawer-file');
@@ -6846,8 +6842,6 @@
         autoSetupRepoMasters();
       }
       
-      // Update initial data status
-      updateLoaderModalUI();
     }
 
     function getRecordHash(record) {

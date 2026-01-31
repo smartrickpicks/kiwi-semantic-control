@@ -1,5 +1,32 @@
 # CHANGELOG
 
+## Version: v1.4.5
+Date: 2026-01-31
+
+### Fixed (Loader Modal Crash + Legacy DOM Cleanup)
+
+- CRASH-01: Removed updateLoaderModalUI Function Entirely
+  - Function deleted along with all call sites (navigateTo, openLoaderModal, initRouter)
+  - Data status chip update logic moved to updateUIForDataState() with null guards
+  - No more "Cannot read properties of null" errors
+
+- CRASH-02: Removed Legacy openLoaderDrawer Calls
+  - All "Load Data" buttons now call openLoaderModal() directly
+  - nav-load-data, empty-queue-load, data source drawer all use openLoaderModal()
+  - openLoaderDrawer() kept as legacy alias for backward compatibility
+
+- CRASH-03: Added Admin Function Stubs
+  - inspectJSON(), loadAdminConfig(), copyInspectorJSON() now exist as stubs
+  - No more "is not defined" errors in Admin Inspector tab
+  - Shows toast notification indicating feature is not yet implemented
+
+### Preserved
+- All v1.4.4 loader UX improvements (simplified modal, XLSX error, validation)
+- Auto-navigate to #/grid after successful load
+- RBAC route guards intact
+
+---
+
 ## Version: v1.4.4
 Date: 2026-01-31
 
