@@ -1,0 +1,168 @@
+{
+  "proposed_side_panel_structure": {
+    "order": [
+      "Progress State",
+      "Triage",
+      "Orchestrator View",
+      "Admin Board"
+    ],
+    "items": [
+      {
+        "id": "progress_state",
+        "label": "Progress State",
+        "kind": "informational_block",
+        "route": null,
+        "visible_to": ["Analyst", "Reviewer", "Admin"],
+        "enabled_when": "always",
+        "policy_refs": {
+          "behavior_default": "informational_only",
+          "behavior_optional": "click_to_triage_allowed",
+          "never": "imply_resolution_or_auto_fix"
+        },
+        "contains": [
+          {
+            "id": "load_data",
+            "label": "Load Data",
+            "type": "action_button",
+            "interaction": "modal_only_no_route_change",
+            "csv_only": true,
+            "xlsx_unsupported_copy": "XLSX not supported yet.",
+            "visible_to": ["Analyst", "Reviewer", "Admin"],
+            "repo_anchors": [
+              "ui/viewer/components/LoaderModal.*",
+              "ui/viewer/index.html"
+            ]
+          }
+        ],
+        "rationale": "Progress is a canonical, role-neutral summary. It is informational by default and may optionally deep-link to Triage without implying resolution. Load Data lives here as the workflow entry, not a utility." 
+      },
+      {
+        "id": "triage",
+        "label": "Triage",
+        "kind": "primary_nav",
+        "route": "#/triage",
+        "visible_to": ["Analyst", "Reviewer", "Admin"],
+        "enabled_when": "dataset_loaded_or_demo_mode",
+        "never": [
+          "append_admin_widgets",
+          "resolve_flags_implicitly"
+        ],
+        "rationale": "Alerts and flags lens; prioritization and entry to record review. Never duplicates Orchestrator responsibilities."
+      },
+      {
+        "id": "orchestrator_view",
+        "label": "Orchestrator View",
+        "kind": "primary_nav",
+        "route": "#/grid",
+        "visible_to": ["Analyst", "Reviewer", "Admin"],
+        "enabled_when": "dataset_loaded",
+        "never": [
+          "mount_admin_tools",
+          "apply_patches_automatically"
+        ],
+        "rationale": "Primary grid for bulk inspection and cross-sheet review. Admin actions remain under Admin Board."
+      },
+      {
+        "id": "admin_board",
+        "label": "Admin Board",
+        "kind": "primary_nav",
+        "route": "#/admin",
+        "visible_to": ["Analyst", "Reviewer", "Admin"],
+        "enabled_when": "always",
+        "gating_notes": "Admin-only actions gated by permissions; non-admins see access denied or read-only summaries.",
+        "rationale": "Config, Inspector (JSON), Standardizer, Patch Console, Evidence live here exclusively."
+      }
+    ]
+  },
+  "navigation_semantics": {
+    "progress_state": {
+      "default": "informational_only",
+      "optional_click_to_triage": true,
+      "on_click": {
+        "action": "navigate",
+        "target": "#/triage",
+        "guard": "must_not_imply_resolution_or_auto_fix"
+      },
+      "never": [
+        "apply_patches",
+        "change_state_implicitly"
+      ]
+    },
+    "triage": {
+      "route": "#/triage",
+      "enabled_when": [
+        "dataset_loaded",
+        "or_demo_mode"
+      ],
+      "does": [
+        "display_flags_and_alerts",
+        "open_record_review"
+      ],
+      "never": [
+        "mount_admin_tools",
+        "apply_patches_automatically"
+      ]
+    },
+    "orchestrator_view": {
+      "route": "#/grid",
+      "enabled_when": [
+        "dataset_loaded"
+      ],
+      "does": [
+        "bulk_inspection",
+        "filters_and_search",
+        "open_record_review"
+      ],
+      "never": [
+        "admin_actions",
+        "implicit_state_changes"
+      ]
+    },
+    "admin_board": {
+      "route": "#/admin",
+      "does": [
+        "config_edit (gated)",
+        "inspector_json",
+        "standardizer_run (gated)",
+        "patch_console (gated)",
+        "evidence_summaries"
+      ],
+      "gating": "Admin role required for mutations; non-admins blocked or read-only",
+      "never": [
+        "mount_in_operator_routes",
+        "bypass_patch_approval"
+      ]
+    },
+    "loader_modal": {
+      "invocation_points": [
+        "Sidebar: Progress State block",
+        "Topbar: secondary entry",
+        "Triage: CTA"
+      ],
+      "interaction": "modal_only_no_route_change",
+      "csv_only": true,
+      "xlsx_copy": "XLSX not supported yet.",
+      "success_flow": [
+        "commit_dataset_state",
+        "close_modal",
+        "navigate '#/grid'"
+      ]
+    },
+    "global_rules": {
+      "no_per_queue_nav_links": true,
+      "no_copy_implying_auto_apply": true,
+      "single_layout_all_roles": true,
+      "role_diff_via_widgets_permissions": true,
+      "offline_first_v1": true
+    }
+  },
+  "copy_pack": {
+    "labels": {
+      "progress_state": "Progress State",
+      "triage": "Triage",
+      "orchestrator_view": "Orchestrator View",
+      "admin_board": "Admin Board",
+      "load_data": "Load Data"
+    },
+    "descriptions": {
+      "progress_state": "Evidence-bound summary of current workflow state. Informational; d
