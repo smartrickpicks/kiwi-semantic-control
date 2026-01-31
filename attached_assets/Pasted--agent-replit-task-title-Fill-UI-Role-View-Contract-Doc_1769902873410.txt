@@ -1,0 +1,51 @@
+{
+  "agent": "replit",
+  "task_title": "Fill UI Role + View Contract Docs (V1) Using Transition Matrix + Gate Mapping",
+  "hard_bounds": {
+    "in_scope": [
+      "Documentation-only edits",
+      "Expand role docs: Analyst, Verifier, Admin",
+      "Expand view docs: triage, record inspection, patch authoring, verifier review, admin approval, promotion",
+      "Make permissions explicit using the Review State Transition Matrix + gate_view_mapping"
+    ],
+    "out_of_scope": [
+      "Implementing UI components",
+      "Implementing backend/runtime logic",
+      "Adding new workflow stages or product features",
+      "Introducing timelines, SLAs, or guarantees"
+    ]
+  },
+  "inputs": [
+    "docs/ui/ui_principles.md",
+    "docs/ui/gate_view_mapping.md",
+    "docs/overview.md (Review State Transition Matrix)",
+    "docs/V1/Flow-Doctrine.md",
+    "docs/specs/Human-Agent-Workflow-V1.json",
+    "docs/REVIEW_CHECKLIST.md (role-tagged)",
+    "docs/ui/roles/analyst.md",
+    "docs/ui/roles/verifier.md",
+    "docs/ui/roles/admin.md",
+    "docs/ui/views/triage_view.md",
+    "docs/ui/views/record_inspection_view.md",
+    "docs/ui/views/patch_authoring_view.md",
+    "docs/ui/views/verifier_review_view.md",
+    "docs/ui/views/admin_approval_view.md",
+    "docs/ui/views/promotion_view.md"
+  ],
+  "instructions": [
+    "For EACH role doc, add a crisp Can/Cannot section that explicitly enumerates: (a) which Review State transitions they may initiate, (b) which gates they can satisfy, (c) which views are read-only vs authoring surfaces.",
+    "For EACH view doc, add: (a) entry conditions, (b) visible artifacts required, (c) allowed actions per role, (d) explicit disallowed actions, (e) what audit/evidence must be recorded when a decision is made.",
+    "Use the Review State Transition Matrix as the single source of allowed transitions.",
+    "Use gate_view_mapping.md as the single source of gate-to-view ownership. Do not invent new gates.",
+    "In verifier_review_view and admin_approval_view, reference the role-tagged REVIEW_CHECKLIST items that must be satisfied for approval, and specify what happens if evidence is missing (force 'hold'/'flag' etc. — as a contract).",
+    "Maintain terminology: 'Verifier' primary; mention 'Reviewer' only once as a legacy alias in verifier.md. Use 'Promote Patch to Baseline' as stakeholder label; mention 'apply_patch' only when referring to permission name."
+  ],
+  "deliverable": {
+    "return_format": "json",
+    "include": [
+      "files_modified",
+      "summary_per_file",
+      "open_questions_for_human_review (do not resolve silently)"
+    ]
+  }
+}

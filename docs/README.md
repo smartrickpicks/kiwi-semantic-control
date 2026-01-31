@@ -14,6 +14,31 @@ See [INDEX.md](INDEX.md) for the complete table of contents.
 | [Workflow Spec](specs/Human-Agent-Workflow-V1.json) | Machine-readable workflow specification |
 | [Miro Diagram Prompt](assets/miro/Human-Agent-Workflow-MiroPrompt.txt) | Visual diagram generation for Miro |
 
+## UI Documentation
+
+### Principles
+| Document | Description |
+|----------|-------------|
+| [UI Principles](ui/ui_principles.md) | Core principles and Review State Transition Matrix |
+| [Gate-View Mapping](ui/gate_view_mapping.md) | Gate-to-view ownership contracts |
+
+### Roles
+| Document | Description |
+|----------|-------------|
+| [Analyst](ui/roles/analyst.md) | Default operator role (load, triage, author) |
+| [Verifier](ui/roles/verifier.md) | Elevated review role (approve/reject at verifier gate) |
+| [Admin](ui/roles/admin.md) | Full authority (final approval, promotion, export) |
+
+### Views
+| Document | Description |
+|----------|-------------|
+| [Triage View](ui/views/triage_view.md) | Queue summary and navigation hub |
+| [Record Inspection](ui/views/record_inspection_view.md) | Single-record detail view |
+| [Patch Authoring](ui/views/patch_authoring_view.md) | Patch Studio workbench |
+| [Verifier Review](ui/views/verifier_review_view.md) | Review surface for verifiers |
+| [Admin Approval](ui/views/admin_approval_view.md) | Final approval surface |
+| [Promotion](ui/views/promotion_view.md) | Baseline promotion and PR export |
+
 ## Core Principles
 
 - **Determinism**: Same inputs produce identical outputs

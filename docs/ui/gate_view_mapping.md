@@ -1,16 +1,32 @@
-# OoS Gate-To-View Mapping (View Contract)
+# Gate-To-View Mapping (View Contract)
 
-This file aps documents consolidate-level mapping between doctrine gates in Human-Agent-Workflow-V1.json and their state/evidence vews. Contracts only; no implementation.
+> Single source of truth for gate-to-view ownership. Contracts only; no implementation.
 
-| Gate ID | Gate Short Name | VIEW Consumer | Notes |
-|-------|--------------|--------|-----------|
-|gate_preflight| Preflight Check | patch_authoring_view | Preflight should be triggerable from within this view (contract only) |
-`-- Ref: Human-Agent-Workflow-V1.json node = "preflight_check", gate_preflight
-|gate_verifier| Verifier Review | verifier_review_view | Evidence bundle visible (requires passed preflight + Evidence Requirements) |
-`-- Ref: Human-Agent-Workflow-V1.json node = "verifier_review", gate_verifier
-|gate_admin| Admin Approval | admin_approval_view | Admin decision visible; export visibility when applicable |
-`-- Ref: Human-Agent-Workflow-V1.json node = "admin_approval", gate_admin
-|promotion/export| Promote Patch to Baseline + PR Ready | promotion_view | Admin only; baseline-mutating event; audit log required |
-`-- Ref: node emits "apply_patch" at Stage 11 and "exportion" at Stage 12 (review doctrine) |
+This document maps doctrine gates from [Human-Agent-Workflow-V1.json](../specs/Human-Agent-Workflow-V1.json) to their owning views.
 
-References: Human-Agent-Workflow-V1.json (gate_preflight, gate_verifier, gate_admin); docs/V1/Flow-Doctrine.md; docs/overview.md.
+## Gate Ownership Table
+
+| Gate ID | Gate Name | Owning View | Required Evidence | Failure Behavior |
+|---------|-----------|-------------|-------------------|------------------|
+| gate_parse | Dataset Parsed | load_data | row_count, column_headers, parse_timestamp | Block navigation to triage |
+| gate_preflight | Preflight Check | [patch_authoring_view](views/patch_authoring_view.md) | preflight_report, badge_summary (no fail) | Block submission |
+| gate_evidence | Evidence Pack | [patch_authoring_view](views/patch_authoring_view.md) | 4-block evidence pack complete | Block submission |
+| gate_verifier | Verifier Decision | [verifier_review_view](views/verifier_review_view.md) | review_notes, decision_status | Patch remains Under_Review |
+| gate_admin | Admin Decision | [admin_approval_view](views/admin_approval_view.md) | admin_action_log, smoke_evidence | Patch remains Verifier_Approved |
+
+## View Responsibilities
+
+| View | Gates Owned | Read-Only Gates |
+|------|-------------|-----------------|
+| Triage | None | All (navigation only) |
+| Record Inspection | None | All (read-only) |
+| Patch Authoring | gate_preflight, gate_evidence | None |
+| Verifier Review | gate_verifier | gate_preflight, gate_evidence |
+| Admin Approval | gate_admin | gate_preflight, gate_evidence, gate_verifier |
+| Promotion | None (post-gate) | All gates must be passed |
+
+## References
+
+- [Human-Agent-Workflow-V1.json](../specs/Human-Agent-Workflow-V1.json) — Gate definitions
+- [Flow-Doctrine.md](../V1/Flow-Doctrine.md) — Workflow stages
+- [ui_principles.md](ui_principles.md) — Review State Transition Matrix
