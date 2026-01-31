@@ -1,0 +1,162 @@
+{
+  "goal": "Add a DataDash-style All Data Grid page and reframe Triage as an alert lens that deep-links into filtered Grid states. Keep Admin tools isolated under #/admin/* and keep everything offline/deterministic.",
+  "constraints": [
+    "Offline-first only; no network calls",
+    "Deterministic UI behavior; no runtime execution",
+    "Copy-only exports; no file writes from UI",
+    "No new dependencies",
+    "Admin-only tools must not mount on Analyst/Reviewer routes",
+    "Grid must be usable for large datasets (many columns/rows)"
+  ],
+  "route_contract": {
+    "routes": {
+      "#/grid": {
+        "roles": ["Analyst", "Reviewer", "Admin"],
+        "purpose": "Primary operator surface: spreadsheet-like view of merged_dataset.json (sheet selector + dense grid)."
+      },
+      "#/triage": {
+        "roles": ["Analyst", "Reviewer", "Admin"],
+        "purpose": "Alert center: chips + queue summaries that link into filtered Grid views (no duplicate heavy table)."
+      },
+      "#/row/:id": {
+        "roles": ["Analyst", "Reviewer", "Admin"],
+        "purpose": "Single-row review drawer/split opened from Grid or Triage; PDF viewer can remain stubbed."
+      },
+      "#/admin/*": {
+        "roles": ["Admin"],
+        "purpose": "Admin console only; never mount outside admin route."
+      }
+    },
+    "default_landing": {
+      "when_dataset_loaded": "#/grid",
+      "when_no_dataset_loaded": "#/triage"
+    }
+  },
+  "data_contract": {
+    "source": "merged_dataset.json (post-standardization)",
+    "multi_sheet": {
+      "required": true,
+      "sheet_selector": "dropdown",
+      "ordering": "deterministic (lexical unless config specifies)",
+      "per_sheet_status": [
+        "row_count",
+        "headers_found_count",
+        "missing_required_anchors_count",
+        "issues_blocking_count"
+      ]
+    },
+    "identity": {
+      "row_key": "contract_key|file_url|file_name (nulls explicit; deterministic ordering)"
+    }
+  },
+  "grid_requirements": {
+    "layout": [
+      "dense rows",
+      "sticky header",
+      "horizontal scroll",
+      "column toggles",
+      "search box",
+      "quick filters",
+      "status chips toolbar"
+    ],
+    "performance": [
+      "avoid rendering full DOM for huge tables; use simple windowing/virtualization if already present, otherwise implement minimal row windowing without new deps",
+      "do not block UI thread during large renders; chunk render if needed"
+    ],
+    "interactions": {
+      "row_click": "open #/row/:id",
+      "status_filter": "apply filter to visible dataset deterministically",
+      "query_params": {
+        "supported": ["f", "sheet", "q"],
+        "examples": [
+          "#/grid?f=flagged",
+          "#/grid?sheet=Contracts&f=needs_review",
+          "#/grid?q=Warner"
+        ]
+      }
+    },
+    "rbac": {
+      "Analyst": "read-only grid + comments entry in row review",
+      "Reviewer": "read-only grid + approve/request-changes actions only if already supported elsewhere; no admin controls",
+      "Admin": "read-only grid; admin controls remain in #/admin/* only"
+    }
+  },
+  "triage_lens_requirements": {
+    "remove_bleed": [
+      "Do not render Admin panels/widgets/diagnostics inside Triage for non-admin",
+      "Do not render Standardizer controls on Triage; standardization happens before queues"
+    ],
+    "ui": [
+      "chips with counts: Flagged, Needs Review, Blocked, Finalized",
+      "each chip navigates to #/grid with f=<status>",
+      "optional sheet dropdown that navigates to #/grid?sheet=<sheet>&f=<status>",
+      "lightweight table/list of top items is allowed, but no duplicate full grid"
+    ],
+    "navigation": {
+      "chip_click": "navigate to #/grid?f=<status>",
+      "queue_row_click": "navigate to #/row/:id (or open drawer) with consistent state"
+    }
+  },
+  "render_boundary_rules": [
+    "Exclusive per-route page shell (no additive/append rendering across routes)",
+    "Admin-only components mount exclusively under #/admin/*",
+    "Role downgrade forces navigation to allowed route and tears down admin state",
+    "Grid/Triage never mount admin components conditionally"
+  ],
+  "tasks": [
+    {
+      "id": "GRID-01",
+      "title": "Create All Data Grid page",
+      "description": "Add #/grid route and implement spreadsheet-like view over merged_dataset.json with multi-sheet support."
+    },
+    {
+      "id": "GRID-02",
+      "title": "Wire query params for deterministic filtering",
+      "description": "Grid reads f/sheet/q from URL and applies filters deterministically; updates chip UI state accordingly."
+    },
+    {
+      "id": "TRIAGE-01",
+      "title": "Refactor Triage into alert lens",
+      "description": "Triage chips deep-link into Grid filtered views; remove any grid-like duplication and remove admin bleed."
+    },
+    {
+      "id": "ROUTER-01",
+      "title": "Set default landing rules",
+      "description": "If datasetLoaded then land on #/grid; else land on #/triage. Loader modal remains an action."
+    },
+    {
+      "id": "RBAC-01",
+      "title": "Confirm route-level guards and render boundaries",
+      "description": "Ensure #/admin/* is router-guarded and that admin panels do not mount on Grid/Triage for Analyst/Reviewer."
+    }
+  ],
+  "acceptance_tests": [
+    {
+      "name": "Default landing goes to Grid when data exists",
+      "steps": ["Load sample dataset", "Hard refresh"],
+      "expected": ["App lands on #/grid", "Sheet selector visible", "Grid shows rows/columns"]
+    },
+    {
+      "name": "Triage chips deep-link to filtered Grid",
+      "steps": ["Go to #/triage", "Click Flagged chip"],
+      "expected": ["Navigates to #/grid?f=flagged", "Grid shows only flagged rows", "Chip state reflects filter"]
+    },
+    {
+      "name": "Admin does not bleed into Analyst/Reviewer",
+      "steps": ["Switch role to Analyst", "Visit #/triage and #/grid"],
+      "expected": ["No admin panels, no debug/testing controls visible", "No admin components mounted in DOM"]
+    },
+    {
+      "name": "Row Review works from Grid",
+      "steps": ["Go to #/grid", "Click a row"],
+      "expected": ["Opens #/row/:id or drawer", "Row identity is consistent", "No admin-only actions appear"]
+    }
+  ],
+  "deliverables": [
+    "New #/grid page with multi-sheet selector and spreadsheet ergonomics",
+    "Triage updated into alert lens with deep links",
+    "Router defaults updated",
+    "RBAC and render boundaries preserved",
+    "CHANGELOG entry for next version"
+  ]
+}
