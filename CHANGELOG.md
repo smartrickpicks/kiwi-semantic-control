@@ -1,5 +1,40 @@
 # CHANGELOG
 
+## Version: v1.4.2
+Date: 2026-01-31
+
+### Added (Multi-Sheet Grid + Unknown Columns)
+
+- Per-Sheet Mini Stats Bar
+  - Row count, Ready/Needs Review/Blocked counts displayed in grid header
+  - Unknown Columns count visible to Admin only
+  - Stats update when sheet filter changes
+
+- Row Virtualization for Large Datasets
+  - Lazy loading kicks in for datasets > 2000 rows
+  - Initial batch of 100 rows rendered, more loaded on scroll
+  - Deterministic ordering preserved
+
+- Unknown Columns Detection (Schema Drift)
+  - Detects columns in data that don't match canonical schema
+  - Stored in localStorage for Admin review
+  - Per-sheet tracking with sample values and non-empty counts
+
+- Admin Unknown Columns UI (under Admin > Unknown Cols tab)
+  - Table showing all unknown columns with sample values
+  - Actions: Add to Global Standard, Mark Source-Specific, Ignore
+  - Export Update Request (copy-only JSON artifact)
+  - Decisions stored in localStorage
+
+### Preserved
+
+- Grid is default landing when dataLoaded=true
+- Triage acts as alert lens linking to Grid
+- Loader remains centered modal with focus trap
+- Admin UI only under #/admin/*
+
+---
+
 ## Version: v1.4.1
 Date: 2026-01-31
 

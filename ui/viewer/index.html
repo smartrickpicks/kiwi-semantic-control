@@ -937,7 +937,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Triage</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.4.1</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.4.2</span>
           </div>
           <p class="page-desc">Alert summary view. Click status cards to open filtered grid views.</p>
           <div class="triage-session-info" id="triage-session-info" style="margin-top: 10px; font-size: 0.85em; color: #666;"></div>
@@ -986,7 +986,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>All-Data Grid</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: GRID | BUILD v1.4.0</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: GRID | BUILD v1.4.2</span>
           </div>
           <p class="page-desc">Dense spreadsheet view of all records with filtering and search.</p>
         </div>
@@ -1015,6 +1015,17 @@
         <div id="grid-column-menu" style="display: none; position: fixed; top: 120px; right: 40px; background: white; border: 1px solid #ddd; border-radius: 8px; padding: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; max-height: 300px; overflow-y: auto;">
           <div style="font-weight: 600; margin-bottom: 8px; color: #333;">Visible Columns</div>
           <div id="grid-column-checkboxes"></div>
+        </div>
+
+        <!-- Per-Sheet Mini Stats -->
+        <div id="grid-sheet-stats" style="display: flex; gap: 16px; align-items: center; margin-bottom: 12px; padding: 10px 16px; background: #f8f9fa; border-radius: 6px; font-size: 0.85em; color: #555;">
+          <span id="grid-stat-rows"><strong>Rows:</strong> <span class="stat-value">0</span></span>
+          <span class="stat-divider" style="color: #ccc;">|</span>
+          <span id="grid-stat-ready"><strong>Ready:</strong> <span class="stat-value" style="color: #2e7d32;">0</span></span>
+          <span id="grid-stat-review"><strong>Needs Review:</strong> <span class="stat-value" style="color: #f57c00;">0</span></span>
+          <span id="grid-stat-blocked"><strong>Blocked:</strong> <span class="stat-value" style="color: #c62828;">0</span></span>
+          <span class="stat-divider admin-only-content" style="color: #ccc; display: none;">|</span>
+          <span id="grid-stat-unknown" class="admin-only-content" style="display: none;"><strong>Unknown Cols:</strong> <span class="stat-value" style="color: #7b1fa2;">0</span></span>
         </div>
 
         <!-- Dense Grid Table -->
@@ -1180,7 +1191,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Admin Console</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-CONSOLE | BUILD v1.4.1</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-CONSOLE | BUILD v1.4.2</span>
           </div>
           <p class="page-desc">Centralized admin tools for governance, config, standardization, and patch management.</p>
         </div>
@@ -1193,6 +1204,7 @@
           <button class="admin-tab" data-admin-tab="standardizer" onclick="switchAdminTab('standardizer')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Standardizer</button>
           <button class="admin-tab" data-admin-tab="patch-console" onclick="switchAdminTab('patch-console')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Patch Console</button>
           <button class="admin-tab" data-admin-tab="evidence" onclick="switchAdminTab('evidence')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Evidence</button>
+          <button class="admin-tab" data-admin-tab="unknown-cols" onclick="switchAdminTab('unknown-cols')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Unknown Cols</button>
         </div>
 
         <!-- GOVERNANCE TAB -->
@@ -1407,6 +1419,46 @@
           </div>
         </div>
         </div><!-- end admin-tab-evidence -->
+
+        <!-- UNKNOWN COLUMNS TAB -->
+        <div id="admin-tab-unknown-cols" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Unknown Columns (Schema Drift) <span class="info-icon" title="Columns found in imported data that don't match any canonical field. Decide how to handle each.">&#9432;</span></h3>
+          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Columns detected during standardization that aren't in the canonical schema. Decide how to classify each one.</p>
+          
+          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <button class="toolbar-btn" onclick="refreshUnknownColumnsTable()">Refresh</button>
+            <button class="toolbar-btn" onclick="exportUnknownColumnsRequest()">Export Update Request (Copy)</button>
+            <button class="toolbar-btn" onclick="clearUnknownColumnsDecisions()">Clear Decisions</button>
+          </div>
+          
+          <div id="unknown-cols-table-container" style="overflow-x: auto;">
+            <table class="grid-table" id="unknown-cols-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+              <thead style="background: #f5f5f5;">
+                <tr>
+                  <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Sheet</th>
+                  <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Original Name</th>
+                  <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Normalized</th>
+                  <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Sample Values</th>
+                  <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Non-Empty</th>
+                  <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="unknown-cols-tbody">
+                <tr><td colspan="6" style="text-align: center; padding: 40px; color: #888;">No unknown columns detected</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Pending Decisions</h3>
+          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Columns marked for action. Export to generate a standard update request artifact.</p>
+          <div id="unknown-cols-decisions" style="background: #f9f9f9; padding: 15px; border-radius: 6px; min-height: 60px; font-family: monospace; font-size: 0.85em;">
+            <em style="color: #888;">No decisions made yet.</em>
+          </div>
+        </div>
+        </div><!-- end admin-tab-unknown-cols -->
 
         <!-- STANDARDIZER TAB -->
         <div id="admin-tab-standardizer" class="admin-tab-panel" data-admin-section="true" style="display: none;">
@@ -4434,6 +4486,12 @@
       updateUIForDataState();
       updateSessionChip();
       
+      // Detect unknown columns for Admin (uses current dataset with sheet awareness)
+      if (typeof detectUnknownColumns === 'function') {
+        var sheetName = sessionState.fileName || sourceType || 'imported_data';
+        detectUnknownColumns(allData.contractResults, sheetName);
+      }
+      
       // Persist to localStorage if enabled
       const rememberChecked = document.getElementById('remember-session')?.checked;
       if (rememberChecked) {
@@ -4993,7 +5051,7 @@
     // Admin Console Tab Switching
     var currentAdminTab = 'governance';
     function switchAdminTab(tabName) {
-      const tabs = ['governance', 'config', 'inspector', 'standardizer', 'patch-console', 'evidence'];
+      const tabs = ['governance', 'config', 'inspector', 'standardizer', 'patch-console', 'evidence', 'unknown-cols'];
       if (!tabs.includes(tabName)) tabName = 'governance';
       currentAdminTab = tabName;
       
@@ -5331,11 +5389,21 @@
           return '<th>' + col.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); }) + '</th>';
         }).join('');
       
-      // Render body
+      // Render body with virtualization for large datasets
       var tbody = document.getElementById('grid-tbody');
+      var VIRTUALIZE_THRESHOLD = 2000;
+      var BATCH_SIZE = 100;
+      
       if (filtered.length === 0) {
+        cleanupGridVirtualization();
         tbody.innerHTML = '<tr><td colspan="' + (gridState.visibleColumns.length + 1) + '" style="text-align: center; padding: 40px; color: #666;">No records match filters</td></tr>';
+      } else if (filtered.length > VIRTUALIZE_THRESHOLD) {
+        // Virtualized rendering: render first batch and add scroll listener
+        renderGridBatch(filtered, 0, BATCH_SIZE, gridState.visibleColumns, true);
+        console.log('[Grid] Virtualized render enabled for ' + filtered.length + ' rows');
       } else {
+        // Cleanup virtualization when not needed
+        cleanupGridVirtualization();
         tbody.innerHTML = filtered.map(function(r, idx) {
           var statusClass = 'status-' + (r.status || '').toLowerCase().replace(/\s+/g, '_');
           return '<tr class="clickable" onclick="openRowReviewDrawer(\'' + (r.contract_key || idx) + '\')">' +
@@ -5359,6 +5427,49 @@
       if (gridState.filter !== 'all') filterInfo.push('Status: ' + gridState.filter);
       if (gridState.search) filterInfo.push('Search: "' + gridState.search + '"');
       document.getElementById('grid-filter-info').textContent = filterInfo.join(' | ');
+      
+      // Update per-sheet mini stats
+      updateGridSheetStats(records, filtered);
+    }
+    
+    function updateGridSheetStats(allRecords, filtered) {
+      // Compute stats for visible/filtered records
+      var rowCount = filtered.length;
+      var readyCount = 0, reviewCount = 0, blockedCount = 0;
+      
+      // Use filtered set for counts to match current view
+      filtered.forEach(function(r) {
+        var status = (r.status || '').toLowerCase().replace(/\s+/g, '_');
+        if (status === 'ready') readyCount++;
+        else if (status === 'needs_review') reviewCount++;
+        else if (status === 'blocked') blockedCount++;
+      });
+      
+      // For total context, also compute from sheet-level (unfiltered by status/search)
+      var sheetTotal = gridState.sheet ? 
+        allRecords.filter(function(r) { return r.sheet === gridState.sheet; }).length : 
+        allRecords.length;
+      
+      document.querySelector('#grid-stat-rows .stat-value').textContent = rowCount + ' / ' + sheetTotal;
+      document.querySelector('#grid-stat-ready .stat-value').textContent = readyCount;
+      document.querySelector('#grid-stat-review .stat-value').textContent = reviewCount;
+      document.querySelector('#grid-stat-blocked .stat-value').textContent = blockedCount;
+      
+      // Unknown columns count (admin only - already gated by CSS admin-only-content)
+      var unknownCount = getUnknownColumnsCount(gridState.sheet);
+      document.querySelector('#grid-stat-unknown .stat-value').textContent = unknownCount;
+    }
+    
+    function getUnknownColumnsCount(sheetName) {
+      var unknownCols = JSON.parse(localStorage.getItem('unknown_columns') || '{}');
+      if (sheetName && unknownCols[sheetName]) {
+        return unknownCols[sheetName].length;
+      }
+      var total = 0;
+      Object.keys(unknownCols).forEach(function(sheet) {
+        total += (unknownCols[sheet] || []).length;
+      });
+      return total;
     }
 
     function toggleColumnMenu() {
@@ -5425,8 +5536,249 @@
         });
       }
     });
+    var gridVirtualState = { data: [], rendered: 0, columns: [], active: false };
+    
+    function cleanupGridVirtualization() {
+      var container = document.querySelector('.grid-table-container');
+      if (container) {
+        container.removeEventListener('scroll', gridLazyLoadHandler);
+      }
+      gridVirtualState.active = false;
+    }
+    
+    function renderGridBatch(data, startIdx, batchSize, columns, isFirst) {
+      var tbody = document.getElementById('grid-tbody');
+      if (isFirst) {
+        cleanupGridVirtualization();
+        tbody.innerHTML = '';
+        gridVirtualState = { data: data, rendered: 0, columns: columns, active: true };
+        // Add scroll listener for lazy loading
+        var container = document.querySelector('.grid-table-container');
+        if (container) {
+          container.addEventListener('scroll', gridLazyLoadHandler);
+        }
+      }
+      
+      var endIdx = Math.min(startIdx + batchSize, data.length);
+      var fragment = document.createDocumentFragment();
+      
+      for (var idx = startIdx; idx < endIdx; idx++) {
+        var r = data[idx];
+        var tr = document.createElement('tr');
+        tr.className = 'clickable';
+        tr.onclick = (function(ck, i) { return function() { openRowReviewDrawer(ck || i); }; })(r.contract_key, idx);
+        
+        var statusClass = 'status-' + (r.status || '').toLowerCase().replace(/\s+/g, '_');
+        tr.innerHTML = '<td class="row-index">' + (idx + 1) + '</td>' +
+          columns.map(function(col) {
+            var val = r[col];
+            if (val === null || val === undefined) val = '';
+            if (typeof val === 'object') val = JSON.stringify(val);
+            var cellClass = col === 'status' ? statusClass : '';
+            return '<td class="' + cellClass + ' truncated" title="' + String(val).replace(/"/g, '&quot;') + '">' + String(val) + '</td>';
+          }).join('');
+        
+        fragment.appendChild(tr);
+      }
+      
+      tbody.appendChild(fragment);
+      gridVirtualState.rendered = endIdx;
+    }
+    
+    function gridLazyLoadHandler() {
+      var container = document.querySelector('.grid-table-container');
+      if (!container || gridVirtualState.rendered >= gridVirtualState.data.length) return;
+      
+      var scrollTop = container.scrollTop;
+      var scrollHeight = container.scrollHeight;
+      var clientHeight = container.clientHeight;
+      
+      // Load more when near bottom (within 200px)
+      if (scrollTop + clientHeight >= scrollHeight - 200) {
+        renderGridBatch(gridVirtualState.data, gridVirtualState.rendered, 100, gridVirtualState.columns, false);
+      }
+    }
+    
     // ============================================================
     // END GRID FUNCTIONS
+    
+    // ============================================================
+    // UNKNOWN COLUMNS FUNCTIONS (v1.4.2)
+    // ============================================================
+    
+    var CANONICAL_FIELDS = ['contract_key', 'file_name', 'file_url', 'status', 'subtype', 'severity', 'sheet', 'notes'];
+    
+    function detectUnknownColumns(records, sheetName) {
+      if (!records || records.length === 0) return [];
+      
+      var unknownCols = [];
+      var seenCols = new Set();
+      
+      records.forEach(function(record) {
+        Object.keys(record).forEach(function(key) {
+          if (seenCols.has(key)) return;
+          seenCols.add(key);
+          
+          var normalized = normalizeColumnName(key);
+          if (!CANONICAL_FIELDS.includes(normalized) && !key.startsWith('_')) {
+            var sampleValues = [];
+            var nonEmptyCount = 0;
+            
+            records.slice(0, 20).forEach(function(r) {
+              var val = r[key];
+              if (val !== null && val !== undefined && val !== '') {
+                nonEmptyCount++;
+                if (sampleValues.length < 3) sampleValues.push(String(val).substring(0, 50));
+              }
+            });
+            
+            unknownCols.push({
+              original_name: key,
+              normalized_name: normalized,
+              sample_values: sampleValues,
+              count_nonempty: nonEmptyCount,
+              suggested_canonical: null,
+              decision: null
+            });
+          }
+        });
+      });
+      
+      // Store in localStorage
+      var stored = JSON.parse(localStorage.getItem('unknown_columns') || '{}');
+      stored[sheetName || '_default'] = unknownCols;
+      localStorage.setItem('unknown_columns', JSON.stringify(stored));
+      
+      return unknownCols;
+    }
+    
+    function normalizeColumnName(name) {
+      return String(name).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    }
+    
+    function refreshUnknownColumnsTable() {
+      var tbody = document.getElementById('unknown-cols-tbody');
+      var stored = JSON.parse(localStorage.getItem('unknown_columns') || '{}');
+      var decisions = JSON.parse(localStorage.getItem('unknown_columns_decisions') || '{}');
+      
+      var allCols = [];
+      Object.keys(stored).forEach(function(sheet) {
+        (stored[sheet] || []).forEach(function(col) {
+          col.sheet = sheet;
+          col.decision = decisions[sheet + '::' + col.original_name] || null;
+          allCols.push(col);
+        });
+      });
+      
+      if (allCols.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: #888;">No unknown columns detected</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = allCols.map(function(col) {
+        var key = col.sheet + '::' + col.original_name;
+        var actionHtml = '<select onchange="setUnknownColumnDecision(\'' + key.replace(/'/g, "\\'") + '\', this.value)" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #ccc;">' +
+          '<option value=""' + (!col.decision ? ' selected' : '') + '>-- Select --</option>' +
+          '<option value="add_global"' + (col.decision === 'add_global' ? ' selected' : '') + '>Add to Global Standard</option>' +
+          '<option value="source_specific"' + (col.decision === 'source_specific' ? ' selected' : '') + '>Mark Source-Specific</option>' +
+          '<option value="ignore"' + (col.decision === 'ignore' ? ' selected' : '') + '>Ignore</option>' +
+          '</select>';
+        
+        return '<tr>' +
+          '<td style="padding: 8px; border-bottom: 1px solid #eee;">' + col.sheet + '</td>' +
+          '<td style="padding: 8px; border-bottom: 1px solid #eee; font-family: monospace;">' + col.original_name + '</td>' +
+          '<td style="padding: 8px; border-bottom: 1px solid #eee; font-family: monospace; color: #666;">' + col.normalized_name + '</td>' +
+          '<td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 0.85em; color: #888;">' + col.sample_values.join(', ') + '</td>' +
+          '<td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">' + col.count_nonempty + '</td>' +
+          '<td style="padding: 8px; border-bottom: 1px solid #eee;">' + actionHtml + '</td>' +
+          '</tr>';
+      }).join('');
+      
+      updateUnknownColumnsDecisionsDisplay();
+    }
+    
+    function setUnknownColumnDecision(key, decision) {
+      var decisions = JSON.parse(localStorage.getItem('unknown_columns_decisions') || '{}');
+      if (decision) {
+        decisions[key] = decision;
+      } else {
+        delete decisions[key];
+      }
+      localStorage.setItem('unknown_columns_decisions', JSON.stringify(decisions));
+      updateUnknownColumnsDecisionsDisplay();
+    }
+    
+    function updateUnknownColumnsDecisionsDisplay() {
+      var container = document.getElementById('unknown-cols-decisions');
+      var decisions = JSON.parse(localStorage.getItem('unknown_columns_decisions') || '{}');
+      var keys = Object.keys(decisions);
+      
+      if (keys.length === 0) {
+        container.innerHTML = '<em style="color: #888;">No decisions made yet.</em>';
+        return;
+      }
+      
+      var html = keys.map(function(key) {
+        var parts = key.split('::');
+        return '<div style="margin-bottom: 4px;"><span style="color: #1976d2;">' + parts[0] + '</span>.<span style="color: #333;">' + parts[1] + '</span> → <span style="color: #2e7d32;">' + decisions[key] + '</span></div>';
+      }).join('');
+      
+      container.innerHTML = html;
+    }
+    
+    function exportUnknownColumnsRequest() {
+      var decisions = JSON.parse(localStorage.getItem('unknown_columns_decisions') || '{}');
+      var stored = JSON.parse(localStorage.getItem('unknown_columns') || '{}');
+      
+      var requests = [];
+      Object.keys(decisions).forEach(function(key) {
+        var parts = key.split('::');
+        var sheet = parts[0];
+        var colName = parts[1];
+        var decision = decisions[key];
+        
+        var colData = null;
+        if (stored[sheet]) {
+          colData = stored[sheet].find(function(c) { return c.original_name === colName; });
+        }
+        
+        requests.push({
+          request_id: 'SUR_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8),
+          timestamp_utc: new Date().toISOString(),
+          sheet: sheet,
+          canonical_field_name: colData ? colData.normalized_name : normalizeColumnName(colName),
+          source_aliases: [colName],
+          classification: decision,
+          source_tag_optional: decision === 'source_specific' ? sheet : null
+        });
+      });
+      
+      var artifact = {
+        type: 'standard_update_request',
+        version: '1.0',
+        generated_at: new Date().toISOString(),
+        requests: requests
+      };
+      
+      var json = JSON.stringify(artifact, null, 2);
+      navigator.clipboard.writeText(json).then(function() {
+        showToast('Standard update request copied to clipboard (' + requests.length + ' items)');
+      });
+      
+      localStorage.setItem('last_standard_update_request', json);
+    }
+    
+    function clearUnknownColumnsDecisions() {
+      if (confirm('Clear all pending decisions?')) {
+        localStorage.removeItem('unknown_columns_decisions');
+        refreshUnknownColumnsTable();
+        showToast('Decisions cleared');
+      }
+    }
+    
+    // ============================================================
+    // END UNKNOWN COLUMNS FUNCTIONS
+    // ============================================================
     // ============================================================
 
     function updateLoaderModalUI() {
