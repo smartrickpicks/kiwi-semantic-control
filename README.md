@@ -53,5 +53,8 @@ bash scripts/replit_smoke.sh --edge
 - local_runner/: offline harness (validate/preview)
 - scripts/: smoke, MCP link generator, repo materializer (offline‑only)
 - ui/: viewer mock (copy‑only; no execution, no writes)
+## Stakeholder Materials
+
+Executive-facing overviews, deck outlines, and FAQs derived from the core governance doctrine live under `docs/stakeholder/`. These documents are non-normative and reference this README, Flow Doctrine, and Human–Agent workflow as sources of truth.
 
 Primary navigation: docs/INDEX.md
