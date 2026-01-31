@@ -1,18 +1,23 @@
 # SCOPE_control_plane.md
 
 ## Purpose
-The Kiwi Semantic Control Board is a standalone control plane for authoring, validating, and governing semantic rules used in downstream systems. Its purpose is to capture human judgment about meaning, intent, and edge cases, and translate that judgment into deterministic, reviewable configuration artifacts.
+
+The Semantic Control Board (Orchestrate OS) is a standalone control plane for authoring, validating, and governing semantic rules used in downstream systems. It captures human judgment about meaning, intent, and edge cases, then translates that judgment into deterministic, reviewable configuration artifacts.
 
 This system exists to make semantic decisions explicit, stable, and auditable.
+
+## Integration Posture (V1)
+Orchestrate OS is governance-first and does not directly connect to or mutate external systems. External data may be brought into Oorchestrate OS via mediated labys (e.g., Kiwi) and/or offline exports (e.g., Salesforce Sandbox exports). Any connectivity happens outside the governance plane; no credentials or secrets are stored inside the governance plane.
 
 ## Intended Users
 - Operators: Perform reviews, identify patterns, and author rules.
 - Analysts: Validate semantic consistency and downstream impact.
-- Reviewers: Approve, reject, or request changes to rule patches.
+- Verifiers: Approve, reject, or request changes to rule patches.
+- Admin: Governs configuration conventions, determinism policy, baseline and versioning discipline; approves/exports governed patches.
 
 ## Inputs
 - Standardized datasets (post-normalization, example-based)
-- QA packets (observed errors, edge cases, inconsistencies)
+- QA artifacts (observed errors, edge cases, inconsistencies)
 - Salesforce-like field expectations (conceptual, not API-bound)
 - Existing config_pack base files
 
@@ -22,16 +27,12 @@ This system exists to make semantic decisions explicit, stable, and auditable.
 - Offline preview classifications
 - Human-readable documentation and changelogs
 
-## Explicit Non-Goals
-This control board will never:
-- Execute production logic
-- Connect to Salesforce or any external APIs
-- Contain credentials, secrets, or runtime configs
-- Generate or host LLM prompts (Kiwi v2)
-- Perform extraction, resolution, or enrichment
+## Integration Posture (UP-F1)
+- No direct connectors or mutating actions within the control plane.
+- External data ingestion may occur via mediated layers (e.g., Kiwi) and/or offline exports (e.g., Salesforce Sandbox).
+- The governance plane does not store credentials/secrets; any connectivity occurs outside (therefore mendiated).
 
-## Relationship to Other Systems
-- DataDash: Consumes exported config_packs as input. DataDash is a runtime and execution environment; Kiwi is not.
-- Kiwi v2: Uses the semantic outputs defined here, but prompt logic and model behavior are out of scope.
-
-The control board is the source of truth for semantics, independent of any runtime.
+## Explicit Non-Goals (preserved)
+- No embedded runtime execution within the control plane.
+- No LLM prompts hosted or models connected to control plane flows.
+- Offline-first, strict determinism constraints.
