@@ -32,6 +32,30 @@
 - docs/TRUTH_SNAPSHOT.md
 - docs/CONFLICT_RESOLUTION.md
 - docs/REVIEW_CHECKLIST.md
+- docs/AUDIT_LOG.md
+
+## V1 Workflow & Doctrine
+- docs/V1/Flow-Doctrine.md
+
+## UI Contracts
+- docs/ui/ui_principles.md
+- docs/ui/gate_view_mapping.md
+
+### UI Roles
+- docs/ui/roles/analyst.md
+- docs/ui/roles/verifier.md
+- docs/ui/roles/admin.md
+
+### UI Views
+- docs/ui/views/triage_view.md
+- docs/ui/views/record_inspection_view.md
+- docs/ui/views/patch_authoring_view.md
+- docs/ui/views/verifier_review_view.md
+- docs/ui/views/admin_approval_view.md
+- docs/ui/views/promotion_view.md
+- docs/ui/views/load_data_view.md
+- docs/ui/views/all_data_grid_view.md
+- docs/ui/views/single_row_review_view.md
 
 ## Rules and Templates
 - rules/salesforce_rules.txt

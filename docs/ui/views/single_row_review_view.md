@@ -68,7 +68,7 @@ Patch editor emits deterministic events:
 - Block conditions are displayed but cannot be resolved here.
 
 ## Navigation
-- From All Data Grid → Single Row Review (this view).
+- From All-Data Grid → Single Row Review (this view).
 - From this view:
   - Open Audit Log detail (read-only overlay or linked panel).
   - Navigate to governed gating views (verifier_review_view, admin_approval_view) via explicit links that do not perform transitions themselves.

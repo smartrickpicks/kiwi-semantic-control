@@ -23,7 +23,7 @@ This document defines the governance workflow for human+agent collaboration in t
 - **Actor**: Operator
 - **Action**: Review queue counts and summary cards
 - **Gate**: Operator acknowledges data state
-- **Evidence**: Queue snapshot (To Do, Needs Review, Flagged, Blocked, Finalized)
+- **Evidence**: Review State snapshot (To Do, Needs Review, Flagged, Blocked, Finalized)
 
 ### Stage 3: Record Inspection
 - **Actor**: Operator
@@ -73,9 +73,9 @@ This document defines the governance workflow for human+agent collaboration in t
 - **Gate**: Admin decision recorded
 - **Evidence**: Admin action log, export payload if applicable
 
-### Stage 11: Apply Patch
+### Stage 11: Promote Patch to Baseline (legacy: Apply Patch)
 - **Actor**: Admin (after external confirmation if required)
-- **Action**: Mark patch as applied to semantic baseline
+- **Action**: Promote patch to semantic baseline
 - **Gate**: Confirmation of application
 - **Evidence**: Applied timestamp, baseline version updated
 
@@ -99,12 +99,12 @@ Deprecated terms that indicate drift from V1 naming:
 - "Kiwi Control Board" → use "Semantic Control Board"
 - "All Data Grid" → use "All-Data Grid"
 - "Reviewer Hub" → use "Verifier Review"
-- "Queue" as standalone nav label → use specific queue name
+- "Queue" as standalone nav label → use specific Review State name
 
 ## Acceptance Tests
 
 1. **Load Test**: Sample dataset loads with correct row count
-2. **Triage Test**: Queue counts match data state
+2. **Triage Test**: Review State counts match data state
 3. **Patch Test**: Structured intent renders correctly
 4. **Preflight Test**: Invalid patches show fail badge
 5. **Submit Test**: Audit log captures submission

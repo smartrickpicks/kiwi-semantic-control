@@ -38,7 +38,7 @@
       "label": "Triage Review",
       "stage": 2,
       "actor": "operator",
-      "description": "Review queue counts and summary cards"
+      "description": "Review Review State counts and summary cards"
     },
     {
       "id": "record_inspection",
@@ -82,7 +82,7 @@
       "label": "Submit to Queue",
       "stage": 8,
       "actor": "operator",
-      "description": "Submit patch request to review queue"
+      "description": "Submit patch request for review"
     },
     {
       "id": "verifier_review",
@@ -99,11 +99,12 @@
       "description": "Final approval, hold, or export to external system"
     },
     {
-      "id": "apply_patch",
-      "label": "Apply Patch",
+      "id": "promote_patch",
+      "label": "Promote Patch to Baseline",
+      "legacy_label": "Apply Patch",
       "stage": 11,
       "actor": "admin",
-      "description": "Mark patch as applied to semantic baseline"
+      "description": "Promote patch to semantic baseline"
     },
     {
       "id": "promotion",
@@ -126,9 +127,9 @@
     { "from": "verifier_review", "to": "patch_authoring", "condition": "clarification_requested", "label": "Needs Clarification" },
     { "from": "verifier_review", "to": "admin_approval", "condition": "verifier_approved" },
     { "from": "verifier_review", "to": "submit_queue", "condition": "verifier_rejected", "label": "Rejected" },
-    { "from": "admin_approval", "to": "apply_patch", "condition": "admin_approved" },
+    { "from": "admin_approval", "to": "promote_patch", "condition": "admin_approved" },
     { "from": "admin_approval", "to": "verifier_review", "condition": "admin_hold", "label": "Hold" },
-    { "from": "apply_patch", "to": "promotion", "condition": "patch_applied" }
+    { "from": "promote_patch", "to": "promotion", "condition": "patch_promoted" }
   ],
   "gates": [
     {
@@ -174,12 +175,12 @@
       { "old": "Kiwi Control Board", "new": "Semantic Control Board" },
       { "old": "All Data Grid", "new": "All-Data Grid" },
       { "old": "Reviewer Hub", "new": "Verifier Review" },
-      { "old": "Queue", "context": "standalone nav label", "new": "specific queue name" }
+      { "old": "Queue", "context": "standalone nav label", "new": "Review State name" }
     ]
   },
   "acceptance_tests": [
     { "id": "load_test", "description": "Sample dataset loads with correct row count" },
-    { "id": "triage_test", "description": "Queue counts match data state" },
+    { "id": "triage_test", "description": "Review State counts match data state" },
     { "id": "patch_test", "description": "Structured intent renders correctly" },
     { "id": "preflight_test", "description": "Invalid patches show fail badge" },
     { "id": "submit_test", "description": "Audit log captures submission" },

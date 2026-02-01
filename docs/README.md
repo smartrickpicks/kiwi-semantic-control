@@ -32,12 +32,16 @@ See [INDEX.md](INDEX.md) for the complete table of contents.
 ### Views
 | Document | Description |
 |----------|-------------|
-| [Triage View](ui/views/triage_view.md) | Queue summary and navigation hub |
+| [Triage View](ui/views/triage_view.md) | Review State summary and navigation hub |
 | [Record Inspection](ui/views/record_inspection_view.md) | Single-record detail view |
 | [Patch Authoring](ui/views/patch_authoring_view.md) | Patch Studio workbench |
 | [Verifier Review](ui/views/verifier_review_view.md) | Review surface for verifiers |
 | [Admin Approval](ui/views/admin_approval_view.md) | Final approval surface |
 | [Promotion](ui/views/promotion_view.md) | Baseline promotion and PR export |
+| [Load Data](ui/views/load_data_view.md) | Governed loader (modal) |
+| [All-Data Grid](ui/views/all_data_grid_view.md) | Bulk inspection surface |
+| [Single Row Review](ui/views/single_row_review_view.md) | Per-record inspection |
+| [AUDIT_LOG](AUDIT_LOG.md) | Append-only evidence ledger |
 
 ## Core Principles
 

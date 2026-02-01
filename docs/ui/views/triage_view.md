@@ -1,6 +1,6 @@
 # View: Triage
 
-> Alert summary view showing queue counts and status cards for quick navigation.
+> Alert summary view showing Review State counts and status cards for quick navigation.
 
 ## Entry Conditions
 
@@ -14,7 +14,7 @@
 
 | Artifact | Description | Required |
 |----------|-------------|----------|
-| Queue counts | To Do, Needs Review, Flagged, Blocked, Finalized | Yes |
+| Review State counts | To Do, Needs Review, Flagged, Blocked, Finalized | Yes |
 | Summary cards | Contracts, Ready, Needs Review, Blocked | Yes |
 | Data source label | Source name and load timestamp | Yes |
 | Filter controls | Search, severity, status, subtype | Yes |
@@ -23,7 +23,7 @@
 
 | Action | Analyst | Verifier | Admin |
 |--------|---------|----------|-------|
-| View queue counts | Yes | Yes | Yes |
+| View Review State counts | Yes | Yes | Yes |
 | Click status card (navigate to filtered grid) | Yes | Yes | Yes |
 | Apply filters | Yes | Yes | Yes |
 | Click record row (open inspection) | Yes | Yes | Yes |

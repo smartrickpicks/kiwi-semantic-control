@@ -2,8 +2,11 @@
 
 Orchestrate OS is an offline‑first, deterministic governance system for semantic rules. It reads local artifacts, validates and previews changes, and helps export patch files for review. There is no runtime execution or network; smoke tests and preview evidence are the arbiter of correctness.
 
-## Queue‑Centric Workflow
-Queues are the entry point, mirroring DataDash familiarity:
+## Review-State-Centric Workflow
+
+> **Operator** = a human user (Analyst/Verifier/Admin) performing non-gated actions.
+
+Review States are the entry point, mirroring DataDash familiarity:
 - To Do: records with READY/NEEDS_REVIEW and not finalized/blocked
 - Needs Review: records awaiting reviewer confirmation
 - Flagged: attention items with warnings or explicit flags

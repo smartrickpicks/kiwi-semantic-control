@@ -1,13 +1,15 @@
-# Orchestrate OS — Workbench (Queues + Triage)
+# Orchestrate OS — Workbench (Review States + Triage)
+
+> **Operator** = a human user (Analyst/Verifier/Admin) performing non-gated actions.
 
 Audience
 - Non‑technical Analysts and Reviewers working with artifacts only (offline‑first).
 
 Purpose
-- The Workbench is your primary triage screen. Load artifacts, inspect queues, open a record, review issues/actions, and (optionally) open Patch Studio. All interactions are copy‑only; no network, no execution, no file writes.
+- The Workbench is your primary triage screen. Load artifacts, inspect Review States, open a record, review issues/actions, and (optionally) open Patch Studio. All interactions are copy‑only; no network, no execution, no file writes.
 
 What you see (panels)
-- Queues Panel: deterministic tables (To Do, Needs Review, Flagged, Blocked, Finalized)
+- Review States Panel: deterministic tables (To Do, Needs Review, Flagged, Blocked, Finalized)
 - Record Context Panel (drawer): identity keys (contract_key → file_url → file_name), fields, issues, field actions
 - PDF Viewer: local PDF with deterministic highlights and navigation
 - Evidence Strip: pasted gate status chips (Base/Validation/Conflicts/Smoke)
@@ -20,7 +22,7 @@ Buttons & actions (deterministic)
 - Run (modal): copy commands for validate/preview/smoke (UI never executes). [screenshot: Run Modal]
 - Build Patch: opens Patch Studio from Workbench for the current selection. [screenshot: Build Patch]
 
-Queues (entry point)
+Review States (entry point)
 - Sorting (always): severity (blocking > warning > info), then contract_key, file_url, file_name (asc; nulls last)
 - To Do: READY/NEEDS_REVIEW, not Blocked/Finalized
 - Needs Review: requires reviewer confirmation
@@ -43,5 +45,5 @@ Determinism
 - Editor/LSP diagnostics are non‑authoritative; Preview Packet + smoke are the arbiter.
 
 Troubleshooting
-- Empty queues: ensure Preview Packet loaded.
+- Empty Review States: ensure Preview Packet loaded.
 - Missing highlights: confirm local PDF selection; highlights rely on deterministic mapping from Preview Packet.
