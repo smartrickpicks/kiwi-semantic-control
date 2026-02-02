@@ -16,23 +16,39 @@ Contract: This document defines the record-level inspection surface. It supports
   - Read-only in this view (inspect baseline, deltas, evidence, and audit log).
   - Gate decisions (STATE_MARKED) occur only in their dedicated governed views (verifier_review_view, admin_approval_view).
 
-## Layout (High-Level)
-- Left pane: Field inspector
-  - Shows fields in a deterministic order (e.g., schema order), each with indicators:
-    - System-derived (neutral icon)
-    - User-modified (delta icon)
-    - Flagged (flag icon with severity)
-  - Field row affordances (read-only for Verifier/Admin): expand to see baseline, proposed value, and field audit subset.
-- Right pane: Evidence Pack editor panel (Analyst-only interactive)
-  - Structured editor with 4 canonical blocks:
-    - **Observation** (helper alias: WHEN)
-    - **Expected** (helper alias: THEN)
-    - **Justification** (helper alias: BECAUSE)
-    - **Repro** (no alias)
-  - Action buttons: Save Patch Draft (emits PATCH_DRAFTED), Submit Patch Request (emits PATCH_SUBMITTED + REVIEW_REQUESTED). No state transition occurs here.
-- Bottom or drawer: Evidence viewer (embedded PDF and anchors)
-  - Inline PDF viewer with highlight overlay.
-  - Evidence list with anchors; selection syncs to current highlight.
+## Layout (Three-Panel)
+
+### Top Bar
+- Back to Grid button
+- Record identity (contract_key or record_id)
+- Review State badge (read-only display)
+- Open Audit Log button (read-only link)
+
+### Left Panel: Field Inspector
+- Shows fields in deterministic order (alphabetical by default, schema order when available)
+- Per-field indicators:
+  - System-derived (S badge, neutral)
+  - User-modified (Δ badge, delta)
+  - Flagged (! badge, warning/error)
+  - Evidence anchor count (optional)
+- Field click focuses related evidence anchors in Document Viewer
+
+### Center Panel: Document Viewer
+- PDF viewer container (stub frame with page controls)
+- Page navigation (← Prev / Next →) and zoom controls
+- Evidence anchor highlight overlay (bounding boxes)
+- Anchor list with click-to-scroll behavior
+
+### Right Panel: Evidence Pack + Patch Request
+- Evidence Pack with 4 canonical blocks:
+  - **Observation** (helper alias: WHEN) — What situation was observed
+  - **Expected** (helper alias: THEN) — What behavior is expected
+  - **Justification** (helper alias: BECAUSE) — Why this change is correct
+  - **Repro** (no alias) — Steps to reproduce
+- Patch Request section:
+  - Proposed changes list (path/before/after)
+  - Buttons: **Save Patch Draft**, **Submit Patch Request**
+  - No Review State transitions occur here
 
 ## Field-Level Indicators (Deterministic)
 For each field:
