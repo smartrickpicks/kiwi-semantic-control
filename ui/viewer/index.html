@@ -332,6 +332,71 @@
     .filter-chip:hover { opacity: 1; }
     .filter-chip.active { background: #1976d2; color: white; border-color: #1565c0; }
 
+    /* Single Row Review - Three Panel Layout */
+    .srr-layout { display: flex; height: calc(100vh - 160px); gap: 0; }
+    .srr-panel { background: white; border: 1px solid #e0e0e0; overflow-y: auto; }
+    .srr-panel-left { width: 280px; flex-shrink: 0; border-right: none; }
+    .srr-panel-center { flex: 1; min-width: 300px; }
+    .srr-panel-right { width: 360px; flex-shrink: 0; border-left: none; }
+    .srr-panel-header { background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-weight: 600; font-size: 0.9em; color: #333; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 5; }
+    .srr-panel-body { padding: 12px; }
+    .srr-top-bar { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 12px 16px; background: #1a1a2e; border-radius: 8px; color: white; }
+    .srr-identity { font-family: 'Courier New', monospace; font-size: 0.85em; background: #0f3460; padding: 6px 12px; border-radius: 4px; }
+    .srr-state-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; text-transform: uppercase; }
+    .srr-state-badge.ready { background: #c8e6c9; color: #2e7d32; }
+    .srr-state-badge.needs_review { background: #ffe0b2; color: #e65100; }
+    .srr-state-badge.blocked { background: #ffcdd2; color: #c62828; }
+    .srr-state-badge.finalized { background: #bbdefb; color: #1565c0; }
+    .srr-back-btn { background: #0f3460; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85em; display: flex; align-items: center; gap: 6px; }
+    .srr-back-btn:hover { background: #1565c0; }
+    
+    /* Field Inspector */
+    .srr-field-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.15s; }
+    .srr-field-item:hover { background: #f8f9fa; }
+    .srr-field-item.active { background: #e3f2fd; border-left: 3px solid #1565c0; }
+    .srr-field-name { flex: 1; font-size: 0.85em; font-weight: 500; word-break: break-word; }
+    .srr-field-value { font-size: 0.8em; color: #666; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .srr-field-indicators { display: flex; gap: 4px; }
+    .srr-indicator { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65em; }
+    .srr-indicator.system { background: #e0e0e0; color: #666; }
+    .srr-indicator.delta { background: #fff3e0; color: #e65100; }
+    .srr-indicator.flag { background: #ffcdd2; color: #c62828; }
+    .srr-indicator.evidence { background: #e3f2fd; color: #1565c0; }
+    
+    /* Document Viewer */
+    .srr-doc-viewer { height: 100%; display: flex; flex-direction: column; }
+    .srr-doc-controls { display: flex; gap: 8px; padding: 8px 12px; background: #263238; border-bottom: 1px solid #37474f; }
+    .srr-doc-btn { background: #37474f; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8em; }
+    .srr-doc-btn:hover { background: #455a64; }
+    .srr-doc-frame { flex: 1; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.9em; position: relative; min-height: 400px; }
+    .srr-anchor-overlay { position: absolute; border: 2px solid #1565c0; background: rgba(21, 101, 192, 0.1); pointer-events: auto; cursor: pointer; }
+    .srr-anchor-overlay:hover { background: rgba(21, 101, 192, 0.25); }
+    .srr-anchor-list { padding: 12px; border-top: 1px solid #e0e0e0; max-height: 150px; overflow-y: auto; }
+    .srr-anchor-item { padding: 8px 10px; background: #f8f9fa; border-radius: 4px; margin-bottom: 6px; font-size: 0.8em; cursor: pointer; border-left: 3px solid #1565c0; }
+    .srr-anchor-item:hover { background: #e3f2fd; }
+    
+    /* Evidence Pack + Patch Request */
+    .srr-evidence-block { margin-bottom: 16px; }
+    .srr-evidence-label { font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .srr-evidence-alias { font-weight: 400; color: #999; }
+    .srr-evidence-textarea { width: 100%; min-height: 70px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85em; font-family: inherit; resize: vertical; }
+    .srr-evidence-textarea:focus { border-color: #1565c0; outline: none; }
+    .srr-patch-section { margin-top: 20px; padding-top: 16px; border-top: 1px solid #e0e0e0; }
+    .srr-patch-list { background: #f9f9f9; border-radius: 6px; max-height: 120px; overflow-y: auto; margin-bottom: 12px; }
+    .srr-patch-item { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 0.8em; }
+    .srr-patch-item:last-child { border-bottom: none; }
+    .srr-patch-path { font-family: 'Courier New', monospace; color: #7b1fa2; }
+    .srr-patch-change { display: flex; gap: 8px; margin-top: 4px; }
+    .srr-patch-before { color: #c62828; text-decoration: line-through; }
+    .srr-patch-after { color: #2e7d32; }
+    .srr-actions { display: flex; gap: 8px; margin-top: 16px; }
+    .srr-btn { flex: 1; padding: 10px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500; }
+    .srr-btn-secondary { background: #455a64; color: white; }
+    .srr-btn-secondary:hover { background: #546e7a; }
+    .srr-btn-primary { background: #1565c0; color: white; }
+    .srr-btn-primary:hover { background: #1976d2; }
+    .srr-empty-state { color: #999; font-style: italic; text-align: center; padding: 20px; }
+
     /* Grid Table Styles */
     .grid-table { min-width: 800px; }
     .grid-table th, .grid-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e0e0e0; white-space: nowrap; }
@@ -1041,6 +1106,110 @@
           <span id="grid-filter-info"></span>
         </div>
       </div><!-- end page-grid -->
+
+      <!-- SINGLE ROW REVIEW PAGE -->
+      <div class="page" id="page-row">
+        <div class="page-header">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <h2>Single Row Review</h2>
+            <span style="font-size: 0.7em; color: #999;">PAGE: SINGLE-ROW-REVIEW | BUILD v1.4.5</span>
+          </div>
+          <p class="page-desc">Per-record inspection with Evidence Pack authoring and Patch Request creation.</p>
+        </div>
+
+        <!-- Top Bar: Identity, State Badge, Back Button -->
+        <div class="srr-top-bar">
+          <button class="srr-back-btn" onclick="navigateTo('grid')">← Back to Grid</button>
+          <div style="flex: 1;">
+            <span style="font-size: 0.75em; color: #aaa; margin-right: 8px;">Record:</span>
+            <span class="srr-identity" id="srr-record-id">—</span>
+          </div>
+          <div>
+            <span style="font-size: 0.75em; color: #aaa; margin-right: 8px;">Review State:</span>
+            <span class="srr-state-badge" id="srr-state-badge">—</span>
+          </div>
+          <button class="srr-back-btn" onclick="showAuditLogForRecord()" title="View audit log for this record">Audit Log</button>
+        </div>
+
+        <!-- Three-Panel Layout -->
+        <div class="srr-layout">
+          <!-- Left Panel: Field Inspector -->
+          <div class="srr-panel srr-panel-left">
+            <div class="srr-panel-header">
+              <span>Field Inspector</span>
+              <span id="srr-field-count" style="font-weight: normal; color: #666; font-size: 0.85em;">0 fields</span>
+            </div>
+            <div class="srr-panel-body" id="srr-field-list" style="padding: 0;">
+              <div class="srr-empty-state">No fields loaded</div>
+            </div>
+          </div>
+
+          <!-- Center Panel: Document Viewer -->
+          <div class="srr-panel srr-panel-center">
+            <div class="srr-panel-header">
+              <span>Document Viewer</span>
+              <span id="srr-doc-page" style="font-weight: normal; color: #666; font-size: 0.85em;">Page 1 of 1</span>
+            </div>
+            <div class="srr-doc-viewer">
+              <div class="srr-doc-controls">
+                <button class="srr-doc-btn" onclick="srrPrevPage()">← Prev</button>
+                <button class="srr-doc-btn" onclick="srrNextPage()">Next →</button>
+                <button class="srr-doc-btn" onclick="srrZoomOut()">−</button>
+                <button class="srr-doc-btn" onclick="srrZoomIn()">+</button>
+              </div>
+              <div class="srr-doc-frame" id="srr-doc-frame">
+                <div style="text-align: center;">
+                  <div style="font-size: 3em; margin-bottom: 10px;">📄</div>
+                  <div>No document attached</div>
+                  <div style="font-size: 0.85em; color: #999; margin-top: 8px;">PDF viewer stub — attach documents via Data Source</div>
+                </div>
+              </div>
+              <div class="srr-anchor-list" id="srr-anchor-list">
+                <div style="font-size: 0.8em; font-weight: 600; color: #666; margin-bottom: 8px;">Evidence Anchors</div>
+                <div class="srr-empty-state" style="padding: 10px;">No anchors defined</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Panel: Evidence Pack + Patch Request -->
+          <div class="srr-panel srr-panel-right">
+            <div class="srr-panel-header">
+              <span>Evidence Pack + Patch Request</span>
+            </div>
+            <div class="srr-panel-body">
+              <!-- Evidence Pack: 4 Canonical Blocks -->
+              <div class="srr-evidence-block">
+                <div class="srr-evidence-label">Observation <span class="srr-evidence-alias">(WHEN)</span></div>
+                <textarea class="srr-evidence-textarea" id="srr-observation" placeholder="What situation was observed..."></textarea>
+              </div>
+              <div class="srr-evidence-block">
+                <div class="srr-evidence-label">Expected <span class="srr-evidence-alias">(THEN)</span></div>
+                <textarea class="srr-evidence-textarea" id="srr-expected" placeholder="What behavior is expected..."></textarea>
+              </div>
+              <div class="srr-evidence-block">
+                <div class="srr-evidence-label">Justification <span class="srr-evidence-alias">(BECAUSE)</span></div>
+                <textarea class="srr-evidence-textarea" id="srr-justification" placeholder="Why this change is correct..."></textarea>
+              </div>
+              <div class="srr-evidence-block">
+                <div class="srr-evidence-label">Repro</div>
+                <textarea class="srr-evidence-textarea" id="srr-repro" placeholder="Steps to reproduce the issue..."></textarea>
+              </div>
+
+              <!-- Patch Request Section -->
+              <div class="srr-patch-section">
+                <div style="font-size: 0.85em; font-weight: 600; color: #333; margin-bottom: 10px;">Proposed Changes</div>
+                <div class="srr-patch-list" id="srr-patch-list">
+                  <div class="srr-empty-state" style="padding: 12px;">No changes proposed yet</div>
+                </div>
+                <div class="srr-actions">
+                  <button class="srr-btn srr-btn-secondary" onclick="srrSaveDraft()">Save Patch Draft</button>
+                  <button class="srr-btn srr-btn-primary" onclick="srrSubmitPatchRequest()">Submit Patch Request</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- end page-row -->
 
       <!-- PATCH STUDIO PAGE -->
       <div class="page" id="page-patch">
@@ -5894,6 +6063,16 @@
       renderGrid();
     }
 
+    // Single Row Review state
+    var srrState = {
+      currentRecord: null,
+      currentRowId: null,
+      docPage: 1,
+      docTotalPages: 1,
+      zoom: 1,
+      patchDraft: { observation: '', expected: '', justification: '', repro: '', changes: [] }
+    };
+
     function openRowReviewDrawer(rowId) {
       // Find record by contract_key or index
       var record = null;
@@ -5915,11 +6094,168 @@
         return;
       }
       
-      // Open record detail drawer (reuse existing drawer if available)
-      openRecordDetailDrawer(record);
+      // Store in state and navigate to Single Row Review page
+      srrState.currentRecord = record;
+      srrState.currentRowId = rowId;
+      
+      // Navigate to page and render
+      navigateTo('row');
+      renderSingleRowReview(record, rowId);
       
       // Update URL
       history.pushState(null, '', '#/row/' + rowId);
+    }
+    
+    function renderSingleRowReview(record, rowId) {
+      // Update top bar
+      document.getElementById('srr-record-id').textContent = record.contract_key || rowId || '—';
+      var stateBadge = document.getElementById('srr-state-badge');
+      var status = (record.status || 'unknown').toLowerCase().replace(/\s+/g, '_');
+      stateBadge.textContent = record.status || 'Unknown';
+      stateBadge.className = 'srr-state-badge ' + status;
+      
+      // Render Field Inspector
+      renderSrrFields(record);
+      
+      // Clear Evidence Pack textareas (or load from draft)
+      document.getElementById('srr-observation').value = srrState.patchDraft.observation || '';
+      document.getElementById('srr-expected').value = srrState.patchDraft.expected || '';
+      document.getElementById('srr-justification').value = srrState.patchDraft.justification || '';
+      document.getElementById('srr-repro').value = srrState.patchDraft.repro || '';
+      
+      // Render patch changes list
+      renderSrrPatchList();
+    }
+    
+    function renderSrrFields(record) {
+      var container = document.getElementById('srr-field-list');
+      if (!record) {
+        container.innerHTML = '<div class="srr-empty-state">No fields loaded</div>';
+        document.getElementById('srr-field-count').textContent = '0 fields';
+        return;
+      }
+      
+      // Get all keys except internal ones, sort alphabetically for determinism
+      var keys = Object.keys(record).filter(function(k) {
+        return !k.startsWith('_');
+      }).sort();
+      
+      document.getElementById('srr-field-count').textContent = keys.length + ' fields';
+      
+      var html = keys.map(function(key, idx) {
+        var val = record[key];
+        if (val === null || val === undefined) val = '';
+        if (typeof val === 'object') val = JSON.stringify(val);
+        var displayVal = String(val).substring(0, 30) + (String(val).length > 30 ? '...' : '');
+        
+        // Determine indicators (stub logic)
+        var indicators = '<span class="srr-indicator system" title="System-derived">S</span>';
+        if (key === 'status' || key === 'notes') {
+          indicators = '<span class="srr-indicator delta" title="User-modified">Δ</span>';
+        }
+        
+        return '<div class="srr-field-item" data-field="' + key + '" onclick="srrSelectField(\'' + key + '\')">' +
+          '<div class="srr-field-name">' + key + '</div>' +
+          '<div class="srr-field-value" title="' + String(val).replace(/"/g, '&quot;') + '">' + displayVal + '</div>' +
+          '<div class="srr-field-indicators">' + indicators + '</div>' +
+        '</div>';
+      }).join('');
+      
+      container.innerHTML = html || '<div class="srr-empty-state">No fields loaded</div>';
+    }
+    
+    function srrSelectField(fieldKey) {
+      // Highlight selected field
+      document.querySelectorAll('.srr-field-item').forEach(function(el) {
+        el.classList.remove('active');
+      });
+      var selected = document.querySelector('.srr-field-item[data-field="' + fieldKey + '"]');
+      if (selected) selected.classList.add('active');
+      
+      // Future: scroll document viewer to related evidence anchor
+      console.log('[SRR] Selected field: ' + fieldKey);
+    }
+    
+    function renderSrrPatchList() {
+      var container = document.getElementById('srr-patch-list');
+      var changes = srrState.patchDraft.changes || [];
+      
+      if (changes.length === 0) {
+        container.innerHTML = '<div class="srr-empty-state" style="padding: 12px;">No changes proposed yet</div>';
+        return;
+      }
+      
+      var html = changes.map(function(c, idx) {
+        return '<div class="srr-patch-item">' +
+          '<div class="srr-patch-path">' + (c.path || 'field') + '</div>' +
+          '<div class="srr-patch-change">' +
+            '<span class="srr-patch-before">' + (c.before || '—') + '</span>' +
+            '<span>→</span>' +
+            '<span class="srr-patch-after">' + (c.after || '—') + '</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      
+      container.innerHTML = html;
+    }
+    
+    // Document Viewer stubs
+    function srrPrevPage() {
+      if (srrState.docPage > 1) {
+        srrState.docPage--;
+        document.getElementById('srr-doc-page').textContent = 'Page ' + srrState.docPage + ' of ' + srrState.docTotalPages;
+      }
+    }
+    
+    function srrNextPage() {
+      if (srrState.docPage < srrState.docTotalPages) {
+        srrState.docPage++;
+        document.getElementById('srr-doc-page').textContent = 'Page ' + srrState.docPage + ' of ' + srrState.docTotalPages;
+      }
+    }
+    
+    function srrZoomIn() {
+      srrState.zoom = Math.min(srrState.zoom + 0.25, 3);
+      console.log('[SRR] Zoom: ' + (srrState.zoom * 100) + '%');
+    }
+    
+    function srrZoomOut() {
+      srrState.zoom = Math.max(srrState.zoom - 0.25, 0.5);
+      console.log('[SRR] Zoom: ' + (srrState.zoom * 100) + '%');
+    }
+    
+    // Patch actions
+    function srrSaveDraft() {
+      srrState.patchDraft.observation = document.getElementById('srr-observation').value;
+      srrState.patchDraft.expected = document.getElementById('srr-expected').value;
+      srrState.patchDraft.justification = document.getElementById('srr-justification').value;
+      srrState.patchDraft.repro = document.getElementById('srr-repro').value;
+      
+      // Emit audit event (stub)
+      console.log('[SRR] PATCH_DRAFTED:', srrState.patchDraft);
+      showToast('Patch Draft saved', 'success');
+    }
+    
+    function srrSubmitPatchRequest() {
+      // Save current values
+      srrSaveDraft();
+      
+      // Validate Evidence Pack has content
+      if (!srrState.patchDraft.observation && !srrState.patchDraft.expected) {
+        showToast('Please fill in Observation and Expected blocks', 'warning');
+        return;
+      }
+      
+      // Emit audit events (stub)
+      console.log('[SRR] PATCH_SUBMITTED:', srrState.patchDraft);
+      console.log('[SRR] REVIEW_REQUESTED: patch_id=' + (srrState.currentRowId || 'new'));
+      
+      showToast('Patch Request submitted — sent to Verifier Review', 'success');
+    }
+    
+    function showAuditLogForRecord() {
+      showToast('Audit Log view coming soon', 'info');
+      console.log('[SRR] Opening audit log for record: ' + srrState.currentRowId);
     }
 
     // Attach Grid event listeners

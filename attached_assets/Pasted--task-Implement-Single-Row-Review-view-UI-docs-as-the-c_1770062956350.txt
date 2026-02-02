@@ -1,0 +1,75 @@
+{
+  "task": "Implement Single Row Review view (UI + docs) as the canonical per-record surface with PDF viewer, Evidence Pack panel, and Patch Request stub flow. Maintain terminology lock and offline-first constraints.",
+  "priority": "P0",
+  "constraints": [
+    "Offline-first only. No network calls.",
+    "No state transitions from Single Row Review (no Review State gates here).",
+    "Use canonical terms only: Single Row Review, Evidence Pack (Observation/Expected/Justification/Repro), Submit Patch Request, Review States.",
+    "Do not introduce legacy terms: Queue/Loader/Record Inspection/Apply Patch."
+  ],
+  "ui_requirements": {
+    "route_or_entry": "From All Data Grid row click -> opens Single Row Review for record_id",
+    "layout": {
+      "left_panel": {
+        "name": "Field Inspector",
+        "features": [
+          "Deterministic field list (use schema order if available; otherwise stable alphabetical)",
+          "Per-field indicators: system-derived vs user-modified (delta count), flags count, evidence count",
+          "Clicking a field focuses evidence anchors related to that field"
+        ]
+      },
+      "center_panel": {
+        "name": "Document Viewer",
+        "features": [
+          "PDF viewer container (working if you already have a local PDF viewer; otherwise a stub frame with page controls)",
+          "Evidence anchor highlight overlay (stub OK: render bounding boxes from anchor list as rectangles)",
+          "Anchor click scrolls to page and highlights bbox"
+        ]
+      },
+      "right_panel": {
+        "name": "Evidence Pack + Patch Request",
+        "sections": [
+          "Evidence Pack blocks: Observation, Expected, Justification, Repro (textareas or read-only cards if not editable yet)",
+          "Patch Request panel: list of proposed changes (path/before/after/rationale) - stub ok",
+          "Buttons: Save Patch Draft, Submit Patch Request (Submit routes user to Verifier Review OR creates a stub notice 'Sent to Verifier Review')"
+        ],
+        "rules": [
+          "Submitting a Patch Request must not change Review State here.",
+          "All actions must be labeled using canonical terminology."
+        ]
+      }
+    },
+    "top_bar": [
+      "Record identity: record_id + dataset_id",
+      "Review State badge (read-only display)",
+      "Open Audit Log (read-only link)"
+    ]
+  },
+  "data_model_stubs": {
+    "record": ["record_id", "dataset_id", "review_state", "fields (key/value)", "flags", "deltas"],
+    "evidence_anchors": ["anchor_id", "doc_path", "page_index", "text_snippet", "bbox", "field_key(optional)"],
+    "patch_request": ["patch_id", "changes[]", "status (Draft|Submitted)"]
+  },
+  "docs_updates_required": [
+    "docs/ui/views/single_row_review_view.md (ensure matches what is built)",
+    "docs/ui/ui_principles.md (add any new UI tokens used for this layout)",
+    "docs/specs/Human-Agent-Workflow-V1.json (only if needed to reflect the view wiring; keep minimal)",
+    "docs/INDEX.md (only if new docs are added)"
+  ],
+  "acceptance_checks": [
+    "Single Row Review view renders and is navigable from All Data Grid row click",
+    "Three-panel layout exists (Field Inspector, Document Viewer, Evidence Pack + Patch Request)",
+    "Evidence Pack uses exactly the 4 blocks (Observation/Expected/Justification/Repro)",
+    "Buttons labeled: Save Patch Draft, Submit Patch Request",
+    "No forbidden terms exist in docs or UI labels",
+    "Smoke tests pass"
+  ],
+  "deliverable": {
+    "output": [
+      "List of files changed",
+      "Short summary of UI behavior",
+      "grep-based terminology check results",
+      "Suggested commit message"
+    ]
+  }
+}
