@@ -1,0 +1,82 @@
+{
+  "task": "Create handoff docs for Codex-driven build workflow",
+  "repo": {
+    "name": "smartrickpicks/kiwi-semantic-control",
+    "branch": "main",
+    "commit": "PASTE_CURRENT_COMMIT_HASH"
+  },
+  "constraints": [
+    "Do NOT invent context. Use existing repo docs as source of truth.",
+    "Do NOT claim a push/PR. Only create/update files locally in repo.",
+    "Preserve canonical terminology: Data Source, All Data Grid, Single Row Review, Verifier Review, Admin Approval; Review States; Submit Patch Request; Evidence Pack blocks."
+  ],
+  "inputs": {
+    "required_files_to_read_first": [
+      "README.md",
+      "docs/INDEX.md",
+      "docs/overview.md",
+      "docs/TRUTH_SNAPSHOT.md",
+      "docs/nomenclature.md",
+      "docs/ui/ui_principles.md",
+      "docs/ui/gate_view_mapping.md",
+      "docs/specs/Human-Agent-Workflow-V1.json",
+      "docs/ui/views/data_source_view.md",
+      "docs/ui/views/all_data_grid_view.md",
+      "docs/ui/views/single_row_review_view.md",
+      "docs/ui/views/patch_authoring_view.md",
+      "docs/REVIEW_CHECKLIST.md"
+    ],
+    "audit_context": [
+      "Use the most recent Kiwi audit report provided by the user in chat (if available) as the current 'drift list'.",
+      "If no audit report is available in repo, create a short 'Pending Audit Items' section in HANDOFF.md instead of guessing."
+    ]
+  },
+  "deliverables": [
+    {
+      "path": "docs/handoff/STATUS.md",
+      "requirements": [
+        "Current milestone",
+        "Summary of progress (3-5 bullets)",
+        "Current blockers",
+        "Decisions made",
+        "Next 3 actions"
+      ]
+    },
+    {
+      "path": "docs/handoff/TASKS.md",
+      "requirements": [
+        "Short list of tasks grouped by [TODO], [IN_PROGRESS], [BLOCKED], [DONE]",
+        "Include owner when known (e.g., Zac, Replit, Kiwi, Codex)"
+      ]
+    },
+    {
+      "path": "docs/handoff/HANDOFF.md",
+      "requirements": [
+        "Goal for the next session",
+        "Constraints / do-not-change list",
+        "Context the coder must know",
+        "Files likely to touch",
+        "Replit/Codex-ready prompt (3-8 imperative sentences)"
+      ]
+    },
+    {
+      "path": "docs/handoff/AUDIT.md",
+      "requirements": [
+        "Date (YYYY-MM-DD)",
+        "Tool (Kiwi / other)",
+        "Summary",
+        "Files touched",
+        "Outstanding diffs if any (bullets, no guesses)"
+      ],
+      "notes": [
+        "Do NOT replace or modify docs/AUDIT_LOG.md contract unless explicitly required by existing drift."
+      ]
+    }
+  ],
+  "acceptance_tests": [
+    "All four files exist under docs/handoff/",
+    "No forbidden legacy terms appear in these handoff docs (Queue/Load Data/Record Inspection/Apply Patch/Reviewer Hub)",
+    "HANDOFF.md includes repo name, branch, commit, and a clear next-session instruction set",
+    "No claims about pushes or PR URLs"
+  ]
+}
