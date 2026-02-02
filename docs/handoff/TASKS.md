@@ -16,6 +16,9 @@ Open PRs: unknown/none
 ### [TODO]
 - [Unknown — requires audit] Lock gate_parse owning view to data_source_panel in docs/ui/gate_view_mapping.md
 - [Unknown — requires audit] Align Human-Agent-Workflow-V1.json node labels with canonical terms
+- [Unknown — requires audit] Choose ingestion attribution pattern: Pattern A (per-user folders) vs Pattern B (manifest file) — see docs/ingestion/INGESTION_DOCTRINE.md
+- [Unknown — requires audit] Define auth integration for submitter identity resolution (V2)
+- [Unknown — requires audit] Specify Drive/Dropbox/Email Drop integration requirements when V2 scope is confirmed
 
 ### [IN_PROGRESS]
 - (none)

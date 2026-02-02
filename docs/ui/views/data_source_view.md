@@ -71,6 +71,61 @@ Contract: This document defines the governed, offline-first Data Source experien
 - **V2 badge**: Visible next to "Search" label.
 - **No filtering**: Stub only, no actual search logic.
 
+## Source Types
+
+### V1: Local Folder (Implemented)
+- **Status**: Available
+- **Behavior**: Manual file placement in `inbound/` folder or direct upload
+- **Supported formats**: CSV, XLSX, JSON, PDF (attachments)
+- **Offline-compatible**: Yes
+
+### V2 Stubs (Not Implemented)
+
+> **Note:** The following are governance stubs only. No runtime integration exists.
+
+#### Google Drive Drop (V2 Stub)
+- **Status**: Not implemented
+- **Purpose**: Auto-ingest from shared Drive folder
+- **Requires**: OAuth integration, folder watch API
+- **UI Placeholder**: Disabled tile with "V2" badge
+
+#### Dropbox Drop (V2 Stub)
+- **Status**: Not implemented
+- **Purpose**: Auto-ingest from Dropbox folder
+- **Requires**: Dropbox API integration
+- **UI Placeholder**: Disabled tile with "V2" badge
+
+#### Email Drop (V2 Stub)
+- **Status**: Not implemented
+- **Purpose**: Ingest attachments from dedicated mailbox
+- **Requires**: IMAP/SMTP integration, attachment extraction
+- **UI Placeholder**: Disabled tile with "V2" badge
+
+## Attribution and Routing (Docs-Only)
+
+### Attribution Display
+When a dataset is loaded, the Data Source panel shows:
+- **Source**: Origin path or method (e.g., "inbound/contracts.xlsx")
+- **Submitter**: Resolved identity (if available) or "Unknown"
+- **Loaded at**: Timestamp of ingestion
+- **Checksum**: SHA-256 of source file (collapsed by default)
+
+### Attribution Methods
+| Method | Description | Status |
+|--------|-------------|--------|
+| Folder name | Per-user subfolder in inbound/ | V1 available |
+| Manifest | manifest.json with explicit submitter field | V1 available |
+| Auth token | Identity from authenticated session | V2 stub |
+
+### Routing Display
+After ingestion, the panel shows routing summary:
+- **Records routed**: Count of records assigned to Review States
+- **Initial state distribution**: e.g., "42 To Do, 3 Blocked"
+- **Assigned pool**: "Analyst pool" (default)
+
+### Routing Rules Reference
+See docs/ingestion/INGESTION_DOCTRINE.md for complete routing logic.
+
 ## Connector Language (V1)
 - **V1 Default**: Connect stubs are always visible but disabled (in Connect tile).
 - **Connect tile** shows: "Connect Source — Google Drive, MCP" with V2 badge.
@@ -113,6 +168,14 @@ Upon successful data load, emit exactly one LOADED event per dataset with payloa
 Additionally:
 - Emit VIEWED event when the modal/drawer is opened (context: "dataset").
 - Emit DATASET_SWITCHED event when switching active datasets.
+
+### Ingestion Events (V1)
+The Data Source view emits the following ingestion events:
+- INGESTION_REGISTERED: When file is accepted into inbound folder with checksum
+- SUBMISSION_ATTRIBUTED: When submitter identity is resolved
+- ROUTED_TO_ANALYST: When records are assigned initial Review States
+
+See docs/AUDIT_LOG.md for complete event type definitions and payload contracts.
 
 ## User Flow
 

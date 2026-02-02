@@ -36,6 +36,14 @@ Each entry in the audit log is an Event with the following invariant fields:
 - evidence: zero or more evidence anchors (array; see Evidence Anchors).
 
 ### Event Types
+
+#### Ingestion Events
+- INGESTION_REGISTERED: a file was accepted into the inbound folder with checksum recorded. Origin: data_source_view.
+- SUBMISSION_ATTRIBUTED: submitter identity was resolved for an ingested file. Origin: data_source_view.
+- ROUTED_TO_ANALYST: a record was assigned an initial Review State after ingestion. Origin: data_source_view.
+- OUTPUT_PUBLISHED: finalized output was written to the outbound folder. Origin: admin_approval_view.
+
+#### Core Events
 - LOADED: data was loaded into the system through the governed loader (copy-only ingestion). Origin: data_source_view.
 - VIEWED: a record was opened in a governed inspection view. Origin: any read-only view.
 - PATCH_DRAFTED: an Analyst authored an initial Patch Draft (no submission yet). Origin: single_row_review_view (Evidence Pack panel).
@@ -73,6 +81,33 @@ Normalization rules:
 - Null values are explicit; omitted fields are not allowed.
 
 ## Payload Contracts (by event_type)
+
+### Ingestion Event Payloads
+
+INGESTION_REGISTERED payload fields (canonical order):
+- file_path (string; repository-relative path, e.g., "inbound/contracts.xlsx")
+- checksum_sha256 (string; 64-char hex digest)
+- file_size_bytes (integer)
+- detected_type (string; csv | xlsx | json | pdf)
+
+SUBMISSION_ATTRIBUTED payload fields:
+- file_path (string; repository-relative path)
+- submitter (string; email or identifier)
+- attribution_method (string; folder_name | manifest | auth_token)
+
+ROUTED_TO_ANALYST payload fields:
+- record_id (string)
+- source_file (string; repository-relative path)
+- initial_review_state (string; typically "To Do")
+- assigned_pool (string; "analyst")
+
+OUTPUT_PUBLISHED payload fields:
+- output_path (string; repository-relative path, e.g., "outbound/2026-02-02_140000/sf_packet.json")
+- record_count (integer)
+- approved_by (string; admin identifier)
+
+### Core Event Payloads
+
 LOADED payload fields (canonical order):
 - file_path (string; repository-relative path)
 - file_format (string; csv | xlsx)

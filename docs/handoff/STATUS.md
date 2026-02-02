@@ -15,6 +15,11 @@ Open PRs: unknown/none
 - Current UI/UX WIP: Unknown — requires audit
 - Known risks/regressions to avoid: Unknown — requires audit
 
+## Current Blockers / Decisions Made
+- Ingestion attribution pattern choice (Pattern A vs Pattern B): Unknown — requires audit
+- Auth integration for submitter identity: Unknown — requires audit (V2)
+- Drive/Dropbox/Email Drop integrations: Documented as V2 stubs only
+
 ## Evidence Links
 - Canonical index: docs/INDEX.md
 - UI principles: docs/ui/ui_principles.md
