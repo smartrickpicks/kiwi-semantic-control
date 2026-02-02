@@ -24,6 +24,10 @@
 
 **SVG requirement**: viewBox must tightly bound the visible mark (no internal whitespace).
 
+## Canonical Language Rule
+
+All documentation, UI labels, and schemas must use canonical terms only. No synonyms or aliases are permitted. This ensures consistency across docs, UI, and data schemas. See `docs/overview.md` for the authoritative Canonical Terms list.
+
 ## Core Principles
 
 ### 1. Evidence-First Display

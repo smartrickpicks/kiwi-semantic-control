@@ -16,13 +16,13 @@ The Analyst is the primary operator role responsible for:
 
 | Capability | Description |
 |------------|-------------|
-| Load Data | Import CSV, load sample dataset, attach files |
-| View Triage | See queue counts and summary cards |
+| Open Data Source | Import CSV, load sample dataset, attach files |
+| View Triage | See Review State counts and summary cards |
 | Inspect Records | Drill into individual records, view field values |
 | Author Patches | Create structured intent (WHEN/THEN/BECAUSE) |
 | Run Preflight | Trigger preflight validation on draft patches |
 | Assemble Evidence | Complete 4-block evidence pack |
-| Submit to Queue | Submit patch request for review |
+| Submit Patch Request | Submit patch request for review |
 | Respond to Clarification | Address verifier questions on own patches |
 
 ### Cannot Do
@@ -41,7 +41,7 @@ Based on the Review State Transition Matrix:
 
 | From State | To State | Action |
 |------------|----------|--------|
-| Draft | Submitted | Submit to Queue |
+| Draft | Submitted | Submit Patch Request |
 | Needs_Clarification | Submitted | Respond to Clarification |
 
 ## Gate Responsibilities
@@ -59,7 +59,7 @@ Based on the Review State Transition Matrix:
 | View | Access Level |
 |------|-------------|
 | Triage | Full access |
-| Record Inspection | Full access |
+| Single Row Review | Full access |
 | Patch Authoring (Patch Studio) | Full access |
 | Verifier Review | Read-only (own patches only) |
 | Admin Approval | No access |

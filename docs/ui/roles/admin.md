@@ -41,7 +41,7 @@ Based on the Review State Transition Matrix:
 
 | From State | To State | Action |
 |------------|----------|--------|
-| Draft | Submitted | Submit to Queue |
+| Draft | Submitted | Submit Patch Request |
 | Submitted | Under_Review | Begin Review |
 | Under_Review | Needs_Clarification | Request Clarification |
 | Needs_Clarification | Submitted | Respond to Clarification |
@@ -68,7 +68,7 @@ Based on the Review State Transition Matrix:
 | View | Access Level |
 |------|-------------|
 | Triage | Full access |
-| Record Inspection | Full access |
+| Single Row Review | Full access |
 | Patch Authoring (Patch Studio) | Full access |
 | Verifier Review | Full access |
 | Admin Approval | Full access (authoring surface) |

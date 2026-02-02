@@ -33,7 +33,7 @@ See [INDEX.md](INDEX.md) for the complete table of contents.
 | Document | Description |
 |----------|-------------|
 | [Triage View](ui/views/triage_view.md) | Review State summary and navigation hub |
-| [Record Inspection](ui/views/record_inspection_view.md) | Single-record detail view |
+| [Single Row Review](ui/views/single_row_review_view.md) | Single-record detail view |
 | [Patch Authoring](ui/views/patch_authoring_view.md) | Patch Studio workbench |
 | [Verifier Review](ui/views/verifier_review_view.md) | Review surface for verifiers |
 | [Admin Approval](ui/views/admin_approval_view.md) | Final approval surface |

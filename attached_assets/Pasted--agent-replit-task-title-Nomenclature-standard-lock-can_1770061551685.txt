@@ -1,0 +1,172 @@
+{
+  "agent": "replit",
+  "task_title": "Nomenclature standard lock (canonical-only) + doc alignment sweep",
+  "repo_context": {
+    "product_name": "Orchestrate OS — Semantic Control Board",
+    "docs_root": "docs/",
+    "hard_rule": "Use canonical terms only. No aliases. No legacy synonyms."
+  },
+  "canonical_vocabulary": {
+    "surfaces": [
+      "Data Source",
+      "All Data Grid",
+      "Single Row Review",
+      "Verifier Review",
+      "Admin Approval",
+      "Audit Log"
+    ],
+    "objects": [
+      "Dataset",
+      "Record",
+      "Patch",
+      "Patch Request",
+      "Evidence Pack",
+      "Review State"
+    ],
+    "review_states": [
+      "To Do",
+      "Needs Review",
+      "Flagged",
+      "Blocked",
+      "Finalized"
+    ],
+    "actions": [
+      "Open Data Source",
+      "Disconnect Data Source",
+      "Activate Dataset",
+      "Duplicate Dataset",
+      "Delete Dataset",
+      "Save Patch Draft",
+      "Submit Patch Request",
+      "Promote Patch to Baseline"
+    ],
+    "evidence_pack_blocks": [
+      "Observation",
+      "Expected",
+      "Justification",
+      "Repro"
+    ],
+    "agent_language": {
+      "preferred": [
+        "agent suggestion",
+        "system-derived"
+      ],
+      "forbidden": [
+        "system output",
+        "system suggestion"
+      ]
+    }
+  },
+  "forbidden_terms_and_required_replacements": [
+    { "forbidden": "Queue", "replace_with": "Review States" },
+    { "forbidden": "Queues", "replace_with": "Review States" },
+    { "forbidden": "Loader", "replace_with": "Data Source" },
+    { "forbidden": "Load Data", "replace_with": "Data Source" },
+    { "forbidden": "Record Inspection", "replace_with": "Single Row Review" },
+    { "forbidden": "Apply Patch", "replace_with": "Promote Patch to Baseline" },
+    { "forbidden": "Reviewer Hub", "replace_with": "Verifier Review" }
+  ],
+  "required_changes": [
+    {
+      "change_id": "NOM-01",
+      "type": "docs",
+      "title": "Add Canonical Language Rule (single-source vocabulary)",
+      "instructions": [
+        "Add a short section titled 'Canonical Language Rule' to docs/overview.md and docs/ui/ui_principles.md.",
+        "Content must state: canonical terms are required; no synonyms/aliases permitted; docs+UI+schemas must match."
+      ]
+    },
+    {
+      "change_id": "NOM-02",
+      "type": "docs",
+      "title": "Lock Canonical Terms list",
+      "instructions": [
+        "Create or update a single appendix section in docs/overview.md called 'Canonical Terms'.",
+        "List the canonical surfaces, objects, review states, actions, evidence pack blocks, and agent language preferences from canonical_vocabulary."
+      ]
+    },
+    {
+      "change_id": "NOM-03",
+      "type": "docs",
+      "title": "Sweep + replace forbidden terms (docs only, deterministic)",
+      "instructions": [
+        "Run a repository-wide sweep under docs/ to remove forbidden terms and replace with required canonical terms.",
+        "Do NOT change meaning; only nomenclature. Keep sentences grammatical after replacement.",
+        "Do not introduce new synonyms."
+      ]
+    },
+    {
+      "change_id": "NOM-04",
+      "type": "docs",
+      "title": "Action naming standardization",
+      "instructions": [
+        "Ensure any action labels in view docs use canonical action names exactly (case-sensitive).",
+        "Key checks: 'Open Data Source', 'Submit Patch Request', 'Promote Patch to Baseline', 'Disconnect Data Source'."
+      ]
+    },
+    {
+      "change_id": "NOM-05",
+      "type": "docs",
+      "title": "Schema + audit alignment with canonical surface ids",
+      "instructions": [
+        "Verify docs/AUDIT_LOG.md uses canonical view examples: data_source_view, single_row_review_view, verifier_review_view, admin_approval_view.",
+        "Verify LOADED origin is data_source_view.",
+        "Verify EXPORT_GENERATED origin is single_row_review_view or admin_approval_view.",
+        "Verify docs/specs/Human-Agent-Workflow-V1.json uses the canonical names (especially Review States) and contains no 'Queue/Loader/Apply Patch' language."
+      ]
+    },
+    {
+      "change_id": "NOM-06",
+      "type": "docs",
+      "title": "Cross-doc consistency guardrails",
+      "instructions": [
+        "Add a short 'Consistency Checks' section to docs/REVIEW_CHECKLIST.md requiring checks against: docs/INDEX.md, docs/ui/ui_principles.md, docs/ui/gate_view_mapping.md, docs/AUDIT_LOG.md.",
+        "This should be written as a deterministic checklist (bullets with exact file paths)."
+      ]
+    }
+  ],
+  "acceptance_tests": [
+    {
+      "id": "AT-01",
+      "description": "No forbidden terms remain in docs/",
+      "commands": [
+        "grep -RIn \"\\bQueue\\b|\\bQueues\\b|\\bLoader\\b|\\bLoad Data\\b|\\bRecord Inspection\\b|\\bApply Patch\\b|\\bReviewer Hub\\b\" docs/ || true"
+      ],
+      "pass_condition": "Command prints no matches."
+    },
+    {
+      "id": "AT-02",
+      "description": "Canonical surface + action terms appear where expected",
+      "commands": [
+        "grep -RIn \"Canonical Language Rule\" docs/overview.md docs/ui/ui_principles.md",
+        "grep -RIn \"Canonical Terms\" docs/overview.md",
+        "grep -RIn \"Open Data Source|Submit Patch Request|Promote Patch to Baseline|Disconnect Data Source\" docs/ui/views/ || true"
+      ],
+      "pass_condition": "Finds the Canonical sections; action terms are present in relevant view docs."
+    },
+    {
+      "id": "AT-03",
+      "description": "Audit log uses canonical view examples",
+      "commands": [
+        "grep -n \"Examples: .*data_source_view\" docs/AUDIT_LOG.md",
+        "grep -n \"LOADED:.*Origin: data_source_view\" docs/AUDIT_LOG.md"
+      ],
+      "pass_condition": "Both lines exist and match canonical view names."
+    }
+  ],
+  "deliverables": [
+    "Updated docs/overview.md with Canonical Language Rule + Canonical Terms appendix",
+    "Updated docs/ui/ui_principles.md with Canonical Language Rule section",
+    "Updated docs/REVIEW_CHECKLIST.md with Consistency Checks section",
+    "Docs sweep applied across docs/ to remove forbidden terms and standardize actions",
+    "Any necessary schema wording alignment in docs/specs/Human-Agent-Workflow-V1.json (terminology only)"
+  ],
+  "commit_guidance": {
+    "suggested_branch": "docs/nomenclature-lock",
+    "suggested_commit_message": "docs: canonical nomenclature lock + consistency checklist",
+    "notes": [
+      "This is docs-only; do not change runtime behavior.",
+      "If any replacement risks changing meaning, leave a TODO comment in that file rather than guessing."
+    ]
+  }
+}

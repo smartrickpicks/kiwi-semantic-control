@@ -61,3 +61,15 @@ Use this checklist before approving any Patch Request. All items must be satisfi
 Reviewer:
 - Name: ______________________  Date: ____________
 - Notes: ____________________________________________________________
+
+---
+
+## Consistency Checks
+
+Before finalizing any documentation changes, verify consistency across these authoritative files:
+
+- [ ] `docs/INDEX.md` — links and section headings
+- [ ] `docs/ui/ui_principles.md` — Canonical Language Rule, transition matrix
+- [ ] `docs/ui/gate_view_mapping.md` — view names and gate labels
+- [ ] `docs/AUDIT_LOG.md` — view examples and event origins
+- [ ] `docs/overview.md` — Canonical Terms appendix
