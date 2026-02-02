@@ -1,25 +1,27 @@
-# STATUS — Orchestrate OS
+# STATUS (Handoff)
 
-## Current Milestone
-**V1.4.5 — DataDash V1 Operator Ergonomics**
+Audience: Governance reviewers and operators
+Purpose: Snapshot of current governance/doc state for Orchestrate OS
+Scope: Docs-only; no implementation or runtime claims
+Non-Goals: Do not assert code, runtime, or PR merges
+Authority Level: Informational; not a source of truth over canonical docs
+Owner Agent: Kiwi (documentation architect)
+Update Rules: Update only with links to source evidence (commit/PR/doc). If evidence is unavailable, state "Unknown — requires audit."
 
-## Summary of Progress
-- Single Row Review implemented as full-page three-panel layout (Field Inspector, Document Viewer, Evidence Pack)
-- Canonical field ordering locked: schema order primary, alphabetical fallback for unknown fields
-- Patch status semantics finalized: Draft/Submitted badges with local-only state management
-- Evidence Pack authoring with 4 canonical blocks (Observation, Expected, Justification, Repro)
-- Nomenclature standards enforced across UI labels and documentation
+Repository: smartrickpicks/kiwi-semantic-control (branch: main)
+Open PRs: unknown/none
 
-## Current Blockers
-- None blocking V1.4.5 completion
+## Summary
+- Current UI/UX WIP: Unknown — requires audit
+- Known risks/regressions to avoid: Unknown — requires audit
 
-## Decisions Made
-- Field Inspector uses `SRR_SCHEMA_ORDER` stub array (V2 will load from `config/schema.json`)
-- Submit Patch Request sets patch status to Submitted, **not** Review State
-- Review State transitions occur only in governed gate views (Verifier Review, Admin Approval)
-- No runtime services added; all state is local-only
+## Evidence Links
+- Canonical index: docs/INDEX.md
+- UI principles: docs/ui/ui_principles.md
+- Data Source panel: docs/ui/views/data_source_view.md
+- Single Row Review: docs/ui/views/single_row_review_view.md
+- Gate view mapping: docs/ui/gate_view_mapping.md
 
-## Next 3 Actions
-1. Wire PDF document viewer integration (currently stub frame)
-2. Add field-to-evidence anchor linking in Document Viewer panel
-3. Implement Patch Request persistence to localStorage
+## Notes
+- Replace any generic progress statements with direct links to commits or PRs
+- If no evidence link exists, keep "Unknown — requires audit"

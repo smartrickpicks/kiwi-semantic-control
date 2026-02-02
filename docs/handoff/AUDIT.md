@@ -1,28 +1,23 @@
-# AUDIT — Orchestrate OS
+# AUDIT (Docs-Only)
 
-## Date
-2026-02-02
+Audience: Governance reviewers
+Purpose: Record audit checks, findings, and minimal diffs
+Scope: Only allowed paths; docs-only assertions
+Non-Goals: No claims about code execution, pipelines, or merges
+Authority Level: Informational
+Owner Agent: Kiwi (documentation architect)
+Update Rules: Include commit/PR links for any claimed change; otherwise use "Unknown — requires audit"
 
-## Tool
-Manual review (no Kiwi audit report provided)
-
-## Summary
-No active drift items. Codebase is aligned with documentation.
-
-## Files Touched (This Session)
-- `ui/viewer/index.html` — Added Single Row Review page, schema-based field ordering, patch status badges
-- `docs/ui/views/single_row_review_view.md` — Updated layout spec to three-panel, added field ordering rule
+## Checklist
+- Canonical terminology: Unknown — requires audit
+- No invented state: Unknown — requires audit
+- Prompt compliance: Unknown — requires audit (repo+branch, open PRs, UI WIP, risks)
 
 ## Outstanding Diffs
-- None identified
+- Unknown — requires audit
 
-## Pending Audit Items
-- No Kiwi audit report was provided in this session
-- Future audits should verify:
-  - Field ordering matches `SRR_SCHEMA_ORDER` in implementation
-  - Patch status transitions (Draft → Submitted) are correctly logged
-  - Canonical terminology is enforced in all new UI labels
-
-## Related Documents
-- `docs/AUDIT_LOG.md` — Append-only audit event contract (not modified)
-- `docs/REVIEW_CHECKLIST.md` — Approval checklist for Patch Requests
+## References
+- docs/INDEX.md
+- docs/ui/ui_principles.md
+- docs/overview.md
+- docs/REVIEW_CHECKLIST.md

@@ -1,22 +1,32 @@
-# TASKS — Orchestrate OS
+# TASKS (Handoff)
 
-## [DONE]
-- [x] Implement Single Row Review three-panel layout (Replit)
-- [x] Add navigation from All Data Grid row click to Single Row Review (Replit)
-- [x] Lock canonical field ordering: schema order + alphabetical fallback (Replit)
-- [x] Add patch status badges (Draft/Submitted) with status-based labeling (Replit)
-- [x] Update `docs/ui/views/single_row_review_view.md` with layout spec (Replit)
-- [x] Lock Canonical Terms appendix in `docs/overview.md` (Replit)
+Audience: Governance reviewers and operators
+Purpose: Enumerate governance-aligned tasks with evidence references
+Scope: Docs-only; no runtime or implementation tasks
+Non-Goals: Do not claim code merges or runtime changes
+Authority Level: Informational; tasks must reference evidence links
+Owner Agent: Kiwi (documentation architect)
+Update Rules: Every task must include a source link; otherwise mark "Unknown — requires audit"
 
-## [IN_PROGRESS]
-- [ ] Evidence anchor linking (field click → document highlight) — Replit/Codex
+Repository: smartrickpicks/kiwi-semantic-control (branch: main)
+Open PRs: unknown/none
 
-## [TODO]
-- [ ] PDF viewer integration (real PDF rendering or stub upgrade) — Codex
-- [ ] Patch Request persistence to localStorage — Codex
-- [ ] Verifier Review view implementation — Codex
-- [ ] Admin Approval view implementation — Codex
-- [ ] Smoke test for Single Row Review navigation — Replit
+## Task Backlog
 
-## [BLOCKED]
-- None
+### [TODO]
+- [Unknown — requires audit] Lock gate_parse owning view to data_source_panel in docs/ui/gate_view_mapping.md
+- [Unknown — requires audit] Align Human-Agent-Workflow-V1.json node labels with canonical terms
+
+### [IN_PROGRESS]
+- (none)
+
+### [BLOCKED]
+- (none)
+
+### [DONE]
+- (none)
+
+## Definition of Done
+- Linked evidence (commit/PR/docline)
+- Terminology compliance check passed (no forbidden terms)
+- No invented state; ambiguous items marked "Unknown — requires audit"
