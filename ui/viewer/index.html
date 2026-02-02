@@ -2991,6 +2991,12 @@
       return commentsStore.comments.filter(function(c) { return c.status === status; });
     }
     
+    function getCommentsByTarget(targetType, targetId) {
+      return commentsStore.comments.filter(function(c) {
+        return c.target_type === targetType && c.target_id === targetId;
+      });
+    }
+    
     function getOpenComments() {
       return commentsStore.comments.filter(function(c) {
         return c.status === 'Open' || c.status === 'ReviewerResponded';
@@ -5621,6 +5627,67 @@
       }
       
       input.value = ''; // Reset input
+    }
+    
+    // Process CSV file from drawer upload
+    function processCSVFile(file) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var text = e.target.result;
+        var parsed = parseCSV(text);
+        
+        if (!parsed || parsed.length === 0) {
+          showToast('Failed to parse CSV file', 'error');
+          return;
+        }
+        
+        // Get headers and rows
+        var headers = parsed[0];
+        var rows = parsed.slice(1).filter(function(row) {
+          return row.some(function(cell) { return cell && cell.trim(); });
+        });
+        
+        // Create a workbook-compatible structure
+        var sheetName = file.name.replace(/\.(csv|xlsx)$/i, '');
+        
+        // Convert to records array
+        var records = rows.map(function(row, idx) {
+          var record = {};
+          headers.forEach(function(h, i) {
+            record[h] = row[i] || null;
+          });
+          return record;
+        });
+        
+        // Load into workbook
+        window.workbookState = window.workbookState || { sheets: {}, sheetOrder: [], activeSheet: null };
+        window.workbookState.sheets[sheetName] = {
+          name: sheetName,
+          headers: headers,
+          rows: records
+        };
+        if (window.workbookState.sheetOrder.indexOf(sheetName) < 0) {
+          window.workbookState.sheetOrder.push(sheetName);
+        }
+        window.workbookState.activeSheet = sheetName;
+        
+        console.log('[Loader] CSV file loaded: ' + sheetName + ', ' + records.length + ' rows');
+        
+        // Update state
+        dataLoaded = true;
+        sessionState.status = 'loaded';
+        sessionState.loadedAt = new Date().toISOString();
+        sessionState.source = 'file:' + file.name;
+        
+        updateUIForDataState();
+        closeDataDrawer();
+        showToast('CSV loaded: ' + records.length + ' records', 'success');
+        navigateTo('grid');
+      };
+      reader.onerror = function() {
+        showToast('Failed to read file', 'error');
+      };
+      reader.readAsText(file);
     }
     
     // Placeholder XLSX processing (V2 full implementation)
