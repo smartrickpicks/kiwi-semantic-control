@@ -5636,30 +5636,22 @@
         var text = e.target.result;
         var parsed = parseCSV(text);
         
-        if (!parsed || parsed.length === 0) {
-          showToast('Failed to parse CSV file', 'error');
+        // parseCSV returns { headers: [], rows: [], delimiter: '' }
+        if (!parsed || !parsed.rows || parsed.rows.length === 0) {
+          showToast('Failed to parse CSV file or no data rows found', 'error');
           return;
         }
         
-        // Get headers and rows
-        var headers = parsed[0];
-        var rows = parsed.slice(1).filter(function(row) {
-          return row.some(function(cell) { return cell && cell.trim(); });
-        });
+        var headers = parsed.headers;
+        var records = parsed.rows; // Already in object format
         
         // Create a workbook-compatible structure
         var sheetName = file.name.replace(/\.(csv|xlsx)$/i, '');
         
-        // Convert to records array
-        var records = rows.map(function(row, idx) {
-          var record = {};
-          headers.forEach(function(h, i) {
-            record[h] = row[i] || null;
-          });
-          return record;
-        });
+        // Clear any cached version of this sheet to treat re-import as fresh
+        clearCachedDataset(sheetName);
         
-        // Load into workbook
+        // Load into workbook (fresh state)
         window.workbookState = window.workbookState || { sheets: {}, sheetOrder: [], activeSheet: null };
         window.workbookState.sheets[sheetName] = {
           name: sheetName,
@@ -5688,6 +5680,29 @@
         showToast('Failed to read file', 'error');
       };
       reader.readAsText(file);
+    }
+    
+    // Clear cached dataset by name to ensure fresh import
+    function clearCachedDataset(sheetName) {
+      // Remove from workbook if exists
+      if (window.workbookState && window.workbookState.sheets && window.workbookState.sheets[sheetName]) {
+        delete window.workbookState.sheets[sheetName];
+        var idx = window.workbookState.sheetOrder.indexOf(sheetName);
+        if (idx >= 0) window.workbookState.sheetOrder.splice(idx, 1);
+        console.log('[Loader] Cleared cached dataset: ' + sheetName);
+      }
+      
+      // Remove from upload library localStorage
+      try {
+        var library = JSON.parse(localStorage.getItem('upload_library_v1') || '[]');
+        var filtered = library.filter(function(ds) { return ds.name !== sheetName; });
+        if (filtered.length !== library.length) {
+          localStorage.setItem('upload_library_v1', JSON.stringify(filtered));
+          console.log('[Loader] Removed from upload library: ' + sheetName);
+        }
+      } catch (err) {
+        console.warn('[Loader] Could not clear upload library cache', err);
+      }
     }
     
     // Placeholder XLSX processing (V2 full implementation)
