@@ -1559,48 +1559,40 @@
       <div class="drawer-body">
         <!-- Empty State Section (shown when no data loaded) -->
         <div id="data-source-empty-section" style="display: none;">
-          <div style="text-align: center; padding: 30px 20px; color: #888; background: #f5f5f5; border-radius: 8px; border: 2px dashed #ddd; margin-bottom: 20px;">
+          <div style="text-align: center; padding: 24px 20px; color: #888; background: #f5f5f5; border-radius: 8px; border: 2px dashed #ddd; margin-bottom: 20px;">
             <div style="font-size: 2em; margin-bottom: 10px;">📁</div>
             <div style="font-weight: 600; color: #333; margin-bottom: 8px;">No Active Dataset</div>
-            <p style="margin: 0; font-size: 0.9em;">Upload a file or load sample data to get started.</p>
+            <p style="margin: 0; font-size: 0.9em;">Upload a file or connect a source to get started.</p>
           </div>
           
-          <!-- In-panel Upload Section -->
-          <div style="margin-bottom: 20px;">
-            <div style="font-weight: 600; margin-bottom: 10px; color: #333;">Upload Data</div>
-            <div class="drop-zone" id="drawer-upload-dropzone" onclick="document.getElementById('drawer-upload-file').click();">
-              <div class="drop-zone-icon">📄</div>
-              <div class="drop-zone-text">Drop CSV or XLSX file here or click to browse</div>
-              <div class="drop-zone-file" id="drawer-upload-file-name" style="display: none;"></div>
+          <!-- Upload | Connect Row (Two Columns) -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+            <!-- Upload Tile -->
+            <div style="background: #fff; border: 2px dashed #1976d2; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; transition: background 0.15s;" onclick="document.getElementById('drawer-upload-file').click();" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'">
+              <div style="font-size: 1.5em; margin-bottom: 8px;">📄</div>
+              <div style="font-weight: 600; font-size: 0.85em; color: #1976d2; margin-bottom: 4px;">Upload File</div>
+              <div style="font-size: 0.7em; color: #666;">CSV or XLSX (multi-sheet)</div>
             </div>
             <input type="file" id="drawer-upload-file" accept=".csv,.xlsx" style="display: none;" onchange="handleDrawerFileUpload(this)">
-            <div style="font-size: 0.75em; color: #888; margin-top: 6px;">Supported: CSV, XLSX files</div>
+            
+            <!-- Connect Tile -->
+            <div style="background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; text-align: center; opacity: 0.6;">
+              <div style="font-size: 1.5em; margin-bottom: 8px;">🔌</div>
+              <div style="font-weight: 600; font-size: 0.85em; color: #666; margin-bottom: 4px;">Connect Source</div>
+              <div style="font-size: 0.7em; color: #888;">Google Drive, MCP <span style="background: #e0e0e0; padding: 1px 5px; border-radius: 3px; font-weight: 600;">V2</span></div>
+            </div>
           </div>
           
           <!-- Sample Dataset Button -->
-          <div style="margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px; border: 1px dashed #ccc;">
+          <div style="margin-bottom: 16px; padding: 12px 15px; background: #f5f5f5; border-radius: 8px; border: 1px dashed #ccc;">
             <div style="display: flex; align-items: center; gap: 12px;">
               <span style="font-size: 1.2em;">📦</span>
               <div style="flex: 1;">
                 <div style="font-weight: 600; font-size: 0.9em;">Demo Dataset</div>
-                <div style="font-size: 0.8em; color: #666;">5 sample contracts for testing</div>
+                <div style="font-size: 0.8em; color: #666;">5 sample contracts</div>
               </div>
-              <button class="modal-btn modal-btn-primary" onclick="loadSampleDataset(true); closeDataSourceDrawer();">Load Sample</button>
+              <button class="modal-btn modal-btn-primary" onclick="loadSampleDataset(true); closeDataSourceDrawer();">Load</button>
             </div>
-          </div>
-          
-          <!-- Connect Stubs (Empty State) -->
-          <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
-            <div style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 12px;">Connect External Source</div>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <button class="modal-btn modal-btn-secondary" disabled style="width: 100%; opacity: 0.5; justify-content: flex-start; display: flex; align-items: center; gap: 8px;">
-                <span>📁</span> Connect Google Drive <span style="margin-left: auto; font-size: 0.75em; background: #e0e0e0; padding: 2px 6px; border-radius: 4px;">V2</span>
-              </button>
-              <button class="modal-btn modal-btn-secondary" disabled style="width: 100%; opacity: 0.5; justify-content: flex-start; display: flex; align-items: center; gap: 8px;">
-                <span>🔌</span> Connect MCP Source <span style="margin-left: auto; font-size: 0.75em; background: #e0e0e0; padding: 2px 6px; border-radius: 4px;">V2</span>
-              </button>
-            </div>
-            <p style="color: #888; font-size: 0.75em; margin-top: 8px;">Coming in V2</p>
           </div>
         </div>
         
@@ -1626,40 +1618,45 @@
           </div>
         </div>
         
-        <!-- Upload New Section (shown when active dataset exists) -->
-        <div id="data-source-upload-section" style="display: none; margin-bottom: 20px;">
-          <div style="font-weight: 600; margin-bottom: 10px; color: #333;">Upload New Dataset</div>
-          <div class="drop-zone" id="drawer-upload-new-dropzone" onclick="document.getElementById('drawer-upload-new-file').click();">
-            <div class="drop-zone-icon">📄</div>
-            <div class="drop-zone-text">Drop CSV or XLSX file here</div>
+        <!-- Upload | Connect Row (Active State - Two Columns) -->
+        <div id="data-source-upload-section" style="display: none; margin-bottom: 16px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <!-- Upload Tile -->
+            <div style="background: #fff; border: 2px dashed #1976d2; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; transition: background 0.15s;" onclick="document.getElementById('drawer-upload-new-file').click();" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'">
+              <div style="font-size: 1.5em; margin-bottom: 8px;">📄</div>
+              <div style="font-weight: 600; font-size: 0.85em; color: #1976d2; margin-bottom: 4px;">Upload New</div>
+              <div style="font-size: 0.7em; color: #666;">CSV or XLSX (multi-sheet)</div>
+            </div>
+            <input type="file" id="drawer-upload-new-file" accept=".csv,.xlsx" style="display: none;" onchange="handleDrawerFileUpload(this)">
+            
+            <!-- Connect Tile -->
+            <div style="background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; text-align: center; opacity: 0.6;">
+              <div style="font-size: 1.5em; margin-bottom: 8px;">🔌</div>
+              <div style="font-weight: 600; font-size: 0.85em; color: #666; margin-bottom: 4px;">Connect Source</div>
+              <div style="font-size: 0.7em; color: #888;">Google Drive, MCP <span style="background: #e0e0e0; padding: 1px 5px; border-radius: 3px; font-weight: 600;">V2</span></div>
+            </div>
           </div>
-          <input type="file" id="drawer-upload-new-file" accept=".csv,.xlsx" style="display: none;" onchange="handleDrawerFileUpload(this)">
-          <p style="color: #888; font-size: 0.75em; margin-top: 6px;">Uploading rotates current active dataset to Saved.</p>
+          <p style="color: #888; font-size: 0.75em; margin-top: 8px; text-align: center;">Uploading rotates current active dataset to Saved.</p>
+        </div>
+        
+        <!-- Search Stub (V2) -->
+        <div id="data-source-search-section" style="display: none; margin-bottom: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+            <span style="font-weight: 600; font-size: 0.85em; color: #666;">Search</span>
+            <span style="font-size: 0.7em; background: #e0e0e0; padding: 1px 5px; border-radius: 3px; font-weight: 600; color: #666;">V2</span>
+          </div>
+          <input type="text" id="data-source-search-input" placeholder="Search agreements, accounts, record IDs..." style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em; box-sizing: border-box;" oninput="showDataSourceSearchToast()" onkeydown="if(event.key==='Enter') showDataSourceSearchToast()">
         </div>
         
         <!-- Library Header (shown when saved datasets exist) -->
-        <div id="data-source-library-header" style="display: none; margin-bottom: 15px; border-top: 1px solid #e0e0e0; padding-top: 15px;">
-          <div style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 8px;">Saved Datasets</div>
-          <p style="color: #888; font-size: 0.85em; margin: 0;">Select a dataset to make it active. Active dataset cannot be deleted.</p>
+        <div id="data-source-library-header" style="display: none; margin-bottom: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
+          <div style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 6px;">Saved Datasets</div>
+          <p style="color: #888; font-size: 0.8em; margin: 0;">Select to activate. Active dataset cannot be deleted.</p>
         </div>
         
         <!-- Dataset List -->
-        <div id="upload-library-list" style="display: flex; flex-direction: column; gap: 12px;">
+        <div id="upload-library-list" style="display: flex; flex-direction: column; gap: 10px;">
           <!-- Populated by renderUploadLibrary() -->
-        </div>
-        
-        <!-- Connector Section (always visible, stubs disabled) -->
-        <div id="data-source-connector-section" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
-          <div style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 12px;">Connect External Source</div>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <button class="modal-btn modal-btn-secondary" disabled style="width: 100%; opacity: 0.5; justify-content: flex-start; display: flex; align-items: center; gap: 8px;">
-              <span>📁</span> Connect Google Drive <span style="margin-left: auto; font-size: 0.75em; background: #e0e0e0; padding: 2px 6px; border-radius: 4px;">V2</span>
-            </button>
-            <button class="modal-btn modal-btn-secondary" disabled style="width: 100%; opacity: 0.5; justify-content: flex-start; display: flex; align-items: center; gap: 8px;">
-              <span>🔌</span> Connect MCP Source <span style="margin-left: auto; font-size: 0.75em; background: #e0e0e0; padding: 2px 6px; border-radius: 4px;">V2</span>
-            </button>
-          </div>
-          <p style="color: #888; font-size: 0.75em; margin-top: 8px;">Coming in V2</p>
         </div>
         
         <div class="modal-status" id="data-source-status" style="display: none; margin-top: 15px;"></div>
@@ -5304,6 +5301,7 @@
       var emptySection = document.getElementById('data-source-empty-section');
       var activeSection = document.getElementById('data-source-active-section');
       var uploadSection = document.getElementById('data-source-upload-section');
+      var searchSection = document.getElementById('data-source-search-section');
       var libraryHeader = document.getElementById('data-source-library-header');
       var uploadLibrary = getUploadLibrary();
       var count = uploadLibrary ? uploadLibrary.length : 0;
@@ -5343,6 +5341,11 @@
         uploadSection.style.display = hasData ? 'block' : 'none';
       }
       
+      // Show search section when active dataset exists
+      if (searchSection) {
+        searchSection.style.display = hasData ? 'block' : 'none';
+      }
+      
       // Show library header only when there are saved datasets (excluding active)
       if (libraryHeader) {
         libraryHeader.style.display = count > 0 ? 'block' : 'none';
@@ -5360,6 +5363,16 @@
       if (menu) {
         menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
       }
+    }
+    
+    // Data Source panel search stub - show "coming soon" toast
+    var dataSourceSearchDebounce = null;
+    function showDataSourceSearchToast() {
+      if (dataSourceSearchDebounce) return;
+      dataSourceSearchDebounce = setTimeout(function() {
+        dataSourceSearchDebounce = null;
+      }, 1500);
+      showToast('Search coming soon (V2)', 'info');
     }
     
     // Disconnect active dataset (move to Saved)

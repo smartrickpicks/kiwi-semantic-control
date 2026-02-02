@@ -13,20 +13,20 @@ Contract: This document defines the governed, offline-first Data Source experien
 - **Condition**: No active dataset loaded.
 - **Display**: Right-side panel with:
   - Empty state card: "No Active Dataset"
-  - In-panel upload dropzone (CSV/XLSX)
+  - Two-column row: Upload tile (left) | Connect tile (right, disabled V2)
   - Demo Dataset load button
-  - Connect stubs: "Connect Google Drive (V2)" disabled, "Connect MCP Source (V2)" disabled
 - **Affordances**: Upload CSV/XLSX, load demo dataset.
 
 ### State B: Active Dataset
 - **Condition**: Active dataset loaded.
-- **Display**: Right-side panel with:
-  - Active Dataset card with name, row count, loaded timestamp, "ACTIVE ▾" badge.
-  - ACTIVE badge has hover menu with "Disconnect" action.
-  - "Upload New Dataset" dropzone (uploading rotates previous active to Saved).
-  - Saved Datasets list (if any exist).
-  - Connect stubs (disabled, Coming in V2).
-- **Affordances**: View metadata, disconnect, upload new, select from Saved.
+- **Display**: Right-side panel with (in order):
+  1. Active Dataset card with name, row count, loaded timestamp, "ACTIVE ▾" badge
+  2. Two-column row: Upload New tile (left) | Connect tile (right, disabled V2)
+  3. Search stub (V2) — placeholder, shows toast on input
+  4. Saved Datasets list (if any exist)
+- ACTIVE badge has click menu with "Disconnect" action.
+- Upload helper text: "Uploading rotates current active dataset to Saved."
+- **Affordances**: View metadata, disconnect, upload new, search (stub), select from Saved.
 
 ## Active Dataset Constraints
 
@@ -54,10 +54,17 @@ Contract: This document defines the governed, offline-first Data Source experien
 - Switching only changes the active dataset context for display.
 - Audit event: DATASET_SWITCHED (not STATE_MARKED).
 
+## Panel Search Stub (V2)
+- **Location**: Between Upload|Connect row and Saved Datasets section.
+- **Placeholder**: "Search agreements, accounts, record IDs..."
+- **Behavior**: On input or Enter, show "Search coming soon (V2)" toast.
+- **V2 badge**: Visible next to "Search" label.
+- **No filtering**: Stub only, no actual search logic.
+
 ## Connector Language (V1)
-- **V1 Default**: Connect stubs are always visible but disabled.
-- **Stub buttons**: 
-  - "Connect Google Drive" — disabled, badge: "V2"
+- **V1 Default**: Connect stubs are always visible but disabled (in Connect tile).
+- **Connect tile** shows: "Connect Source — Google Drive, MCP" with V2 badge.
+- **V2 buttons** (disabled):
   - "Connect MCP Source" — disabled, badge: "V2"
 - **Label**: "Coming in V2" below the stubs.
 - **No feature flag gating**: Stubs are always visible to set expectations.

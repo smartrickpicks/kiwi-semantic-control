@@ -53,11 +53,17 @@ Gates are checkpoints that must be satisfied before proceeding. See [gate_view_m
 
 | Gate | Owning View | Required Evidence |
 |------|-------------|-------------------|
-| gate_parse | data_source | row_count, column_headers, parse_timestamp |
+| gate_parse | data_source_panel | row_count, column_headers, parse_timestamp |
 | gate_preflight | patch_authoring_view | preflight_report, badge_summary (no fail) |
 | gate_evidence | patch_authoring_view | 4-block Evidence Pack complete (Observation, Expected, Justification, Repro) |
 | gate_verifier | verifier_review_view | review_notes, decision_status |
 | gate_admin | admin_approval_view | admin_action_log |
+
+## Data Source Panel (V1.5)
+- **Entry**: Top quick-action "Data Source" button only (not in sidebar).
+- **Type**: Right-side drawer panel (never modal).
+- **Layout order** (active state): Active Dataset card → Upload|Connect row (two columns) → Search stub (V2) → Saved Datasets → Close.
+- **Terminology**: "Data Source" (not "Load Data"), "Disconnect" (not "Remove").
 
 ## Terminology
 
