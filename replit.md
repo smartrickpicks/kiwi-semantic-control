@@ -7,7 +7,7 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 **Product Identity:**
 - Product name: Orchestrate OS
 - Primary surface: Semantic Control Board
-- Logo asset: `assets/brand/orchestrate-os-logo.png`
+- Logo asset: `assets/brand/orchestrate-os-logo.svg` (SVG canonical)
 - Logo is informational only (not navigational)
 
 **Core Purpose:**

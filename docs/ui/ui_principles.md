@@ -10,7 +10,9 @@
   - Logo is informational, not navigational
   - No homepage metaphor
   - Clicking logo does not trigger state changes
-- **Asset location**: `assets/brand/orchestrate-os-logo.png`
+- **Logo format**: SVG (canonical)
+- **Asset location**: `assets/brand/orchestrate-os-logo.svg`
+- **Sidebar logo size**: 32–40px visual height (target: 36px)
 
 ## Core Principles
 
