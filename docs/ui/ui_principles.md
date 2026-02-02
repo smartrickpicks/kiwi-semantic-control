@@ -35,7 +35,7 @@ This matrix defines the allowed state transitions for patch requests. Only the s
 
 | From State | To State | Initiating Role | Trigger Action |
 |------------|----------|-----------------|----------------|
-| Draft | Submitted | Analyst, Verifier, Admin | Submit to Queue |
+| Draft | Submitted | Analyst, Verifier, Admin | Submit Patch Request |
 | Submitted | Under_Review | Verifier, Admin | Begin Review |
 | Under_Review | Needs_Clarification | Verifier, Admin | Request Clarification |
 | Needs_Clarification | Submitted | Analyst, Verifier, Admin | Respond to Clarification |
@@ -55,16 +55,33 @@ Gates are checkpoints that must be satisfied before proceeding. See [gate_view_m
 |------|-------------|-------------------|
 | gate_parse | load_data | row_count, column_headers, parse_timestamp |
 | gate_preflight | patch_authoring_view | preflight_report, badge_summary (no fail) |
-| gate_evidence | patch_authoring_view | 4-block evidence pack complete |
+| gate_evidence | patch_authoring_view | 4-block Evidence Pack complete (Observation, Expected, Justification, Repro) |
 | gate_verifier | verifier_review_view | review_notes, decision_status |
 | gate_admin | admin_approval_view | admin_action_log |
 
 ## Terminology
 
+### Roles
+- **Analyst**: Default operator role (Stages 1-8)
 - **Verifier**: Primary term for the review role (Stage 9)
 - **Admin**: Final approval authority (Stage 10-12)
-- **Analyst**: Default operator role (Stages 1-8)
-- **Promote Patch to Baseline**: Stakeholder-facing label for the `apply_patch` permission
+
+### Patch Lifecycle
+- **Patch Draft**: Initial authored patch before submission
+- **Patch Request**: Submitted patch awaiting review
+- **Approved Patch**: Patch approved by Admin
+- **Baseline Patch**: Patch promoted to semantic baseline
+- **Promote Patch to Baseline**: The baseline mutation moment (Stage 11)
+
+### Evidence Pack (canonical blocks)
+- **Observation** (alias: WHEN) — What situation was observed
+- **Expected** (alias: THEN) — What behavior is expected
+- **Justification** (alias: BECAUSE) — Why this change is correct
+- **Repro** (no alias) — Steps to reproduce
+
+### Agent Language
+- **Agent suggestion**: For optional AI assistance (never "system" when referring to agents)
+- **System-derived**: For deterministic computed values only
 
 ## Related Documents
 

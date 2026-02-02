@@ -1,6 +1,6 @@
 # View: Verifier Review
 
-> Review surface for evaluating submitted patches, requesting clarification, and approving/rejecting.
+> Review surface for evaluating submitted Patch Requests, requesting clarification, and approving/rejecting.
 
 ## Entry Conditions
 
@@ -18,8 +18,8 @@
 
 | Artifact | Description | Required |
 |----------|-------------|----------|
-| Structured Intent | Rendered WHEN/THEN/BECAUSE | Yes |
-| Evidence Pack | All 4 blocks | Yes |
+| Structured Intent | Rendered Observation/Expected/Justification (aliases: WHEN/THEN/BECAUSE) | Yes |
+| Evidence Pack | All 4 canonical blocks (Observation, Expected, Justification, Repro) | Yes |
 | Preflight Report | Badge summary from submission | Yes |
 | Revision History | All revisions with diff summaries | Yes |
 | Author Info | Submitting actor and timestamp | Yes |

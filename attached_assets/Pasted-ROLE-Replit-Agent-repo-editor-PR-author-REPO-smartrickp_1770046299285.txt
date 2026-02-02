@@ -1,0 +1,74 @@
+ROLE: Replit Agent (repo editor + PR author)
+
+REPO: smartrickpicks/kiwi-semantic-control
+BRANCH: term-lock-2026-02-02
+SCOPE: docs + UI label strings only (NO behavior changes)
+
+GOAL:
+Lock finalized terminology across docs + UI label strings so Evidence Pack nomenclature is canonical and Patch lifecycle language is consistent.
+
+CANONICAL TERMS (must match exactly):
+REVIEW STATES:
+- To Do
+- Needs Review
+- Flagged
+- Blocked
+- Finalized
+
+REVIEW SURFACES (UI + docs):
+- All Data Grid
+- Single Row Review
+- Verifier Review
+- Admin Approval
+- Audit Log
+
+PATCH LIFECYCLE (UI + docs):
+- Patch Draft
+- Patch Request
+- Approved Patch
+- Baseline Patch
+- Promote Patch to Baseline (ONLY as the baseline mutation moment)
+
+EVIDENCE PACK (canonical blocks):
+- Observation
+- Expected
+- Justification
+- Repro
+
+AUTHORING ALIASES (allowed as helper text only):
+- WHEN -> Observation
+- THEN -> Expected
+- BECAUSE -> Justification
+(Repro has NO alias)
+
+AGENTS:
+- “Agent suggestion” (never “system”)
+- “System-derived” (deterministic only)
+
+STRICT RULES:
+1) Never use “Queue” in UI/docs. Replace with “Review States”.
+2) Never use “Patch” unqualified in UI labels and headings. Always use a lifecycle qualifier.
+3) Never imply auto-fix, auto-apply, or implicit transitions.
+4) Do not change routing, permissions, or workflow behavior.
+
+FILES TO UPDATE (minimum):
+- docs/overview.md (ensure Review States + transition language matches canonical)
+- docs/V1/Flow-Doctrine.md (Evidence Pack + promotion wording)
+- docs/REVIEW_CHECKLIST.md (Evidence Pack blocks + “Smoke (Strict)” wording)
+- docs/ui/ui_principles.md
+- docs/ui/gate_view_mapping.md
+- docs/ui/views/all_data_grid_view.md
+- docs/ui/views/single_row_review_view.md  (Patch editor must be reframed as Evidence Pack authoring)
+- docs/ui/views/verifier_review_view.md
+- docs/ui/views/admin_approval_view.md
+- docs/ui/views/promotion_view.md
+- docs/AUDIT_LOG.md (ensure event names don’t conflict with canonical language)
+
+OUTPUT REQUIRED:
+A) Commit with message:
+   "docs(ui): terminology lock — evidence pack + patch lifecycle + review states"
+B) Open a PR from branch term-lock-2026-02-02 to main
+C) In PR description include:
+   - Summary of term changes
+   - Files touched list
+   - Explicit statement: "docs/UI-copy only; no behavior changes"

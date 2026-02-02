@@ -1,9 +1,10 @@
 # REVIEW_CHECKLIST
 
-Use this checklist before approving any patch. All items must be satisfied.
+Use this checklist before approving any Patch Request. All items must be satisfied.
 
 ## Intent Clarity
-- [ ] Plain-English description states the situation (WHEN) and the expectation (THEN)
+- [ ] Plain-English description states the situation (Observation) and the expectation (Expected)
+- [ ] Authoring aliases are understood: WHEN→Observation, THEN→Expected, BECAUSE→Justification
 - [ ] rule_id follows naming conventions and is descriptive
 - [ ] Scope boundaries are explicit (what is included and excluded)
 
@@ -29,14 +30,14 @@ Use this checklist before approving any patch. All items must be satisfied.
 - [ ] Transition or migration notes are included if needed
 - [ ] Interactions with QA expectations and subtype/schema assumptions are acknowledged
 
-## Smoke Verification (Required)
+## Smoke (Strict) Verification (Required)
 - [ ] Strict smoke test passed without `--allow-diff`:
   ```
   bash scripts/replit_smoke.sh
   ```
   - Exit code 0 and message "OK: preview output matches expected (normalized)."
 - [ ] Evidence attached:
-  - Log snippet showing strict pass, or
+  - Log snippet showing Smoke (Strict) pass, or
   - Reference to docs/replit_baseline.md with recorded SHA256 (only if outputs intentionally changed) AND a corresponding CHANGELOG entry explaining why.
 
 ## Versioning and Changelog
@@ -45,8 +46,15 @@ Use this checklist before approving any patch. All items must be satisfied.
 - [ ] Changelog references examples used in preview/smoke
 - [ ] Related documentation updates are linked or included
 
+## Evidence Pack Verification
+- [ ] All 4 canonical blocks populated:
+  - **Observation** (alias: WHEN) — What situation was observed
+  - **Expected** (alias: THEN) — What behavior is expected
+  - **Justification** (alias: BECAUSE) — Why this change is correct
+  - **Repro** (no alias) — Steps to reproduce
+
 ## Approval Decision
-- [ ] Approve (meets all checks)
+- [ ] Approve (Patch Request meets all checks; becomes Approved Patch)
 - [ ] Hold (needs clarifications or more examples)
 - [ ] Reject (conflicts or risks not resolved)
 

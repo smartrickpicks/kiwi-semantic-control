@@ -1,4 +1,4 @@
-# All-Data Grid View — Bulk Inspection (Read-Only)
+# All Data Grid View — Bulk Inspection (Read-Only)
 
 Contract: This document defines the bulk inspection grid. It is read-only and provides navigation to record-level inspection without permitting edits, gates, or transitions.
 

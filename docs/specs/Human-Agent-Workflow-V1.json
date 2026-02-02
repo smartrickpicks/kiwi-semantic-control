@@ -173,7 +173,7 @@
   "drift_detection": {
     "deprecated_terms": [
       { "old": "Kiwi Control Board", "new": "Semantic Control Board" },
-      { "old": "All Data Grid", "new": "All-Data Grid" },
+      { "old": "All-Data Grid", "new": "All Data Grid" },
       { "old": "Reviewer Hub", "new": "Verifier Review" },
       { "old": "Queue", "context": "standalone nav label", "new": "Review State name" }
     ]

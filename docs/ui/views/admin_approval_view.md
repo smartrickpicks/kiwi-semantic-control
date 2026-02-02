@@ -1,6 +1,6 @@
 # View: Admin Approval
 
-> Final approval surface for Admin decisions before baseline promotion.
+> Final approval surface for Admin decisions before Promote Patch to Baseline.
 
 ## Entry Conditions
 
@@ -17,12 +17,12 @@
 
 | Artifact | Description | Required |
 |----------|-------------|----------|
-| Structured Intent | Rendered WHEN/THEN/BECAUSE | Yes |
-| Evidence Pack | All 4 blocks | Yes |
+| Structured Intent | Rendered Observation/Expected/Justification (aliases: WHEN/THEN/BECAUSE) | Yes |
+| Evidence Pack | All 4 canonical blocks (Observation, Expected, Justification, Repro) | Yes |
 | Preflight Report | Badge summary | Yes |
 | Verifier Decision | Approval notes and timestamp | Yes |
 | Revision History | All revisions with diff summaries | Yes |
-| Smoke Test Status | Pass/fail indicator | Yes |
+| Smoke (Strict) Status | Pass/fail indicator | Yes |
 | Changelog Preview | Proposed changelog entry | Yes |
 
 ## Allowed Actions by Role
@@ -64,10 +64,10 @@ Before Admin Approve, the Admin must confirm ALL checklist sections (see [REVIEW
 | Preview Validity | Confirmed by Verifier |
 | Conflict Assessment | Confirmed by Verifier |
 | Downstream Risk Awareness | Confirmed by Verifier |
-| Smoke Verification | **Must be currently passing** (not just at submit time) |
+| Smoke (Strict) Verification | **Must be currently passing** (not just at submit time) |
 | Versioning and Changelog | Version increment, changelog entry present |
 
-**Contract:** If smoke test is not currently passing, the Admin MUST use "Admin Hold". If changelog is missing, the Admin MUST request it before approval. Promotion without passing smoke and complete changelog is a contract violation.
+**Contract:** If Smoke (Strict) is not currently passing, the Admin MUST use "Admin Hold". If changelog is missing, the Admin MUST request it before approval. Promote Patch to Baseline without passing Smoke (Strict) and complete changelog is a contract violation.
 
 ## Audit/Evidence Requirements
 

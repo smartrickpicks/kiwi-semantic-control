@@ -1,6 +1,6 @@
 # View: Promotion
 
-> Final stage for applying patches to baseline and exporting PR-ready artifacts.
+> Final stage for promoting Approved Patches to Baseline Patches and exporting PR-ready artifacts.
 
 ## Entry Conditions
 
@@ -10,7 +10,7 @@
 | User authenticated | Yes |
 | Minimum role | Admin |
 | gate_admin passed | Yes |
-| Smoke test passing | Yes |
+| Smoke (Strict) passing | Yes |
 
 ## Visible Artifacts
 
@@ -20,7 +20,7 @@
 | Current Baseline Version | config_pack.base.json version | Yes |
 | New Baseline Version | Proposed version after apply | Yes |
 | Changelog Entry | Full changelog text | Yes |
-| Smoke Evidence | Current pass status with SHA256 | Yes |
+| Smoke (Strict) Evidence | Current pass status with SHA256 | Yes |
 | Export Preview | Patch file contents | Yes |
 | Audit Trail | Full decision history | Yes |
 
@@ -39,7 +39,7 @@
 | Action | Reason |
 |--------|--------|
 | Edit patch content | Locked after admin approval |
-| Promote without smoke pass | Baseline mutation requires evidence |
+| Promote without Smoke (Strict) pass | Baseline mutation requires evidence |
 | Skip changelog | Changelog is required artifact |
 | Revert promotion | Use git revert instead |
 
@@ -49,11 +49,11 @@
 
 | Step | Description |
 |------|-------------|
-| 1 | Verify smoke test is currently passing |
+| 1 | Verify Smoke (Strict) is currently passing |
 | 2 | Confirm baseline version increment |
 | 3 | Click "Promote Patch to Baseline" |
-| 4 | System updates baseline version in memory |
-| 5 | Audit log records applied timestamp |
+| 4 | System-derived: baseline version updated in memory |
+| 5 | Audit log records promotion timestamp |
 
 ### Stage 12: Export to PR
 
@@ -62,7 +62,7 @@
 | 1 | Review export preview |
 | 2 | Confirm changelog entry |
 | 3 | Click "Export to PR" |
-| 4 | System generates patch file |
+| 4 | System-derived: patch file generated |
 | 5 | Audit log records export path |
 
 ## Audit/Evidence Requirements
@@ -85,7 +85,7 @@
 |----------|--------|-------------|
 | Patch file | JSON | config/config_pack.patch.json |
 | Changelog entry | Markdown | CHANGELOG.md |
-| Smoke evidence | Text | docs/replit_baseline.md |
+| Smoke (Strict) evidence | Text | docs/replit_baseline.md |
 
 ## Related Documents
 

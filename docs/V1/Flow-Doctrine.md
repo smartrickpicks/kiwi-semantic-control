@@ -21,7 +21,7 @@ This document defines the governance workflow for human+agent collaboration in t
 
 ### Stage 2: Triage Review
 - **Actor**: Operator
-- **Action**: Review queue counts and summary cards
+- **Action**: Review Review State counts and summary cards
 - **Gate**: Operator acknowledges data state
 - **Evidence**: Review State snapshot (To Do, Needs Review, Flagged, Blocked, Finalized)
 
@@ -32,14 +32,14 @@ This document defines the governance workflow for human+agent collaboration in t
 - **Evidence**: Record ID, field values, current status
 
 ### Stage 4: Issue Identification
-- **Actor**: Operator (with optional Agent suggestion)
+- **Actor**: Operator (with optional agent suggestion)
 - **Action**: Identify semantic issue or rule gap
 - **Gate**: Issue articulated in plain language
 - **Evidence**: Observation statement, expected behavior
 
-### Stage 5: Patch Authoring (Patch Studio)
+### Stage 5: Patch Draft Authoring (Patch Studio)
 - **Actor**: Operator
-- **Action**: Author structured intent (WHEN/THEN/BECAUSE)
+- **Action**: Author Evidence Pack using structured intent (WHEN→Observation / THEN→Expected / BECAUSE→Justification)
 - **Gate**: All required fields populated
 - **Evidence**: Intent preview, target field, condition, action
 
@@ -51,39 +51,43 @@ This document defines the governance workflow for human+agent collaboration in t
 
 ### Stage 7: Evidence Pack Assembly
 - **Actor**: Operator
-- **Action**: Complete 4-block evidence pack
-- **Gate**: Observation, Expected, Justification, Repro all populated
-- **Evidence**: Timestamped evidence pack snapshot
+- **Action**: Complete 4-block Evidence Pack
+- **Gate**: All 4 canonical blocks populated:
+  - **Observation** (alias: WHEN)
+  - **Expected** (alias: THEN)
+  - **Justification** (alias: BECAUSE)
+  - **Repro** (no alias)
+- **Evidence**: Timestamped Evidence Pack snapshot
 
-### Stage 8: Submit to Queue
+### Stage 8: Submit Patch Request
 - **Actor**: Operator
-- **Action**: Submit patch request to review queue
+- **Action**: Submit Patch Request for review
 - **Gate**: Submission logged
 - **Evidence**: Audit log entry with timestamp and actor
 
 ### Stage 9: Verifier Review
 - **Actor**: Verifier (elevated role)
-- **Action**: Review patch, request clarification or approve/reject
+- **Action**: Review Patch Request, request clarification or approve/reject
 - **Gate**: Verifier decision recorded
 - **Evidence**: Review notes, decision status, revision history
 
 ### Stage 10: Admin Approval
 - **Actor**: Admin (elevated role)
-- **Action**: Final approval, hold, or export to external system
-- **Gate**: Admin decision recorded
+- **Action**: Final approval of Patch Request, hold, or export to external system
+- **Gate**: Admin decision recorded; Patch Request becomes Approved Patch
 - **Evidence**: Admin action log, export payload if applicable
 
-### Stage 11: Promote Patch to Baseline (legacy: Apply Patch)
+### Stage 11: Promote Patch to Baseline
 - **Actor**: Admin (after external confirmation if required)
-- **Action**: Promote patch to semantic baseline
-- **Gate**: Confirmation of application
-- **Evidence**: Applied timestamp, baseline version updated
+- **Action**: Promote Approved Patch to semantic baseline; patch becomes Baseline Patch
+- **Gate**: Confirmation of promotion
+- **Evidence**: Promotion timestamp, baseline version updated
 
-### Stage 12: Promotion (PR Ready)
+### Stage 12: Export (PR Ready)
 - **Actor**: Operator or Admin
-- **Action**: Export artifacts for pull request
-- **Gate**: All applied patches included
-- **Evidence**: Patch file, changelog entry, smoke test pass
+- **Action**: Export Baseline Patch artifacts for pull request
+- **Gate**: All Baseline Patches included
+- **Evidence**: Patch file, changelog entry, Smoke (Strict) pass
 
 ## Authority Model
 
@@ -97,7 +101,7 @@ This document defines the governance workflow for human+agent collaboration in t
 
 Deprecated terms that indicate drift from V1 naming:
 - "Kiwi Control Board" → use "Semantic Control Board"
-- "All Data Grid" → use "All-Data Grid"
+- "All-Data Grid" → use "All Data Grid" (no hyphen)
 - "Reviewer Hub" → use "Verifier Review"
 - "Queue" as standalone nav label → use specific Review State name
 

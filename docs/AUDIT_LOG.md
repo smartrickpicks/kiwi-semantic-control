@@ -38,8 +38,8 @@ Each entry in the audit log is an Event with the following invariant fields:
 ### Event Types
 - LOADED: data was loaded into the system through the governed loader (copy-only ingestion). Origin: load_data_view.
 - VIEWED: a record was opened in a governed inspection view. Origin: any read-only view.
-- PATCH_DRAFTED: an Analyst authored an initial patch delta (no submission yet). Origin: single_row_review_view (patch panel).
-- PATCH_SUBMITTED: an Analyst submitted a patch for verification. Origin: single_row_review_view. This does not change review state.
+- PATCH_DRAFTED: an Analyst authored an initial Patch Draft (no submission yet). Origin: single_row_review_view (Evidence Pack panel).
+- PATCH_SUBMITTED: an Analyst submitted a Patch Request for verification. Origin: single_row_review_view. This does not change Review State.
 - REVIEW_REQUESTED: explicit request for verification on a record or patch. Origin: single_row_review_view.
 - NOTE_ADDED: a structured note or comment was added. Origin: any governed view.
 - FLAG_ADDED: a flag was set with category and rationale. Origin: single_row_review_view or verifier_review_view.
