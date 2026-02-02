@@ -30,7 +30,7 @@ Each entry in the audit log is an Event with the following invariant fields:
 - patch_id: identifier of the patch when present (string, optional).
 - actor.handle: free-form actor label (string, may be pseudonymous or local handle).
 - actor.role: one of [Analyst, Verifier, Admin].
-- view: originating view (string). Examples: load_data_view, single_row_review_view, verifier_review_view, admin_approval_view, record_inspection_view.
+- view: originating view (string). Examples: load_data_view, single_row_review_view, verifier_review_view, admin_approval_view.
 - event_type: see Event Types below (string enum).
 - payload: event-specific, deterministic object (see Payload Contracts).
 - evidence: zero or more evidence anchors (array; see Evidence Anchors).
@@ -46,7 +46,7 @@ Each entry in the audit log is an Event with the following invariant fields:
 - FLAG_CLEARED: a previously set flag was cleared with rationale. Origin: verifier_review_view or admin_approval_view.
 - STATE_MARKED: review state was marked to a target state by a governed gate. Origin: verifier_review_view or admin_approval_view only.
 - EVIDENCE_ATTACHED: evidence anchors were added to an existing entry or patch. Origin: single_row_review_view or verifier_review_view.
-- EXPORT_GENERATED: a deterministic export or snapshot was generated. Origin: record_inspection_view or admin_approval_view.
+- EXPORT_GENERATED: a deterministic export or snapshot was generated. Origin: single_row_review_view or admin_approval_view.
 
 Review States (for STATE_MARKED): one of [To Do, Needs Review, Flagged, Blocked, Finalized].
 

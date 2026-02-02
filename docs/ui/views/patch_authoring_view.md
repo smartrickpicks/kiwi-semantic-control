@@ -9,7 +9,7 @@
 | Dataset loaded | Yes |
 | User authenticated | Yes (any role) |
 | Minimum role | Analyst |
-| Issue identified | Recommended (from Record Inspection) |
+| Issue identified | Recommended (from Single Row Review) |
 
 ## Visible Artifacts
 
@@ -41,7 +41,7 @@
 | View preflight report | Yes | Yes | Yes |
 | Copy preflight report | Yes | Yes | Yes |
 | Edit evidence pack | Yes | Yes | Yes |
-| Submit to Queue | Yes | Yes | Yes |
+| Submit Patch Request | Yes | Yes | Yes |
 
 ## Disallowed Actions
 
@@ -66,13 +66,13 @@ This view owns two gates (see [gate_view_mapping.md](../gate_view_mapping.md)):
 | Event | Logged | Evidence |
 |-------|--------|----------|
 | Preflight run | Yes | timestamp, patch_id, badge_summary |
-| Submit to Queue | Yes | timestamp, patch_id, actor, intent_rendered |
+| Submit Patch Request | Yes | timestamp, patch_id, actor, intent_rendered |
 
 ## State Transitions
 
 | From State | To State | Action | Role |
 |------------|----------|--------|------|
-| Draft | Submitted | Submit to Queue | Analyst, Verifier, Admin |
+| Draft | Submitted | Submit Patch Request | Analyst, Verifier, Admin |
 | Needs_Clarification | Submitted | Respond to Clarification | Author |
 
 ## Form Validation
@@ -91,6 +91,8 @@ This view owns two gates (see [gate_view_mapping.md](../gate_view_mapping.md)):
 ## Related Documents
 
 - [gate_view_mapping.md](../gate_view_mapping.md) — Gate ownership
-- [record_inspection_view.md](record_inspection_view.md) — Issue identification
+- [single_row_review_view.md](single_row_review_view.md) — Issue identification
 - [verifier_review_view.md](verifier_review_view.md) — Next stage after submit
 - [analyst.md](../roles/analyst.md) — Analyst role permissions
+
+Note: “Submit Patch Request” routes to Verifier Review and sets patch status to Submitted. No “queue” semantics are implied.

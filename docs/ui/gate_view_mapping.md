@@ -19,7 +19,7 @@ This document maps doctrine gates from [Human-Agent-Workflow-V1.json](../specs/H
 | View | Gates Owned | Read-Only Gates |
 |------|-------------|-----------------|
 | Triage | None | All (navigation only) |
-| Record Inspection | None | All (read-only) |
+| Single Row Review | None | All (read-only) |
 | Patch Authoring | gate_preflight, gate_evidence | None |
 | Verifier Review | gate_verifier | gate_preflight, gate_evidence |
 | Admin Approval | gate_admin | gate_preflight, gate_evidence, gate_verifier |

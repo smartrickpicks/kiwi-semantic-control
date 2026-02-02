@@ -48,7 +48,6 @@
 
 ### UI Views
 - docs/ui/views/triage_view.md
-- docs/ui/views/record_inspection_view.md
 - docs/ui/views/patch_authoring_view.md
 - docs/ui/views/verifier_review_view.md
 - docs/ui/views/admin_approval_view.md

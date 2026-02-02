@@ -25,7 +25,7 @@ This document defines the governance workflow for human+agent collaboration in t
 - **Gate**: Operator acknowledges data state
 - **Evidence**: Review State snapshot (To Do, Needs Review, Flagged, Blocked, Finalized)
 
-### Stage 3: Record Inspection
+### Stage 3: Single Row Review
 - **Actor**: Operator
 - **Action**: Drill into individual records, examine field values
 - **Gate**: Record selected and visible

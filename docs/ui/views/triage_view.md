@@ -53,6 +53,6 @@ This view does not initiate state transitions. It is a navigation hub.
 
 ## Related Documents
 
-- [record_inspection_view.md](record_inspection_view.md) — Record detail view
+- [single_row_review_view.md](single_row_review_view.md) — Single Row Review view
 - [ui_principles.md](../ui_principles.md) — UI principles
 - [analyst.md](../roles/analyst.md) — Analyst role permissions
