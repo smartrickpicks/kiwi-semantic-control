@@ -2,7 +2,7 @@
 
 > Review surface for evaluating submitted Patch Requests, requesting clarification, and approving/rejecting.
 
-## Implementation Status (v1.4.5)
+## Implementation Status (v1.4.17)
 
 | Feature | Status |
 |---------|--------|
@@ -18,6 +18,8 @@
 | Audit logging (client-side) | Done |
 | Clarification modal | Done |
 | Role-gated navigation | Done |
+
+**Note (v1.4.17):** Patch Replay evaluation occurs in Admin Approval, not Verifier Review. Verifiers focus on semantic review; Admins perform replay validation before promotion.
 
 ## Entry Conditions
 

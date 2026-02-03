@@ -574,6 +574,26 @@
     .aa-smoke-status.fail { background: #ffebee; border: 1px solid #ffcdd2; }
     .aa-smoke-icon { font-size: 1.5em; }
     .aa-smoke-label { font-weight: 600; }
+    /* Patch Replay Styles (v1.4.17) */
+    .aa-replay-status { display: flex; align-items: center; gap: 8px; padding: 12px; border-radius: 6px; margin-bottom: 12px; }
+    .aa-replay-status.not-run { background: #f5f5f5; border: 1px solid #e0e0e0; color: #666; }
+    .aa-replay-status.pass { background: #e8f5e9; border: 1px solid #c8e6c9; color: #2e7d32; }
+    .aa-replay-status.fail { background: #ffebee; border: 1px solid #ffcdd2; color: #c62828; }
+    .aa-replay-badge { font-weight: 600; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; text-transform: uppercase; }
+    .aa-replay-badge.not-run { background: #e0e0e0; color: #666; }
+    .aa-replay-badge.pass { background: #4caf50; color: white; }
+    .aa-replay-badge.fail { background: #f44336; color: white; }
+    .aa-replay-packet { margin-top: 12px; }
+    .aa-replay-check { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fafafa; border-left: 3px solid #e0e0e0; margin-bottom: 4px; font-size: 0.85em; }
+    .aa-replay-check.pass { border-left-color: #4caf50; }
+    .aa-replay-check.fail { border-left-color: #f44336; }
+    .aa-replay-check-icon { font-size: 1.1em; }
+    .aa-replay-check-label { flex: 1; }
+    .aa-replay-failure-reason { background: #fff8e1; border: 1px solid #ffcc80; padding: 12px; border-radius: 6px; margin-top: 12px; font-size: 0.85em; }
+    .aa-replay-failure-reason-header { font-weight: 600; color: #e65100; margin-bottom: 6px; }
+    .aa-replay-btn { background: #1976d2; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: 500; }
+    .aa-replay-btn:hover { background: #1565c0; }
+    .aa-replay-btn:disabled { background: #90caf9; cursor: not-allowed; }
     .aa-changelog-preview { background: #263238; color: #eceff1; padding: 12px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 0.8em; white-space: pre-wrap; }
     .aa-actions-panel { background: #f3e5f5; padding: 16px; border-radius: 8px; margin-top: 16px; border: 1px solid #ce93d8; }
     .aa-actions-header { font-weight: 600; font-size: 0.9em; margin-bottom: 12px; color: #6a1b9a; }
@@ -1865,6 +1885,49 @@
                 <div>
                   <div class="aa-smoke-label">Smoke (Strict) Passing</div>
                   <div style="font-size: 0.8em; color: #666;">Last run: <span id="aa-smoke-time">—</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Patch Replay Gate (v1.4.17) -->
+            <div class="aa-section" style="margin-top: 16px;">
+              <div class="aa-section-header"><span class="icon">🔄</span> Patch Replay</div>
+              <div class="aa-replay-status not-run" id="aa-replay-status">
+                <span class="aa-replay-badge not-run" id="aa-replay-badge">NOT RUN</span>
+                <span id="aa-replay-status-text">Replay evaluation not yet performed</span>
+              </div>
+              <button class="aa-replay-btn" id="aa-replay-btn" onclick="aaRunReplay()">Run Replay</button>
+              
+              <!-- Replay Packet (checks list) -->
+              <div class="aa-replay-packet" id="aa-replay-packet" style="display: none;">
+                <div class="aa-replay-check pass" id="aa-replay-check-schema">
+                  <span class="aa-replay-check-icon">✓</span>
+                  <span class="aa-replay-check-label">Schema Validation</span>
+                </div>
+                <div class="aa-replay-check pass" id="aa-replay-check-conflicts">
+                  <span class="aa-replay-check-icon">✓</span>
+                  <span class="aa-replay-check-label">Conflict Detection</span>
+                </div>
+                <div class="aa-replay-check pass" id="aa-replay-check-baseline">
+                  <span class="aa-replay-check-icon">✓</span>
+                  <span class="aa-replay-check-label">Baseline Compatibility</span>
+                </div>
+                <div class="aa-replay-check pass" id="aa-replay-check-rules">
+                  <span class="aa-replay-check-icon">✓</span>
+                  <span class="aa-replay-check-label">Rule Evaluation</span>
+                </div>
+                <div class="aa-replay-check pass" id="aa-replay-check-output">
+                  <span class="aa-replay-check-icon">✓</span>
+                  <span class="aa-replay-check-label">Output Determinism</span>
+                </div>
+              </div>
+              
+              <!-- Failure Reason (shown only on FAIL) -->
+              <div class="aa-replay-failure-reason" id="aa-replay-failure-reason" style="display: none;">
+                <div class="aa-replay-failure-reason-header">Failure Reason</div>
+                <div id="aa-replay-failure-text">—</div>
+                <div style="margin-top: 8px; font-size: 0.8em;">
+                  <a href="#" onclick="aaShowReplayAuditLog(); return false;">View in Audit Log →</a>
                 </div>
               </div>
             </div>
@@ -8920,6 +8983,113 @@
       };
       aaState.auditLog.push(event);
       console.log('[AA] AUDIT:', eventType, event);
+    }
+    
+    // v1.4.17: Patch Replay Gate functions
+    var replayState = {
+      status: 'not_run', // not_run | pass | fail
+      checks: [],
+      failureReason: null,
+      lastRunAt: null
+    };
+    
+    function aaRunReplay() {
+      console.log('[AA] Running Patch Replay evaluation...');
+      
+      // Deterministic stub: evaluate based on patch content hash
+      // Uses a simple hash of the current patch to produce consistent results
+      var patchHash = 0;
+      var intentText = (aaState.observation || '') + (aaState.expected || '') + (aaState.justification || '');
+      for (var i = 0; i < intentText.length; i++) {
+        patchHash = ((patchHash << 5) - patchHash) + intentText.charCodeAt(i);
+        patchHash = patchHash & patchHash; // Convert to 32-bit integer
+      }
+      
+      // Deterministic check results based on hash (not random)
+      var checks = [
+        { id: 'schema', label: 'Schema Validation', pass: true },
+        { id: 'conflicts', label: 'Conflict Detection', pass: true },
+        { id: 'baseline', label: 'Baseline Compatibility', pass: (patchHash % 7) !== 0 },
+        { id: 'rules', label: 'Rule Evaluation', pass: (patchHash % 11) !== 0 },
+        { id: 'output', label: 'Output Determinism', pass: true }
+      ];
+      
+      var allPass = checks.every(function(c) { return c.pass; });
+      var failedCheck = checks.find(function(c) { return !c.pass; });
+      
+      replayState.status = allPass ? 'pass' : 'fail';
+      replayState.checks = checks;
+      replayState.lastRunAt = new Date().toISOString();
+      replayState.failureReason = failedCheck ? 'Check failed: ' + failedCheck.label + ' (hash=' + Math.abs(patchHash % 100) + ')' : null;
+      
+      // Update UI
+      aaRenderReplayStatus();
+      
+      // Log audit event
+      aaLogAuditEvent('REPLAY_EVALUATED', {
+        result: replayState.status,
+        checks: checks.map(function(c) { return { id: c.id, pass: c.pass }; }),
+        failure_reason: replayState.failureReason
+      });
+      
+      showToast('Replay evaluation: ' + replayState.status.toUpperCase(), replayState.status === 'pass' ? 'success' : 'warning');
+    }
+    
+    function aaRenderReplayStatus() {
+      var statusEl = document.getElementById('aa-replay-status');
+      var badgeEl = document.getElementById('aa-replay-badge');
+      var textEl = document.getElementById('aa-replay-status-text');
+      var packetEl = document.getElementById('aa-replay-packet');
+      var failureEl = document.getElementById('aa-replay-failure-reason');
+      var failureTextEl = document.getElementById('aa-replay-failure-text');
+      var btnEl = document.getElementById('aa-replay-btn');
+      
+      // Update status badge
+      statusEl.className = 'aa-replay-status ' + replayState.status.replace('_', '-');
+      badgeEl.className = 'aa-replay-badge ' + replayState.status.replace('_', '-');
+      badgeEl.textContent = replayState.status.toUpperCase().replace('_', ' ');
+      
+      if (replayState.status === 'not_run') {
+        textEl.textContent = 'Replay evaluation not yet performed';
+        packetEl.style.display = 'none';
+        failureEl.style.display = 'none';
+        btnEl.textContent = 'Run Replay';
+      } else {
+        textEl.textContent = replayState.status === 'pass' 
+          ? 'All checks passed at ' + new Date(replayState.lastRunAt).toLocaleTimeString()
+          : 'Failed at ' + new Date(replayState.lastRunAt).toLocaleTimeString();
+        
+        // Show packet with per-check status
+        packetEl.style.display = 'block';
+        replayState.checks.forEach(function(check) {
+          var checkEl = document.getElementById('aa-replay-check-' + check.id);
+          if (checkEl) {
+            checkEl.className = 'aa-replay-check ' + (check.pass ? 'pass' : 'fail');
+            checkEl.querySelector('.aa-replay-check-icon').textContent = check.pass ? '✓' : '✗';
+          }
+        });
+        
+        // Show failure reason if failed
+        if (replayState.status === 'fail') {
+          failureEl.style.display = 'block';
+          failureTextEl.textContent = replayState.failureReason || 'Unknown failure';
+        } else {
+          failureEl.style.display = 'none';
+        }
+        
+        btnEl.textContent = 'Re-run Replay';
+      }
+    }
+    
+    function aaShowReplayAuditLog() {
+      // Stub: show toast pointing to audit log
+      showToast('Replay failure logged to Audit Log (entry ID: REPLAY_' + Date.now() + ')', 'info');
+      console.log('[AA] Replay audit entry:', {
+        event_type: 'REPLAY_FAILED',
+        timestamp: replayState.lastRunAt,
+        failure_reason: replayState.failureReason,
+        checks: replayState.checks
+      });
     }
     
     function aaAdminApprove() {

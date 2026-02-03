@@ -2,7 +2,7 @@
 
 > Final approval surface for Admin decisions before Promote Patch to Baseline.
 
-## Implementation Status (v1.4.5)
+## Implementation Status (v1.4.17)
 
 | Feature | Status |
 |---------|--------|
@@ -13,6 +13,7 @@
 | Verifier Decision section | Done |
 | Revision History section | Done (stub) |
 | Smoke (Strict) Status indicator | Done |
+| **Patch Replay Gate (v1.4.17)** | Done |
 | Changelog Preview | Done |
 | Admin Notes textarea | Done |
 | Admin Actions panel | Done |
@@ -42,7 +43,38 @@
 | Verifier Decision | Approval notes and timestamp | Yes |
 | Revision History | All revisions with diff summaries | Yes |
 | Smoke (Strict) Status | Pass/fail indicator | Yes |
+| **Patch Replay** | Replay Packet with per-check status (v1.4.17) | Yes |
 | Changelog Preview | Proposed changelog entry | Yes |
+
+## Patch Replay Gate (v1.4.17)
+
+The Patch Replay section evaluates whether the patch can be deterministically replayed against the baseline.
+
+### Replay Status
+- **NOT RUN**: Replay evaluation not yet performed
+- **PASS**: All replay checks passed
+- **FAIL**: One or more replay checks failed
+
+### Replay Packet Checks
+| Check | Description |
+|-------|-------------|
+| Schema Validation | Patch fields match expected schema |
+| Conflict Detection | No conflicts with concurrent patches |
+| Baseline Compatibility | Patch applies cleanly to current baseline |
+| Rule Evaluation | All rules evaluate correctly with patch applied |
+| Output Determinism | Patch produces identical outputs on replay |
+
+### Stub Behavior
+The current implementation uses a deterministic stub:
+- Hash-based evaluation produces consistent PASS/FAIL results for the same patch content
+- Not random: same patch always produces same result
+- Failure reasons include the check that failed and a hash identifier
+
+### Failure Handling
+If replay fails:
+- Failure reason block is displayed
+- Link to Audit Log entry (stub)
+- Admin can still proceed with Admin Hold or request clarification
 
 ## Allowed Actions by Role
 

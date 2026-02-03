@@ -43,7 +43,9 @@ All tasks must use these terms exclusively:
 | PDF-PROXY-02 | BUGFIX: FastAPI proxy CORS headers + explicit OPTIONS handler | Backend | `server/pdf_proxy.py` | OPTIONS preflight returns 204 with CORS headers; browser fetch not CORS blocked | Done (74c7948) |
 | SRR-BUG-03 | BUGFIX: row/undefined hash navigation (rowId always defined) | UI bugfix | `ui/viewer/index.html` | Clicking grid row yields #/row/<number>; no SRR_OPEN_FAIL after row click | Done (74c7948) |
 | DEBUG-01 | PDF proxy debug logging (localStorage pdfDebug=1) | UI debug | `ui/viewer/index.html` | When pdfDebug=1, console shows viewerOrigin + proxyOrigin once | Done (74c7948) |
-| PDF-PROXY-03 | Supabase Edge Function proxy for SRR PDFs (DataDash method) | Backend + UI | `supabase/functions/contract-proxy/index.ts`, `ui/viewer/index.html`, `docs/` | With Supabase env set, SRR fetches via Supabase proxy; falls back to FastAPI if missing | In Progress |
+| PDF-PROXY-03 | Supabase Edge Function proxy for SRR PDFs (DataDash method) | Backend + UI | `supabase/functions/contract-proxy/index.ts`, `ui/viewer/index.html`, `docs/` | With Supabase env set, SRR fetches via Supabase proxy; falls back to FastAPI if missing | Done (25a1414) |
+| EP-REPLAY-01 | Admin Approval: Patch Replay Gate panel with status badge and Run Replay button | UI | `ui/viewer/index.html`, `docs/ui/views/admin_approval_view.md` | Admin Approval shows Patch Replay section; Run Replay sets deterministic PASS/FAIL | In Progress |
+| EP-REPLAY-02 | Replay Packet preview + failure reason stub | UI | `ui/viewer/index.html`, `docs/AUDIT_LOG.md` | Replay Packet list with per-check status; failure shows reason + Audit Log link | In Progress |
 
 ### P1 — High Priority
 

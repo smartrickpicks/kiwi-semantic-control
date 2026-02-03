@@ -1,0 +1,76 @@
+{
+  "route": "BUILD_TASK_REPLIT",
+  "goal": "Implement Patch Replay gate (Admin Approval) with deterministic PASS/FAIL stub and Replay Packet preview, aligned to governance terminology.",
+  "constraints": [
+    "Do not rename canonical ids/routes/tokens.",
+    "UI label remains 'Record Inspection' where user-facing; canonical docs/specs remain 'Single Row Review'.",
+    "No external services; replay evaluation is a local stub (deterministic).",
+    "No invented claims; output git commands only."
+  ],
+  "files_in_scope": [
+    "ui/viewer/index.html",
+    "docs/ui/views/admin_approval_view.md",
+    "docs/ui/views/verifier_review_view.md",
+    "docs/AUDIT_LOG.md",
+    "docs/handoff/TASKS_UI.md"
+  ],
+  "implementation_steps": [
+    {
+      "id": "EP-REPLAY-01",
+      "title": "Admin Approval: Replay Gate panel",
+      "requirements": [
+        "Add a 'Patch Replay' section in Admin Approval view.",
+        "Include status badge (PASS/FAIL/NOT_RUN).",
+        "Include 'Run Replay' button that computes a deterministic stub result.",
+        "Store replay status in local state (no persistence required)."
+      ],
+      "acceptance_tests": [
+        "Admin Approval shows Patch Replay section with status badge.",
+        "Clicking Run Replay sets status to PASS or FAIL deterministically (no randomness)."
+      ]
+    },
+    {
+      "id": "EP-REPLAY-02",
+      "title": "Replay Packet preview + failure reason stub",
+      "requirements": [
+        "Add a Replay Packet preview list (e.g., 3–5 checks) with PASS/FAIL per check.",
+        "If replay fails, show a failure reason block and link to 'Audit Log' entry stub.",
+        "Keep copy canonical and avoid legacy terms."
+      ],
+      "acceptance_tests": [
+        "Replay Packet list renders with per-check status.",
+        "Failure path shows a reason block and Audit Log stub link."
+      ]
+    },
+    {
+      "id": "DOCS-01",
+      "title": "Update docs for Replay gate",
+      "requirements": [
+        "Update docs/ui/views/admin_approval_view.md to document Replay Gate behavior and stub evaluation.",
+        "Update docs/ui/views/verifier_review_view.md to note Replay Gate occurs in Admin Approval (not Verifier).",
+        "Update docs/AUDIT_LOG.md to add replay event types + payload contract (stub)."
+      ],
+      "acceptance_tests": [
+        "Docs describe Replay Gate placement and stub behavior.",
+        "Audit Log includes replay event type(s) with payload fields."
+      ]
+    },
+    {
+      "id": "TASKS-UI-01",
+      "title": "Track replay work in TASKS_UI",
+      "requirements": [
+        "Mark EP-REPLAY-01 and EP-REPLAY-02 as IN_PROGRESS or DONE only if commit URL exists.",
+        "If no URL, keep 'Unknown — requires audit' in Evidence."
+      ],
+      "acceptance_tests": [
+        "TASKS_UI reflects the Replay tasks and evidence rules."
+      ]
+    }
+  ],
+  "output_format": {
+    "summary": "bullet list (file -> change)",
+    "verification": "commands run + key console log lines",
+    "suggested_commit_message": "single line",
+    "git_commands": "git add/commit commands only (no push claims)"
+  }
+}

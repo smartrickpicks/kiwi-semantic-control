@@ -81,6 +81,11 @@ Each entry in the audit log is an Event with the following invariant fields:
 - EVIDENCE_ATTACHED: evidence anchors were added to an existing entry or patch. Origin: single_row_review_view or verifier_review_view.
 - EXPORT_GENERATED: a deterministic export or snapshot was generated. Origin: single_row_review_view or admin_approval_view.
 
+#### Replay Events (v1.4.17)
+- REPLAY_EVALUATED: Patch Replay gate was executed. Origin: admin_approval_view.
+- REPLAY_PASSED: Patch Replay completed successfully (all checks passed). Origin: admin_approval_view.
+- REPLAY_FAILED: Patch Replay failed one or more checks. Origin: admin_approval_view.
+
 Review States (for STATE_MARKED): one of [To Do, Needs Review, Flagged, Blocked, Finalized].
 
 ## Deterministic Event Schema (Canonical Order)
@@ -186,6 +191,26 @@ EXPORT_GENERATED payload fields:
 - export_path (string; repository-relative)
 - export_format (string)
 - rationale (string)
+
+### Replay Event Payloads (v1.4.17)
+
+REPLAY_EVALUATED payload fields:
+- result (string; "pass" | "fail")
+- checks (array of check objects)
+  - For each check: id (string), pass (boolean)
+- failure_reason (string | null)
+
+REPLAY_PASSED payload fields:
+- checks (array of check objects)
+  - For each check: id (string), pass (boolean)
+- evaluated_at (ISO-8601 UTC Z)
+
+REPLAY_FAILED payload fields:
+- checks (array of check objects)
+  - For each check: id (string), pass (boolean)
+- failure_reason (string)
+- failed_check_id (string)
+- evaluated_at (ISO-8601 UTC Z)
 
 ## Evidence Anchors
 Each evidence entry is a deterministic anchor that the UI can resolve:
