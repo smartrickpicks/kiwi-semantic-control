@@ -9824,15 +9824,25 @@
         const time = new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         
         let actions = '';
-        if (p.status === 'pending') {
+        
+        // RFI rows: view-only actions (no Approve in table)
+        if (p.type === 'rfi') {
           actions = `
-            <button onclick="event.stopPropagation(); updatePayloadStatus('${p.id}', 'sent_to_admin')" style="background:#2e7d32; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Approve</button>
-            <button onclick="event.stopPropagation(); updatePayloadStatus('${p.id}', 'needs_clarification')" style="background:#f57c00; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">RFI</button>
+            <button onclick="event.stopPropagation(); openVerifierReviewDetail('${p.id}')" style="background:#1565c0; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Open Review</button>
+            <button onclick="event.stopPropagation(); openRecordFromPayload('${p.id}')" style="background:#f5f5f5; color:#333; border:1px solid #ddd; padding:4px 8px; border-radius:4px; cursor:pointer;">Open Record</button>
           `;
-        } else if (p.status === 'needs_clarification') {
-          actions = `<button onclick="event.stopPropagation(); updatePayloadStatus('${p.id}', 'pending')" style="background:#1565c0; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Re-check</button>`;
-        } else if (p.status === 'sent_to_admin') {
-          actions = `<button onclick="event.stopPropagation(); updatePayloadStatus('${p.id}', 'resolved')" style="background:#7b1fa2; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Finalize</button>`;
+        } else {
+          // Correction/Blacklist: keep existing status-based actions
+          if (p.status === 'pending') {
+            actions = `
+              <button onclick="event.stopPropagation(); updatePayloadStatus('${p.id}', 'sent_to_admin')" style="background:#2e7d32; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Approve</button>
+              <button onclick="event.stopPropagation(); updatePayloadStatus('${p.id}', 'needs_clarification')" style="background:#f57c00; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">RFI</button>
+            `;
+          } else if (p.status === 'needs_clarification') {
+            actions = `<button onclick="event.stopPropagation(); updatePayloadStatus('${p.id}', 'pending')" style="background:#1565c0; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Re-check</button>`;
+          } else if (p.status === 'sent_to_admin') {
+            actions = `<button onclick="event.stopPropagation(); updatePayloadStatus('${p.id}', 'resolved')" style="background:#7b1fa2; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Finalize</button>`;
+          }
         }
 
         return `
@@ -9856,6 +9866,35 @@
         saveVerifierQueue();
         renderVerifierTriage();
         showToast(`Payload ${newStatus.replace(/_/g, ' ')}`, 'info');
+      }
+    }
+    
+    function openRecordFromPayload(payloadId) {
+      var payload = verifierQueueState.payloads.find(function(p) { return p.id === payloadId; });
+      if (payload && payload.record_id) {
+        var recordId = payload.record_id;
+        var foundIdx = -1;
+        
+        // Search across all sheets for the record
+        Object.keys(globalDataset).forEach(function(sheetName) {
+          if (foundIdx >= 0) return;
+          var rows = globalDataset[sheetName];
+          for (var i = 0; i < rows.length; i++) {
+            if (rows[i].contract_key === recordId || rows[i].record_id === recordId) {
+              srrState.currentSheetName = sheetName;
+              foundIdx = i;
+              break;
+            }
+          }
+        });
+        
+        if (foundIdx >= 0) {
+          navigateTo('row/' + foundIdx);
+        } else {
+          showToast('Record not found in dataset', 'warning');
+        }
+      } else {
+        showToast('No record linked to this payload', 'info');
       }
     }
 
