@@ -400,10 +400,17 @@
     
     /* Document Viewer */
     .srr-doc-viewer { height: 100%; display: flex; flex-direction: column; }
-    .srr-doc-controls { display: flex; gap: 8px; padding: 8px 12px; background: #263238; border-bottom: 1px solid #37474f; }
+    .srr-doc-controls { display: flex; gap: 8px; padding: 8px 12px; background: #263238; border-bottom: 1px solid #37474f; align-items: center; }
     .srr-doc-btn { background: #37474f; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8em; }
     .srr-doc-btn:hover { background: #455a64; }
-    .srr-doc-frame { flex: 1; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.9em; position: relative; min-height: 400px; }
+    .srr-doc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .srr-page-indicator { color: #b0bec5; font-size: 0.8em; min-width: 80px; text-align: center; }
+    .srr-zoom-indicator { color: #b0bec5; font-size: 0.8em; min-width: 50px; text-align: center; }
+    .srr-doc-spacer { flex: 1; }
+    .srr-doc-frame { flex: 1; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.9em; position: relative; min-height: 400px; overflow: hidden; }
+    .srr-doc-empty-state { text-align: center; padding: 40px; }
+    .srr-doc-container { width: 100%; height: 100%; overflow: auto; }
+    .srr-pdf-iframe { width: 100%; height: 100%; border: none; transform-origin: top left; }
     .srr-anchor-overlay { position: absolute; border: 2px solid #1565c0; background: rgba(21, 101, 192, 0.1); pointer-events: auto; cursor: pointer; }
     .srr-anchor-overlay:hover { background: rgba(21, 101, 192, 0.25); }
     .srr-anchor-list { padding: 12px; border-top: 1px solid #e0e0e0; max-height: 150px; overflow-y: auto; }
@@ -1409,16 +1416,22 @@
             </div>
             <div class="srr-doc-viewer">
               <div class="srr-doc-controls">
-                <button class="srr-doc-btn" onclick="srrPrevPage()">← Prev</button>
-                <button class="srr-doc-btn" onclick="srrNextPage()">Next →</button>
-                <button class="srr-doc-btn" onclick="srrZoomOut()">−</button>
-                <button class="srr-doc-btn" onclick="srrZoomIn()">+</button>
+                <button class="srr-doc-btn" id="srr-prev-btn" onclick="srrPrevPage()" title="Previous page">← Prev</button>
+                <span class="srr-page-indicator" id="srr-page-indicator">Page 1 / 1</span>
+                <button class="srr-doc-btn" id="srr-next-btn" onclick="srrNextPage()" title="Next page">Next →</button>
+                <span class="srr-doc-spacer"></span>
+                <button class="srr-doc-btn" id="srr-zoom-out" onclick="srrZoomOut()" title="Zoom out">−</button>
+                <span class="srr-zoom-indicator" id="srr-zoom-indicator">100%</span>
+                <button class="srr-doc-btn" id="srr-zoom-in" onclick="srrZoomIn()" title="Zoom in">+</button>
               </div>
               <div class="srr-doc-frame" id="srr-doc-frame">
-                <div style="text-align: center;">
+                <div class="srr-doc-empty-state" id="srr-doc-empty">
                   <div style="font-size: 3em; margin-bottom: 10px;">📄</div>
-                  <div>No document attached</div>
-                  <div style="font-size: 0.85em; color: #999; margin-top: 8px;">PDF viewer stub — attach documents via Data Source</div>
+                  <div style="font-weight: 500;">No document attached</div>
+                  <div style="font-size: 0.85em; color: #999; margin-top: 8px;">Attach PDFs via Data Source panel to view here</div>
+                </div>
+                <div class="srr-doc-container" id="srr-doc-container" style="display: none;">
+                  <iframe id="srr-pdf-iframe" class="srr-pdf-iframe" src="about:blank"></iframe>
                 </div>
               </div>
               <div class="srr-anchor-list" id="srr-anchor-list">
@@ -6923,6 +6936,9 @@
       
       // Render patch changes list
       renderSrrPatchList();
+      
+      // Load PDF for this record (v1.4.10)
+      srrLoadPdfForRecord(record);
     }
     
     function renderSrrFields(record) {
@@ -7253,13 +7269,8 @@
       // Remove existing overlays
       docFrame.querySelectorAll('.srr-anchor-overlay').forEach(function(el) { el.remove(); });
       
-      // If no field selected, show default state
+      // If no field selected, do not change document viewer state (PDF viewer handles its own state)
       if (!fieldKey) {
-        docFrame.innerHTML = '<div style="text-align: center;">' +
-          '<div style="font-size: 3em; margin-bottom: 10px;">📄</div>' +
-          '<div>No document attached</div>' +
-          '<div style="font-size: 0.85em; color: #999; margin-top: 8px;">PDF viewer stub — attach documents via Data Source</div>' +
-        '</div>';
         return;
       }
       
@@ -7335,29 +7346,136 @@
       container.innerHTML = html;
     }
     
-    // Document Viewer stubs
+    // PDF Viewer State Persistence
+    var SRR_PDF_STATE_KEY = 'orchestrate.srr_pdf_state.v1';
+    
+    function getSrrPdfStateKey(record) {
+      if (!record) return null;
+      return (record.contract_key || '') + '|' + (record.file_url || '') + '|' + (record.file_name || '');
+    }
+    
+    function loadSrrPdfState(record) {
+      try {
+        var key = getSrrPdfStateKey(record);
+        if (!key) return { page: 1, zoom: 1 };
+        var allState = JSON.parse(localStorage.getItem(SRR_PDF_STATE_KEY) || '{}');
+        return allState[key] || { page: 1, zoom: 1 };
+      } catch (e) { return { page: 1, zoom: 1 }; }
+    }
+    
+    function saveSrrPdfState(record) {
+      try {
+        var key = getSrrPdfStateKey(record);
+        if (!key) return;
+        var allState = JSON.parse(localStorage.getItem(SRR_PDF_STATE_KEY) || '{}');
+        allState[key] = { page: srrState.docPage, zoom: srrState.zoom };
+        localStorage.setItem(SRR_PDF_STATE_KEY, JSON.stringify(allState));
+      } catch (e) { console.warn('[SRR] Failed to save PDF state:', e); }
+    }
+    
+    function srrLoadPdfForRecord(record) {
+      var emptyEl = document.getElementById('srr-doc-empty');
+      var containerEl = document.getElementById('srr-doc-container');
+      var iframeEl = document.getElementById('srr-pdf-iframe');
+      
+      if (!emptyEl || !containerEl || !iframeEl) return;
+      
+      var attachments = [];
+      try {
+        attachments = JSON.parse(localStorage.getItem(STORAGE_KEY_PDF_ATTACHMENTS) || '[]');
+      } catch (e) {}
+      
+      var pdfUrl = null;
+      if (record && record.file_url && record.file_url.endsWith('.pdf')) {
+        var match = attachments.find(function(a) { return a.file_name === record.file_name; });
+        if (match && match.local_object_url) {
+          pdfUrl = match.local_object_url;
+        }
+      }
+      if (!pdfUrl && attachments.length > 0) {
+        pdfUrl = attachments[0].local_object_url;
+      }
+      
+      if (pdfUrl) {
+        var savedState = loadSrrPdfState(record);
+        srrState.docPage = savedState.page || 1;
+        srrState.zoom = savedState.zoom || 1;
+        srrState.docTotalPages = 1;
+        srrState.currentPdfUrl = pdfUrl;
+        
+        emptyEl.style.display = 'none';
+        containerEl.style.display = 'block';
+        iframeEl.src = pdfUrl;
+        srrUpdateZoomDisplay();
+        srrUpdatePageDisplay();
+        console.log('[SRR] PDF loaded for record, zoom:', srrState.zoom);
+      } else {
+        srrState.docPage = 1;
+        srrState.docTotalPages = 1;
+        srrState.zoom = 1;
+        srrState.currentPdfUrl = null;
+        emptyEl.style.display = 'block';
+        containerEl.style.display = 'none';
+        iframeEl.src = 'about:blank';
+        srrUpdateZoomDisplay();
+        srrUpdatePageDisplay();
+      }
+    }
+    
+    function srrUpdateZoomDisplay() {
+      var zoomEl = document.getElementById('srr-zoom-indicator');
+      var containerEl = document.getElementById('srr-doc-container');
+      if (zoomEl) zoomEl.textContent = Math.round(srrState.zoom * 100) + '%';
+      if (containerEl) containerEl.style.transform = 'scale(' + srrState.zoom + ')';
+    }
+    
+    function srrUpdatePageDisplay() {
+      var pageEl = document.getElementById('srr-page-indicator');
+      var headerPageEl = document.getElementById('srr-doc-page');
+      var text = 'Page ' + srrState.docPage + ' / ' + srrState.docTotalPages;
+      if (pageEl) pageEl.textContent = text;
+      if (headerPageEl) headerPageEl.textContent = text;
+      
+      var prevBtn = document.getElementById('srr-prev-btn');
+      var nextBtn = document.getElementById('srr-next-btn');
+      if (prevBtn) prevBtn.disabled = srrState.docPage <= 1;
+      if (nextBtn) nextBtn.disabled = srrState.docPage >= srrState.docTotalPages;
+    }
+    
     function srrPrevPage() {
       if (srrState.docPage > 1) {
         srrState.docPage--;
-        document.getElementById('srr-doc-page').textContent = 'Page ' + srrState.docPage + ' of ' + srrState.docTotalPages;
+        srrUpdatePageDisplay();
+        saveSrrPdfState(srrState.currentRecord);
+        console.log('[SRR] Page:', srrState.docPage);
       }
     }
     
     function srrNextPage() {
       if (srrState.docPage < srrState.docTotalPages) {
         srrState.docPage++;
-        document.getElementById('srr-doc-page').textContent = 'Page ' + srrState.docPage + ' of ' + srrState.docTotalPages;
+        srrUpdatePageDisplay();
+        saveSrrPdfState(srrState.currentRecord);
+        console.log('[SRR] Page:', srrState.docPage);
       }
     }
     
     function srrZoomIn() {
-      srrState.zoom = Math.min(srrState.zoom + 0.25, 3);
-      console.log('[SRR] Zoom: ' + (srrState.zoom * 100) + '%');
+      if (srrState.zoom < 3) {
+        srrState.zoom = Math.min(srrState.zoom + 0.25, 3);
+        srrUpdateZoomDisplay();
+        saveSrrPdfState(srrState.currentRecord);
+        console.log('[SRR] Zoom:', srrState.zoom * 100 + '%');
+      }
     }
     
     function srrZoomOut() {
-      srrState.zoom = Math.max(srrState.zoom - 0.25, 0.5);
-      console.log('[SRR] Zoom: ' + (srrState.zoom * 100) + '%');
+      if (srrState.zoom > 0.5) {
+        srrState.zoom = Math.max(srrState.zoom - 0.25, 0.5);
+        srrUpdateZoomDisplay();
+        saveSrrPdfState(srrState.currentRecord);
+        console.log('[SRR] Zoom:', srrState.zoom * 100 + '%');
+      }
     }
     
     // Patch actions

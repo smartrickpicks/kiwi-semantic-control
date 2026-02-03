@@ -66,11 +66,13 @@ Contract: This document defines the record-level inspection surface. It supports
 - Needs Patch: Show edited fields missing justification
 - RFI: Show fields marked with RFI category
 
-### Center Panel: Document Viewer
-- PDF viewer container (stub frame with page controls)
-- Page navigation (← Prev / Next →) and zoom controls
-- Evidence anchor highlight overlay (bounding boxes)
-- Anchor list with click-to-scroll behavior
+### Center Panel: Document Viewer (v1.4.10)
+- **PDF Rendering**: Displays attached PDFs via browser's native PDF viewer (iframe-based, offline-only)
+- **Empty State**: When no PDF is attached, shows placeholder with guidance to attach via Data Source panel
+- **Page Navigation**: ← Prev / Next → buttons with page indicator (Page X / Y)
+- **Zoom Controls**: + / − buttons with zoom indicator (50% to 300% range, 25% increments)
+- **State Persistence**: Per-record page and zoom state persisted to localStorage (keyed by record identity triplet)
+- **Evidence Anchors**: Anchor list with click-to-scroll behavior (V2: bbox overlay on PDF)
 
 ### Right Panel: Evidence Pack + Patch Request
 - Evidence Pack with 4 canonical blocks:
@@ -107,12 +109,36 @@ Patch Draft authoring emits deterministic events:
 - Save Patch Draft → PATCH_DRAFTED with payload { patch_id, changes[], rationale }.
 - Submit Patch Request → PATCH_SUBMITTED with payload { patch_id, submission_notes } and REVIEW_REQUESTED { target: "patch", patch_id, reason }.
 
-## Embedded PDF Viewer & Highlights
-- The viewer must be read-only and offline.
-- Evidence anchors define the page and bbox to highlight.
+## Embedded PDF Viewer & Highlights (v1.4.10)
+
+### Rendering
+- PDFs are rendered via the browser's native PDF viewer (iframe with object URL)
+- Source: Local PDF attachments stored in localStorage via Data Source panel
+- No network calls; fully offline
+
+### Controls (Read-Only)
+| Control | Action | Limits |
+|---------|--------|--------|
+| ← Prev | Go to previous page | Disabled at page 1 |
+| Next → | Go to next page | Disabled at last page |
+| − (Zoom Out) | Decrease zoom by 25% | Min: 50% |
+| + (Zoom In) | Increase zoom by 25% | Max: 300% |
+
+### State Persistence
+- Page and zoom are persisted per-record to localStorage
+- Key: `orchestrate.srr_pdf_state.v1` with record identity triplet (contract_key|file_url|file_name)
+- State is restored when returning to the same record within the session
+
+### Empty State
+When no PDF is attached for the record:
+- Shows placeholder icon and message: "No document attached"
+- Guidance: "Attach PDFs via Data Source panel to view here"
+
+### Evidence Anchors (V2)
+- Evidence anchors will define the page and bbox to highlight
 - Click-through mapping:
-  - Clicking a field with an associated evidence anchor scrolls the viewer to the anchor's page and highlights the bbox.
-  - Selecting a highlight focuses the corresponding field in the inspector pane.
+  - Clicking a field with an associated evidence anchor scrolls the viewer to the anchor's page and highlights the bbox
+  - Selecting a highlight focuses the corresponding field in the inspector pane
 
 ## Audit Integration
 - Opening this view emits a VIEWED event (context: "record").
