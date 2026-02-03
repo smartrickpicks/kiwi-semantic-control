@@ -7384,7 +7384,25 @@
     // Stub required fields (schema stub)
     var SRR_REQUIRED_FIELDS = ['contract_key', 'status'];
 
-    // v1.4.14: Resolve record from workbook with proper identity
+    // v1.4.15: Get active sheet name from grid state or sidebar
+    function getActiveSheetName() {
+      // Priority: gridState.sheet (set by sheet selector) > workbook first sheet
+      if (typeof gridState !== 'undefined' && gridState.sheet) {
+        return gridState.sheet;
+      }
+      // Fallback to sidebar selector if available
+      var sidebarSelector = document.getElementById('sidebar-sheet-selector');
+      if (sidebarSelector && sidebarSelector.value) {
+        return sidebarSelector.value;
+      }
+      // Last resort: first sheet in workbook
+      if (workbook.order.length > 0) {
+        return workbook.order[0];
+      }
+      return null;
+    }
+
+    // v1.4.15: Resolve record from workbook with proper identity
     function openRowReviewDrawer(rowId) {
       var record = null;
       var sheetName = null;
@@ -7392,8 +7410,12 @@
       
       // Priority: workbook sheets > legacy sf_contract_results
       if (workbook.order.length > 0) {
-        // Use current sheet selection or first sheet
-        sheetName = currentSheetFilter || workbook.order[0];
+        // v1.4.15: Use getActiveSheetName() helper (no more currentSheetFilter error)
+        sheetName = getActiveSheetName();
+        if (!sheetName) {
+          showToast('No active sheet selected', 'warning');
+          return;
+        }
         var sheet = workbook.sheets[sheetName];
         
         if (sheet && sheet.rows) {
@@ -7438,6 +7460,18 @@
       srrState.currentSheetName = sheetName;
       srrState.currentRowIndex = rowIndex;
       srrState.currentRecordKey = recordKey;
+      
+      // v1.4.15: Single structured log per SRR open
+      var fileUrl = srrNormalizePdfValue(record.file_url) || '';
+      var fileName = srrNormalizePdfValue(record.file_name) || '';
+      console.log('[SRR_OPEN]', JSON.stringify({
+        sheetName: sheetName,
+        rowIndex: rowIndex,
+        recordKey: recordKey,
+        file_name: fileName,
+        file_url: fileUrl.length > 60 ? fileUrl.substring(0, 60) + '...' : fileUrl,
+        availableKeys: Object.keys(record).slice(0, 8)
+      }));
       
       // Navigate to page and render
       navigateTo('row');
@@ -8131,11 +8165,17 @@
         })
         .catch(function(err) {
           console.warn('[SRR_PDF] Fetch failed:', err.message);
-          srrState.cacheStatus = 'offline';
+          srrState.cacheStatus = 'cors-blocked';
           
-          // Try local attachment fallback
+          // v1.4.15: CORS fallback - try direct iframe src if local fallback unavailable
           if (srrState.localAttachmentFallback) {
             srrRenderPdf(record, srrState.localAttachmentFallback.url, 'Local Attachment (offline fallback)', srrState.localAttachmentFallback.name, srrBuildLogEntry('Local Attachment', 'offline-fallback', 'local-attachment'));
+          } else if (networkUrl && srrIsValidPdfUrl(networkUrl)) {
+            // CORS blocked but URL is valid - try direct iframe (not cached)
+            var sourceName = fileName || networkUrl.split('/').pop().split('?')[0];
+            console.log('[SRR_PDF] CORS blocked, trying direct iframe for:', networkUrl.substring(0, 60));
+            srrRenderPdf(record, networkUrl, 'Network PDF (not cached)', sourceName, srrBuildLogEntry('URL-Direct', 'cors-blocked', networkUrl));
+            showToast('Viewing network PDF (not cached due to CORS)', 'info');
           } else {
             // Show offline stub
             srrShowOfflineStub(networkUrl);

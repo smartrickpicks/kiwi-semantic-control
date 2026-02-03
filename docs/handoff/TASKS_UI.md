@@ -33,6 +33,12 @@ All tasks must use these terms exclusively:
 
 ## Backlog
 
+### IN PROGRESS
+
+| ID | Task | Scope | Files Likely to Touch | Acceptance Criteria | Status |
+|----|------|-------|----------------------|---------------------|--------|
+| SRR-BUG-01 | BUGFIX: SRR row open uses active sheet selection (currentSheetFilter error) | UI bugfix | `ui/viewer/index.html` | No ReferenceError on row click; SRR_OPEN log shows sheetName != "unknown" | In Progress |
+
 ### P1 — High Priority
 
 | ID | Task | Scope | Files Likely to Touch | Acceptance Criteria | Status |

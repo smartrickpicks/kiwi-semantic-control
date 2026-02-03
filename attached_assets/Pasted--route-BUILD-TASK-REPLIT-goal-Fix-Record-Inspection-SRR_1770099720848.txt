@@ -1,0 +1,85 @@
+{
+  "route": "BUILD_TASK_REPLIT",
+  "goal": "Fix Record Inspection (SRR) open flow so clicking a grid row reliably resolves the active sheet + row record (no currentSheetFilter ReferenceError), and passes normalized file_url/file_name into SRR PDF load/caching.",
+  "constraints": [
+    "UI-only bugfix + small docs/tasklist update if needed.",
+    "Do NOT rename canonical tokens/ids/routes (keep single_row_review and existing hash routing).",
+    "Keep UI label as \"Record Inspection\" where user-visible; canonical docs/specs remain \"Single Row Review\".",
+    "Do not add proxy services in this task; if network fetch fails, fall back to non-cached display + clear UX message.",
+    "No claims about pushes/PRs; output git commands and (if available) commit URL only."
+  ],
+  "files_in_scope": [
+    "ui/viewer/index.html",
+    "docs/handoff/TASKS_UI.md"
+  ],
+  "implementation_steps": [
+    {
+      "id": "SRR-OPEN-01",
+      "title": "Remove currentSheetFilter ReferenceError and unify active-sheet resolution",
+      "requirements": [
+        "Find and remove/replace any usage of currentSheetFilter in openRowReviewDrawer() (and elsewhere).",
+        "Introduce a single helper (example: getActiveSheetName()) that resolves the active sheet name from the existing sheet selector UI (DOM) or the current workbook state.",
+        "Ensure the helper always returns a valid sheet name when data is loaded, otherwise show a toast and return (no throw)."
+      ],
+      "acceptance_tests": [
+        "Clicking any grid row does NOT throw: \"ReferenceError: currentSheetFilter is not defined\".",
+        "grep for \"currentSheetFilter\" in ui/viewer/index.html returns 0 matches (or it is defined + used safely, but prefer 0)."
+      ]
+    },
+    {
+      "id": "SRR-OPEN-02",
+      "title": "Resolve the clicked record from the active workbook sheet and set SRR context",
+      "requirements": [
+        "In openRowReviewDrawer(rowIndex): resolve sheetName via getActiveSheetName(), then resolve the record from the active sheet’s records using rowIndex as rendered.",
+        "Store SRR context deterministically (sheetName, rowIndex, recordKey). recordKey should prefer a stable row identifier if present, otherwise `${sheetName}:${rowIndex}`.",
+        "Call SRR PDF load using the resolved record (do not pass undefined).",
+        "Add a single structured log per open (ex: [SRR_OPEN]) including sheetName, rowIndex, recordKey, and the resolved file_name/file_url values."
+      ],
+      "acceptance_tests": [
+        "After clicking a row: SRR opens and a single [SRR_OPEN] log appears (no spam loop).",
+        "The log shows sheetName != \"unknown\" and rowIndex is the clicked row."
+      ]
+    },
+    {
+      "id": "ROUTER-01",
+      "title": "Prevent row-route hashchange loops (if still present)",
+      "requirements": [
+        "Ensure navigation logic does not re-trigger itself repeatedly when already on the same full route (include row id in comparisons, e.g. row/0).",
+        "Row click should not cause repeated hashchange->navigateTo loops."
+      ],
+      "acceptance_tests": [
+        "Clicking a row does not produce repeated [Router] Hashchange spam and does not trigger Chrome IPC flood throttling."
+      ]
+    },
+    {
+      "id": "SRR-PDF-01",
+      "title": "Make SRR PDF source resolution succeed with workbook-mapped columns",
+      "requirements": [
+        "Ensure SRR PDF source resolution reads from the normalized row fields produced by column mapping (prefer record.file_url and record.file_name).",
+        "If file_url/file_name are missing, log a diagnostic once: available keys on the record (top N) so we can refine mapping later without guessing.",
+        "If the cache/fetch path fails due to CORS (TypeError fetch failed) but file_url is a valid PDF URL, fall back to setting the iframe src directly to the URL (not cached) and show a clear UI indicator: \"Viewing network PDF (not cached)\"."
+      ],
+      "acceptance_tests": [
+        "With a dataset that has a PDF URL column, SRR produces [SRR_PDF_LOAD] (or equivalent) showing sourceType \"URL\" (not \"none\").",
+        "Given the sample S3 URL pasted into the dataset, the SRR document pane attempts to display a PDF (cached if fetch succeeds, otherwise direct iframe fallback)."
+      ]
+    },
+    {
+      "id": "TASKS-01",
+      "title": "Track the bugfix in TASKS_UI without invented status",
+      "requirements": [
+        "Add a new entry under [IN_PROGRESS] or [TODO]: \"BUGFIX: SRR row open uses active sheet selection (currentSheetFilter error)\"",
+        "Do NOT mark DONE unless a commit URL is added."
+      ],
+      "acceptance_tests": [
+        "docs/handoff/TASKS_UI.md contains the bugfix entry with scope + files + acceptance tests, and (until commit URL exists) evidence is \"Unknown — requires audit\"."
+      ]
+    }
+  ],
+  "output_format": {
+    "summary": "bullet list of file -> change",
+    "verification": "paste the exact grep commands run + key console screenshots/lines",
+    "suggested_commit_message": "one line",
+    "git_commands": "git add/commit commands only (no push claims)"
+  }
+}
