@@ -8045,7 +8045,7 @@
           actionsHtml += '<button class="srr-field-action rfi" onclick="event.stopPropagation(); srrRfiField(\'' + key + '\')" title="RFI (request for info)">' + iconEdit + '</button>';
           actionsHtml += '<button class="srr-field-action verify" onclick="event.stopPropagation(); srrVerifyField(\'' + key + '\')" title="Verify (mark as correct)">' + iconCheck + '</button>';
         } else if (fieldState === 'verified') {
-          actionsHtml += '<button class="srr-field-action verify active" title="Verified">' + iconCheck + '</button>';
+          // Verified fields only shown when filter is 'verified' - show reset button prominently
           actionsHtml += '<button class="srr-field-action reset" onclick="event.stopPropagation(); srrResetFieldState(\'' + key + '\')" title="Reset to TODO">' + iconReset + '</button>';
         } else {
           actionsHtml += '<button class="srr-field-action reset" onclick="event.stopPropagation(); srrResetFieldState(\'' + key + '\')" title="Reset to TODO">' + iconReset + '</button>';
@@ -8130,11 +8130,18 @@
       srrState.fieldStates[fieldKey] = 'verified';
       console.log('[SRR] Field VERIFIED:', fieldKey);
       
-      // Animate out the field card
+      // Animate out the field card then remove from DOM
       var card = document.querySelector('.srr-field-card[data-field="' + fieldKey + '"]');
       if (card) {
         card.classList.add('removing');
+        // Remove card from DOM after animation
+        setTimeout(function() {
+          if (card.parentNode) card.parentNode.removeChild(card);
+        }, 250);
       }
+      
+      // Update filter counts immediately
+      srrUpdateFilterCounts();
       
       // Check if all fields are now verified (record fully validated)
       var allVerified = true;
@@ -8150,10 +8157,9 @@
         }
       }
       
-      // Delay re-render to allow animation to complete
-      setTimeout(function() {
-        if (allVerified && fieldKeys.length > 0) {
-          // Mark record as validated and route to triage
+      if (allVerified && fieldKeys.length > 0) {
+        // Delay finalization to allow animation
+        setTimeout(function() {
           console.log('[SRR] All fields verified - record validated, routing to To Do queue');
           var recordKey = srrState.currentRecordKey;
           if (recordKey && window.localState && window.localState.recordStatus) {
@@ -8162,12 +8168,8 @@
           updateTriageCounts();
           showToast('Record validated - all fields verified');
           navigateTo('triage');
-          return;
-        }
-        
-        renderSrrFields(srrState.currentRecord);
-        srrRenderPatchEditor();
-      }, 250);
+        }, 300);
+      }
     }
     
     // v1.4.20: Field action - Blacklist Flag
