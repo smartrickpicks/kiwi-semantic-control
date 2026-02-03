@@ -13,6 +13,10 @@ Contract: This document defines the governance contract for the read-only audit 
 - No implicit transitions or auto-review.
 - No external identity or transport guarantees beyond what is recorded in the ledger.
 
+## Operational Access (Not Logged)
+- Document retrieval via proxy services (e.g., Supabase Edge Function for PDFs) is operational and does not emit audit events.
+- Only human-governed actions (patches, flags, state marks, evidence attachments) are eligible for audit entries.
+
 ## Core Principles
 - Append-only: past entries are never edited; corrections are represented as new events that reference prior entries.
 - Human authority: all semantic decisions (e.g., patches, state marks) are attributed to a role and actor and must cite evidence.

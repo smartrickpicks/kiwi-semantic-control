@@ -84,6 +84,21 @@ Patch Draft authoring emits deterministic events:
   - Clicking a field with an associated evidence anchor scrolls the viewer to the anchor's page and highlights the bbox.
   - Selecting a highlight focuses the corresponding field in the inspector pane.
 
+### PDF Retrieval (Supabase Proxy)
+When CORS prevents direct access to PDF URLs (for example, S3 buckets without permissive headers), the viewer may request the PDF through a Supabase Edge Function proxy.
+
+Contract:
+- Endpoint: `supabase/functions/contract-proxy` (Edge Function)
+- Request: `GET /functions/v1/contract-proxy?url=<encoded_source_url>`
+- Response: `Content-Type: application/pdf`, `Content-Disposition: inline`
+- Limits: 25 MB per file (larger files must be viewed via direct URL outside the viewer)
+- Security: allowlist-based host validation and private-network (SSRF) blocking
+- Offline: if the proxy is unavailable and no cached copy exists, the viewer shows a deterministic offline stub
+
+Notes:
+- This proxy is a copy-in mechanism only; it does not mutate source-of-truth.
+- Proxy fetches are operational and are not recorded in the Audit Log.
+
 ## Audit Integration
 - Opening this view emits a VIEWED event (context: "record").
 - All Evidence Pack authoring emits the appropriate PATCH_* events and EVIDENCE_ATTACHED when anchors are added.

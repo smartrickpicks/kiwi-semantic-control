@@ -40,6 +40,7 @@ All tasks must use these terms exclusively:
 | UI-01 | Replace "Load Data" label with "Data Source" in sidebar nav | UI copy | `ui/viewer/index.html` | Sidebar shows "Data Source" | Pending |
 | UI-02 | Replace "Record Inspection" references with "Single Row Review" | UI copy | `ui/viewer/index.html`, docs | All UI labels use "Single Row Review" | Pending |
 | UI-03 | Update drawer title from "Load Data" to "Data Source" | UI copy | `ui/viewer/index.html` | Drawer header shows "Data Source" | Pending |
+| UI-07 | Document Supabase PDF proxy contract (endpoint, limits, security) | Docs | `docs/ui/views/single_row_review_view.md`, `docs/AUDIT_LOG.md`, `docs/handoff/TASKS_UI.md` | Proxy contract documented; audit log notes operational access | In Progress |
 
 ### P2 — Medium Priority
 
