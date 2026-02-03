@@ -1895,46 +1895,145 @@
         </div>
 
         <div class="vr-container" id="vr-container">
-          <!-- Left Column: Intent + Evidence -->
+          <!-- Left Column: Type-Specific Content -->
           <div>
-            <!-- Structured Intent -->
-            <div class="vr-section">
-              <div class="vr-section-header"><span class="icon">📋</span> Structured Intent</div>
-              <div id="vr-intent-blocks">
+            <!-- Payload Type Badge -->
+            <div style="margin-bottom: 16px;">
+              <span id="vr-type-badge" style="display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; font-weight: 600; background: #1565c0; color: white;">CORRECTION</span>
+              <button id="vr-open-srr-btn" onclick="vrOpenSingleRowReview()" style="margin-left: 12px; padding: 6px 12px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Open Single Row Review</button>
+            </div>
+
+            <!-- RFI Content Block -->
+            <div id="vr-rfi-content" style="display: none;">
+              <div class="vr-section">
+                <div class="vr-section-header"><span class="icon">❓</span> RFI Details</div>
                 <div class="vr-intent-block">
-                  <div class="vr-intent-label">Observation (WHEN)</div>
-                  <div class="vr-intent-value" id="vr-intent-when">—</div>
+                  <div class="vr-intent-label">Field</div>
+                  <div class="vr-intent-value" id="vr-rfi-field">—</div>
                 </div>
                 <div class="vr-intent-block">
-                  <div class="vr-intent-label">Expected (THEN)</div>
-                  <div class="vr-intent-value" id="vr-intent-then">—</div>
+                  <div class="vr-intent-label">Current Value</div>
+                  <div class="vr-intent-value" id="vr-rfi-value">—</div>
                 </div>
                 <div class="vr-intent-block">
-                  <div class="vr-intent-label">Justification (BECAUSE)</div>
-                  <div class="vr-intent-value" id="vr-intent-because">—</div>
+                  <div class="vr-intent-label">Question</div>
+                  <div class="vr-intent-value" id="vr-rfi-comment">—</div>
+                </div>
+              </div>
+
+              <!-- Comment Thread Stub -->
+              <div class="vr-section" style="margin-top: 16px;">
+                <div class="vr-section-header"><span class="icon">💬</span> Comment Thread</div>
+                <div id="vr-comment-thread" style="display: flex; flex-direction: column; gap: 12px;">
+                  <div style="display: flex; gap: 10px; align-items: flex-start;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #e3f2fd; display: flex; align-items: center; justify-content: center; font-size: 0.8em; color: #1565c0; flex-shrink: 0;">A</div>
+                    <div style="flex: 1;">
+                      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+                        <span style="font-weight: 600; font-size: 0.85em;">Analyst</span>
+                        <span style="font-size: 0.75em; color: #999;">(coming soon)</span>
+                      </div>
+                      <div style="background: #f5f5f5; padding: 10px 14px; border-radius: 12px; font-size: 0.9em; color: #666;">Thread messages will appear here...</div>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 10px; align-items: flex-start;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #fff3e0; display: flex; align-items: center; justify-content: center; font-size: 0.8em; color: #f57c00; flex-shrink: 0;">V</div>
+                    <div style="flex: 1;">
+                      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+                        <span style="font-weight: 600; font-size: 0.85em;">Verifier</span>
+                        <span style="font-size: 0.75em; color: #999;">(coming soon)</span>
+                      </div>
+                      <div style="background: #fff3e0; padding: 10px 14px; border-radius: 12px; font-size: 0.9em; color: #666;">Verifier responses will appear here...</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Evidence Pack -->
-            <div class="vr-section" style="margin-top: 16px;">
-              <div class="vr-section-header"><span class="icon">📎</span> Evidence Pack</div>
-              <div id="vr-evidence-blocks">
-                <div class="vr-evidence-block">
-                  <div class="vr-evidence-label">Observation</div>
-                  <div class="vr-evidence-text" id="vr-ev-observation">—</div>
+            <!-- Correction Content Block -->
+            <div id="vr-correction-content" style="display: none;">
+              <div class="vr-section">
+                <div class="vr-section-header"><span class="icon">✏️</span> Correction Details</div>
+                <div class="vr-intent-block">
+                  <div class="vr-intent-label">Field</div>
+                  <div class="vr-intent-value" id="vr-corr-field">—</div>
                 </div>
-                <div class="vr-evidence-block">
-                  <div class="vr-evidence-label">Expected</div>
-                  <div class="vr-evidence-text" id="vr-ev-expected">—</div>
+                <div class="vr-intent-block">
+                  <div class="vr-intent-label">Old Value</div>
+                  <div class="vr-intent-value" id="vr-corr-old" style="color: #999; text-decoration: line-through;">—</div>
                 </div>
-                <div class="vr-evidence-block">
-                  <div class="vr-evidence-label">Justification</div>
-                  <div class="vr-evidence-text" id="vr-ev-justification">—</div>
+                <div class="vr-intent-block">
+                  <div class="vr-intent-label">New Value</div>
+                  <div class="vr-intent-value" id="vr-corr-new" style="color: #2e7d32; font-weight: 600;">—</div>
                 </div>
-                <div class="vr-evidence-block">
-                  <div class="vr-evidence-label">Repro</div>
-                  <div class="vr-evidence-text" id="vr-ev-repro">—</div>
+                <div class="vr-intent-block">
+                  <div class="vr-intent-label">Justification</div>
+                  <div class="vr-intent-value" id="vr-corr-comment">—</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Blacklist Content Block -->
+            <div id="vr-blacklist-content" style="display: none;">
+              <div class="vr-section">
+                <div class="vr-section-header"><span class="icon">🚫</span> Blacklist Details</div>
+                <div class="vr-intent-block">
+                  <div class="vr-intent-label">Field</div>
+                  <div class="vr-intent-value" id="vr-bl-field">—</div>
+                </div>
+                <div class="vr-intent-block">
+                  <div class="vr-intent-label">Value</div>
+                  <div class="vr-intent-value" id="vr-bl-value">—</div>
+                </div>
+                <div class="vr-intent-block">
+                  <div class="vr-intent-label">Blacklist Subject</div>
+                  <div class="vr-intent-value" id="vr-bl-subject" style="color: #d32f2f;">—</div>
+                </div>
+                <div class="vr-intent-block">
+                  <div class="vr-intent-label">Justification</div>
+                  <div class="vr-intent-value" id="vr-bl-comment">—</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Legacy Evidence Pack (for sample data fallback) -->
+            <div id="vr-legacy-content">
+              <div class="vr-section">
+                <div class="vr-section-header"><span class="icon">📋</span> Structured Intent</div>
+                <div id="vr-intent-blocks">
+                  <div class="vr-intent-block">
+                    <div class="vr-intent-label">Observation (WHEN)</div>
+                    <div class="vr-intent-value" id="vr-intent-when">—</div>
+                  </div>
+                  <div class="vr-intent-block">
+                    <div class="vr-intent-label">Expected (THEN)</div>
+                    <div class="vr-intent-value" id="vr-intent-then">—</div>
+                  </div>
+                  <div class="vr-intent-block">
+                    <div class="vr-intent-label">Justification (BECAUSE)</div>
+                    <div class="vr-intent-value" id="vr-intent-because">—</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="vr-section" style="margin-top: 16px;">
+                <div class="vr-section-header"><span class="icon">📎</span> Evidence Pack</div>
+                <div id="vr-evidence-blocks">
+                  <div class="vr-evidence-block">
+                    <div class="vr-evidence-label">Observation</div>
+                    <div class="vr-evidence-text" id="vr-ev-observation">—</div>
+                  </div>
+                  <div class="vr-evidence-block">
+                    <div class="vr-evidence-label">Expected</div>
+                    <div class="vr-evidence-text" id="vr-ev-expected">—</div>
+                  </div>
+                  <div class="vr-evidence-block">
+                    <div class="vr-evidence-label">Justification</div>
+                    <div class="vr-evidence-text" id="vr-ev-justification">—</div>
+                  </div>
+                  <div class="vr-evidence-block">
+                    <div class="vr-evidence-label">Repro</div>
+                    <div class="vr-evidence-text" id="vr-ev-repro">—</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -9804,18 +9903,48 @@
         payload = verifierQueueState.payloads.find(function(p) { return p.id === payloadId; });
       }
       
+      // Hide all type-specific content blocks
+      document.getElementById('vr-rfi-content').style.display = 'none';
+      document.getElementById('vr-correction-content').style.display = 'none';
+      document.getElementById('vr-blacklist-content').style.display = 'none';
+      document.getElementById('vr-legacy-content').style.display = 'none';
+      
+      var typeBadge = document.getElementById('vr-type-badge');
+      
       if (payload) {
-        // Map payload data to Verifier Review fields
-        var typeLabel = payload.type === 'rfi' ? 'RFI Request' : (payload.type === 'blacklist' ? 'Blacklist Flag' : 'Correction');
-        
-        document.getElementById('vr-intent-when').textContent = 'Field: ' + payload.field + ' = "' + (payload.old_value || '(empty)') + '"';
-        document.getElementById('vr-intent-then').textContent = payload.new_value ? 'Change to: "' + payload.new_value + '"' : typeLabel;
-        document.getElementById('vr-intent-because').textContent = payload.comment || '—';
-        
-        document.getElementById('vr-ev-observation').textContent = typeLabel;
-        document.getElementById('vr-ev-expected').textContent = payload.new_value || '(no change specified)';
-        document.getElementById('vr-ev-justification').textContent = payload.comment || '—';
-        document.getElementById('vr-ev-repro').textContent = '—';
+        // Update type badge
+        if (payload.type === 'rfi') {
+          typeBadge.textContent = 'RFI';
+          typeBadge.style.background = '#ff9800';
+          document.getElementById('vr-rfi-content').style.display = 'block';
+          
+          // Populate RFI fields
+          document.getElementById('vr-rfi-field').textContent = payload.field || '—';
+          document.getElementById('vr-rfi-value').textContent = payload.old_value || '(empty)';
+          document.getElementById('vr-rfi-comment').textContent = payload.comment || '—';
+          
+        } else if (payload.type === 'blacklist') {
+          typeBadge.textContent = 'BLACKLIST';
+          typeBadge.style.background = '#d32f2f';
+          document.getElementById('vr-blacklist-content').style.display = 'block';
+          
+          // Populate Blacklist fields
+          document.getElementById('vr-bl-field').textContent = payload.field || '—';
+          document.getElementById('vr-bl-value').textContent = payload.old_value || '(empty)';
+          document.getElementById('vr-bl-subject').textContent = payload.field + ': ' + (payload.old_value || '(empty)');
+          document.getElementById('vr-bl-comment').textContent = payload.comment || '—';
+          
+        } else {
+          typeBadge.textContent = 'CORRECTION';
+          typeBadge.style.background = '#1565c0';
+          document.getElementById('vr-correction-content').style.display = 'block';
+          
+          // Populate Correction fields
+          document.getElementById('vr-corr-field').textContent = payload.field || '—';
+          document.getElementById('vr-corr-old').textContent = payload.old_value || '(empty)';
+          document.getElementById('vr-corr-new').textContent = payload.new_value || '(no change)';
+          document.getElementById('vr-corr-comment').textContent = payload.comment || '—';
+        }
         
         document.getElementById('vr-author-name').textContent = payload.analyst_id || 'analyst@example.com';
         document.getElementById('vr-author-time').textContent = new Date(payload.timestamp).toLocaleString();
@@ -9825,9 +9954,13 @@
         var statusMap = { 'pending': 'Submitted', 'needs_clarification': 'Needs_Clarification', 'sent_to_admin': 'Verifier_Approved', 'resolved': 'Admin_Approved' };
         vrState.currentPatchId = payload.id;
         vrState.reviewState = statusMap[payload.status] || 'Submitted';
-        vrState.currentPayload = payload;  // Store for actions
+        vrState.currentPayload = payload;
       } else {
-        // Fallback to sample data
+        // Fallback to sample/legacy data
+        typeBadge.textContent = 'CORRECTION';
+        typeBadge.style.background = '#1565c0';
+        document.getElementById('vr-legacy-content').style.display = 'block';
+        
         document.getElementById('vr-intent-when').textContent = vrSamplePatch.intent.observation || '—';
         document.getElementById('vr-intent-then').textContent = vrSamplePatch.intent.expected || '—';
         document.getElementById('vr-intent-because').textContent = vrSamplePatch.intent.justification || '—';
@@ -9849,6 +9982,37 @@
       vrUpdateStateBadge();
       vrUpdateActionButtons();
       vrRenderDecisionSummary();
+    }
+    
+    function vrOpenSingleRowReview() {
+      var payload = vrState.currentPayload;
+      if (payload && payload.record_id) {
+        // Navigate to Single Row Review for this record
+        // Need to find the row index in the dataset
+        var recordId = payload.record_id;
+        var foundIdx = -1;
+        
+        // Search across all sheets for the record
+        Object.keys(globalDataset).forEach(function(sheetName) {
+          if (foundIdx >= 0) return;
+          var rows = globalDataset[sheetName];
+          for (var i = 0; i < rows.length; i++) {
+            if (rows[i].contract_key === recordId || rows[i].record_id === recordId) {
+              srrState.currentSheetName = sheetName;
+              foundIdx = i;
+              break;
+            }
+          }
+        });
+        
+        if (foundIdx >= 0) {
+          navigateTo('row/' + foundIdx);
+        } else {
+          showToast('Record not found in dataset', 'warning');
+        }
+      } else {
+        showToast('No record linked to this review', 'info');
+      }
     }
     
     function openVerifierReviewDetail(payloadId) {
