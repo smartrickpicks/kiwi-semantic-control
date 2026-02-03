@@ -82,6 +82,20 @@ Default: 25 MB. Configure via:
 export PDF_PROXY_MAX_SIZE_MB=50
 ```
 
+## Dev Environment Config
+
+For local Replit development, the proxy is pre-configured with sensible defaults:
+
+```bash
+# Allow all viewer origins (default for dev)
+PDF_PROXY_ALLOWED_ORIGINS=*
+
+# S3 bucket for Ostereo test data
+PDF_PROXY_ALLOWED_HOSTS=app-myautobots-public-dev.s3.amazonaws.com
+```
+
+The viewer auto-detects the Replit domain and constructs the correct port 8000 proxy URL.
+
 ### CORS
 
 Configure allowed origins:

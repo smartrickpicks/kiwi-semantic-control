@@ -1,0 +1,76 @@
+{
+  "route": "BUILD_TASK_REPLIT",
+  "goal": "Fix PDF proxy CORS (so fetch works) and fix SRR hash routing so row/2 resolves correctly without SRR_OPEN_FAIL.",
+  "constraints": [
+    "Do not rename canonical ids/routes/tokens.",
+    "UI label stays 'Record Inspection'; canonical docs/specs remain 'Single Row Review'.",
+    "No new services beyond the existing FastAPI proxy.",
+    "No invented claims; output git commands only."
+  ],
+  "files_in_scope": [
+    "server/pdf_proxy.py",
+    "ui/viewer/index.html",
+    "docs/handoff/TASKS_UI.md"
+  ],
+  "implementation_steps": [
+    {
+      "id": "PROXY-CORS-01",
+      "title": "Add CORS middleware and ensure ALL responses include CORS",
+      "requirements": [
+        "Add FastAPI CORSMiddleware.",
+        "Allow origins from env `PDF_PROXY_ALLOWED_ORIGINS` (comma-separated).",
+        "For dev, allow '*' if env not set (or include viewer origin + localhost).",
+        "Allow methods GET, OPTIONS and headers '*'.",
+        "Ensure error responses (403/413/500) also include Access-Control-Allow-Origin.",
+        "Add explicit OPTIONS handler for /proxy/pdf returning 204."
+      ],
+      "acceptance_tests": [
+        "Browser fetch to proxy endpoint no longer shows CORS blocked.",
+        "OPTIONS preflight returns 204 with CORS headers."
+      ]
+    },
+    {
+      "id": "ROUTER-ROW-01",
+      "title": "Fix row hash routing to avoid SRR_OPEN_FAIL",
+      "requirements": [
+        "In hashchange handler, when route is row/<index>, always resolve sheetName via srrState.currentSheetName or active sheet selector.",
+        "If data is not loaded yet, store pendingRowIndex and retry after dataset loads.",
+        "Guard against NaN: if rowIndex is invalid, show toast and return.",
+        "Ensure openRowReviewDrawer is called with (sheetName, rowIndex) and does not attempt to re-resolve from an empty dataset."
+      ],
+      "acceptance_tests": [
+        "Clicking a grid row yields #/row/<number> and does NOT log SRR_OPEN_FAIL.",
+        "Directly loading #/row/2 after grid is loaded opens SRR correctly."
+      ]
+    },
+    {
+      "id": "DEV-CONFIG-01",
+      "title": "Document dev proxy config",
+      "requirements": [
+        "Add a short note in server/README_PROXY.md showing the dev env config:",
+        "PDF_PROXY_ALLOWED_ORIGINS=*",
+        "PDF_PROXY_ALLOWED_HOSTS=app-myautobots-public-dev.s3.amazonaws.com"
+      ],
+      "acceptance_tests": [
+        "README_PROXY.md includes the dev config snippet."
+      ]
+    },
+    {
+      "id": "TASKS-UI-01",
+      "title": "Track fixes in TASKS_UI",
+      "requirements": [
+        "Add two entries: 'BUGFIX: FastAPI proxy CORS headers' and 'BUGFIX: SRR row hash resolves active sheet'.",
+        "Evidence remains 'Unknown — requires audit' until commit URL exists."
+      ],
+      "acceptance_tests": [
+        "TASKS_UI contains both entries with scope + acceptance tests."
+      ]
+    }
+  ],
+  "output_format": {
+    "summary": "bullet list (file -> change)",
+    "verification": "commands run + key console log lines",
+    "suggested_commit_message": "single line",
+    "git_commands": "git add/commit commands only (no push claims)"
+  }
+}

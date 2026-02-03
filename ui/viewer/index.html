@@ -6416,6 +6416,19 @@
           navigateTo(dataLoaded ? 'grid' : 'triage');
           return;
         }
+        // v1.4.16: If SRR already open with same row, skip re-open (prevents hashchange loop failures)
+        if (srrState.currentRowId !== null && String(srrState.currentRowId) === String(rowId) && srrState.currentSheetName) {
+          console.log('[Navigate] SRR already open for row:', rowId, 'sheet:', srrState.currentSheetName);
+          return;
+        }
+        // v1.4.16: If srrState has sheetName from prior open, use it for resolution
+        if (srrState.currentSheetName && typeof rowId === 'string') {
+          var idx = parseInt(rowId, 10);
+          if (!isNaN(idx)) {
+            openRowReviewDrawer(srrState.currentSheetName, idx);
+            return;
+          }
+        }
         openRowReviewDrawer(rowId);
         return;
       }
