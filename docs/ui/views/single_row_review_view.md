@@ -30,177 +30,132 @@ Contract: This document defines the record-level inspection surface. It supports
 - Review State badge (read-only display)
 - Open Audit Log button (read-only link)
 
-### Left Panel: Field Inspector (v1.4.1 — Field Cards + Groups/Filters)
+### Left Panel: Field Inspector (v1.4.18)
 
 **Layout:**
-- Group selector dropdown (stub with 3 groups: Identity, Metadata, Status)
-- Filter chips: All, Edited, Needs Patch, RFI
+- Search input (filters by field name or value)
+- Filter chips: All, Changed, Unchanged
 - Field Cards (not simple list items)
 
 **Field Card Structure:**
 - Header: Label (human-friendly) + API name (monospace), status chips
 - Body: Editable value display (click to edit)
-- Mini Patch Prompt: Appears after edit with Justification, Comment, Patch Type, Undo
+- Lock-on-commit: Changed fields lock with Changed marker and 🔒 icon
 
 **Status Chips:**
-- Edited (orange): Field value has been modified
-- Needs Patch (pink): Edited but missing justification
-- Required (purple): Schema-defined required field (stub)
-- RFI (violet): Marked for RFI category
+- Changed (green): Field value has been committed
+- Locked (🔒): Field is locked after commit (use Patch Editor to modify)
+- Required (purple): Schema-defined required field
 
 **Field Ordering Rule (canonical):**
 - Primary: Schema order (deterministic, from `SRR_SCHEMA_ORDER`)
 - Fallback: Alphabetical for unknown fields not in schema
-- V2: Schema order will load from `config/schema.json`
 
 **Inline Editing Behavior:**
 - Click value display to enter edit mode
-- On blur/Enter: Commit edit, auto-create Proposed Change
-- Proposed Change includes: field, label, from, to, category (default: Correction)
-- Mini Patch Prompt appears for justification and comment input
-- Undo Change button reverts to original value and removes Proposed Change
+- On blur/Enter: Commit edit, lock field, auto-create Proposed Change
+- Locked fields cannot be edited inline (use Patch Editor)
 
 **Filters:**
 - All: Show all fields
-- Edited: Show only fields with edits
-- Needs Patch: Show edited fields missing justification
-- RFI: Show fields marked with RFI category
+- Changed: Show only locked/committed fields
+- Unchanged: Show fields not yet modified
 
-### Center Panel: Document Viewer (v1.4.10, updated v1.4.17)
+### Center Panel: Document Viewer (v1.4.17)
 - **PDF Rendering**: Displays PDFs via browser's native PDF viewer (iframe-based)
-- **PDF Proxy (v1.4.17)**: Network PDFs are fetched via proxy to avoid CORS issues and download prompts
-  - **Primary (Supabase Edge Function)**: `${VITE_SUPABASE_URL}/functions/v1/contract-proxy`
-    - Requires `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (window globals or localStorage)
-    - Auth header: `Authorization: Bearer ${VITE_SUPABASE_ANON_KEY}`
-  - **Fallback (FastAPI)**: `server/pdf_proxy.py` on port 8000 (auto-detected in Replit)
-  - Proxy allowlist: Only configured S3 buckets are permitted (SSRF guard)
-  - Size limit: 25MB max
-  - If both proxies unavailable, shows "Proxy not configured" warning
-- **Empty State**: When no PDF is attached, shows placeholder with guidance to attach via Data Source panel
-- **Page Navigation**: ← Prev / Next → buttons with page indicator (Page X / Y)
-- **Zoom Controls**: + / − buttons with zoom indicator (50% to 300% range, 25% increments)
-- **State Persistence**: Per-record page and zoom state persisted to localStorage (keyed by record identity triplet)
-- **Evidence Anchors**: Anchor list with click-to-scroll behavior (V2: bbox overlay on PDF)
-- **Offline Cache (v1.4.13)**: Successfully fetched PDFs are cached in IndexedDB for offline access
+- **PDF Proxy**: Network PDFs are fetched via proxy to avoid CORS issues
+  - Primary: Supabase Edge Function
+  - Fallback: FastAPI on port 8000
+- **Offline Cache**: Successfully fetched PDFs are cached in IndexedDB
 
-### Right Panel: Evidence Pack + Patch Request
-- Evidence Pack with 4 canonical blocks:
-  - **Observation** (helper alias: WHEN) — What situation was observed
-  - **Expected** (helper alias: THEN) — What behavior is expected
-  - **Justification** (helper alias: BECAUSE) — Why this change is correct
-  - **Repro** (no alias) — Steps to reproduce
-- Patch Request section:
-  - Title: **Patches** with status badge (Draft or Submitted)
-  - Proposed changes list (path/before/after)
-  - **Save Patch Draft**: Saves Evidence Pack locally, status remains Draft
-  - **Submit Patch Request**: Sets patch status to Submitted (local UI state only)
-  - Note: Submit updates patch status, **not** Review State. Review State transitions occur only in governed gate views.
+### Right Panel: Patch Editor + Evidence Pack (v1.4.19)
 
-## Field-Level Indicators (Deterministic)
-For each field:
-- state: system_derived | user_modified | flagged
-- delta_count: integer (0 for system_derived)
-- evidence_count: integer for anchors referencing this field
-- last_event_at: timestamp from audit
+**Patch Type Selector:**
+Three chips at top of panel:
+- **Correction** (blue) — Default, for field value fixes
+- **Blacklist Flag** (red) — Flag values for blacklist
+- **RFI** (purple) — Request for information/clarification
 
-## Evidence Pack Authoring Contract
+**Changed Fields Section:**
+- Shows count of committed changes
+- Per-field blocks with:
+  - Field label + remove button
+  - Old value (locked, subdued, strikethrough)
+  - New value (editable input, prominent green border)
+- Editing new value syncs to Field Inspector display
 
-The Evidence Pack uses 4 canonical blocks with optional authoring aliases (helper text only):
+**Override Toggle (Correction only):**
+- Appears when Observation = "Override Needed" OR Expected = "Allow Override"
+- When enabled: Repro block hidden, Override badge shown in header
+- Purpose: Skip repro requirement for documented exceptions
 
-| Block | Alias | Purpose |
-|-------|-------|---------|
-| **Observation** | WHEN | Preconditions or context that define applicability |
-| **Expected** | THEN | One or more changes (deltas) with path, before, after |
-| **Justification** | BECAUSE | Evidence references and plain-language rationale |
-| **Repro** | (none) | Steps to reproduce the issue |
+**Blacklist Subject (Blacklist Flag only):**
+- Read-only display derived from selected field/value
 
-Patch Draft authoring emits deterministic events:
-- Save Patch Draft → PATCH_DRAFTED with payload { patch_id, changes[], rationale }.
-- Submit Patch Request → PATCH_SUBMITTED with payload { patch_id, submission_notes } and REVIEW_REQUESTED { target: "patch", patch_id, reason }.
+**RFI Target (RFI only):**
+- Optional text input for routing (e.g., Team Lead, Legal, Data Steward)
 
-## Embedded PDF Viewer & Highlights (v1.4.11)
+## Evidence Pack (v1.4.19)
 
-### PDF Source Resolution (v1.4.12)
-PDF source uses mapped `file_url` and `file_name` columns from the imported dataset:
+Simplified structure with dropdowns only (no free-text observation/expected notes):
 
-1. **Network URL**: If record has `file_url` that looks like a PDF URL (ends with `.pdf`, contains `.pdf?`, or `/pdf`), render directly from that URL
-2. **Local Attachment (by file_name)**: If a locally attached PDF matches the record's `file_name`, render that
-3. **Local Attachment (fallback)**: If any local PDF attachment exists, render the first one
-4. **Empty State**: Show "No document attached" with guidance
+### Observation (WHEN) — Correction only
+Dropdown options:
+- Incorrect Value
+- Missing Value
+- Formatting Issue
+- Duplicate Entry
+- Inconsistent Data
+- Override Needed
 
-**Note**: `file_url` and `file_name` values come from column mapping applied during CSV/XLSX import. See Data Source View for mapping rules.
+### Expected (THEN) — Correction only
+Dropdown options:
+- Use Correct Value
+- Populate Empty Field
+- Standardize Format
+- Remove Duplicate
+- Align with Source Document
+- Allow Override
 
-### Source Indicator
-- Shows below controls bar when PDF is loaded
-- Format: `[Source Type]: [filename]`
-- Source types: "URL" (network) or "Local Attachment"
+### Justification (BECAUSE) — All patch types
+Single narrative textarea explaining the change/flag/question.
 
-### Controls (Read-Only via PDF Fragment Params)
-Page and zoom are applied using PDF fragment parameters (`#page=N&zoom=percent`):
+### Repro Method — Correction only (when not Override)
+Dropdown options:
+- Breaks Salesforce Rule
+- Breaks QA Gate
+- Resolver Mismatch
+- Doc Evidence Mismatch (requires file attachment)
 
-| Control | Action | Limits |
-|---------|--------|--------|
-| ← Prev | Go to previous page | Disabled at page 1 |
-| Next → | Go to next page | Always enabled (total pages unknown with iframe) |
-| − (Zoom Out) | Decrease zoom by 25% | Min: 50% |
-| + (Zoom In) | Increase zoom by 25% | Max: 300% |
+## Patch Type Behavior
 
-Page indicator shows "Page X" (without total, as total pages unknown with iframe rendering).
+| Type | Required Fields | Optional |
+|------|-----------------|----------|
+| Correction | Observation + Expected + Justification + Repro (unless Override) + Field changes | Override |
+| Blacklist Flag | Justification (min 10 chars) | Field changes |
+| RFI | Justification (min 10 chars) | RFI Target, Field changes |
 
-### State Persistence
-- Only `{page, zoom}` values are persisted (not objectURL strings)
-- Key: `orchestrate.srr_pdf_state.v1` with record identity triplet (contract_key|file_url|file_name)
-- State is restored when returning to the same record
-- Object URLs are kept in-memory for session only; no stale URL behavior after refresh
+## Validation Rules
 
-### PDF Caching (v1.4.13)
-PDFs are cached locally using IndexedDB for offline-first access:
+### Correction
+- Observation type: Required
+- Expected type: Required
+- At least one field change: Required
+- Repro method: Required (unless Override enabled)
+- File attachment: Required if Repro = "Doc Evidence Mismatch"
 
-**Cache Behavior:**
-- **Cache key**: Computed from record identity + source URL
-- **Cache hit**: PDF renders from cached blob; `last_accessed_at` is updated
-- **Cache miss (online)**: PDF is fetched, validated (%PDF signature), and cached
-- **Cache miss (offline)**: Shows "Document not available offline" stub
-
-**Limits:**
-| Limit | Value |
-|-------|-------|
-| Max file size | 25 MB per PDF |
-| Max total cache | 250 MB |
-
-**Eviction Policy:**
-- LRU (Least Recently Used) eviction when total would exceed 250 MB
-- Files >25 MB are not cached but can still be viewed when online
-- Source indicator shows cache status: "Cached", "URL (cached)", "URL (not cached)"
-
-**Offline Stub:**
-When network unavailable and PDF not cached:
-- Shows 📵 icon with message: "Document not available offline"
-- Provides "Open in New Tab (when online)" link for later access
-
-### Empty State
-When no PDF source is available for the record:
-- Shows placeholder icon and message: "No document attached"
-- Guidance: "Attach PDFs via Data Source panel to view here"
-
-### Evidence Anchors (V2)
-- Evidence anchors will define the page and bbox to highlight
-- Click-through mapping:
-  - Clicking a field with an associated evidence anchor scrolls the viewer to the anchor's page and highlights the bbox
-  - Selecting a highlight focuses the corresponding field in the inspector pane
+### Blacklist Flag / RFI
+- Justification: Required (minimum 10 characters)
+- Field changes: Optional
 
 ## Audit Integration
 - Opening this view emits a VIEWED event (context: "record").
-- All Evidence Pack authoring emits the appropriate PATCH_* events and EVIDENCE_ATTACHED when anchors are added.
+- All Evidence Pack authoring emits the appropriate PATCH_* events.
 - No STATE_MARKED events originate from this view.
-
-## Flags & Warnings
-- Analysts can add or clear flags (FLAG_ADDED / FLAG_CLEARED) with category, severity (info | warning | error | critical), and rationale.
-- Block conditions are displayed but cannot be resolved here.
 
 ## Unsaved Changes Guard
 
-If the user attempts to navigate away (Back to Grid) with edited fields that have incomplete patch data (missing justification), a modal appears:
+If the user attempts to navigate away with edited fields that have incomplete patch data, a modal appears:
 
 | Button | Action |
 |--------|--------|
@@ -212,18 +167,25 @@ If the user attempts to navigate away (Back to Grid) with edited fields that hav
 - From All Data Grid → Single Row Review (this view).
 - From this view:
   - Open Audit Log detail (read-only overlay or linked panel).
-  - Navigate to governed gating views (verifier_review_view, admin_approval_view) via explicit links that do not perform transitions themselves.
+  - Navigate to governed gating views via explicit links.
   - Back to Grid (guarded if unsaved changes exist).
 
 ## Read-Only & Gate Separation
 - No approve, promote, or finalize actions are available in this view.
 - Review State transitions are owned exclusively by governed gate views.
 
-## Accessibility & Ergonomics
-- Keyboard shortcuts:
-  - Up/Down: move between fields
-  - Enter: expand/collapse field details
-  - Ctrl/Cmd+S: Save Patch Draft
-  - Ctrl/Cmd+Enter: Submit Patch Request
-- Clear legends for indicators and evidence.
-- Deterministic ordering and stable scroll positions to aid verification.
+## Acceptance Tests (v1.4.19)
+
+| ID | Test | Expected |
+|----|------|----------|
+| SRR-PT-01 | Old/New values visually distinct | Old: subdued, strikethrough; New: prominent green border |
+| SRR-PT-02 | Observation/Expected are dropdowns only | No textarea for observation/expected notes |
+| SRR-PT-03 | Patch Type changes visible form sections | Blacklist/RFI hide Observation/Expected/Repro |
+| SRR-PT-04 | Repro controls appear only when required | Hidden for Blacklist/RFI or when Override enabled |
+| SRR-PT-05 | Override badge appears and suppresses repro | Badge visible in header, repro block hidden |
+
+## References
+
+- [Field Inspector Patch Flow](single_row_review_field_inspector_patch_flow.md)
+- [Human-Agent-Workflow-V1.json](../../specs/Human-Agent-Workflow-V1.json) — single_row_review node
+- [Gate View Mapping](../gate_view_mapping.md)

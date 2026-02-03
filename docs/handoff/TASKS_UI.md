@@ -27,3 +27,15 @@ Open PRs: unknown/none
 - Scope: Update Human-Agent-Workflow-V1.json ids/labels/edges; gate_view_mapping owner token
 - Files likely to touch: docs/specs/Human-Agent-Workflow-V1.json; docs/ui/gate_view_mapping.md
 - Acceptance: spec uses data_source/single_row_review/submit_patch_request; gate_parse owner is data_source_panel; Evidence link: Unknown — requires audit
+
+### SRR: Evidence Pack + Patch Editor Refinement (v1.4.19)
+- Scope: Refine Evidence Pack to reduce analyst load; make patch semantics deterministic and patch-type driven
+- Files likely to touch: ui/viewer/index.html; docs/ui/views/single_row_review_view.md
+- Acceptance tests:
+  - Old/New values visually distinct (Old locked subdued; New prominent editable)
+  - Observation/Expected are dropdown-only (no text areas)
+  - Patch Type selector changes visible form sections
+  - Repro controls appear only when required
+  - Override badge appears and suppresses repro requirement
+  - Docs updated to match UI
+- Evidence link: Unknown — requires audit
