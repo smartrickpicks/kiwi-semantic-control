@@ -31,7 +31,7 @@
       "label": "Data Source",
       "stage": 1,
       "actor": "operator",
-      "description": "Load dataset (sample, CSV, or attached file)"
+      "description": "Manage sources; load dataset (CSV/XLSX/JSON/PDF attachments)"
     },
     {
       "id": "triage_review",
@@ -45,7 +45,7 @@
       "label": "Single Row Review",
       "stage": 3,
       "actor": "operator",
-      "description": "Drill into individual records, examine field values"
+      "description": "Per-record inspection; evidence; patch drafting (no state transitions)"
     },
     {
       "id": "issue_identification",
@@ -82,7 +82,7 @@
       "label": "Submit Patch Request",
       "stage": 8,
       "actor": "operator",
-      "description": "Submit patch request for review"
+      "description": "Submit Patch Request for review"
     },
     {
       "id": "verifier_review",
