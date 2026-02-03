@@ -3374,6 +3374,333 @@
       fileName: null
     };
     
+    // ========== ARTIFACT STORE (v1.5.1 localStorage Mock Filesystem) ==========
+    // Environment + workspace scoped storage adapter
+    const ARTIFACT_STORE = {
+      prefix: 'fs:',
+      workspace_id: 'ws_default',
+      environment: 'playground', // 'playground' | 'prod'
+      
+      // Generate scoped key
+      _key: function(path) {
+        return this.prefix + this.environment + '/' + this.workspace_id + '/' + path;
+      },
+      
+      // Filesystem helpers
+      fsRead: function(path) {
+        var key = this._key(path);
+        var data = localStorage.getItem(key);
+        return data ? data : null;
+      },
+      
+      fsWrite: function(path, contents) {
+        var key = this._key(path);
+        localStorage.setItem(key, typeof contents === 'string' ? contents : JSON.stringify(contents));
+        return true;
+      },
+      
+      fsAppend: function(path, line) {
+        var key = this._key(path);
+        var existing = localStorage.getItem(key) || '';
+        var newLine = typeof line === 'string' ? line : JSON.stringify(line);
+        localStorage.setItem(key, existing + (existing ? '\n' : '') + newLine);
+        return true;
+      },
+      
+      fsList: function(pathPrefix) {
+        var fullPrefix = this._key(pathPrefix || '');
+        var results = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i);
+          if (key && key.startsWith(fullPrefix)) {
+            results.push(key.substring(this._key('').length));
+          }
+        }
+        return results;
+      },
+      
+      fsDelete: function(path) {
+        var key = this._key(path);
+        localStorage.removeItem(key);
+        return true;
+      },
+      
+      // Clear only playground environment keys
+      resetPlayground: function() {
+        var playgroundPrefix = this.prefix + 'playground/';
+        var keysToDelete = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i);
+          if (key && key.startsWith(playgroundPrefix)) {
+            keysToDelete.push(key);
+          }
+        }
+        keysToDelete.forEach(function(k) { localStorage.removeItem(k); });
+        console.log('[ArtifactStore] Reset playground, cleared', keysToDelete.length, 'keys');
+        return keysToDelete.length;
+      }
+    };
+    
+    // Simple non-crypto hash for deterministic IDs
+    function simpleHash(str) {
+      var hash = 0;
+      for (var i = 0; i < str.length; i++) {
+        var char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+      }
+      return Math.abs(hash).toString(36);
+    }
+    
+    // Generate deterministic artifact ID
+    function generateArtifactId(dataset_id, record_id, field_key, timestamp) {
+      var seed = [dataset_id, record_id, field_key, timestamp].join('|');
+      return 'art_' + simpleHash(seed) + '_' + Date.now().toString(36).slice(-4);
+    }
+    
+    // Generate thread ID for RFI conversations
+    function generateThreadId(artifact_id) {
+      return 'thread_' + artifact_id.replace('art_', '');
+    }
+    
+    // ========== ARTIFACT ENVELOPE & CRUD ==========
+    // Artifact envelope contract fields
+    function createArtifact(params) {
+      var now = new Date().toISOString();
+      var artifact_id = params.artifact_id || generateArtifactId(
+        params.dataset_id,
+        params.record_id,
+        params.field_key,
+        now
+      );
+      var thread_id = params.thread_id || generateThreadId(artifact_id);
+      
+      var artifact = {
+        artifact_id: artifact_id,
+        workspace_id: ARTIFACT_STORE.workspace_id,
+        environment: ARTIFACT_STORE.environment,
+        dataset_id: params.dataset_id || '',
+        record_id: params.record_id || '',
+        field_key: params.field_key || '',
+        artifact_type: params.artifact_type || 'rfi', // 'rfi' | 'patch_request'
+        status: params.status || 'open',
+        created_by_actor_id: params.created_by_actor_id || getCurrentActorId(),
+        created_by_role: params.created_by_role || currentMode,
+        assigned_to: params.assigned_to || null,
+        created_at: now,
+        updated_at: now,
+        thread_id: thread_id,
+        source_pointers: params.source_pointers || {
+          sheet_name: params.sheet_name || '',
+          file_url: params.file_url || '',
+          file_name: params.file_name || ''
+        },
+        body: params.body || {}
+      };
+      
+      // Persist artifact
+      ARTIFACT_STORE.fsWrite(artifact_id + '.json', artifact);
+      
+      // Log event
+      logArtifactEvent(params.artifact_type === 'rfi' ? 'RFI_CREATED' : 'PATCH_DRAFT_CREATED', artifact);
+      
+      console.log('[ArtifactStore] Created artifact:', artifact_id, artifact.artifact_type);
+      return artifact;
+    }
+    
+    function getArtifact(artifact_id) {
+      var data = ARTIFACT_STORE.fsRead(artifact_id + '.json');
+      if (data) {
+        try {
+          return JSON.parse(data);
+        } catch (e) {
+          console.error('[ArtifactStore] Failed to parse artifact:', artifact_id, e);
+          return null;
+        }
+      }
+      return null;
+    }
+    
+    function updateArtifact(artifact_id, updates) {
+      var artifact = getArtifact(artifact_id);
+      if (!artifact) {
+        console.error('[ArtifactStore] Artifact not found:', artifact_id);
+        return null;
+      }
+      
+      Object.assign(artifact, updates, { updated_at: new Date().toISOString() });
+      ARTIFACT_STORE.fsWrite(artifact_id + '.json', artifact);
+      
+      console.log('[ArtifactStore] Updated artifact:', artifact_id, updates);
+      return artifact;
+    }
+    
+    function listArtifacts(filter) {
+      var files = ARTIFACT_STORE.fsList('');
+      var artifacts = [];
+      
+      files.forEach(function(path) {
+        if (path.endsWith('.json') && path.startsWith('art_')) {
+          var data = ARTIFACT_STORE.fsRead(path);
+          if (data) {
+            try {
+              var artifact = JSON.parse(data);
+              if (!filter || matchesFilter(artifact, filter)) {
+                artifacts.push(artifact);
+              }
+            } catch (e) { /* skip invalid */ }
+          }
+        }
+      });
+      
+      // Sort by created_at descending
+      artifacts.sort(function(a, b) {
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+      
+      return artifacts;
+    }
+    
+    function matchesFilter(artifact, filter) {
+      if (filter.artifact_type && artifact.artifact_type !== filter.artifact_type) return false;
+      if (filter.status && artifact.status !== filter.status) return false;
+      if (filter.created_by_role && artifact.created_by_role !== filter.created_by_role) return false;
+      if (filter.assigned_to && artifact.assigned_to !== filter.assigned_to) return false;
+      if (filter.dataset_id && artifact.dataset_id !== filter.dataset_id) return false;
+      if (filter.record_id && artifact.record_id !== filter.record_id) return false;
+      return true;
+    }
+    
+    // ========== EVENT LOG ==========
+    function logArtifactEvent(event_type, artifact, extra) {
+      var event = {
+        event_type: event_type,
+        artifact_id: artifact.artifact_id,
+        artifact_type: artifact.artifact_type,
+        record_id: artifact.record_id,
+        field_key: artifact.field_key,
+        actor_id: getCurrentActorId(),
+        role: currentMode,
+        timestamp: new Date().toISOString()
+      };
+      if (extra) Object.assign(event, extra);
+      
+      ARTIFACT_STORE.fsAppend('events.jsonl', event);
+      console.log('[ArtifactStore] Event logged:', event_type, artifact.artifact_id);
+    }
+    
+    function getEventLog() {
+      var data = ARTIFACT_STORE.fsRead('events.jsonl');
+      if (!data) return [];
+      
+      return data.split('\n').filter(Boolean).map(function(line) {
+        try { return JSON.parse(line); } catch (e) { return null; }
+      }).filter(Boolean);
+    }
+    
+    // ========== THREAD SYSTEM (RFI Replies) ==========
+    function getThread(thread_id) {
+      var data = ARTIFACT_STORE.fsRead(thread_id + '.json');
+      if (data) {
+        try { return JSON.parse(data); } catch (e) { return null; }
+      }
+      return { thread_id: thread_id, messages: [] };
+    }
+    
+    function addThreadMessage(thread_id, message) {
+      var thread = getThread(thread_id);
+      var msg = {
+        message_id: 'msg_' + Date.now().toString(36),
+        author_id: getCurrentActorId(),
+        author_role: currentMode,
+        content: message.content || '',
+        created_at: new Date().toISOString()
+      };
+      thread.messages.push(msg);
+      ARTIFACT_STORE.fsWrite(thread_id + '.json', thread);
+      
+      // Log event
+      var artifact = getArtifactByThreadId(thread_id);
+      if (artifact) {
+        logArtifactEvent('RFI_REPLIED', artifact, { message_id: msg.message_id });
+      }
+      
+      return msg;
+    }
+    
+    function getArtifactByThreadId(thread_id) {
+      var artifacts = listArtifacts({});
+      return artifacts.find(function(a) { return a.thread_id === thread_id; }) || null;
+    }
+    
+    // ========== ACTOR & ROLE HELPERS ==========
+    var playgroundActors = {
+      analyst: 'analyst@example.com',
+      reviewer: 'reviewer@example.com',
+      admin: 'admin@example.com'
+    };
+    
+    function getCurrentActorId() {
+      return playgroundActors[currentMode] || 'unknown@example.com';
+    }
+    
+    // ========== QUEUE GENERATION FROM ARTIFACTS ==========
+    function getAnalystQueue() {
+      var actorId = playgroundActors['analyst'];
+      return listArtifacts({}).filter(function(a) {
+        return a.created_by_actor_id === actorId || a.assigned_to === actorId;
+      });
+    }
+    
+    function getVerifierQueue() {
+      return listArtifacts({ artifact_type: 'rfi', status: 'open' }).concat(
+        listArtifacts({ artifact_type: 'rfi', status: 'submitted' })
+      ).concat(
+        listArtifacts({ artifact_type: 'patch_request', status: 'submitted' })
+      );
+    }
+    
+    function getAdminQueue() {
+      return listArtifacts({ artifact_type: 'patch_request', status: 'submitted' });
+    }
+    
+    // ========== RECORD LOOKUP BY record_id ==========
+    function findRecordById(record_id) {
+      if (!record_id) return null;
+      
+      var result = null;
+      Object.keys(globalDataset).some(function(sheetName) {
+        var rows = globalDataset[sheetName];
+        for (var i = 0; i < rows.length; i++) {
+          var row = rows[i];
+          // Check various ID fields
+          if (row.record_id === record_id || 
+              row.contract_key === record_id ||
+              (sheetName + ':' + i) === record_id) {
+            result = { sheetName: sheetName, rowIndex: i, row: row };
+            return true;
+          }
+        }
+        return false;
+      });
+      
+      return result;
+    }
+    
+    function navigateToArtifact(artifact) {
+      if (!artifact) return;
+      
+      var recordInfo = findRecordById(artifact.record_id);
+      if (recordInfo) {
+        srrState.currentSheetName = recordInfo.sheetName;
+        srrState.focusFieldKey = artifact.field_key || null;
+        navigateTo('row/' + recordInfo.rowIndex);
+        console.log('[ArtifactStore] Navigated to record:', artifact.record_id, 'field:', artifact.field_key);
+      } else {
+        showToast('Record not found: ' + artifact.record_id, 'warning');
+      }
+    }
+    
     // ========== WORKBOOK DATA STRUCTURE (v1.4.3 INGEST-01) ==========
     // Canonical multi-sheet dataset contract
     var workbook = {
@@ -9651,18 +9978,49 @@
       // Submit the patch request
       var submittedRequest = submitPatchRequest(request.request_id, author, currentMode || 'Analyst');
       
-      // v1.5.0: Add to verifier queue
+      // v1.5.1: Create artifact in artifact store (primary)
+      var fieldKey = changes.length > 0 ? changes[0].field : (srrState.rfiField ? srrState.rfiField.key : 'N/A');
+      var artifact = createArtifact({
+        dataset_id: sessionState.fileName || 'default_dataset',
+        record_id: request.contract_key || srrState.currentRecordKey,
+        field_key: fieldKey,
+        artifact_type: patchType === 'rfi' ? 'rfi' : 'patch_request',
+        status: 'open',
+        created_by_actor_id: author,
+        created_by_role: currentMode || 'analyst',
+        sheet_name: srrState.currentSheetName,
+        file_url: srrResolveFieldValue(record, 'file_url'),
+        file_name: srrResolveFieldValue(record, 'file_name'),
+        body: {
+          patch_type: patchType,
+          old_value: changes.length > 0 ? changes[0].from : (srrState.rfiField ? srrState.rfiField.value : ''),
+          new_value: changes.length > 0 ? changes[0].to : '',
+          comment: justification,
+          changes: changes,
+          override_enabled: srrState.overrideEnabled,
+          evidence: {
+            observation_type: srrState.patchDraft.observation_type,
+            expected_type: srrState.patchDraft.expected_type,
+            repro_type: srrState.patchDraft.repro_type,
+            justification: justification
+          },
+          legacy_request_id: request.request_id
+        }
+      });
+      
+      // v1.5.0: Also add to legacy verifier queue for backwards compatibility
       addVerifierPayload({
-        id: request.request_id,
+        id: artifact.artifact_id,
         type: patchType,
         record_id: request.contract_key,
-        field: changes.length > 0 ? changes[0].field : (srrState.rfiField ? srrState.rfiField.key : 'N/A'),
+        field: fieldKey,
         old_value: changes.length > 0 ? changes[0].from : (srrState.rfiField ? srrState.rfiField.value : ''),
         new_value: changes.length > 0 ? changes[0].to : '',
         comment: justification,
         analyst_id: author,
         timestamp: new Date().toISOString(),
-        status: 'pending'
+        status: 'pending',
+        artifact_id: artifact.artifact_id
       });
       
       // Update local state
