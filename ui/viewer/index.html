@@ -7995,11 +7995,11 @@
         
         if (srrState.activeFilter === 'all') return true;  // Show all fields
         if (srrState.activeFilter === 'todo') {
-          // To Do shows: todo, modified (not verified, submitted, rfi, blocked)
-          return state === 'todo' || state === 'modified';
+          // To Do shows: todo, modified, rfi_pending (not verified, submitted, rfi, blocked)
+          return state === 'todo' || state === 'modified' || state === 'rfi_pending';
         }
         if (srrState.activeFilter === 'verified') return state === 'verified';
-        if (srrState.activeFilter === 'rfi') return state === 'rfi';
+        if (srrState.activeFilter === 'rfi') return state === 'rfi' || state === 'rfi_pending';
         if (srrState.activeFilter === 'patched') return state === 'patched' || state === 'submitted';
         if (srrState.activeFilter === 'blocked') return state === 'blocked';
         return true;
@@ -8030,7 +8030,7 @@
           chips += '<span class="srr-chip srr-chip-modified">Modified</span>';
         } else if (fieldState === 'submitted') {
           chips += '<span class="srr-chip srr-chip-submitted">Patch Submitted</span>';
-        } else if (fieldState === 'rfi') {
+        } else if (fieldState === 'rfi' || fieldState === 'rfi_pending') {
           chips += '<span class="srr-chip srr-chip-rfi">RFI</span>';
         } else if (fieldState === 'blocked') {
           chips += '<span class="srr-chip srr-chip-blocked">Blocked</span>';
@@ -8041,9 +8041,9 @@
         // Human-friendly label (convert snake_case to Title Case)
         var label = key.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
         
-        // Add state-based classes (patched→submitted for backwards compat)
+        // Add state-based classes (patched→submitted, rfi_pending→rfi for styling)
         var cardClass = 'srr-field-card';
-        var displayState = fieldState === 'patched' ? 'submitted' : fieldState;
+        var displayState = fieldState === 'patched' ? 'submitted' : (fieldState === 'rfi_pending' ? 'rfi' : fieldState);
         if (displayState !== 'todo') cardClass += ' state-' + displayState;
         if (isLocked) cardClass += ' locked';
         if (srrState.selectedField === key) cardClass += ' active';
@@ -8133,10 +8133,12 @@
         var state = srrState.fieldStates[k] || 'todo';
         counts[state] = (counts[state] || 0) + 1;
       });
-      // Todo count includes modified (they're still in the To Do queue)
-      var todoCount = counts.todo + counts.modified;
+      // Todo count includes modified and rfi_pending (still in To Do queue)
+      var todoCount = counts.todo + counts.modified + (counts.rfi_pending || 0);
       // Patched count includes submitted for backwards compat
       var patchedCount = counts.patched + counts.submitted;
+      // RFI count includes both sent and pending
+      var rfiCount = counts.rfi + (counts.rfi_pending || 0);
       
       var allEl = document.getElementById('srr-count-all');
       var todoEl = document.getElementById('srr-count-todo');
@@ -8146,7 +8148,7 @@
       if (allEl) allEl.textContent = '(' + counts.all + ')';
       if (todoEl) todoEl.textContent = '(' + todoCount + ')';
       if (verifiedEl) verifiedEl.textContent = '(' + counts.verified + ')';
-      if (rfiEl) rfiEl.textContent = '(' + counts.rfi + ')';
+      if (rfiEl) rfiEl.textContent = '(' + rfiCount + ')';
       if (patchedEl) patchedEl.textContent = '(' + patchedCount + ')';
     }
     
@@ -8228,7 +8230,8 @@
     
     // v1.4.20: Field action - RFI (question)
     function srrRfiField(fieldKey) {
-      srrState.fieldStates[fieldKey] = 'rfi';
+      // Set to rfi_pending (stays in To Do until Send RFI)
+      srrState.fieldStates[fieldKey] = 'rfi_pending';
       
       // Auto-set patch type to RFI
       srrState.patchType = 'rfi';
@@ -8240,7 +8243,7 @@
         if (chip.dataset.type === 'rfi') chip.classList.add('active');
       });
       
-      console.log('[SRR] Field RFI:', fieldKey);
+      console.log('[SRR] Field RFI (pending):', fieldKey);
       srrUpdatePatchFormSections();
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditor();
@@ -9241,15 +9244,18 @@
       var rfiSection = document.getElementById('srr-rfi-section');
       if (rfiSection) rfiSection.classList.toggle('srr-section-hidden', !isRfi);
       
-      // Update submit button text based on patch type
+      // Update submit button text and style based on patch type
       var submitBtn = document.getElementById('srr-submit-btn');
       if (submitBtn) {
         if (isRfi) {
           submitBtn.textContent = 'Send RFI';
+          submitBtn.style.background = '#f57c00';  // Orange for RFI
         } else if (isBlacklist) {
           submitBtn.textContent = 'Submit Blacklist';
+          submitBtn.style.background = '#d32f2f';  // Red for blacklist
         } else {
           submitBtn.textContent = 'Submit Patch Request';
+          submitBtn.style.background = '#1565c0';  // Blue default
         }
       }
     }
@@ -9422,7 +9428,14 @@
           srrState.fieldStates[fieldKey] = 'submitted';
         });
       }
-      // RFI fields stay as 'rfi' (already set when RFI button clicked)
+      // RFI: Change rfi_pending to rfi (leaves To Do, stays in All)
+      if (patchType === 'rfi') {
+        Object.keys(srrState.fieldStates).forEach(function(fieldKey) {
+          if (srrState.fieldStates[fieldKey] === 'rfi_pending') {
+            srrState.fieldStates[fieldKey] = 'rfi';
+          }
+        });
+      }
       // Blocked fields stay as 'blocked' (already set when Blacklist clicked)
       
       // Re-render field list to reflect state changes
