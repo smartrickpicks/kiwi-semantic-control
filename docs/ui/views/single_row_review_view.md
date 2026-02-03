@@ -66,13 +66,18 @@ Contract: This document defines the record-level inspection surface. It supports
 - Needs Patch: Show edited fields missing justification
 - RFI: Show fields marked with RFI category
 
-### Center Panel: Document Viewer (v1.4.10)
-- **PDF Rendering**: Displays attached PDFs via browser's native PDF viewer (iframe-based, offline-only)
+### Center Panel: Document Viewer (v1.4.10, updated v1.4.16)
+- **PDF Rendering**: Displays PDFs via browser's native PDF viewer (iframe-based)
+- **PDF Proxy (v1.4.16)**: Network PDFs are fetched via local FastAPI proxy (`server/pdf_proxy.py`) to avoid CORS issues and download prompts
+  - Proxy allowlist: Only configured S3 buckets are permitted (SSRF guard)
+  - Size limit: 25MB max (configurable via `PDF_PROXY_MAX_SIZE_MB`)
+  - If proxy unavailable, falls back to direct iframe (may show download prompt)
 - **Empty State**: When no PDF is attached, shows placeholder with guidance to attach via Data Source panel
 - **Page Navigation**: ← Prev / Next → buttons with page indicator (Page X / Y)
 - **Zoom Controls**: + / − buttons with zoom indicator (50% to 300% range, 25% increments)
 - **State Persistence**: Per-record page and zoom state persisted to localStorage (keyed by record identity triplet)
 - **Evidence Anchors**: Anchor list with click-to-scroll behavior (V2: bbox overlay on PDF)
+- **Offline Cache (v1.4.13)**: Successfully fetched PDFs are cached in IndexedDB for offline access
 
 ### Right Panel: Evidence Pack + Patch Request
 - Evidence Pack with 4 canonical blocks:

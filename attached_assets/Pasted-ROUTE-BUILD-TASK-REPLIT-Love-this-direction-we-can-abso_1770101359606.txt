@@ -1,0 +1,89 @@
+ROUTE: BUILD_TASK_REPLIT
+
+Love this direction — we can absolutely do a small **FastAPI proxy** and point the viewer at it. I’ll assume **local dev default** of `http://localhost:8000/proxy/pdf` and make it configurable. If you want a different base URL later, it’s just one constant.
+
+```json
+{
+  "route": "BUILD_TASK_REPLIT",
+  "goal": "Add a lightweight FastAPI PDF proxy and route SRR PDF loads through it so PDFs render inline (no download prompt, no CORS issues).",
+  "constraints": [
+    "Do not rename canonical ids/routes/tokens.",
+    "UI label stays 'Record Inspection' (user-facing); canonical docs/specs remain 'Single Row Review'.",
+    "Proxy must be allowlisted and size-limited (security).",
+    "No invented claims; output git commands only."
+  ],
+  "files_in_scope": [
+    "ui/viewer/index.html",
+    "docs/ui/views/single_row_review_view.md",
+    "docs/handoff/TASKS_UI.md",
+    "server/pdf_proxy.py",
+    "server/requirements.txt",
+    "server/README_PROXY.md"
+  ],
+  "implementation_steps": [
+    {
+      "id": "PROXY-API-01",
+      "title": "Create FastAPI proxy service",
+      "requirements": [
+        "Create `server/pdf_proxy.py` with FastAPI.",
+        "Endpoint: `GET /proxy/pdf?url=`",
+        "Allowlist hostnames via env `PDF_PROXY_ALLOWED_HOSTS` (comma-separated). Default allowlist includes `app-myautobots-public-dev.s3.amazonaws.com`.",
+        "Reject private IPs and non-allowlisted hosts (SSRF guard).",
+        "Enforce size limit via `Content-Length` when present; default max 25MB.",
+        "Stream response to client with `Content-Type` preserved and `Content-Disposition: inline` to avoid download prompt.",
+        "Add CORS headers for allowed origins (env `PDF_PROXY_ALLOWED_ORIGINS`, default `*`)."
+      ],
+      "acceptance_tests": [
+        "GET /proxy/pdf?url=<s3-pdf> returns 200 with Content-Type application/pdf",
+        "Content-Disposition is inline (no forced download)",
+        "Requests to non-allowlisted hosts return 403"
+      ]
+    },
+    {
+      "id": "PROXY-UI-02",
+      "title": "Use proxy in SRR PDF load path",
+      "requirements": [
+        "Add PROXY_BASE_URL constant in `ui/viewer/index.html` (default `http://localhost:8000/proxy/pdf`).",
+        "When SRR PDF loads, always attempt proxy fetch -> blob -> object URL (no direct iframe fallback to S3).",
+        "If proxy is unreachable, show deterministic UI message: 'Proxy unavailable' and keep offline stub visible.",
+        "Keep cache behavior intact (store proxy-fetched blob in IndexedDB)."
+      ],
+      "acceptance_tests": [
+        "SRR no longer triggers a download prompt on S3 URLs.",
+        "PDF renders inline via proxy blob.",
+        "Cache hit uses local blob without refetch."
+      ]
+    },
+    {
+      "id": "DOCS-01",
+      "title": "Document proxy behavior",
+      "requirements": [
+        "Update `docs/ui/views/single_row_review_view.md` to note: PDFs are fetched via local proxy to avoid CORS and download prompts.",
+        "Mention allowlist + size limits."
+      ],
+      "acceptance_tests": [
+        "SRR doc includes proxy fallback details and security limits."
+      ]
+    },
+    {
+      "id": "TASKS-UI-01",
+      "title": "Track proxy work in TASKS_UI",
+      "requirements": [
+        "Add a new entry under [IN_PROGRESS] or [TODO]: 'PDF proxy fetch to avoid download prompt (CORS-safe SRR render)'.",
+        "Evidence: 'Unknown — requires audit' until commit URL exists."
+      ],
+      "acceptance_tests": [
+        "TASKS_UI contains the new entry with scope, files, and acceptance tests."
+      ]
+    }
+  ],
+  "output_format": {
+    "summary": "bullet list (file -> change)",
+    "verification": "commands run + key console log lines",
+    "suggested_commit_message": "single line",
+    "git_commands": "git add/commit commands only (no push claims)"
+  }
+}
+```
+
+If you want a different **default proxy base URL** or **allowed origins**, tell me and I’ll update the prompt.

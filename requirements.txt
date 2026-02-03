@@ -1,1 +1,4 @@
 # No external dependencies. Stdlib-only by design.
+fastapi
+httpx
+uvicorn[standard]

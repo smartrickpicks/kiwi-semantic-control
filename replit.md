@@ -1,4 +1,4 @@
-# Orchestrate OS — Semantic Control Board (v1.4.13)
+# Orchestrate OS — Semantic Control Board (v1.4.16)
 
 ## Overview
 
@@ -86,6 +86,14 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - Row Review (#/row/:id): Consistent entry point for single-row review
 - Default route: #/grid when dataset loaded, #/triage otherwise
 - RBAC preserved: Admin UI only under #/admin/*
+
+**v1.4.16 PDF Proxy + Field Resolution:**
+- FastAPI PDF proxy server (`server/pdf_proxy.py`) for CORS-safe PDF fetching
+- Host allowlist (default: S3 buckets) with SSRF guards (no private IPs)
+- `srrResolveFieldValue()` handles Salesforce-style columns (File_URL_c, File_Name_c)
+- Proxy returns PDFs with `Content-Disposition: inline` (no download prompt)
+- Size limit: 25MB configurable via `PDF_PROXY_MAX_SIZE_MB` env var
+- Fallback: Direct iframe if proxy unavailable
 
 **What This Is NOT:**
 - Not a runtime system

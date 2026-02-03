@@ -5508,6 +5508,54 @@
     
     // ========== PDF CACHE (v1.4.13) ==========
     // IndexedDB-based offline-first PDF cache with LRU eviction
+    // v1.4.16: PDF Proxy configuration for CORS-safe fetching
+    // Auto-detect Replit environment: use port 8000 subdomain if on Replit, else localhost
+    var PDF_PROXY_CONFIG = (function() {
+      var baseUrl = 'http://localhost:8000/proxy/pdf';
+      var host = window.location.hostname;
+      var protocol = window.location.protocol;
+      
+      // Detect Replit environment and construct port 8000 URL
+      // Pattern 1: xxx-00-yyy.kirk.replit.dev (port 5000 default) -> xxx-8000-yyy.kirk.replit.dev
+      // Pattern 2: xxx.replit.app -> xxx-8000.replit.app (may not work, use same-origin fallback)
+      // Pattern 3: xxx.repl.co -> legacy pattern
+      if (host.includes('.replit.dev')) {
+        if (host.includes('-00-')) {
+          baseUrl = protocol + '//' + host.replace('-00-', '-8000-') + '/proxy/pdf';
+        } else {
+          // Try inserting -8000 before the first dot
+          var parts = host.split('.');
+          if (parts.length > 0) {
+            parts[0] = parts[0] + '-8000';
+            baseUrl = protocol + '//' + parts.join('.') + '/proxy/pdf';
+          }
+        }
+      } else if (host.includes('.replit.app')) {
+        // xxx.replit.app -> xxx-8000.replit.app (note: may require port config)
+        var parts = host.split('.');
+        if (parts.length >= 2) {
+          parts[0] = parts[0].replace(/-5000$/, '') + '-8000';
+          baseUrl = protocol + '//' + parts.join('.') + '/proxy/pdf';
+        }
+      } else if (host.includes('.repl.co')) {
+        // Legacy pattern
+        var parts = host.split('.');
+        if (parts.length > 0) {
+          parts[0] = parts[0] + '-8000';
+          baseUrl = protocol + '//' + parts.join('.') + '/proxy/pdf';
+        }
+      }
+      // If still localhost, proxy runs on same machine
+      
+      console.log('[PDF_PROXY] Base URL:', baseUrl, '(host:', host + ')');
+      
+      return {
+        BASE_URL: baseUrl,
+        ENABLED: true,
+        TIMEOUT_MS: 30000
+      };
+    })();
+    
     var PDF_CACHE_CONFIG = {
       DB_NAME: 'orchestrate_pdf_cache',
       DB_VERSION: 1,
@@ -8200,10 +8248,23 @@
     
     // v1.4.13: Fetch PDF from network and cache it
     // v1.4.14: Use structured log entries
+    // v1.4.16: Route through FastAPI proxy to avoid CORS and download prompts
     function srrFetchAndCachePdf(record, networkUrl, fileName, cacheKey, attachments) {
       var recordId = srrState.currentRecordKey || (record ? (record.contract_key || record.id || 'unknown') : 'no-record');
       
-      fetch(networkUrl, { mode: 'cors' })
+      // v1.4.16: Build proxy URL if enabled
+      var fetchUrl = networkUrl;
+      var usingProxy = false;
+      
+      if (PDF_PROXY_CONFIG.ENABLED && networkUrl) {
+        fetchUrl = PDF_PROXY_CONFIG.BASE_URL + '?url=' + encodeURIComponent(networkUrl);
+        usingProxy = true;
+        console.log('[SRR_PDF] Fetching via proxy:', fetchUrl.substring(0, 80));
+      }
+      
+      var fetchOptions = usingProxy ? {} : { mode: 'cors' };
+      
+      fetch(fetchUrl, fetchOptions)
         .then(function(response) {
           if (!response.ok) throw new Error('HTTP ' + response.status);
           return response.blob();
@@ -8220,23 +8281,37 @@
         .then(function(blob) {
           var objectUrl = URL.createObjectURL(blob);
           var sourceName = fileName || networkUrl.split('/').pop().split('?')[0];
+          var sourceLabel = usingProxy ? 'Proxy' : 'URL';
           
           // Check if file is too large to cache
           if (blob.size > PDF_CACHE_CONFIG.MAX_FILE_BYTES) {
             srrState.cacheStatus = 'too-large';
             console.log('[PDF_CACHE] File too large to cache:', (blob.size / 1024 / 1024).toFixed(2), 'MB');
-            srrRenderPdf(record, objectUrl, 'URL (not cached)', sourceName, srrBuildLogEntry('URL', 'too-large', networkUrl));
+            srrRenderPdf(record, objectUrl, sourceLabel + ' (not cached)', sourceName, srrBuildLogEntry(sourceLabel, 'too-large', networkUrl));
           } else {
             // Cache the PDF
             cachePdf(cacheKey, networkUrl, blob).then(function(cached) {
               srrState.cacheStatus = cached ? 'cached' : 'cache-failed';
-              srrRenderPdf(record, objectUrl, cached ? 'URL (cached)' : 'URL', sourceName, srrBuildLogEntry('URL', cached ? 'cached' : 'cache-failed', networkUrl));
+              srrRenderPdf(record, objectUrl, cached ? sourceLabel + ' (cached)' : sourceLabel, sourceName, srrBuildLogEntry(sourceLabel, cached ? 'cached' : 'cache-failed', networkUrl));
             });
           }
         })
         .catch(function(err) {
-          console.warn('[SRR_PDF] Fetch failed:', err.message);
-          srrState.cacheStatus = 'cors-blocked';
+          console.warn('[SRR_PDF] Fetch failed:', err.message, usingProxy ? '(proxy)' : '(direct)');
+          srrState.cacheStatus = usingProxy ? 'proxy-failed' : 'cors-blocked';
+          
+          // v1.4.16: If proxy failed, show clear message
+          if (usingProxy) {
+            // Proxy unavailable - show deterministic message
+            if (srrState.localAttachmentFallback) {
+              srrRenderPdf(record, srrState.localAttachmentFallback.url, 'Local Attachment (proxy unavailable)', srrState.localAttachmentFallback.name, srrBuildLogEntry('Local Attachment', 'proxy-fallback', 'local-attachment'));
+              showToast('Proxy unavailable - using local attachment', 'warning');
+            } else {
+              srrShowOfflineStub(networkUrl);
+              showToast('Proxy unavailable - start server/pdf_proxy.py', 'error');
+            }
+            return;
+          }
           
           // v1.4.15: CORS fallback - try direct iframe src if local fallback unavailable
           if (srrState.localAttachmentFallback) {

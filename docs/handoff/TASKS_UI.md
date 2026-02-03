@@ -39,6 +39,7 @@ All tasks must use these terms exclusively:
 |----|------|-------|----------------------|---------------------|--------|
 | SRR-BUG-01 | BUGFIX: SRR row open uses active sheet selection (currentSheetFilter error) | UI bugfix | `ui/viewer/index.html` | No ReferenceError on row click; SRR_OPEN log shows sheetName != "unknown" | Done (9c4bfda) |
 | SRR-BUG-02 | BUGFIX: Grid row click resolves correct sheet + record (no data row not found) | UI bugfix | `ui/viewer/index.html` | Click opens SRR without "data row not found"; console shows sheetName and recordIndex | In Progress |
+| PDF-PROXY-01 | PDF proxy fetch to avoid download prompt (CORS-safe SRR render) | Backend + UI | `server/pdf_proxy.py`, `ui/viewer/index.html`, `docs/ui/views/single_row_review_view.md` | SRR PDF renders inline via proxy; no download prompt; cache hit uses local blob | In Progress |
 
 ### P1 — High Priority
 

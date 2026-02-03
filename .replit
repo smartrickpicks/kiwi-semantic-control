@@ -1,4 +1,4 @@
-modules = ["python-3.12", "bash", "nodejs-22"]
+modules = ["bash", "nodejs-22", "python-3.11"]
 [replit]
 language = "python3"
 run = "python3 local_runner/validate_config.py --base config/config_pack.base.json --patch config/config_pack.example.patch.json && python3 local_runner/run_local.py --base config/config_pack.base.json --patch config/config_pack.example.patch.json --standardized examples/standardized_dataset.example.json --out out/sf_packet.preview.json"
@@ -26,6 +26,10 @@ args = "Smoke Test"
 task = "workflow.run"
 args = "Viewer Server"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "PDF Proxy"
+
 [[workflows.workflow]]
 name = "Smoke Test"
 author = "agent"
@@ -49,9 +53,25 @@ task = "shell.exec"
 args = "bash scripts/serve_viewer.sh"
 waitForPort = 5000
 
+[[workflows.workflow]]
+name = "PDF Proxy"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd server && python -m uvicorn pdf_proxy:app --host 0.0.0.0 --port 8000"
+waitForPort = 8000
+
+[workflows.workflow.metadata]
+outputType = "console"
+
 [deployment]
 deploymentTarget = "cloudrun"
 
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 8000
+externalPort = 8000
