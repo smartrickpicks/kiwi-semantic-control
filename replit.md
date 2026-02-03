@@ -95,6 +95,19 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - Size limit: 25MB configurable via `PDF_PROXY_MAX_SIZE_MB` env var
 - Fallback: Direct iframe if proxy unavailable
 
+**v1.4.18 Field Inspector Patch Flow:**
+- Search input filters fields by name or value (case-insensitive)
+- Filter chips: All / Changed / Unchanged (replaced old Edited/Needs Patch/RFI)
+- Inline field editing: Click to edit, Enter/blur commits
+- Lock-on-commit: Changed fields lock with Changed marker and 🔒 icon
+- Patch Editor block in right panel: Old/New values with bidirectional sync
+- Evidence Pack restructured: Dropdown selectors + optional notes for each block
+- Observation/Expected/Justification/Repro dropdowns with standardized options
+- Repro file attachment support
+- Submit validation: Observation type + Expected type + at least one field change
+- Patch Request creation via existing createPatchRequest/submitPatchRequest functions
+- Submitted patches visible in Patch Console
+
 **What This Is NOT:**
 - Not a runtime system
 - Not connected to any external APIs
