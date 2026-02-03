@@ -438,16 +438,23 @@
     .srr-chip-locked { background: #9e9e9e; color: white; }
     
     /* v1.4.20: Field state styling */
+    /* Field state styles */
     .srr-field-card.state-verified { border-left: 3px solid #4caf50; }
     .srr-field-card.state-verified .srr-field-card-header { background: #e8f5e9; }
-    .srr-field-card.state-rfi { border-left: 3px solid #7b1fa2; }
-    .srr-field-card.state-rfi .srr-field-card-header { background: #f3e5f5; }
-    .srr-field-card.state-patched { border-left: 3px solid #ff9800; }
-    .srr-field-card.state-patched .srr-field-card-header { background: #fff3e0; }
+    .srr-field-card.state-modified { border-left: 3px solid #1976d2; }
+    .srr-field-card.state-modified .srr-field-card-header { background: #e3f2fd; }
+    .srr-field-card.state-submitted { border-left: 3px solid #1565c0; }
+    .srr-field-card.state-submitted .srr-field-card-header { background: #bbdefb; }
+    .srr-field-card.state-rfi { border-left: 3px solid #ff9800; }
+    .srr-field-card.state-rfi .srr-field-card-header { background: #fff3e0; }
+    .srr-field-card.state-blocked { border-left: 3px solid #d32f2f; }
+    .srr-field-card.state-blocked .srr-field-card-header { background: #ffebee; }
+    /* Field state badges */
     .srr-chip-verified { background: #4caf50; color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 10px; }
-    .srr-chip-rfi { background: #7b1fa2; color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 10px; }
-    .srr-chip-patched { background: #ff9800; color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 10px; }
-    .srr-chip-todo { background: #9e9e9e; color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 10px; }
+    .srr-chip-modified { background: #1976d2; color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 10px; }
+    .srr-chip-submitted { background: #1565c0; color: white; font-size: 0.65em; padding: 2px 5px; border-radius: 10px; white-space: nowrap; }
+    .srr-chip-rfi { background: #ff9800; color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 10px; }
+    .srr-chip-blocked { background: #d32f2f; color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 10px; }
     
     /* v1.4.20: Field action buttons */
     /* v1.4.20: Field action icons - Heroicons outline SVGs */
@@ -7980,17 +7987,21 @@
         });
       }
       
-      // v1.4.20: Apply field state filter - verified fields hidden by default
+      // Apply field state filter - verified/submitted hidden from To Do by default
       keys = keys.filter(function(k) {
         var state = srrState.fieldStates[k] || 'todo';
-        // Hide verified fields unless explicitly viewing verified filter
-        if (state === 'verified' && srrState.activeFilter !== 'verified') return false;
-        // Apply active filter
-        if (srrState.activeFilter === 'all') return state !== 'verified';
-        if (srrState.activeFilter === 'todo') return state === 'todo';
+        // States that clear from To Do: verified, submitted
+        var clearsFromToDo = (state === 'verified' || state === 'submitted');
+        
+        if (srrState.activeFilter === 'all') return true;  // Show all fields
+        if (srrState.activeFilter === 'todo') {
+          // To Do shows: todo, modified (not verified, submitted, rfi, blocked)
+          return state === 'todo' || state === 'modified';
+        }
         if (srrState.activeFilter === 'verified') return state === 'verified';
         if (srrState.activeFilter === 'rfi') return state === 'rfi';
-        if (srrState.activeFilter === 'patched') return state === 'patched';
+        if (srrState.activeFilter === 'patched') return state === 'patched' || state === 'submitted';
+        if (srrState.activeFilter === 'blocked') return state === 'blocked';
         return true;
       });
       
@@ -8011,24 +8022,29 @@
         var isRequired = SRR_REQUIRED_FIELDS.indexOf(key) >= 0;
         var fieldState = srrState.fieldStates[key] || 'todo';  // v1.4.20: field state
         
-        // v1.4.20: Build chips based on field state
+        // Build badges based on field state (exact labels per spec)
         var chips = '';
         if (fieldState === 'verified') {
-          chips += '<span class="srr-chip srr-chip-verified">✓ Verified</span>';
+          chips += '<span class="srr-chip srr-chip-verified">Verified</span>';
+        } else if (fieldState === 'modified') {
+          chips += '<span class="srr-chip srr-chip-modified">Modified</span>';
+        } else if (fieldState === 'submitted') {
+          chips += '<span class="srr-chip srr-chip-submitted">Patch Submitted</span>';
         } else if (fieldState === 'rfi') {
-          chips += '<span class="srr-chip srr-chip-rfi">? RFI</span>';
-        } else if (fieldState === 'patched') {
-          chips += '<span class="srr-chip srr-chip-patched">✏ Patched</span>';
-          if (isLocked) chips += '<span class="srr-chip srr-chip-locked">🔒</span>';
+          chips += '<span class="srr-chip srr-chip-rfi">RFI</span>';
+        } else if (fieldState === 'blocked') {
+          chips += '<span class="srr-chip srr-chip-blocked">Blocked</span>';
         }
-        if (isRequired) chips += '<span class="srr-chip srr-chip-required">Required</span>';
+        // No badge for 'todo' (default state)
+        if (isRequired && fieldState === 'todo') chips += '<span class="srr-chip srr-chip-required">Required</span>';
         
         // Human-friendly label (convert snake_case to Title Case)
         var label = key.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
         
-        // v1.4.20: Add state-based classes
+        // Add state-based classes (patched→submitted for backwards compat)
         var cardClass = 'srr-field-card';
-        if (fieldState !== 'todo') cardClass += ' state-' + fieldState;
+        var displayState = fieldState === 'patched' ? 'submitted' : fieldState;
+        if (displayState !== 'todo') cardClass += ' state-' + displayState;
         if (isLocked) cardClass += ' locked';
         if (srrState.selectedField === key) cardClass += ' active';
         
@@ -8041,13 +8057,17 @@
         
         var actionsHtml = '<div class="srr-field-actions">';
         if (fieldState === 'todo') {
-          actionsHtml += '<button class="srr-field-action blacklist" onclick="event.stopPropagation(); srrBlacklistField(\'' + key + '\')" title="Blacklist Flag">' + iconFlag + '</button>';
-          actionsHtml += '<button class="srr-field-action rfi" onclick="event.stopPropagation(); srrRfiField(\'' + key + '\')" title="RFI (request for info)">' + iconEdit + '</button>';
+          actionsHtml += '<button class="srr-field-action blacklist" onclick="event.stopPropagation(); srrBlacklistField(\'' + key + '\')" title="Block this field">' + iconFlag + '</button>';
+          actionsHtml += '<button class="srr-field-action rfi" onclick="event.stopPropagation(); srrRfiField(\'' + key + '\')" title="Request for Info">' + iconEdit + '</button>';
           actionsHtml += '<button class="srr-field-action verify" onclick="event.stopPropagation(); srrVerifyField(\'' + key + '\')" title="Verify (mark as correct)">' + iconCheck + '</button>';
+        } else if (fieldState === 'modified') {
+          // Modified: no action icons (user moved on after editing)
         } else if (fieldState === 'verified') {
-          // Verified fields only shown when filter is 'verified' - show reset button prominently
           actionsHtml += '<button class="srr-field-action reset" onclick="event.stopPropagation(); srrResetFieldState(\'' + key + '\')" title="Reset to TODO">' + iconReset + '</button>';
+        } else if (fieldState === 'submitted') {
+          // Patch Submitted: no actions needed
         } else {
+          // rfi, blocked, patched: show reset
           actionsHtml += '<button class="srr-field-action reset" onclick="event.stopPropagation(); srrResetFieldState(\'' + key + '\')" title="Reset to TODO">' + iconReset + '</button>';
         }
         actionsHtml += '</div>';
@@ -8108,21 +8128,26 @@
     // v1.4.20: Update filter chip counts
     function srrUpdateFilterCounts() {
       var allKeys = Object.keys(srrState.originalValues);
-      var counts = { all: allKeys.length, todo: 0, verified: 0, rfi: 0, patched: 0 };
+      var counts = { all: allKeys.length, todo: 0, verified: 0, modified: 0, submitted: 0, rfi: 0, blocked: 0, patched: 0 };
       allKeys.forEach(function(k) {
         var state = srrState.fieldStates[k] || 'todo';
         counts[state] = (counts[state] || 0) + 1;
       });
+      // Todo count includes modified (they're still in the To Do queue)
+      var todoCount = counts.todo + counts.modified;
+      // Patched count includes submitted for backwards compat
+      var patchedCount = counts.patched + counts.submitted;
+      
       var allEl = document.getElementById('srr-count-all');
       var todoEl = document.getElementById('srr-count-todo');
       var verifiedEl = document.getElementById('srr-count-verified');
       var rfiEl = document.getElementById('srr-count-rfi');
       var patchedEl = document.getElementById('srr-count-patched');
       if (allEl) allEl.textContent = '(' + counts.all + ')';
-      if (todoEl) todoEl.textContent = '(' + counts.todo + ')';
+      if (todoEl) todoEl.textContent = '(' + todoCount + ')';
       if (verifiedEl) verifiedEl.textContent = '(' + counts.verified + ')';
       if (rfiEl) rfiEl.textContent = '(' + counts.rfi + ')';
-      if (patchedEl) patchedEl.textContent = '(' + counts.patched + ')';
+      if (patchedEl) patchedEl.textContent = '(' + patchedCount + ')';
     }
     
     // v1.4.20: Field action - Verify (mark as correct)
@@ -8179,8 +8204,8 @@
         : srrState.originalValues[fieldKey];
       var label = fieldKey.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
       
-      // Set field state to patched
-      srrState.fieldStates[fieldKey] = 'patched';
+      // Set field state to blocked
+      srrState.fieldStates[fieldKey] = 'blocked';
       
       // Auto-set patch type to blacklist
       srrState.patchType = 'blacklist';
