@@ -9598,6 +9598,70 @@
       } else {
         showToast('Patch Request submitted — visible in Patch Console', 'success');
       }
+      
+      // v1.5.0: Reset Patch Editor state after submission
+      resetPatchEditorState();
+    }
+    
+    function resetPatchEditorState() {
+      // Reset patch draft in srrState
+      srrState.patchDraft = {
+        patch_type: 'correction',
+        observation_type: '',
+        expected_type: '',
+        justification: '',
+        repro_type: '',
+        repro_file: null,
+        rfi_target: '',
+        blacklist_category: '',
+        blacklist_subject: '',
+        changes: [],
+        status: 'Draft'
+      };
+      srrState.patchType = 'correction';
+      srrState.overrideEnabled = false;
+      srrState.rfiField = null;
+      srrState.proposedChanges = {};
+      srrState.lockedFields = {};
+      
+      // Reset form inputs
+      var obsEl = document.getElementById('srr-observation-type');
+      var expEl = document.getElementById('srr-expected-type');
+      var justEl = document.getElementById('srr-justification');
+      var reproEl = document.getElementById('srr-repro-type');
+      
+      if (obsEl) obsEl.value = '';
+      if (expEl) expEl.value = '';
+      if (justEl) justEl.value = '';
+      if (reproEl) reproEl.value = '';
+      
+      // Reset patch type chips
+      document.querySelectorAll('.srr-patch-chip').forEach(function(chip) {
+        chip.classList.toggle('active', chip.dataset.patchtype === 'correction');
+      });
+      
+      // Clear override toggle
+      var overrideToggle = document.getElementById('srr-override-toggle');
+      if (overrideToggle) overrideToggle.checked = false;
+      
+      // Clear blacklist subject display
+      var blacklistEl = document.getElementById('srr-blacklist-subject');
+      if (blacklistEl) blacklistEl.textContent = '';
+      
+      // Clear RFI display
+      var rfiEl = document.getElementById('srr-rfi-request-display');
+      if (rfiEl) rfiEl.innerHTML = '';
+      
+      // Clear old/new value displays in patch editor
+      var oldValEl = document.getElementById('srr-patch-old-value');
+      var newValEl = document.getElementById('srr-patch-new-value');
+      if (oldValEl) oldValEl.textContent = '';
+      if (newValEl) newValEl.value = '';
+      
+      // Update visibility of conditional sections
+      updatePatchEditorVisibility();
+      
+      console.log('[SRR] Patch Editor state reset');
     }
     
     function showAuditLogForRecord() {
