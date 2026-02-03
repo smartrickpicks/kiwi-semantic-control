@@ -1689,7 +1689,7 @@
               <div class="srr-patch-section">
                 <div class="srr-actions">
                   <button class="srr-btn srr-btn-secondary" onclick="srrSaveDraft()">Save Draft</button>
-                  <button class="srr-btn srr-btn-primary" onclick="srrSubmitPatchRequest()">Submit Patch Request</button>
+                  <button class="srr-btn srr-btn-primary" id="srr-submit-btn" onclick="srrSubmitPatchRequest()">Submit Patch Request</button>
                 </div>
               </div>
             </div>
@@ -8204,9 +8204,8 @@
         : srrState.originalValues[fieldKey];
       var label = fieldKey.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
       
-      // Set field state to modified first (shows Modified tag immediately)
-      // The 'blocked' state will be applied after submit
-      srrState.fieldStates[fieldKey] = 'modified';
+      // Set field state to blocked (red header + Blocked badge)
+      srrState.fieldStates[fieldKey] = 'blocked';
       
       // Auto-set patch type to blacklist
       srrState.patchType = 'blacklist';
@@ -9238,9 +9237,21 @@
         if (isBlacklist) srrUpdateBlacklistSubject();
       }
       
-      // RFI Target (RFI only)
+      // RFI Assignment stub (RFI only)
       var rfiSection = document.getElementById('srr-rfi-section');
       if (rfiSection) rfiSection.classList.toggle('srr-section-hidden', !isRfi);
+      
+      // Update submit button text based on patch type
+      var submitBtn = document.getElementById('srr-submit-btn');
+      if (submitBtn) {
+        if (isRfi) {
+          submitBtn.textContent = 'Send RFI';
+        } else if (isBlacklist) {
+          submitBtn.textContent = 'Submit Blacklist';
+        } else {
+          submitBtn.textContent = 'Submit Patch Request';
+        }
+      }
     }
     
     // v1.4.19: Check if override is applicable based on observation/expected
@@ -9404,11 +9415,31 @@
       // Update local state
       srrState.patchDraft.status = 'Submitted';
       
+      // Update field states based on patch type
+      if (patchType === 'correction') {
+        // Correction: Set all modified fields to 'submitted' (clears from To Do)
+        Object.keys(srrState.proposedChanges).forEach(function(fieldKey) {
+          srrState.fieldStates[fieldKey] = 'submitted';
+        });
+      }
+      // RFI fields stay as 'rfi' (already set when RFI button clicked)
+      // Blocked fields stay as 'blocked' (already set when Blacklist clicked)
+      
+      // Re-render field list to reflect state changes
+      renderSrrFields(srrState.currentRecord);
+      
       // Emit audit events
       console.log('[SRR] PATCH_SUBMITTED (' + patchType + '):', request);
       console.log('[SRR] REVIEW_REQUESTED: patch_id=' + request.request_id);
       
-      showToast('Patch Request submitted — visible in Patch Console', 'success');
+      // Show appropriate toast based on patch type
+      if (patchType === 'rfi') {
+        showToast('RFI sent — analyst handoff complete', 'success');
+      } else if (patchType === 'blacklist') {
+        showToast('Blacklist submitted — visible in Patch Console', 'success');
+      } else {
+        showToast('Patch Request submitted — visible in Patch Console', 'success');
+      }
     }
     
     function showAuditLogForRecord() {
