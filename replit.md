@@ -1,4 +1,4 @@
-# Orchestrate OS — Semantic Control Board (v1.4.16)
+# Orchestrate OS — Semantic Control Board (v1.4.19)
 
 ## Overview
 
@@ -107,6 +107,15 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - Submit validation: Observation type + Expected type + at least one field change
 - Patch Request creation via existing createPatchRequest/submitPatchRequest functions
 - Submitted patches visible in Patch Console
+
+**v1.4.19 Patch Editor Refinement:**
+- Patch Type selector (Correction/Blacklist Flag/RFI) with conditional form sections
+- Old/New value styling: Old subdued with strikethrough, New prominent with green border
+- Conditional form sections: Override toggle, Blacklist Subject, RFI Target
+- Simplified Evidence Pack: Dropdown-only Observation/Expected (no textarea notes)
+- Patch-type-driven validation: Correction requires full Evidence Pack, Blacklist/RFI require only Justification
+- Override toggle appears when Observation="Override Needed" OR Expected="Allow Override"
+- Repro block hidden for Blacklist/RFI patch types and when Override enabled
 
 **What This Is NOT:**
 - Not a runtime system

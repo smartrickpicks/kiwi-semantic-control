@@ -8070,6 +8070,8 @@
       valueDisplay.innerHTML = '<input type="text" class="srr-field-value-input" id="srr-edit-input-' + fieldKey + '" value="' + String(currentVal).replace(/"/g, '&quot;') + '">';
       
       var input = document.getElementById('srr-edit-input-' + fieldKey);
+      if (!input) return;
+      
       input.focus();
       input.select();
       
