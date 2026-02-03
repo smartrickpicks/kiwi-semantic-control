@@ -54,11 +54,25 @@ All tasks must use these terms exclusively:
 |----|------|-------|----------------------|---------------------|--------|
 | UI-06 | Add deprecation tooltips for legacy terms (dev mode only) | UI behavior | `ui/viewer/index.html` | Dev mode shows tooltips on legacy terms | Pending |
 
+### SRR — Single Row Review Enhancements (v1.4.1)
+
+| ID | Task | Scope | Files Likely to Touch | Acceptance Criteria | Status |
+|----|------|-------|----------------------|---------------------|--------|
+| SRR-UI-01 | Field Cards + Groups/Filters in left panel | UI structure | `ui/viewer/index.html` | Left panel shows field cards (not simple list), 3+ groups exist in UI, edited fields visually differ from unchanged | Done |
+| SRR-PATCH-01 | Inline edit auto-creates Proposed Change | UI behavior | `ui/viewer/index.html` | Editing any field adds Proposed Change with from/to, includes field label + api name, Edited chip appears immediately | Done |
+| SRR-PATCH-02 | Mini patch prompt under edited field | UI behavior | `ui/viewer/index.html` | Mini patch prompt appears after edit with Justification/Comment inputs, Undo Change reverts to original | Done |
+| SRR-GUARD-01 | Unsaved changes guard modal | UI behavior | `ui/viewer/index.html` | Back to Grid triggers modal when edits exist, Discard clears edits + proposed changes | Done |
+| SRR-PATCH-03 | Patch Type category selector stub | UI behavior | `ui/viewer/index.html` | Each proposed change shows category (Correction/Blacklist Flag/RFI), category persists in session state | Done |
+
 ## Completed
 
 | ID | Task | Evidence | Completed Date |
 |----|------|----------|----------------|
-| (none yet) | | | |
+| SRR-UI-01 | Field Cards + Groups/Filters | Commit TBD | 2026-02-03 |
+| SRR-PATCH-01 | Inline edit auto-creates Proposed Change | Commit TBD | 2026-02-03 |
+| SRR-PATCH-02 | Mini patch prompt under edited field | Commit TBD | 2026-02-03 |
+| SRR-GUARD-01 | Unsaved changes guard modal | Commit TBD | 2026-02-03 |
+| SRR-PATCH-03 | Patch Type category selector stub | Commit TBD | 2026-02-03 |
 
 ## References
 

@@ -401,6 +401,62 @@
     .srr-btn-primary:hover { background: #1976d2; }
     .srr-empty-state { color: #999; font-style: italic; text-align: center; padding: 20px; }
 
+    /* SRR Field Cards + Groups/Filters (v1.4.1) */
+    .srr-filter-bar { display: flex; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #e0e0e0; flex-wrap: wrap; background: #fafafa; }
+    .srr-group-select { padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8em; background: white; cursor: pointer; }
+    .srr-filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .srr-filter-chip { padding: 3px 10px; border-radius: 12px; font-size: 0.75em; cursor: pointer; border: 1px solid #ddd; background: white; transition: all 0.15s; }
+    .srr-filter-chip.active { background: #1565c0; color: white; border-color: #1565c0; }
+    .srr-filter-chip:hover { background: #e3f2fd; }
+    .srr-filter-chip.active:hover { background: #1976d2; }
+    .srr-field-card { border: 1px solid #e0e0e0; border-radius: 8px; margin: 8px; padding: 0; background: white; transition: all 0.15s; overflow: hidden; }
+    .srr-field-card:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    .srr-field-card.active { border-color: #1565c0; box-shadow: 0 0 0 2px rgba(21, 101, 192, 0.2); }
+    .srr-field-card.edited { border-color: #ff9800; background: #fff8e1; }
+    .srr-field-card-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: #f5f5f5; border-bottom: 1px solid #eee; cursor: pointer; }
+    .srr-field-card.edited .srr-field-card-header { background: #fff3e0; }
+    .srr-field-card-label { font-weight: 600; font-size: 0.85em; color: #333; }
+    .srr-field-card-api { font-size: 0.7em; color: #888; font-family: 'Courier New', monospace; }
+    .srr-field-card-chips { display: flex; gap: 4px; }
+    .srr-chip { padding: 2px 6px; border-radius: 8px; font-size: 0.65em; font-weight: 600; text-transform: uppercase; }
+    .srr-chip-edited { background: #ff9800; color: white; }
+    .srr-chip-needs-patch { background: #e91e63; color: white; }
+    .srr-chip-required { background: #9c27b0; color: white; }
+    .srr-chip-rfi { background: #673ab7; color: white; }
+    .srr-field-card-body { padding: 10px; }
+    .srr-field-value-display { font-size: 0.85em; color: #333; word-break: break-word; padding: 6px 8px; background: #fafafa; border-radius: 4px; min-height: 24px; cursor: text; }
+    .srr-field-value-display:hover { background: #f0f0f0; }
+    .srr-field-card.edited .srr-field-value-display { background: #fff8e1; }
+    .srr-field-value-input { width: 100%; padding: 6px 8px; border: 1px solid #1565c0; border-radius: 4px; font-size: 0.85em; font-family: inherit; box-shadow: 0 0 0 2px rgba(21, 101, 192, 0.2); }
+    .srr-mini-patch { margin-top: 10px; padding: 10px; background: #e3f2fd; border-radius: 6px; border: 1px solid #bbdefb; }
+    .srr-mini-patch-label { font-size: 0.75em; font-weight: 600; color: #1565c0; margin-bottom: 6px; }
+    .srr-mini-patch-input { width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8em; margin-bottom: 6px; }
+    .srr-mini-patch-actions { display: flex; gap: 6px; }
+    .srr-mini-patch-btn { flex: 1; padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75em; font-weight: 500; }
+    .srr-mini-patch-btn.save { background: #1565c0; color: white; }
+    .srr-mini-patch-btn.save:hover { background: #1976d2; }
+    .srr-mini-patch-btn.undo { background: #f44336; color: white; }
+    .srr-mini-patch-btn.undo:hover { background: #e53935; }
+    .srr-patch-type { padding: 3px 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.75em; background: white; cursor: pointer; }
+    .srr-proposed-change { padding: 10px; border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 8px; background: #fafafa; }
+    .srr-proposed-change-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .srr-proposed-change-field { font-weight: 600; font-size: 0.85em; color: #333; }
+    .srr-proposed-change-values { font-size: 0.8em; display: flex; gap: 8px; flex-wrap: wrap; }
+    .srr-proposed-change-from { color: #c62828; text-decoration: line-through; }
+    .srr-proposed-change-to { color: #2e7d32; font-weight: 500; }
+
+    /* Unsaved Changes Modal */
+    .srr-guard-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 9999; }
+    .srr-guard-modal.active { display: flex; }
+    .srr-guard-dialog { background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+    .srr-guard-title { font-size: 1.1em; font-weight: 600; color: #333; margin-bottom: 12px; }
+    .srr-guard-message { font-size: 0.9em; color: #666; line-height: 1.5; margin-bottom: 20px; }
+    .srr-guard-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .srr-guard-btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500; }
+    .srr-guard-btn.cancel { background: #e0e0e0; color: #333; }
+    .srr-guard-btn.discard { background: #f44336; color: white; }
+    .srr-guard-btn.save { background: #1565c0; color: white; }
+
     /* Grid Table Styles */
     .grid-table { min-width: 800px; }
     .grid-table th, .grid-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e0e0e0; white-space: nowrap; }
@@ -1123,7 +1179,7 @@
 
         <!-- Top Bar: Identity, State Badge, Back Button -->
         <div class="srr-top-bar">
-          <button class="srr-back-btn" onclick="navigateTo('grid')">← Back to Grid</button>
+          <button class="srr-back-btn" onclick="srrBackToGrid()">← Back to Grid</button>
           <div style="flex: 1;">
             <span style="font-size: 0.75em; color: #aaa; margin-right: 8px;">Record:</span>
             <span class="srr-identity" id="srr-record-id">—</span>
@@ -1137,11 +1193,25 @@
 
         <!-- Three-Panel Layout -->
         <div class="srr-layout">
-          <!-- Left Panel: Field Inspector -->
+          <!-- Left Panel: Field Inspector with Field Cards + Groups/Filters -->
           <div class="srr-panel srr-panel-left">
             <div class="srr-panel-header">
               <span>Field Inspector</span>
               <span id="srr-field-count" style="font-weight: normal; color: #666; font-size: 0.85em;">0 fields</span>
+            </div>
+            <div class="srr-filter-bar" id="srr-filter-bar">
+              <select class="srr-group-select" id="srr-group-select" onchange="srrFilterByGroup(this.value)">
+                <option value="all">All Groups</option>
+                <option value="identity">Identity</option>
+                <option value="metadata">Metadata</option>
+                <option value="status">Status</option>
+              </select>
+              <div class="srr-filter-chips">
+                <span class="srr-filter-chip active" data-filter="all" onclick="srrSetFilter('all')">All</span>
+                <span class="srr-filter-chip" data-filter="edited" onclick="srrSetFilter('edited')">Edited</span>
+                <span class="srr-filter-chip" data-filter="needs-patch" onclick="srrSetFilter('needs-patch')">Needs Patch</span>
+                <span class="srr-filter-chip" data-filter="rfi" onclick="srrSetFilter('rfi')">RFI</span>
+              </div>
             </div>
             <div class="srr-panel-body" id="srr-field-list" style="padding: 0;">
               <div class="srr-empty-state">No fields loaded</div>
@@ -2349,6 +2419,19 @@
   </div>
 
   <!-- Legacy Patch Studio overlay removed in v1.2.4 - all functionality now in Workbench tab -->
+
+  <!-- Unsaved Changes Guard Modal -->
+  <div class="srr-guard-modal" id="srr-guard-modal">
+    <div class="srr-guard-dialog">
+      <div class="srr-guard-title">Unsaved Changes</div>
+      <div class="srr-guard-message">You have edited fields with incomplete patch data. What would you like to do?</div>
+      <div class="srr-guard-actions">
+        <button class="srr-guard-btn cancel" onclick="srrGuardCancel()">Cancel</button>
+        <button class="srr-guard-btn discard" onclick="srrGuardDiscard()">Discard Changes</button>
+        <button class="srr-guard-btn save" onclick="srrGuardSave()">Save Patch Draft</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     const PRIMARY_PATH = 'out/sf_packet.preview.json';
@@ -6148,10 +6231,16 @@
       renderGrid();
     }
 
-    // Single Row Review state
+    // Single Row Review state (v1.4.1 - DataDash-style field editing)
     var srrState = {
       currentRecord: null,
       currentRowId: null,
+      originalValues: {},
+      editedValues: {},
+      proposedChanges: {},
+      activeFilter: 'all',
+      activeGroup: 'all',
+      editingField: null,
       docPage: 1,
       docTotalPages: 1,
       zoom: 1,
@@ -6170,6 +6259,16 @@
       'artist',
       'label'
     ];
+    
+    // Stub field groups (v1 - will load from config in v2)
+    var SRR_FIELD_GROUPS = {
+      'identity': ['contract_key', 'file_name', 'file_url'],
+      'metadata': ['artist', 'label', 'subtype'],
+      'status': ['status', 'notes']
+    };
+    
+    // Stub required fields (schema stub)
+    var SRR_REQUIRED_FIELDS = ['contract_key', 'status'];
 
     function openRowReviewDrawer(rowId) {
       // Find record by contract_key or index
@@ -6211,6 +6310,28 @@
       var status = (record.status || 'unknown').toLowerCase().replace(/\s+/g, '_');
       stateBadge.textContent = record.status || 'Unknown';
       stateBadge.className = 'srr-state-badge ' + status;
+      
+      // Store original values for edit tracking
+      srrState.originalValues = {};
+      Object.keys(record).forEach(function(k) {
+        if (!k.startsWith('_')) {
+          srrState.originalValues[k] = record[k];
+        }
+      });
+      
+      // Reset edit state for new record
+      srrState.editedValues = {};
+      srrState.proposedChanges = {};
+      srrState.editingField = null;
+      srrState.activeFilter = 'all';
+      srrState.activeGroup = 'all';
+      
+      // Reset filter chips
+      document.querySelectorAll('.srr-filter-chip').forEach(function(chip) {
+        chip.classList.remove('active');
+        if (chip.dataset.filter === 'all') chip.classList.add('active');
+      });
+      document.getElementById('srr-group-select').value = 'all';
       
       // Render Field Inspector
       renderSrrFields(record);
@@ -6258,28 +6379,274 @@
       // Final order: schema fields first, then unknown fields
       var keys = schemaKeys.concat(unknownKeys);
       
+      // Apply group filter
+      if (srrState.activeGroup !== 'all' && SRR_FIELD_GROUPS[srrState.activeGroup]) {
+        var groupFields = SRR_FIELD_GROUPS[srrState.activeGroup];
+        keys = keys.filter(function(k) { return groupFields.indexOf(k) >= 0; });
+      }
+      
+      // Apply status filter
+      if (srrState.activeFilter !== 'all') {
+        keys = keys.filter(function(k) {
+          var isEdited = srrState.editedValues.hasOwnProperty(k);
+          var change = srrState.proposedChanges[k];
+          var needsPatch = isEdited && (!change || !change.justification);
+          var isRfi = change && change.category === 'RFI';
+          
+          if (srrState.activeFilter === 'edited') return isEdited;
+          if (srrState.activeFilter === 'needs-patch') return needsPatch;
+          if (srrState.activeFilter === 'rfi') return isRfi;
+          return true;
+        });
+      }
+      
       document.getElementById('srr-field-count').textContent = keys.length + ' fields';
       
       var html = keys.map(function(key, idx) {
-        var val = record[key];
-        if (val === null || val === undefined) val = '';
-        if (typeof val === 'object') val = JSON.stringify(val);
-        var displayVal = String(val).substring(0, 30) + (String(val).length > 30 ? '...' : '');
+        var originalVal = srrState.originalValues[key];
+        var currentVal = srrState.editedValues.hasOwnProperty(key) ? srrState.editedValues[key] : originalVal;
+        if (currentVal === null || currentVal === undefined) currentVal = '';
+        if (typeof currentVal === 'object') currentVal = JSON.stringify(currentVal);
         
-        // Determine indicators (stub logic)
-        var indicators = '<span class="srr-indicator system" title="System-derived">S</span>';
-        if (key === 'status' || key === 'notes') {
-          indicators = '<span class="srr-indicator delta" title="User-modified">Δ</span>';
+        var isEdited = srrState.editedValues.hasOwnProperty(key);
+        var change = srrState.proposedChanges[key];
+        var needsPatch = isEdited && (!change || !change.justification);
+        var isRequired = SRR_REQUIRED_FIELDS.indexOf(key) >= 0;
+        var isRfi = change && change.category === 'RFI';
+        
+        // Build chips
+        var chips = '';
+        if (isEdited) chips += '<span class="srr-chip srr-chip-edited">Edited</span>';
+        if (needsPatch) chips += '<span class="srr-chip srr-chip-needs-patch">Needs Patch</span>';
+        if (isRequired) chips += '<span class="srr-chip srr-chip-required">Required</span>';
+        if (isRfi) chips += '<span class="srr-chip srr-chip-rfi">RFI</span>';
+        
+        // Human-friendly label (convert snake_case to Title Case)
+        var label = key.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+        
+        var cardClass = 'srr-field-card' + (isEdited ? ' edited' : '') + (srrState.selectedField === key ? ' active' : '');
+        
+        var cardHtml = '<div class="' + cardClass + '" data-field="' + key + '">' +
+          '<div class="srr-field-card-header" onclick="srrSelectField(\'' + key + '\')">' +
+            '<div>' +
+              '<div class="srr-field-card-label">' + label + '</div>' +
+              '<div class="srr-field-card-api">' + key + '</div>' +
+            '</div>' +
+            '<div class="srr-field-card-chips">' + chips + '</div>' +
+          '</div>' +
+          '<div class="srr-field-card-body">' +
+            '<div class="srr-field-value-display" onclick="srrStartEdit(\'' + key + '\')" title="Click to edit">' + 
+              (String(currentVal) || '<span style="color:#999;font-style:italic;">Empty</span>') + 
+            '</div>';
+        
+        // Show mini patch prompt if this field was just edited
+        if (isEdited && srrState.editingField === key) {
+          var existingJustification = change ? (change.justification || '') : '';
+          var existingComment = change ? (change.comment || '') : '';
+          var existingCategory = change ? (change.category || 'Correction') : 'Correction';
+          
+          cardHtml += '<div class="srr-mini-patch">' +
+            '<div class="srr-mini-patch-label">Patch Details</div>' +
+            '<select class="srr-patch-type" id="srr-patch-type-' + key + '" onchange="srrUpdateChangeCategory(\'' + key + '\', this.value)">' +
+              '<option value="Correction"' + (existingCategory === 'Correction' ? ' selected' : '') + '>Correction</option>' +
+              '<option value="Blacklist Flag"' + (existingCategory === 'Blacklist Flag' ? ' selected' : '') + '>Blacklist Flag</option>' +
+              '<option value="RFI"' + (existingCategory === 'RFI' ? ' selected' : '') + '>RFI</option>' +
+            '</select>' +
+            '<input type="text" class="srr-mini-patch-input" id="srr-mini-just-' + key + '" placeholder="Justification (required)" value="' + existingJustification.replace(/"/g, '&quot;') + '">' +
+            '<input type="text" class="srr-mini-patch-input" id="srr-mini-comment-' + key + '" placeholder="Comment (optional)" value="' + existingComment.replace(/"/g, '&quot;') + '">' +
+            '<div class="srr-mini-patch-actions">' +
+              '<button class="srr-mini-patch-btn undo" onclick="srrUndoChange(\'' + key + '\')">Undo Change</button>' +
+              '<button class="srr-mini-patch-btn save" onclick="srrSaveMiniPatch(\'' + key + '\')">Save Patch Draft</button>' +
+            '</div>' +
+          '</div>';
         }
         
-        return '<div class="srr-field-item" data-field="' + key + '" onclick="srrSelectField(\'' + key + '\')">' +
-          '<div class="srr-field-name">' + key + '</div>' +
-          '<div class="srr-field-value" title="' + String(val).replace(/"/g, '&quot;') + '">' + displayVal + '</div>' +
-          '<div class="srr-field-indicators">' + indicators + '</div>' +
-        '</div>';
+        cardHtml += '</div></div>';
+        return cardHtml;
       }).join('');
       
-      container.innerHTML = html || '<div class="srr-empty-state">No fields loaded</div>';
+      container.innerHTML = html || '<div class="srr-empty-state">No fields match current filter</div>';
+    }
+    
+    // SRR Filter functions
+    function srrSetFilter(filter) {
+      srrState.activeFilter = filter;
+      document.querySelectorAll('.srr-filter-chip').forEach(function(chip) {
+        chip.classList.remove('active');
+        if (chip.dataset.filter === filter) chip.classList.add('active');
+      });
+      renderSrrFields(srrState.currentRecord);
+    }
+    
+    function srrFilterByGroup(group) {
+      srrState.activeGroup = group;
+      renderSrrFields(srrState.currentRecord);
+    }
+    
+    // SRR Inline Edit functions
+    function srrStartEdit(fieldKey) {
+      var card = document.querySelector('.srr-field-card[data-field="' + fieldKey + '"]');
+      if (!card) return;
+      
+      var valueDisplay = card.querySelector('.srr-field-value-display');
+      var currentVal = srrState.editedValues.hasOwnProperty(fieldKey) 
+        ? srrState.editedValues[fieldKey] 
+        : (srrState.originalValues[fieldKey] || '');
+      
+      // Replace display with input
+      valueDisplay.innerHTML = '<input type="text" class="srr-field-value-input" id="srr-edit-input-' + fieldKey + '" value="' + String(currentVal).replace(/"/g, '&quot;') + '">';
+      
+      var input = document.getElementById('srr-edit-input-' + fieldKey);
+      input.focus();
+      input.select();
+      
+      // Handle blur and Enter
+      input.addEventListener('blur', function() {
+        srrCommitEdit(fieldKey, input.value);
+      });
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          srrCommitEdit(fieldKey, input.value);
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          srrState.editingField = null;
+          renderSrrFields(srrState.currentRecord);
+        }
+      });
+    }
+    
+    function srrCommitEdit(fieldKey, newValue) {
+      var originalVal = srrState.originalValues[fieldKey];
+      if (originalVal === null || originalVal === undefined) originalVal = '';
+      
+      // Check if value actually changed
+      if (String(newValue) !== String(originalVal)) {
+        srrState.editedValues[fieldKey] = newValue;
+        srrState.editingField = fieldKey;
+        
+        // Create or update proposed change
+        if (!srrState.proposedChanges[fieldKey]) {
+          srrState.proposedChanges[fieldKey] = {
+            field: fieldKey,
+            label: fieldKey.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); }),
+            from: originalVal,
+            to: newValue,
+            category: 'Correction',
+            justification: '',
+            comment: ''
+          };
+        } else {
+          srrState.proposedChanges[fieldKey].to = newValue;
+        }
+        
+        // Update patch draft changes array
+        srrSyncProposedChanges();
+        
+        console.log('[SRR] Field edited:', fieldKey, 'from:', originalVal, 'to:', newValue);
+      } else {
+        srrState.editingField = null;
+      }
+      
+      renderSrrFields(srrState.currentRecord);
+      renderSrrPatchList();
+    }
+    
+    function srrUndoChange(fieldKey) {
+      delete srrState.editedValues[fieldKey];
+      delete srrState.proposedChanges[fieldKey];
+      srrState.editingField = null;
+      
+      srrSyncProposedChanges();
+      renderSrrFields(srrState.currentRecord);
+      renderSrrPatchList();
+      
+      showToast('Change reverted: ' + fieldKey, 'info');
+      console.log('[SRR] Undo change:', fieldKey);
+    }
+    
+    function srrUpdateChangeCategory(fieldKey, category) {
+      if (srrState.proposedChanges[fieldKey]) {
+        srrState.proposedChanges[fieldKey].category = category;
+        srrSyncProposedChanges();
+        renderSrrPatchList();
+      }
+    }
+    
+    function srrSaveMiniPatch(fieldKey) {
+      var justInput = document.getElementById('srr-mini-just-' + fieldKey);
+      var commentInput = document.getElementById('srr-mini-comment-' + fieldKey);
+      
+      if (srrState.proposedChanges[fieldKey]) {
+        srrState.proposedChanges[fieldKey].justification = justInput ? justInput.value : '';
+        srrState.proposedChanges[fieldKey].comment = commentInput ? commentInput.value : '';
+      }
+      
+      srrState.editingField = null;
+      srrSyncProposedChanges();
+      renderSrrFields(srrState.currentRecord);
+      renderSrrPatchList();
+      
+      showToast('Patch draft saved for: ' + fieldKey, 'success');
+    }
+    
+    function srrSyncProposedChanges() {
+      // Sync proposed changes to patch draft changes array
+      srrState.patchDraft.changes = Object.values(srrState.proposedChanges).map(function(c) {
+        return {
+          path: c.field,
+          label: c.label,
+          before: c.from,
+          after: c.to,
+          category: c.category,
+          justification: c.justification,
+          comment: c.comment
+        };
+      });
+    }
+    
+    // Check for unsaved changes
+    function srrHasUnsavedChanges() {
+      var editedFields = Object.keys(srrState.editedValues);
+      if (editedFields.length === 0) return false;
+      
+      // Check if any edited field has incomplete patch data
+      for (var i = 0; i < editedFields.length; i++) {
+        var key = editedFields[i];
+        var change = srrState.proposedChanges[key];
+        if (!change || !change.justification) {
+          return true;
+        }
+      }
+      return false;
+    }
+    
+    // Navigation guard
+    function srrBackToGrid() {
+      if (srrHasUnsavedChanges()) {
+        document.getElementById('srr-guard-modal').classList.add('active');
+      } else {
+        navigateTo('grid');
+      }
+    }
+    
+    function srrGuardCancel() {
+      document.getElementById('srr-guard-modal').classList.remove('active');
+    }
+    
+    function srrGuardDiscard() {
+      srrState.editedValues = {};
+      srrState.proposedChanges = {};
+      srrState.patchDraft.changes = [];
+      document.getElementById('srr-guard-modal').classList.remove('active');
+      navigateTo('grid');
+    }
+    
+    function srrGuardSave() {
+      srrSaveDraft();
+      document.getElementById('srr-guard-modal').classList.remove('active');
+      navigateTo('grid');
     }
     
     function srrSelectField(fieldKey) {
@@ -6366,15 +6733,23 @@
         ? '<span class="srr-patch-status submitted">Submitted</span>'
         : '<span class="srr-patch-status draft">Draft</span>';
       
-      var html = '<div class="srr-patch-header">Patches ' + statusBadge + '</div>';
+      var html = '<div class="srr-patch-header">Proposed Changes ' + statusBadge + '</div>';
       html += changes.map(function(c, idx) {
-        return '<div class="srr-patch-item">' +
-          '<div class="srr-patch-path">' + (c.path || 'field') + '</div>' +
-          '<div class="srr-patch-change">' +
-            '<span class="srr-patch-before">' + (c.before || '—') + '</span>' +
-            '<span>→</span>' +
-            '<span class="srr-patch-after">' + (c.after || '—') + '</span>' +
+        var categoryColor = c.category === 'RFI' ? '#673ab7' : (c.category === 'Blacklist Flag' ? '#f44336' : '#1565c0');
+        var fromVal = c.before !== null && c.before !== undefined && c.before !== '' ? c.before : '(empty)';
+        var toVal = c.after !== null && c.after !== undefined && c.after !== '' ? c.after : '(empty)';
+        
+        return '<div class="srr-proposed-change">' +
+          '<div class="srr-proposed-change-header">' +
+            '<div class="srr-proposed-change-field">' + (c.label || c.path) + ' <span style="font-weight: normal; color: #888; font-size: 0.8em;">(' + c.path + ')</span></div>' +
+            '<span style="font-size: 0.7em; padding: 2px 6px; border-radius: 8px; background: ' + categoryColor + '; color: white;">' + (c.category || 'Correction') + '</span>' +
           '</div>' +
+          '<div class="srr-proposed-change-values">' +
+            '<span class="srr-proposed-change-from">' + fromVal + '</span>' +
+            '<span style="color: #666;">→</span>' +
+            '<span class="srr-proposed-change-to">' + toVal + '</span>' +
+          '</div>' +
+          (c.justification ? '<div style="font-size: 0.75em; color: #666; margin-top: 4px;"><strong>Why:</strong> ' + c.justification + '</div>' : '') +
         '</div>';
       }).join('');
       

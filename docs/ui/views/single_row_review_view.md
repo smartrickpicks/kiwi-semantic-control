@@ -24,17 +24,41 @@ Contract: This document defines the record-level inspection surface. It supports
 - Review State badge (read-only display)
 - Open Audit Log button (read-only link)
 
-### Left Panel: Field Inspector
-- **Field Ordering Rule (canonical):**
-  - Primary: Schema order (deterministic, from `SRR_SCHEMA_ORDER`)
-  - Fallback: Alphabetical for unknown fields not in schema
-  - V2: Schema order will load from `config/schema.json`
-- Per-field indicators:
-  - System-derived (S badge, neutral)
-  - User-modified (Δ badge, delta)
-  - Flagged (! badge, warning/error)
-  - Evidence anchor count (optional)
-- Field click focuses related evidence anchors in Document Viewer
+### Left Panel: Field Inspector (v1.4.1 — Field Cards + Groups/Filters)
+
+**Layout:**
+- Group selector dropdown (stub with 3 groups: Identity, Metadata, Status)
+- Filter chips: All, Edited, Needs Patch, RFI
+- Field Cards (not simple list items)
+
+**Field Card Structure:**
+- Header: Label (human-friendly) + API name (monospace), status chips
+- Body: Editable value display (click to edit)
+- Mini Patch Prompt: Appears after edit with Justification, Comment, Patch Type, Undo
+
+**Status Chips:**
+- Edited (orange): Field value has been modified
+- Needs Patch (pink): Edited but missing justification
+- Required (purple): Schema-defined required field (stub)
+- RFI (violet): Marked for RFI category
+
+**Field Ordering Rule (canonical):**
+- Primary: Schema order (deterministic, from `SRR_SCHEMA_ORDER`)
+- Fallback: Alphabetical for unknown fields not in schema
+- V2: Schema order will load from `config/schema.json`
+
+**Inline Editing Behavior:**
+- Click value display to enter edit mode
+- On blur/Enter: Commit edit, auto-create Proposed Change
+- Proposed Change includes: field, label, from, to, category (default: Correction)
+- Mini Patch Prompt appears for justification and comment input
+- Undo Change button reverts to original value and removes Proposed Change
+
+**Filters:**
+- All: Show all fields
+- Edited: Show only fields with edits
+- Needs Patch: Show edited fields missing justification
+- RFI: Show fields marked with RFI category
 
 ### Center Panel: Document Viewer
 - PDF viewer container (stub frame with page controls)
@@ -93,11 +117,22 @@ Patch Draft authoring emits deterministic events:
 - Analysts can add or clear flags (FLAG_ADDED / FLAG_CLEARED) with category, severity (info | warning | error | critical), and rationale.
 - Block conditions are displayed but cannot be resolved here.
 
+## Unsaved Changes Guard
+
+If the user attempts to navigate away (Back to Grid) with edited fields that have incomplete patch data (missing justification), a modal appears:
+
+| Button | Action |
+|--------|--------|
+| Cancel | Close modal, stay on Single Row Review |
+| Discard Changes | Clear all edits and Proposed Changes, navigate to Grid |
+| Save Patch Draft | Save current patch draft, then navigate to Grid |
+
 ## Navigation
 - From All Data Grid → Single Row Review (this view).
 - From this view:
   - Open Audit Log detail (read-only overlay or linked panel).
   - Navigate to governed gating views (verifier_review_view, admin_approval_view) via explicit links that do not perform transitions themselves.
+  - Back to Grid (guarded if unsaved changes exist).
 
 ## Read-Only & Gate Separation
 - No approve, promote, or finalize actions are available in this view.
