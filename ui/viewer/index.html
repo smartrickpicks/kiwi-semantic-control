@@ -6916,7 +6916,10 @@
       
       // If navigating to verifier-review, load sample data
       if (page === 'verifier-review') {
-        setTimeout(function() { loadVerifierReviewData(); }, 0);
+        setTimeout(function() { 
+          loadVerifierReviewData(vrState.selectedPayloadId);
+          vrState.selectedPayloadId = null;  // Clear after use
+        }, 0);
       }
       
       // If navigating to admin-approval, load sample data
@@ -9864,7 +9867,8 @@
       auditLog: [],
       notes: '',
       fromVerifierTriage: false,  // v1.5.0: Track if navigated from Verifier Triage
-      currentPayload: null        // v1.5.0: Store current payload for actions
+      currentPayload: null,       // v1.5.0: Store current payload for actions
+      selectedPayloadId: null     // v1.5.0: Store selected payload ID for navigation
     };
     
     function navigateBackFromVerifierReview() {
@@ -10017,8 +10021,8 @@
     
     function openVerifierReviewDetail(payloadId) {
       vrState.fromVerifierTriage = true;  // Track navigation source
+      vrState.selectedPayloadId = payloadId;  // Store selected payload ID for navigation handler
       navigateTo('verifier-review');
-      setTimeout(function() { loadVerifierReviewData(payloadId); }, 0);
     }
     
     function vrUpdateStateBadge() {
