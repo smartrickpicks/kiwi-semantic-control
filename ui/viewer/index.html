@@ -457,6 +457,57 @@
     .srr-guard-btn.discard { background: #f44336; color: white; }
     .srr-guard-btn.save { background: #1565c0; color: white; }
 
+    /* Verifier Review Styles (v1.4.5) */
+    .vr-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; }
+    .vr-section { background: white; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; }
+    .vr-section-header { font-weight: 600; font-size: 0.95em; color: #333; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .vr-section-header .icon { font-size: 1.1em; }
+    .vr-intent-block { background: #f8f9fa; padding: 12px; border-radius: 6px; margin-bottom: 8px; }
+    .vr-intent-label { font-size: 0.75em; color: #666; text-transform: uppercase; margin-bottom: 4px; font-weight: 600; }
+    .vr-intent-value { font-size: 0.9em; color: #333; }
+    .vr-evidence-block { background: #fafafa; padding: 10px 12px; border-left: 3px solid #1565c0; margin-bottom: 8px; }
+    .vr-evidence-label { font-size: 0.7em; color: #666; text-transform: uppercase; font-weight: 600; }
+    .vr-evidence-text { font-size: 0.85em; color: #333; margin-top: 4px; white-space: pre-wrap; }
+    .vr-preflight-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; }
+    .vr-preflight-badge.pass { background: #e8f5e9; color: #2e7d32; }
+    .vr-preflight-badge.warn { background: #fff3e0; color: #e65100; }
+    .vr-preflight-badge.fail { background: #ffebee; color: #c62828; }
+    .vr-revision-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 0.85em; }
+    .vr-revision-item:last-child { border-bottom: none; }
+    .vr-author-info { display: flex; flex-direction: column; gap: 4px; font-size: 0.85em; }
+    .vr-author-label { color: #666; }
+    .vr-author-value { font-weight: 500; color: #333; }
+    .vr-notes-area { width: 100%; min-height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.85em; resize: vertical; }
+    .vr-actions-panel { background: #f5f5f5; padding: 16px; border-radius: 8px; margin-top: 16px; }
+    .vr-actions-header { font-weight: 600; font-size: 0.9em; margin-bottom: 12px; color: #333; }
+    .vr-actions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .vr-action-btn { padding: 12px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500; transition: all 0.15s; }
+    .vr-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .vr-action-btn.begin { background: #1565c0; color: white; }
+    .vr-action-btn.begin:hover:not(:disabled) { background: #1976d2; }
+    .vr-action-btn.clarify { background: #ff9800; color: white; }
+    .vr-action-btn.clarify:hover:not(:disabled) { background: #ffa726; }
+    .vr-action-btn.approve { background: #2e7d32; color: white; }
+    .vr-action-btn.approve:hover:not(:disabled) { background: #388e3c; }
+    .vr-action-btn.reject { background: #c62828; color: white; }
+    .vr-action-btn.reject:hover:not(:disabled) { background: #d32f2f; }
+    .vr-state-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; }
+    .vr-state-badge.submitted { background: #e3f2fd; color: #1565c0; }
+    .vr-state-badge.under-review { background: #fff3e0; color: #e65100; }
+    .vr-state-badge.needs-clarification { background: #fce4ec; color: #c2185b; }
+    .vr-state-badge.approved { background: #e8f5e9; color: #2e7d32; }
+    .vr-state-badge.rejected { background: #ffebee; color: #c62828; }
+    .vr-decision-summary { background: #e8f5e9; border: 1px solid #c8e6c9; padding: 12px; border-radius: 6px; margin-top: 12px; }
+    .vr-decision-summary.rejected { background: #ffebee; border-color: #ffcdd2; }
+    .vr-empty-state { color: #666; font-style: italic; padding: 20px; text-align: center; background: #f9f9f9; border-radius: 6px; }
+    .vr-full-width { grid-column: span 2; }
+    .vr-clarify-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 9999; }
+    .vr-clarify-modal.active { display: flex; }
+    .vr-clarify-modal-content { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 500px; }
+    .vr-clarify-modal h4 { margin: 0 0 12px 0; }
+    .vr-clarify-modal textarea { width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 12px; }
+    .vr-clarify-modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
     /* Grid Table Styles */
     .grid-table { min-width: 800px; }
     .grid-table th, .grid-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e0e0e0; white-space: nowrap; }
@@ -903,6 +954,10 @@
           <a class="nav-item" data-page="patch" href="#/patch">
             <span class="nav-icon">✎</span>
             <span class="nav-label">Patch Studio</span>
+          </a>
+          <a class="nav-item reviewer-only" data-page="verifier-review" href="#/verifier-review">
+            <span class="nav-icon">✓</span>
+            <span class="nav-label">Verifier Review</span>
           </a>
           <a class="nav-item reviewer-only" data-page="review" href="#/review">
             <span class="nav-icon">🔍</span>
@@ -1425,6 +1480,132 @@
 
         <div id="review-evidence-summary" class="evidence-summary-panel"></div>
       </div><!-- end page-review -->
+
+      <!-- VERIFIER REVIEW PAGE -->
+      <div class="page" id="page-verifier-review">
+        <div class="page-header">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <button class="srr-back-btn" onclick="navigateTo('triage')" style="padding: 6px 12px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.85em;">← Back</button>
+              <h2 style="margin: 0;">Verifier Review</h2>
+              <span class="vr-state-badge" id="vr-state-badge">Submitted</span>
+            </div>
+            <span style="font-size: 0.7em; color: #999;">PAGE: VERIFIER-REVIEW | BUILD v1.4.5</span>
+          </div>
+          <p class="page-desc">Review submitted Patch Requests, request clarification, approve or reject.</p>
+        </div>
+
+        <div class="vr-container" id="vr-container">
+          <!-- Left Column: Intent + Evidence -->
+          <div>
+            <!-- Structured Intent -->
+            <div class="vr-section">
+              <div class="vr-section-header"><span class="icon">📋</span> Structured Intent</div>
+              <div id="vr-intent-blocks">
+                <div class="vr-intent-block">
+                  <div class="vr-intent-label">Observation (WHEN)</div>
+                  <div class="vr-intent-value" id="vr-intent-when">—</div>
+                </div>
+                <div class="vr-intent-block">
+                  <div class="vr-intent-label">Expected (THEN)</div>
+                  <div class="vr-intent-value" id="vr-intent-then">—</div>
+                </div>
+                <div class="vr-intent-block">
+                  <div class="vr-intent-label">Justification (BECAUSE)</div>
+                  <div class="vr-intent-value" id="vr-intent-because">—</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Evidence Pack -->
+            <div class="vr-section" style="margin-top: 16px;">
+              <div class="vr-section-header"><span class="icon">📎</span> Evidence Pack</div>
+              <div id="vr-evidence-blocks">
+                <div class="vr-evidence-block">
+                  <div class="vr-evidence-label">Observation</div>
+                  <div class="vr-evidence-text" id="vr-ev-observation">—</div>
+                </div>
+                <div class="vr-evidence-block">
+                  <div class="vr-evidence-label">Expected</div>
+                  <div class="vr-evidence-text" id="vr-ev-expected">—</div>
+                </div>
+                <div class="vr-evidence-block">
+                  <div class="vr-evidence-label">Justification</div>
+                  <div class="vr-evidence-text" id="vr-ev-justification">—</div>
+                </div>
+                <div class="vr-evidence-block">
+                  <div class="vr-evidence-label">Repro</div>
+                  <div class="vr-evidence-text" id="vr-ev-repro">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Preflight + Author + Revisions + Notes + Actions -->
+          <div>
+            <!-- Preflight Report -->
+            <div class="vr-section">
+              <div class="vr-section-header"><span class="icon">✅</span> Preflight Report</div>
+              <div id="vr-preflight-badges" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <span class="vr-preflight-badge pass">Schema ✓</span>
+                <span class="vr-preflight-badge pass">Conflicts ✓</span>
+                <span class="vr-preflight-badge pass">Evidence ✓</span>
+              </div>
+            </div>
+
+            <!-- Author Info -->
+            <div class="vr-section" style="margin-top: 16px;">
+              <div class="vr-section-header"><span class="icon">👤</span> Author Info</div>
+              <div class="vr-author-info">
+                <div><span class="vr-author-label">Submitted by:</span> <span class="vr-author-value" id="vr-author-name">analyst@example.com</span></div>
+                <div><span class="vr-author-label">Submitted at:</span> <span class="vr-author-value" id="vr-author-time">—</span></div>
+                <div><span class="vr-author-label">Patch ID:</span> <span class="vr-author-value" id="vr-patch-id" style="font-family: monospace;">—</span></div>
+              </div>
+            </div>
+
+            <!-- Revision History -->
+            <div class="vr-section" style="margin-top: 16px;">
+              <div class="vr-section-header"><span class="icon">📜</span> Revision History</div>
+              <div id="vr-revisions">
+                <div class="vr-empty-state">No previous revisions</div>
+              </div>
+            </div>
+
+            <!-- Review Notes -->
+            <div class="vr-section" style="margin-top: 16px;">
+              <div class="vr-section-header"><span class="icon">📝</span> Review Notes</div>
+              <textarea class="vr-notes-area" id="vr-notes" placeholder="Add notes for this review (visible to author if clarification requested)..."></textarea>
+            </div>
+          </div>
+
+          <!-- Full-Width: Actions Panel -->
+          <div class="vr-full-width">
+            <div class="vr-actions-panel">
+              <div class="vr-actions-header">Verifier Actions</div>
+              <div class="vr-actions-grid">
+                <button class="vr-action-btn begin" id="vr-btn-begin" onclick="vrBeginReview()">Begin Review</button>
+                <button class="vr-action-btn clarify" id="vr-btn-clarify" onclick="vrRequestClarification()" disabled>Request Clarification</button>
+                <button class="vr-action-btn approve" id="vr-btn-approve" onclick="vrApprove()" disabled>Approve (Verifier)</button>
+                <button class="vr-action-btn reject" id="vr-btn-reject" onclick="vrReject()" disabled>Reject</button>
+              </div>
+              <div id="vr-decision-summary" style="margin-top: 12px;"></div>
+            </div>
+          </div>
+        </div>
+      </div><!-- end page-verifier-review -->
+
+      <!-- Verifier Review Clarification Modal -->
+      <div class="vr-clarify-modal" id="vr-clarify-modal">
+        <div class="vr-clarify-modal-content">
+          <h4>Request Clarification</h4>
+          <p style="font-size: 0.85em; color: #666; margin-bottom: 12px;">Describe what information or evidence is needed from the author.</p>
+          <textarea id="vr-clarify-text" placeholder="What clarification is needed?"></textarea>
+          <div class="vr-clarify-modal-actions">
+            <button class="vr-action-btn" style="background: #e0e0e0; color: #333;" onclick="vrClarifyCancel()">Cancel</button>
+            <button class="vr-action-btn clarify" onclick="vrClarifySubmit()">Send Request</button>
+          </div>
+        </div>
+      </div>
 
       <!-- ADMIN PAGE (Console) -->
       <div class="page" id="page-admin">
@@ -5249,7 +5430,7 @@
       options = options || {};
       // Loader is now a drawer, not a page - redirect loader requests to triage
       if (page === 'loader') page = 'triage';
-      var pages = ['triage', 'grid', 'patch', 'review', 'admin', 'row'];
+      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-review', 'admin', 'row'];
       // Handle row/:id routes
       if (page.startsWith('row/')) {
         var rowId = page.split('/')[1];
@@ -5281,6 +5462,11 @@
       if (page === 'review' && currentMode !== 'reviewer' && currentMode !== 'admin') {
         console.log('[Navigate] Review page requires reviewer/admin mode');
         showToast('Reviewer access required', 'warning');
+        page = 'triage';
+      }
+      if (page === 'verifier-review' && currentMode !== 'reviewer' && currentMode !== 'admin') {
+        console.log('[Navigate] Verifier Review page requires reviewer/admin mode');
+        showToast('Verifier access required', 'warning');
         page = 'triage';
       }
       
@@ -5338,6 +5524,11 @@
       // If navigating to grid, initialize grid
       if (page === 'grid') {
         setTimeout(function() { initGrid(); }, 0);
+      }
+      
+      // If navigating to verifier-review, load sample data
+      if (page === 'verifier-review') {
+        setTimeout(function() { loadVerifierReviewData(); }, 0);
       }
       
       // Update hash (include tab for admin deep-links, preserve grid query params)
@@ -6817,6 +7008,191 @@
     function showAuditLogForRecord() {
       showToast('Audit Log view coming soon', 'info');
       console.log('[SRR] Opening audit log for record: ' + srrState.currentRowId);
+    }
+
+    // ========== VERIFIER REVIEW STATE + FUNCTIONS (v1.4.5) ==========
+    var vrState = {
+      currentPatchId: null,
+      reviewState: 'Submitted', // Submitted, Under_Review, Needs_Clarification, Verifier_Approved, Rejected
+      reviewerActor: 'verifier@example.com',
+      auditLog: [],
+      notes: ''
+    };
+    
+    // Sample patch data for demo (would come from SRR in real flow)
+    var vrSamplePatch = {
+      patch_id: 'PATCH-2026-0001',
+      author: 'analyst@example.com',
+      submitted_at: new Date().toISOString(),
+      intent: {
+        observation: 'Contract has missing label_vendor field despite being a licensing agreement.',
+        expected: 'Label_vendor should be populated when contract_type = LICENSING.',
+        justification: 'Licensing agreements require label_vendor for downstream royalty calculations.'
+      },
+      evidence: {
+        observation: 'Row 142 shows contract_type=LICENSING but label_vendor is blank.',
+        expected: 'label_vendor = "Sony Music" based on contract header data.',
+        justification: 'Header section row 1 references Sony Music as the licensing partner.',
+        repro: '1. Load sample_v1.json\n2. Navigate to row 142\n3. Observe label_vendor is empty\n4. Cross-reference with contract header'
+      },
+      preflight: { schema: 'pass', conflicts: 'pass', evidence: 'pass' },
+      revisions: []
+    };
+    
+    function loadVerifierReviewData() {
+      // Load sample data into view
+      document.getElementById('vr-intent-when').textContent = vrSamplePatch.intent.observation || '—';
+      document.getElementById('vr-intent-then').textContent = vrSamplePatch.intent.expected || '—';
+      document.getElementById('vr-intent-because').textContent = vrSamplePatch.intent.justification || '—';
+      
+      document.getElementById('vr-ev-observation').textContent = vrSamplePatch.evidence.observation || '—';
+      document.getElementById('vr-ev-expected').textContent = vrSamplePatch.evidence.expected || '—';
+      document.getElementById('vr-ev-justification').textContent = vrSamplePatch.evidence.justification || '—';
+      document.getElementById('vr-ev-repro').textContent = vrSamplePatch.evidence.repro || '—';
+      
+      document.getElementById('vr-author-name').textContent = vrSamplePatch.author;
+      document.getElementById('vr-author-time').textContent = vrSamplePatch.submitted_at;
+      document.getElementById('vr-patch-id').textContent = vrSamplePatch.patch_id;
+      
+      vrState.currentPatchId = vrSamplePatch.patch_id;
+      vrState.reviewState = 'Submitted';
+      vrUpdateStateBadge();
+      vrUpdateActionButtons();
+      vrRenderDecisionSummary();
+    }
+    
+    function vrUpdateStateBadge() {
+      var badge = document.getElementById('vr-state-badge');
+      var stateClass = vrState.reviewState.toLowerCase().replace(/_/g, '-');
+      badge.className = 'vr-state-badge ' + stateClass;
+      badge.textContent = vrState.reviewState.replace(/_/g, ' ');
+    }
+    
+    function vrUpdateActionButtons() {
+      var btnBegin = document.getElementById('vr-btn-begin');
+      var btnClarify = document.getElementById('vr-btn-clarify');
+      var btnApprove = document.getElementById('vr-btn-approve');
+      var btnReject = document.getElementById('vr-btn-reject');
+      
+      // Reset all
+      btnBegin.disabled = true;
+      btnClarify.disabled = true;
+      btnApprove.disabled = true;
+      btnReject.disabled = true;
+      
+      // Enable based on state
+      if (vrState.reviewState === 'Submitted') {
+        btnBegin.disabled = false;
+      } else if (vrState.reviewState === 'Under_Review') {
+        btnClarify.disabled = false;
+        btnApprove.disabled = false;
+        btnReject.disabled = false;
+      }
+      // Needs_Clarification, Verifier_Approved, Rejected = no actions available
+    }
+    
+    function vrLogAuditEvent(eventType, details) {
+      var event = {
+        timestamp: new Date().toISOString(),
+        event_type: eventType,
+        patch_id: vrState.currentPatchId,
+        actor: vrState.reviewerActor,
+        details: details || {}
+      };
+      vrState.auditLog.push(event);
+      console.log('[VR] AUDIT:', eventType, event);
+    }
+    
+    function vrBeginReview() {
+      if (vrState.reviewState !== 'Submitted') return;
+      
+      vrState.reviewState = 'Under_Review';
+      vrLogAuditEvent('BEGIN_REVIEW', { from_state: 'Submitted' });
+      vrUpdateStateBadge();
+      vrUpdateActionButtons();
+      vrRenderDecisionSummary();
+      showToast('Review started — patch is now Under Review', 'info');
+    }
+    
+    function vrRequestClarification() {
+      if (vrState.reviewState !== 'Under_Review') return;
+      document.getElementById('vr-clarify-modal').classList.add('active');
+    }
+    
+    function vrClarifyCancel() {
+      document.getElementById('vr-clarify-modal').classList.remove('active');
+      document.getElementById('vr-clarify-text').value = '';
+    }
+    
+    function vrClarifySubmit() {
+      var clarifyText = document.getElementById('vr-clarify-text').value.trim();
+      if (!clarifyText) {
+        showToast('Please describe the clarification needed', 'warning');
+        return;
+      }
+      
+      vrState.reviewState = 'Needs_Clarification';
+      vrState.notes = document.getElementById('vr-notes').value;
+      vrLogAuditEvent('REQUEST_CLARIFICATION', { question_text: clarifyText });
+      
+      document.getElementById('vr-clarify-modal').classList.remove('active');
+      document.getElementById('vr-clarify-text').value = '';
+      
+      vrUpdateStateBadge();
+      vrUpdateActionButtons();
+      vrRenderDecisionSummary();
+      showToast('Clarification requested — author notified', 'info');
+    }
+    
+    function vrApprove() {
+      if (vrState.reviewState !== 'Under_Review') return;
+      
+      vrState.notes = document.getElementById('vr-notes').value;
+      vrState.reviewState = 'Verifier_Approved';
+      vrLogAuditEvent('VERIFIER_APPROVED', { checklist_confirmed: true, notes: vrState.notes });
+      
+      vrUpdateStateBadge();
+      vrUpdateActionButtons();
+      vrRenderDecisionSummary();
+      showToast('Patch approved by Verifier — routed to Admin Approval', 'success');
+    }
+    
+    function vrReject() {
+      if (vrState.reviewState !== 'Under_Review') return;
+      
+      var notes = document.getElementById('vr-notes').value.trim();
+      if (!notes) {
+        showToast('Please add review notes explaining the rejection reason', 'warning');
+        return;
+      }
+      
+      vrState.notes = notes;
+      vrState.reviewState = 'Rejected';
+      vrLogAuditEvent('REJECTED', { rejection_reason: notes });
+      
+      vrUpdateStateBadge();
+      vrUpdateActionButtons();
+      vrRenderDecisionSummary();
+      showToast('Patch rejected', 'info');
+    }
+    
+    function vrRenderDecisionSummary() {
+      var container = document.getElementById('vr-decision-summary');
+      
+      if (vrState.reviewState === 'Submitted' || vrState.reviewState === 'Under_Review') {
+        container.innerHTML = '';
+        return;
+      }
+      
+      var isRejected = vrState.reviewState === 'Rejected';
+      var stateLabel = vrState.reviewState.replace(/_/g, ' ');
+      var lastEvent = vrState.auditLog[vrState.auditLog.length - 1];
+      
+      container.innerHTML = '<div class="vr-decision-summary' + (isRejected ? ' rejected' : '') + '">' +
+        '<strong>Decision:</strong> ' + stateLabel + '<br>' +
+        '<span style="font-size: 0.85em; color: #666;">by ' + vrState.reviewerActor + ' at ' + (lastEvent ? lastEvent.timestamp : '—') + '</span>' +
+        (vrState.notes ? '<div style="margin-top: 8px; font-size: 0.85em;"><strong>Notes:</strong> ' + vrState.notes + '</div>' : '') +
+      '</div>';
     }
 
     // Attach Grid event listeners

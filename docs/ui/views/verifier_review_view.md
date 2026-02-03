@@ -2,6 +2,23 @@
 
 > Review surface for evaluating submitted Patch Requests, requesting clarification, and approving/rejecting.
 
+## Implementation Status (v1.4.5)
+
+| Feature | Status |
+|---------|--------|
+| Page layout (2-column grid) | Done |
+| Structured Intent display (WHEN/THEN/BECAUSE) | Done |
+| Evidence Pack display (4 blocks) | Done |
+| Preflight Report badges | Done |
+| Author Info section | Done |
+| Revision History section | Done (stub) |
+| Review Notes textarea | Done |
+| Verifier Actions panel | Done |
+| State transitions (Submitted → Under_Review → Approved/Rejected/Needs_Clarification) | Done |
+| Audit logging (client-side) | Done |
+| Clarification modal | Done |
+| Role-gated navigation | Done |
+
 ## Entry Conditions
 
 | Condition | Required |
