@@ -1,4 +1,4 @@
-# Orchestrate OS — Semantic Control Board (v1.4.19)
+# Orchestrate OS — Semantic Control Board (v1.5.1)
 
 ## Overview
 
@@ -116,6 +116,26 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - Patch-type-driven validation: Correction requires full Evidence Pack, Blacklist/RFI require only Justification
 - Override toggle appears when Observation="Override Needed" OR Expected="Allow Override"
 - Repro block hidden for Blacklist/RFI patch types and when Override enabled
+
+**v1.5.0 Verifier Triage + Payload System:**
+- Verifier Triage view with 4-queue system (Pending, Clarification, To Admin, Resolved)
+- Automatic view swap: Analyst Triage ↔ Verifier Triage based on role
+- RFI/Correction/Blacklist submissions generate verifier payloads
+- Verifier Review detail with type-specific content blocks (RFI chat, Correction diff, Blacklist subject)
+- Clickable triage rows navigate to Verifier Review
+- RFI rows show view-only actions (Open Review, Open Record)
+- Patch Editor reset after submission to prevent carry-over
+
+**v1.5.1 Artifact Store + Role Handoff Routing:**
+- localStorage-backed mock filesystem (fs: prefix) with environment scoping
+- Artifact envelope contract: workspace_id, environment, dataset_id, record_id, field_key, artifact_type, status, thread_id
+- Deterministic artifact IDs: hash(dataset_id + record_id + field_key + timestamp)
+- Event log (events.jsonl): RFI_CREATED, RFI_REPLIED, PATCH_DRAFT_CREATED, PATCH_REQUEST_SUBMITTED
+- Thread system for RFI conversations with message history
+- Queue routing via record_id lookup (not row index) for stable navigation
+- Playground mode: Environment selector (Playground/Prod), Reset Playground button
+- Environment scoping: playground keys isolated, prod locked for now
+- Backwards compatibility: Legacy verifierQueueState preserved alongside artifact store
 
 **What This Is NOT:**
 - Not a runtime system

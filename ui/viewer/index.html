@@ -7288,9 +7288,14 @@
         setTimeout(function() { initGrid(); }, 0);
       }
       
-      // If navigating to verifier-review, load sample data
+      // If navigating to verifier-review, load data (only if we have a payload or haven't loaded yet)
       if (page === 'verifier-review') {
-        setTimeout(function() { 
+        setTimeout(function() {
+          // Skip re-loading if we already have a loaded payload and no new selection
+          if (!vrState.selectedPayloadId && vrState.currentPayload) {
+            console.log('[VR_LOAD] Skipping reload - already have payload:', vrState.currentPayload.id || vrState.currentPatchId);
+            return;
+          }
           loadVerifierReviewData(vrState.selectedPayloadId);
           vrState.selectedPayloadId = null;  // Clear after use
         }, 0);
