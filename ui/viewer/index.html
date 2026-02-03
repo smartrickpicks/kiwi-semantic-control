@@ -436,6 +436,36 @@
     .srr-field-card.changed .srr-field-card-header { background: #e8f5e9; }
     .srr-chip-changed { background: #4caf50; color: white; }
     .srr-chip-locked { background: #9e9e9e; color: white; }
+    
+    /* v1.4.20: Field state styling */
+    .srr-field-card.state-verified { border-left: 3px solid #4caf50; }
+    .srr-field-card.state-verified .srr-field-card-header { background: #e8f5e9; }
+    .srr-field-card.state-rfi { border-left: 3px solid #7b1fa2; }
+    .srr-field-card.state-rfi .srr-field-card-header { background: #f3e5f5; }
+    .srr-field-card.state-patched { border-left: 3px solid #ff9800; }
+    .srr-field-card.state-patched .srr-field-card-header { background: #fff3e0; }
+    .srr-chip-verified { background: #4caf50; color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 10px; }
+    .srr-chip-rfi { background: #7b1fa2; color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 10px; }
+    .srr-chip-patched { background: #ff9800; color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 10px; }
+    .srr-chip-todo { background: #9e9e9e; color: white; font-size: 0.7em; padding: 2px 6px; border-radius: 10px; }
+    
+    /* v1.4.20: Field action buttons */
+    .srr-field-actions { display: flex; gap: 4px; margin-left: auto; }
+    .srr-field-action { border: none; background: transparent; cursor: pointer; padding: 4px 6px; border-radius: 4px; font-size: 0.9em; opacity: 0.7; transition: opacity 0.15s, background 0.15s; }
+    .srr-field-action:hover { opacity: 1; }
+    .srr-field-action.verify { color: #4caf50; }
+    .srr-field-action.verify:hover { background: #e8f5e9; }
+    .srr-field-action.blacklist { color: #d32f2f; }
+    .srr-field-action.blacklist:hover { background: #ffebee; }
+    .srr-field-action.rfi { color: #7b1fa2; }
+    .srr-field-action.rfi:hover { background: #f3e5f5; }
+    .srr-field-action.patch { color: #1565c0; }
+    .srr-field-action.patch:hover { background: #e3f2fd; }
+    .srr-field-action.active { opacity: 1; }
+    .srr-field-action.verify.active { background: #4caf50; color: white; }
+    
+    /* v1.4.20: Filter chip with count */
+    .srr-filter-chip .chip-count { font-size: 0.85em; margin-left: 4px; opacity: 0.8; }
     .srr-lock-icon { font-size: 0.9em; margin-left: 4px; }
     
     /* v1.4.18: Patch Editor Block */
@@ -553,7 +583,7 @@
 
     /* Unsaved Changes Modal */
     .srr-guard-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 9999; }
-    .srr-guard-modal.active { display: flex; }
+    .srr-guard-modal.active, .srr-guard-modal.visible { display: flex; }
     .srr-guard-dialog { background: white; border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
     .srr-guard-title { font-size: 1.1em; font-weight: 600; color: #333; margin-bottom: 12px; }
     .srr-guard-message { font-size: 0.9em; color: #666; line-height: 1.5; margin-bottom: 20px; }
@@ -1482,10 +1512,12 @@
               <input type="text" class="srr-search-input" id="srr-field-search" placeholder="Search fields..." oninput="srrFilterFields()">
             </div>
             <div class="srr-filter-bar" id="srr-filter-bar">
-              <div class="srr-filter-chips">
-                <span class="srr-filter-chip active" data-filter="all" onclick="srrSetFilter('all')">All</span>
-                <span class="srr-filter-chip" data-filter="changed" onclick="srrSetFilter('changed')">Changed</span>
-                <span class="srr-filter-chip" data-filter="unchanged" onclick="srrSetFilter('unchanged')">Unchanged</span>
+              <div class="srr-filter-chips" id="srr-filter-chips">
+                <span class="srr-filter-chip active" data-filter="all" onclick="srrSetFilter('all')">All <span class="chip-count" id="srr-count-all"></span></span>
+                <span class="srr-filter-chip" data-filter="todo" onclick="srrSetFilter('todo')">To Do <span class="chip-count" id="srr-count-todo"></span></span>
+                <span class="srr-filter-chip" data-filter="verified" onclick="srrSetFilter('verified')">Verified <span class="chip-count" id="srr-count-verified"></span></span>
+                <span class="srr-filter-chip" data-filter="rfi" onclick="srrSetFilter('rfi')">RFI <span class="chip-count" id="srr-count-rfi"></span></span>
+                <span class="srr-filter-chip" data-filter="patched" onclick="srrSetFilter('patched')">Patched <span class="chip-count" id="srr-count-patched"></span></span>
               </div>
             </div>
             <div class="srr-panel-body" id="srr-field-list" style="padding: 0;">
@@ -1552,11 +1584,11 @@
             <div class="srr-panel-body">
               <!-- v1.4.19: Patch Type Selector -->
               <div class="srr-patch-type-selector">
-                <div class="srr-patch-type-label">Patch Type</div>
+                <div class="srr-patch-type-label">Patch Type <span style="font-weight:normal;font-size:0.85em;color:#999;">(auto-determined by action)</span></div>
                 <div class="srr-patch-type-chips">
-                  <div class="srr-patch-type-chip correction active" data-type="correction" onclick="srrSetPatchType('correction')">Correction</div>
-                  <div class="srr-patch-type-chip blacklist" data-type="blacklist" onclick="srrSetPatchType('blacklist')">Blacklist Flag</div>
-                  <div class="srr-patch-type-chip rfi" data-type="rfi" onclick="srrSetPatchType('rfi')">RFI (Question)</div>
+                  <div class="srr-patch-type-chip correction active" data-type="correction" style="cursor:default;" title="Patch type is auto-set by field action">Correction</div>
+                  <div class="srr-patch-type-chip blacklist" data-type="blacklist" style="cursor:default;" title="Patch type is auto-set by field action">Blacklist Flag</div>
+                  <div class="srr-patch-type-chip rfi" data-type="rfi" style="cursor:default;" title="Patch type is auto-set by field action">RFI (Question)</div>
                 </div>
               </div>
 
@@ -3118,14 +3150,15 @@
   <!-- Legacy Patch Studio overlay removed in v1.2.4 - all functionality now in Workbench tab -->
 
   <!-- Unsaved Changes Guard Modal -->
+  <!-- v1.4.20: Guard modal for unresolved PATCHED/RFI fields -->
   <div class="srr-guard-modal" id="srr-guard-modal">
     <div class="srr-guard-dialog">
-      <div class="srr-guard-title">Unsaved Changes</div>
-      <div class="srr-guard-message">You have edited fields with incomplete patch data. What would you like to do?</div>
+      <div class="srr-guard-title">Unresolved Fields</div>
+      <div class="srr-guard-message">You have <strong id="srr-guard-count">0</strong> unresolved fields (Patched or RFI). What would you like to do?</div>
       <div class="srr-guard-actions">
-        <button class="srr-guard-btn cancel" onclick="srrGuardCancel()">Cancel</button>
-        <button class="srr-guard-btn discard" onclick="srrGuardDiscard()">Discard Changes</button>
-        <button class="srr-guard-btn save" onclick="srrGuardSave()">Save Patch Draft</button>
+        <button class="srr-guard-btn cancel" onclick="srrGuardCancel()">Stay Here</button>
+        <button class="srr-guard-btn discard" onclick="srrGuardDiscardAll()">Discard Changes</button>
+        <button class="srr-guard-btn save" onclick="srrGuardSaveDraft()">Save Draft</button>
       </div>
     </div>
   </div>
@@ -7649,6 +7682,7 @@
       editedValues: {},
       proposedChanges: {},
       lockedFields: {},  // v1.4.18: Fields locked after edit commit
+      fieldStates: {},   // v1.4.20: Per-field states: todo, verified, rfi, patched
       activeFilter: 'all',
       activeGroup: 'all',
       searchQuery: '',   // v1.4.18: Search filter
@@ -7656,7 +7690,7 @@
       docPage: 1,
       docTotalPages: 1,
       zoom: 1,
-      patchType: 'correction',  // v1.4.19: correction | blacklist | rfi
+      patchType: 'correction',  // v1.4.19: correction | blacklist | rfi (now auto-driven)
       overrideEnabled: false,   // v1.4.19: Override toggle state
       patchDraft: { 
         patch_type: 'correction',
@@ -7665,6 +7699,8 @@
         justification: '',
         repro_type: '', repro_file: null,
         rfi_target: '',
+        blacklist_category: '',
+        blacklist_subject: '',
         changes: [], 
         status: 'Draft' 
       }
@@ -7944,15 +7980,20 @@
         });
       }
       
-      // v1.4.18: Apply changed/unchanged filter
+      // v1.4.20: Apply field state filter
       if (srrState.activeFilter !== 'all') {
         keys = keys.filter(function(k) {
-          var isChanged = srrState.lockedFields.hasOwnProperty(k);
-          if (srrState.activeFilter === 'changed') return isChanged;
-          if (srrState.activeFilter === 'unchanged') return !isChanged;
+          var state = srrState.fieldStates[k] || 'todo';
+          if (srrState.activeFilter === 'todo') return state === 'todo';
+          if (srrState.activeFilter === 'verified') return state === 'verified';
+          if (srrState.activeFilter === 'rfi') return state === 'rfi';
+          if (srrState.activeFilter === 'patched') return state === 'patched';
           return true;
         });
       }
+      
+      // v1.4.20: Update filter chip counts
+      srrUpdateFilterCounts();
       
       document.getElementById('srr-field-count').textContent = keys.length + ' fields';
       
@@ -7966,25 +8007,43 @@
         var isLocked = srrState.lockedFields.hasOwnProperty(key);  // v1.4.18: locked after commit
         var change = srrState.proposedChanges[key];
         var isRequired = SRR_REQUIRED_FIELDS.indexOf(key) >= 0;
+        var fieldState = srrState.fieldStates[key] || 'todo';  // v1.4.20: field state
         
-        // v1.4.18: Build chips - Changed and Locked indicators
+        // v1.4.20: Build chips based on field state
         var chips = '';
-        if (isLocked) {
-          chips += '<span class="srr-chip srr-chip-changed">Changed</span>';
-          chips += '<span class="srr-chip srr-chip-locked">🔒</span>';
-        } else if (isEdited) {
-          chips += '<span class="srr-chip srr-chip-edited">Editing</span>';
+        if (fieldState === 'verified') {
+          chips += '<span class="srr-chip srr-chip-verified">✓ Verified</span>';
+        } else if (fieldState === 'rfi') {
+          chips += '<span class="srr-chip srr-chip-rfi">? RFI</span>';
+        } else if (fieldState === 'patched') {
+          chips += '<span class="srr-chip srr-chip-patched">✏ Patched</span>';
+          if (isLocked) chips += '<span class="srr-chip srr-chip-locked">🔒</span>';
         }
         if (isRequired) chips += '<span class="srr-chip srr-chip-required">Required</span>';
         
         // Human-friendly label (convert snake_case to Title Case)
         var label = key.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
         
-        // v1.4.18: Add locked and changed classes
+        // v1.4.20: Add state-based classes
         var cardClass = 'srr-field-card';
-        if (isLocked) cardClass += ' locked changed';
-        else if (isEdited) cardClass += ' edited';
+        if (fieldState !== 'todo') cardClass += ' state-' + fieldState;
+        if (isLocked) cardClass += ' locked';
         if (srrState.selectedField === key) cardClass += ' active';
+        
+        // v1.4.20: Build action buttons based on state
+        var actionsHtml = '<div class="srr-field-actions">';
+        if (fieldState === 'todo') {
+          actionsHtml += '<button class="srr-field-action verify" onclick="event.stopPropagation(); srrVerifyField(\'' + key + '\')" title="Verify (mark as correct)">✓</button>';
+          actionsHtml += '<button class="srr-field-action blacklist" onclick="event.stopPropagation(); srrBlacklistField(\'' + key + '\')" title="Blacklist Flag">🚫</button>';
+          actionsHtml += '<button class="srr-field-action rfi" onclick="event.stopPropagation(); srrRfiField(\'' + key + '\')" title="RFI (question)">?</button>';
+          actionsHtml += '<button class="srr-field-action patch" onclick="event.stopPropagation(); srrStartEdit(\'' + key + '\')" title="Patch (edit value)">✏️</button>';
+        } else if (fieldState === 'verified') {
+          actionsHtml += '<button class="srr-field-action verify active" title="Verified">✓</button>';
+          actionsHtml += '<button class="srr-field-action" onclick="event.stopPropagation(); srrResetFieldState(\'' + key + '\')" title="Reset to TODO">↩</button>';
+        } else {
+          actionsHtml += '<button class="srr-field-action" onclick="event.stopPropagation(); srrResetFieldState(\'' + key + '\')" title="Reset to TODO">↩</button>';
+        }
+        actionsHtml += '</div>';
         
         var cardHtml = '<div class="' + cardClass + '" data-field="' + key + '">' +
           '<div class="srr-field-card-header" onclick="srrSelectField(\'' + key + '\')">' +
@@ -7993,6 +8052,7 @@
               '<div class="srr-field-card-api">' + key + '</div>' +
             '</div>' +
             '<div class="srr-field-card-chips">' + chips + '</div>' +
+            actionsHtml +
           '</div>' +
           '<div class="srr-field-card-body">' +
             '<div class="srr-field-value-display" onclick="srrStartEdit(\'' + key + '\')" title="Click to edit">' + 
@@ -8036,6 +8096,119 @@
         if (chip.dataset.filter === filter) chip.classList.add('active');
       });
       renderSrrFields(srrState.currentRecord);
+    }
+    
+    // v1.4.20: Update filter chip counts
+    function srrUpdateFilterCounts() {
+      var allKeys = Object.keys(srrState.originalValues);
+      var counts = { all: allKeys.length, todo: 0, verified: 0, rfi: 0, patched: 0 };
+      allKeys.forEach(function(k) {
+        var state = srrState.fieldStates[k] || 'todo';
+        counts[state] = (counts[state] || 0) + 1;
+      });
+      var allEl = document.getElementById('srr-count-all');
+      var todoEl = document.getElementById('srr-count-todo');
+      var verifiedEl = document.getElementById('srr-count-verified');
+      var rfiEl = document.getElementById('srr-count-rfi');
+      var patchedEl = document.getElementById('srr-count-patched');
+      if (allEl) allEl.textContent = '(' + counts.all + ')';
+      if (todoEl) todoEl.textContent = '(' + counts.todo + ')';
+      if (verifiedEl) verifiedEl.textContent = '(' + counts.verified + ')';
+      if (rfiEl) rfiEl.textContent = '(' + counts.rfi + ')';
+      if (patchedEl) patchedEl.textContent = '(' + counts.patched + ')';
+    }
+    
+    // v1.4.20: Field action - Verify (mark as correct)
+    function srrVerifyField(fieldKey) {
+      srrState.fieldStates[fieldKey] = 'verified';
+      console.log('[SRR] Field VERIFIED:', fieldKey);
+      renderSrrFields(srrState.currentRecord);
+      srrRenderPatchEditor();
+    }
+    
+    // v1.4.20: Field action - Blacklist Flag
+    function srrBlacklistField(fieldKey) {
+      var currentVal = srrState.editedValues.hasOwnProperty(fieldKey) 
+        ? srrState.editedValues[fieldKey] 
+        : srrState.originalValues[fieldKey];
+      var label = fieldKey.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+      
+      // Set field state to patched
+      srrState.fieldStates[fieldKey] = 'patched';
+      
+      // Auto-set patch type to blacklist
+      srrState.patchType = 'blacklist';
+      srrState.patchDraft.patch_type = 'blacklist';
+      
+      // Auto-populate blacklist subject
+      srrState.patchDraft.blacklist_subject = label + ': ' + (currentVal || '(empty)');
+      
+      // Update patch type UI
+      document.querySelectorAll('.srr-patch-type-chip').forEach(function(chip) {
+        chip.classList.remove('active');
+        if (chip.dataset.type === 'blacklist') chip.classList.add('active');
+      });
+      
+      console.log('[SRR] Field BLACKLIST:', fieldKey, 'subject:', srrState.patchDraft.blacklist_subject);
+      srrUpdatePatchFormSections();
+      renderSrrFields(srrState.currentRecord);
+      srrRenderPatchEditor();
+    }
+    
+    // v1.4.20: Field action - RFI (question)
+    function srrRfiField(fieldKey) {
+      srrState.fieldStates[fieldKey] = 'rfi';
+      
+      // Auto-set patch type to RFI
+      srrState.patchType = 'rfi';
+      srrState.patchDraft.patch_type = 'rfi';
+      
+      // Update patch type UI
+      document.querySelectorAll('.srr-patch-type-chip').forEach(function(chip) {
+        chip.classList.remove('active');
+        if (chip.dataset.type === 'rfi') chip.classList.add('active');
+      });
+      
+      console.log('[SRR] Field RFI:', fieldKey);
+      srrUpdatePatchFormSections();
+      renderSrrFields(srrState.currentRecord);
+      srrRenderPatchEditor();
+    }
+    
+    // v1.4.20: Reset field state to TODO
+    function srrResetFieldState(fieldKey) {
+      var prevState = srrState.fieldStates[fieldKey];
+      delete srrState.fieldStates[fieldKey];
+      
+      // If was patched, also clear proposed change
+      if (prevState === 'patched' && srrState.proposedChanges[fieldKey]) {
+        delete srrState.proposedChanges[fieldKey];
+        delete srrState.lockedFields[fieldKey];
+        delete srrState.editedValues[fieldKey];
+      }
+      
+      console.log('[SRR] Field reset to TODO:', fieldKey);
+      renderSrrFields(srrState.currentRecord);
+      srrRenderPatchEditor();
+    }
+    
+    // v1.4.20: Check if there are unresolved PATCHED or RFI fields
+    function srrHasUnresolvedFields() {
+      for (var key in srrState.fieldStates) {
+        var state = srrState.fieldStates[key];
+        if (state === 'patched' || state === 'rfi') return true;
+      }
+      return false;
+    }
+    
+    // v1.4.20: Get count of unresolved fields
+    function srrGetUnresolvedCount() {
+      var count = 0;
+      for (var key in srrState.fieldStates) {
+        var state = srrState.fieldStates[key];
+        if (state === 'patched' || state === 'rfi') count++;
+      }
+      return count;
     }
     
     function srrFilterByGroup(group) {
@@ -8103,6 +8276,14 @@
         
         // v1.4.18: Lock field after commit (AC-01)
         srrState.lockedFields[fieldKey] = true;
+        
+        // v1.4.20: Set field state to patched
+        srrState.fieldStates[fieldKey] = 'patched';
+        
+        // v1.4.20: Auto-set patch type to correction (via edit action)
+        srrState.patchType = 'correction';
+        srrState.patchDraft.patch_type = 'correction';
+        srrUpdatePatchTypeDisplay();
         
         // Create or update proposed change
         if (!srrState.proposedChanges[fieldKey]) {
@@ -8254,29 +8435,33 @@
     }
     
     // Navigation guard
+    // v1.4.20: Back to Grid with guard for unresolved fields
     function srrBackToGrid() {
-      if (srrHasUnsavedChanges()) {
-        document.getElementById('srr-guard-modal').classList.add('active');
+      if (srrHasUnresolvedFields()) {
+        srrShowGuardModal();
       } else {
         navigateTo('grid');
       }
     }
     
     function srrGuardCancel() {
-      document.getElementById('srr-guard-modal').classList.remove('active');
+      srrHideGuardModal();
     }
     
-    function srrGuardDiscard() {
-      srrState.editedValues = {};
-      srrState.proposedChanges = {};
+    // v1.4.20: Discard all changes and clear field states
+    function srrGuardDiscardAll() {
+      // Clear all PATCHED and RFI states
+      for (var key in srrState.fieldStates) {
+        var state = srrState.fieldStates[key];
+        if (state === 'patched' || state === 'rfi') {
+          delete srrState.fieldStates[key];
+          delete srrState.proposedChanges[key];
+          delete srrState.lockedFields[key];
+          delete srrState.editedValues[key];
+        }
+      }
       srrState.patchDraft.changes = [];
-      document.getElementById('srr-guard-modal').classList.remove('active');
-      navigateTo('grid');
-    }
-    
-    function srrGuardSave() {
-      srrSaveDraft();
-      document.getElementById('srr-guard-modal').classList.remove('active');
+      srrHideGuardModal();
       navigateTo('grid');
     }
     
@@ -8908,21 +9093,38 @@
     // Patch actions
     // v1.4.18: Save Evidence Pack draft (AC-03)
     // v1.4.19: Set patch type and update form sections
+    // v1.4.20: Internal patch type setter (now auto-driven, not user-clickable)
     function srrSetPatchType(type) {
       srrState.patchType = type;
       srrState.patchDraft.patch_type = type;
-      
-      // Update chip UI
-      document.querySelectorAll('.srr-patch-type-chip').forEach(function(chip) {
-        chip.classList.remove('active');
-        if (chip.dataset.type === type) chip.classList.add('active');
-      });
-      
-      // Update form section visibility
+      srrUpdatePatchTypeDisplay();
       srrUpdatePatchFormSections();
       srrSaveEvidenceDraft();
-      console.log('[SRR] Patch type set:', type);
+      console.log('[SRR] Patch type auto-set:', type);
     }
+    
+    // v1.4.20: Update patch type display (read-only indicator)
+    function srrUpdatePatchTypeDisplay() {
+      document.querySelectorAll('.srr-patch-type-chip').forEach(function(chip) {
+        chip.classList.remove('active');
+        if (chip.dataset.type === srrState.patchType) chip.classList.add('active');
+      });
+    }
+    
+    // v1.4.20: Guard modal for leaving SRR with unresolved fields
+    function srrShowGuardModal() {
+      var count = srrGetUnresolvedCount();
+      var modal = document.getElementById('srr-guard-modal');
+      var countEl = document.getElementById('srr-guard-count');
+      if (countEl) countEl.textContent = count;
+      if (modal) modal.classList.add('visible');
+    }
+    
+    function srrHideGuardModal() {
+      var modal = document.getElementById('srr-guard-modal');
+      if (modal) modal.classList.remove('visible');
+    }
+    
     
     // v1.4.19: Update form sections based on patch type
     function srrUpdatePatchFormSections() {

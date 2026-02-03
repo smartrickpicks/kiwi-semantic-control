@@ -52,3 +52,16 @@ Open PRs: unknown/none
   - SRR doc includes guard modal for unresolved PATCHED/RFI fields
   - No UI code files modified
 - Evidence link: Unknown — requires audit
+
+### SRR: Field Inspector Mini-Queue UI Implementation (v1.4.20)
+- Scope: Implement Field Inspector mini-queue behavior with field states, actions, filters, and guard modal
+- Files likely to touch: ui/viewer/index.html
+- Acceptance tests:
+  - AT-01: Verify action sets VERIFIED and removes field from TODO list
+  - AT-02: Blacklist action sets PATCHED + auto Patch Type = Blacklist Flag, without editing value
+  - AT-03: RFI action sets RFI + auto Patch Type = RFI
+  - AT-04: Editing a field sets PATCHED + auto Patch Type = Correction
+  - AT-05: Filter chips reflect correct counts (TODO/Verified/RFI/Patched/All)
+  - AT-06: Guard modal appears when leaving SRR with unresolved PATCHED/RFI fields
+  - AT-07: Patch Type is not user-editable (read-only display)
+- Evidence link: Unknown — requires audit
