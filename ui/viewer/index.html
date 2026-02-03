@@ -1240,6 +1240,16 @@
           <button class="mode-btn mode-admin" data-mode="admin">Admin</button>
         </div>
       </div>
+      
+      <!-- Playground Controls (v1.5.1) -->
+      <div class="nav-mode-section" id="playground-controls" style="border-top: 1px solid #e8e8e8; padding-top: 12px; margin-top: 12px;">
+        <div class="nav-mode-label">Environment</div>
+        <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+          <button class="env-btn active" data-env="playground" onclick="setEnvironment('playground')" style="flex: 1; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; background: #e3f2fd; color: #1565c0; font-size: 0.75em; cursor: pointer;">Playground</button>
+          <button class="env-btn" data-env="prod" onclick="setEnvironment('prod')" disabled style="flex: 1; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; color: #999; font-size: 0.75em; cursor: not-allowed;" title="Production locked">Prod 🔒</button>
+        </div>
+        <button onclick="resetPlayground()" style="width: 100%; padding: 8px; border: 1px solid #ffcdd2; border-radius: 4px; background: #fff; color: #d32f2f; font-size: 0.75em; cursor: pointer;">Reset Playground</button>
+      </div>
     </nav>
 
     <main class="main-content">
@@ -3642,6 +3652,43 @@
     
     function getCurrentActorId() {
       return playgroundActors[currentMode] || 'unknown@example.com';
+    }
+    
+    // Environment switching (v1.5.1)
+    function setEnvironment(env) {
+      if (env === 'prod') {
+        showToast('Production environment is locked', 'warning');
+        return;
+      }
+      ARTIFACT_STORE.environment = env;
+      document.querySelectorAll('.env-btn').forEach(function(btn) {
+        var isActive = btn.dataset.env === env;
+        btn.classList.toggle('active', isActive);
+        btn.style.background = isActive ? '#e3f2fd' : '#f5f5f5';
+        btn.style.color = isActive ? '#1565c0' : '#666';
+      });
+      console.log('[ArtifactStore] Environment set to:', env);
+      showToast('Environment: ' + env, 'info');
+    }
+    
+    // Reset playground data (v1.5.1)
+    function resetPlayground() {
+      if (!confirm('Reset playground? This will clear all RFIs, patches, and event logs.')) {
+        return;
+      }
+      var cleared = ARTIFACT_STORE.resetPlayground();
+      // Also clear legacy verifier queue
+      verifierQueueState.payloads = [];
+      saveVerifierQueue();
+      // Clear legacy patch storage
+      localStorage.removeItem(PATCH_STORAGE_KEY);
+      
+      showToast('Playground reset: ' + cleared + ' artifacts cleared', 'success');
+      
+      // Re-render any active views
+      if (typeof renderVerifierTriage === 'function') {
+        renderVerifierTriage();
+      }
     }
     
     // ========== QUEUE GENERATION FROM ARTIFACTS ==========
@@ -10230,26 +10277,29 @@
     }
     
     function openRecordFromPayload(payloadId) {
-      var payload = verifierQueueState.payloads.find(function(p) { return p.id === payloadId; });
-      if (payload && payload.record_id) {
-        var recordId = payload.record_id;
-        var foundIdx = -1;
-        
-        // Search across all sheets for the record
-        Object.keys(globalDataset).forEach(function(sheetName) {
-          if (foundIdx >= 0) return;
-          var rows = globalDataset[sheetName];
-          for (var i = 0; i < rows.length; i++) {
-            if (rows[i].contract_key === recordId || rows[i].record_id === recordId) {
-              srrState.currentSheetName = sheetName;
-              foundIdx = i;
-              break;
-            }
-          }
-        });
-        
-        if (foundIdx >= 0) {
-          navigateTo('row/' + foundIdx);
+      // v1.5.1: Try artifact store first, then legacy payload
+      var artifact = getArtifact(payloadId);
+      var recordId = null;
+      var fieldKey = null;
+      
+      if (artifact) {
+        recordId = artifact.record_id;
+        fieldKey = artifact.field_key;
+      } else {
+        var payload = verifierQueueState.payloads.find(function(p) { return p.id === payloadId; });
+        if (payload) {
+          recordId = payload.record_id;
+          fieldKey = payload.field;
+        }
+      }
+      
+      if (recordId) {
+        var recordInfo = findRecordById(recordId);
+        if (recordInfo) {
+          srrState.currentSheetName = recordInfo.sheetName;
+          srrState.focusFieldKey = fieldKey || null;
+          navigateTo('row/' + recordInfo.rowIndex);
+          console.log('[ArtifactStore] Opened record by ID:', recordId, 'field:', fieldKey);
         } else {
           showToast('Record not found in dataset', 'warning');
         }
@@ -10301,13 +10351,35 @@
     
     function loadVerifierReviewData(payloadId) {
       console.log('[VR_LOAD] loadVerifierReviewData called with payloadId:', payloadId);
-      console.log('[VR_LOAD] verifierQueueState.payloads count:', verifierQueueState.payloads.length);
       
-      // v1.5.0: If payloadId provided, load from verifier queue; else load sample
+      // v1.5.1: Try artifact store first, then legacy payload
+      var artifact = null;
       var payload = null;
+      
       if (payloadId) {
-        payload = verifierQueueState.payloads.find(function(p) { return p.id === payloadId; });
-        console.log('[VR_LOAD] Found payload:', payload ? 'yes' : 'no', payload);
+        artifact = getArtifact(payloadId);
+        if (artifact) {
+          console.log('[VR_LOAD] Found artifact:', artifact.artifact_id, artifact.artifact_type);
+          // Convert artifact to payload-like structure for display
+          payload = {
+            id: artifact.artifact_id,
+            type: artifact.body.patch_type || (artifact.artifact_type === 'rfi' ? 'rfi' : 'correction'),
+            record_id: artifact.record_id,
+            field: artifact.field_key,
+            old_value: artifact.body.old_value || '',
+            new_value: artifact.body.new_value || '',
+            comment: artifact.body.comment || '',
+            analyst_id: artifact.created_by_actor_id,
+            timestamp: artifact.created_at,
+            status: artifact.status,
+            thread_id: artifact.thread_id,
+            artifact: artifact  // Keep reference to full artifact
+          };
+        } else {
+          // Fallback to legacy verifier queue
+          payload = verifierQueueState.payloads.find(function(p) { return p.id === payloadId; });
+          console.log('[VR_LOAD] Found legacy payload:', payload ? 'yes' : 'no');
+        }
       }
       
       // Hide all type-specific content blocks
