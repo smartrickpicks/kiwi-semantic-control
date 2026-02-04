@@ -3724,6 +3724,80 @@
       return row;
     }
     
+    // ========== CANONICAL RECORD STORE (v1.5.3) ==========
+    // Path: kiwi/v1/{tenant_id}/records/{dataset_id}/{record_id}.json
+    
+    function getRecordStorageKey(tenantId, datasetId, recordId) {
+      return 'kiwi/v1/' + tenantId + '/records/' + datasetId + '/' + recordId + '.json';
+    }
+    
+    function persistRecordToStore(row, sheetName, rowIndex) {
+      if (!row || !row._identity) return null;
+      
+      var identity = row._identity;
+      var storageKey = getRecordStorageKey(
+        identity.tenant_id,
+        identity.dataset_id,
+        identity.record_id
+      );
+      
+      // Build canonical record with full identity
+      var storedRecord = {
+        tenant_id: identity.tenant_id,
+        division_id: identity.division_id,
+        dataset_id: identity.dataset_id,
+        record_id: identity.record_id,
+        source_pointers: {
+          sheet_name: sheetName,
+          row_index: rowIndex,
+          file_name: (identity.source_pointers && identity.source_pointers.source_file_name) || '',
+          file_url: row.file_url || ''
+        },
+        aliases: identity.aliases || [],
+        data: row,
+        _stored_at: new Date().toISOString()
+      };
+      
+      localStorage.setItem(storageKey, JSON.stringify(storedRecord));
+      return storageKey;
+    }
+    
+    function loadRecordFromStore(tenantId, datasetId, recordId) {
+      var storageKey = getRecordStorageKey(tenantId, datasetId, recordId);
+      var stored = localStorage.getItem(storageKey);
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.warn('[RecordStore] Failed to parse record:', storageKey, e);
+          return null;
+        }
+      }
+      return null;
+    }
+    
+    function persistAllRecordsToStore() {
+      // v1.5.3: Persist all workbook records to canonical store
+      var count = 0;
+      if (!workbook || !workbook.sheets) return count;
+      
+      Object.keys(workbook.sheets).forEach(function(sheetName) {
+        var sheet = workbook.sheets[sheetName];
+        var rows = sheet ? sheet.rows : [];
+        if (!rows) return;
+        
+        rows.forEach(function(row, idx) {
+          if (row && row._identity) {
+            persistRecordToStore(row, sheetName, idx);
+            count++;
+          }
+        });
+      });
+      
+      console.log('[RecordStore] Persisted', count, 'records to canonical store');
+      return count;
+    }
+    
     // Generate deterministic artifact ID
     function generateArtifactId(dataset_id, record_id, field_key, timestamp) {
       var seed = [dataset_id, record_id, field_key, timestamp].join('|');
@@ -3977,30 +4051,50 @@
     }
     
     // ========== RECORD LOOKUP BY record_id ==========
-    function findRecordById(record_id) {
+    function findRecordById(record_id, datasetId, tenantId) {
       if (!record_id) return null;
       
       var result = null;
-      // Use workbook.sheets instead of globalDataset
-      if (!workbook || !workbook.sheets) return null;
       
-      Object.keys(workbook.sheets).some(function(sheetName) {
-        var sheet = workbook.sheets[sheetName];
-        var rows = sheet ? sheet.rows : [];
-        if (!rows) return false;
-        for (var i = 0; i < rows.length; i++) {
-          var row = rows[i];
-          // v1.5.2: Check record_id (including _identity.record_id), then fallbacks
-          var rowRecordId = row.record_id || (row._identity && row._identity.record_id);
-          if (rowRecordId === record_id || 
-              row.contract_key === record_id ||
-              (sheetName + ':' + i) === record_id) {
-            result = { sheetName: sheetName, rowIndex: i, row: row };
-            return true;
+      // First: Try workbook.sheets (in-memory dataset)
+      if (workbook && workbook.sheets) {
+        Object.keys(workbook.sheets).some(function(sheetName) {
+          var sheet = workbook.sheets[sheetName];
+          var rows = sheet ? sheet.rows : [];
+          if (!rows) return false;
+          for (var i = 0; i < rows.length; i++) {
+            var row = rows[i];
+            // v1.5.2: Check record_id (including _identity.record_id), then fallbacks
+            var rowRecordId = row.record_id || (row._identity && row._identity.record_id);
+            if (rowRecordId === record_id || 
+                row.contract_key === record_id ||
+                (sheetName + ':' + i) === record_id) {
+              result = { sheetName: sheetName, rowIndex: i, row: row };
+              return true;
+            }
+          }
+          return false;
+        });
+      }
+      
+      // v1.5.3: Fallback to canonical record store if not found in workbook
+      if (!result) {
+        var tid = tenantId || IDENTITY_CONTEXT.tenant_id;
+        var did = datasetId || IDENTITY_CONTEXT.dataset_id;
+        if (tid && did) {
+          var storedRecord = loadRecordFromStore(tid, did, record_id);
+          if (storedRecord && storedRecord.data) {
+            var sp = storedRecord.source_pointers || {};
+            result = {
+              sheetName: sp.sheet_name || 'default',
+              rowIndex: sp.row_index || 0,
+              row: storedRecord.data,
+              fromStore: true // Mark as loaded from persistent store
+            };
+            console.log('[RecordStore] Loaded record from store:', record_id);
           }
         }
-        return false;
-      });
+      }
       
       return result;
     }
@@ -7094,6 +7188,9 @@
       updateUIForDataState();
       updateSessionChip();
       
+      // v1.5.3: Persist all records to canonical store
+      persistAllRecordsToStore();
+      
       // Detect unknown columns for Admin (uses current dataset with sheet awareness)
       if (typeof detectUnknownColumns === 'function') {
         var sheetName = sessionState.fileName || sourceType || 'imported_data';
@@ -7222,6 +7319,10 @@
             currentArtifactPath = session.fileName || session.sourceType;
             updateUIForDataState();
             updateSessionChip();
+            
+            // v1.5.3: Persist all records to canonical store
+            persistAllRecordsToStore();
+            
             return true;
           }
         }
@@ -8210,6 +8311,10 @@
         
         updateUIForDataState();
         closeDataSourceDrawer();
+        
+        // v1.5.3: Persist all records to canonical store
+        persistAllRecordsToStore();
+        
         showToast('CSV loaded: ' + records.length + ' records', 'success');
         navigateTo('grid');
       };
@@ -11502,43 +11607,153 @@
     }
     
     function openRecordFromPayload(payloadId) {
-      // v1.5.3: Open record in Reviewer SRR mode with patch context
+      // v1.5.3: Open record in Reviewer SRR mode with PatchRequest-first loading
+      
+      // Step 1: Get artifact and payload first to find patch_request_id
       var artifact = getArtifact(payloadId);
       var payload = verifierQueueState.payloads.find(function(p) { return p.id === payloadId; });
+      
+      // Step 2: Determine patch_request_id - could be payloadId itself or a linked field
+      var patchRequestId = payloadId;
+      if (payload && payload.patch_request_id) {
+        patchRequestId = payload.patch_request_id;
+      } else if (artifact && artifact.patch_request_id) {
+        patchRequestId = artifact.patch_request_id;
+      }
+      
+      // Step 3: Load PatchRequest from store using resolved patch_request_id
+      var patchRequest = null;
+      var patchRequestStore = localStorage.getItem('srr_patch_requests_v1');
+      if (patchRequestStore) {
+        try {
+          var allRequests = JSON.parse(patchRequestStore);
+          patchRequest = allRequests.find(function(pr) {
+            return pr.request_id === patchRequestId || 
+                   pr.id === patchRequestId ||
+                   pr.request_id === payloadId || 
+                   pr.id === payloadId;
+          });
+        } catch (e) {
+          console.warn('[Reviewer SRR] Failed to parse PatchRequest store:', e);
+        }
+      }
+      
+      // Step 4: Check if PatchRequest was expected but not found (strict mode)
+      var patchRequestExpected = patchRequestId !== payloadId || (payload && payload.patch_request_id) || (artifact && artifact.patch_request_id);
+      if (patchRequestExpected && !patchRequest) {
+        console.warn('[Reviewer SRR] PatchRequest expected but not found:', patchRequestId);
+        // Continue with artifact/payload fallback but log warning
+      }
+      
+      // Step 5: Resolve record_id - prefer PatchRequest, then artifact, then payload
       var recordId = null;
+      var datasetId = null;
+      var tenantId = null;
       var fieldKey = null;
       var patchType = null;
       
-      if (artifact) {
-        recordId = artifact.record_id;
-        fieldKey = artifact.field_key;
-        patchType = artifact.type || 'correction';
-      } else if (payload) {
-        recordId = payload.record_id;
-        fieldKey = payload.field;
-        patchType = payload.type || 'correction';
+      if (patchRequest) {
+        recordId = patchRequest.record_id;
+        datasetId = patchRequest.dataset_id;
+        tenantId = patchRequest.tenant_id;
+        fieldKey = patchRequest.field_key;
+        patchType = patchRequest.patch_kind || patchRequest.patch_type || 'correction';
+        console.log('[Reviewer SRR] Loaded PatchRequest:', patchRequestId, 'record_id:', recordId);
       }
       
-      if (recordId) {
-        var recordInfo = findRecordById(recordId);
-        if (recordInfo) {
-          srrState.currentSheetName = recordInfo.sheetName;
-          srrState.focusFieldKey = fieldKey || null;
-          
-          // v1.5.3: Set reviewer SRR mode with patch context
-          srrState.reviewerMode = true;
-          srrState.reviewerPayload = payload || artifact;
-          srrState.reviewerPatchType = patchType;
-          srrState.reviewerPayloadId = payloadId;
-          
-          navigateTo('row/' + recordInfo.rowIndex);
-          console.log('[Reviewer SRR] Opened record:', recordId, 'patchType:', patchType, 'field:', fieldKey);
-        } else {
-          showToast('Record not found in dataset', 'warning');
-        }
-      } else {
-        showToast('No record linked to this payload', 'info');
+      // Fallback to artifact if no PatchRequest record_id
+      if (!recordId && artifact) {
+        recordId = artifact.record_id;
+        datasetId = datasetId || artifact.dataset_id;
+        tenantId = tenantId || artifact.tenant_id;
+        fieldKey = fieldKey || artifact.field_key;
+        patchType = patchType || artifact.type || 'correction';
       }
+      
+      // Fallback to payload if still no record_id
+      if (!recordId && payload) {
+        recordId = payload.record_id;
+        datasetId = datasetId || payload.dataset_id;
+        tenantId = tenantId || payload.tenant_id;
+        fieldKey = fieldKey || payload.field;
+        patchType = patchType || payload.type || 'correction';
+      }
+      
+      // Also populate missing identity fields from any available source
+      if (!datasetId) datasetId = (artifact && artifact.dataset_id) || (payload && payload.dataset_id);
+      if (!tenantId) tenantId = (artifact && artifact.tenant_id) || (payload && payload.tenant_id);
+      
+      // Step 5: Validate record_id exists
+      if (!recordId) {
+        showBlockingError('Missing record_id', 
+          'Cannot open record: PatchRequest ' + payloadId + ' has no record_id.\n\n' +
+          'Key: patch_request_id=' + payloadId);
+        console.error('[Reviewer SRR] Missing record_id in PatchRequest:', payloadId);
+        return;
+      }
+      
+      // Step 7: Validate identity fields are available for store lookup
+      var effectiveDatasetId = datasetId || IDENTITY_CONTEXT.dataset_id;
+      var effectiveTenantId = tenantId || IDENTITY_CONTEXT.tenant_id;
+      
+      if (!effectiveTenantId) {
+        showBlockingError('Missing tenant_id', 
+          'Cannot open record: No tenant context available.\n\n' +
+          'record_id=' + recordId + ', patch_request_id=' + payloadId);
+        console.error('[Reviewer SRR] Missing tenant_id for record lookup:', recordId);
+        return;
+      }
+      
+      if (!effectiveDatasetId) {
+        showBlockingError('Missing dataset_id', 
+          'Cannot open record: No dataset context available.\n\n' +
+          'record_id=' + recordId + ', tenant_id=' + effectiveTenantId + ', patch_request_id=' + payloadId);
+        console.error('[Reviewer SRR] Missing dataset_id for record lookup:', recordId);
+        return;
+      }
+      
+      // Step 8: Find record using enhanced lookup with store fallback
+      var recordInfo = findRecordById(recordId, effectiveDatasetId, effectiveTenantId);
+      
+      if (!recordInfo) {
+        var fullKey = 'tenant=' + effectiveTenantId + 
+                      ', dataset=' + effectiveDatasetId +
+                      ', record=' + recordId;
+        showBlockingError('Record not found', 
+          'Cannot open record: No matching record in dataset or store.\n\n' +
+          'Key: ' + fullKey);
+        console.error('[Reviewer SRR] Record not found:', recordId, 'dataset:', effectiveDatasetId);
+        return;
+      }
+      
+      // Step 9: Set up Reviewer SRR state
+      srrState.currentSheetName = recordInfo.sheetName;
+      srrState.focusFieldKey = fieldKey || null;
+      srrState.reviewerMode = true;
+      srrState.reviewerPayload = patchRequest || payload || artifact;
+      srrState.reviewerPatchType = patchType;
+      srrState.reviewerPayloadId = payloadId;
+      
+      // Navigate to SRR
+      navigateTo('row/' + recordInfo.rowIndex);
+      console.log('[Reviewer SRR] Opened record:', recordId, 'patchType:', patchType, 'field:', fieldKey, 'fromStore:', !!recordInfo.fromStore);
+    }
+    
+    function showBlockingError(title, message) {
+      // v1.5.3: Show blocking error modal for critical failures
+      var existingModal = document.getElementById('blocking-error-modal');
+      if (existingModal) existingModal.remove();
+      
+      var modal = document.createElement('div');
+      modal.id = 'blocking-error-modal';
+      modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:9999; display:flex; align-items:center; justify-content:center;';
+      modal.innerHTML = 
+        '<div style="background:white; padding:24px; border-radius:8px; max-width:500px; box-shadow:0 4px 24px rgba(0,0,0,0.3);">' +
+          '<h3 style="margin:0 0 12px 0; color:#c62828;">' + escapeHtml(title) + '</h3>' +
+          '<pre style="margin:0 0 16px 0; padding:12px; background:#f5f5f5; border-radius:4px; white-space:pre-wrap; font-size:0.85em; max-height:200px; overflow:auto;">' + escapeHtml(message) + '</pre>' +
+          '<button onclick="document.getElementById(\'blocking-error-modal\').remove()" style="padding:8px 16px; background:#1976d2; color:white; border:none; border-radius:4px; cursor:pointer;">Close</button>' +
+        '</div>';
+      document.body.appendChild(modal);
     }
     
     function initReviewerSRRMode() {
@@ -12971,6 +13186,9 @@
           populateGridSheetSelector();
           renderAllTables();
           renderGrid();
+          
+          // v1.5.3: Persist all records to canonical store
+          persistAllRecordsToStore();
           
           console.log('[Loader] Workbook imported:', file.name, 'sheets:', result.order.length, 'total rows:', allRows.length);
           showToast(ext.toUpperCase() + ' imported: ' + result.order.length + ' sheet(s), ' + allRows.length + ' rows', 'success');
@@ -16921,6 +17139,9 @@ Add any additional notes here.
         populateTargetFieldDropdown();
         renderUploadLibrary();
         
+        // v1.5.3: Persist all records to canonical store
+        persistAllRecordsToStore();
+        
         showToast('Dataset activated: ' + datasetId, 'success');
       } catch (e) {
         console.error('Failed to activate dataset:', e);
@@ -17003,6 +17224,9 @@ Add any additional notes here.
         renderGrid();
         populateTargetFieldDropdown();
         updateLoaderPageUI();
+        
+        // v1.5.3: Persist all records to canonical store for SRR rehydration
+        persistAllRecordsToStore();
         
         console.log('[Loader] Sample dataset loaded:', workbook.order.length, 'sheets');
         showToast('Sample dataset loaded successfully', 'success');
@@ -17126,6 +17350,9 @@ Add any additional notes here.
           populateGridSheetSelector();
           renderAllTables();
           renderGrid();
+          
+          // v1.5.3: Persist all records to canonical store
+          persistAllRecordsToStore();
           
           console.log('[Loader] CSV imported:', sheetName, 'headers:', normalizedHeaders.length, 'rows:', normalizedRows.length, 'unknown:', unknownColumns.length);
           showToast('CSV imported: ' + parsed.rows.length + ' rows, ' + unknownColumns.length + ' unknown columns', 'success');
@@ -17310,6 +17537,9 @@ Add any additional notes here.
           renderAllTables();
           populateTargetFieldDropdown();
           updateLoaderPageUI();
+          
+          // v1.5.3: Persist all records to canonical store
+          persistAllRecordsToStore();
           
           showToast('Imported ' + parsed.rows.length + ' rows from ' + file.name, 'success');
           
