@@ -130,12 +130,16 @@ LocalStorage-backed mock filesystem for artifacts, events, and threads.
 
 ### Storage Layout
 
-| Prefix | Content | Example Key |
-|--------|---------|-------------|
-| `art:` | Artifact objects | `art:art_ds1_rec123_field_2026...` |
-| `pr:` | PatchRequest objects | `pr:pr_1234567890` |
-| `evt:` | Event log entries | `evt:evt_2026-02-04T...` |
-| `thr:` | Thread messages | `thr:thr_art_ds1_rec123...` |
+The artifact store uses `fs:` mock filesystem paths:
+
+| Path Pattern | Content | Example Key |
+|--------------|---------|-------------|
+| `fs:.orchestrate/workspaces/{ws}/artifacts/{id}` | Artifact objects | `fs:.orchestrate/workspaces/default/artifacts/art_ds1_rec123...` |
+| `fs:.orchestrate/workspaces/{ws}/patches/{id}` | PatchRequest objects | `fs:.orchestrate/workspaces/default/patches/pr_1234567890` |
+| `fs:.orchestrate/workspaces/{ws}/events/{id}` | Event log entries | `fs:.orchestrate/workspaces/default/events/evt_2026-02-04...` |
+| `fs:.orchestrate/workspaces/{ws}/threads/{id}` | Thread messages | `fs:.orchestrate/workspaces/default/threads/thr_art_ds1...` |
+
+**Legacy Prefix Compatibility:** The `pr:` prefix is still used for shared PatchRequest store (`PATCH_REQUEST_STORE`) to maintain cross-role hydration compatibility.
 
 ### Artifact ID Generation
 

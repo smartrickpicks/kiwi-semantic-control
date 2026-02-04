@@ -16,7 +16,7 @@ Contract: This document defines the record-level inspection surface. It supports
 
 ## Recent Changes (v1.5.0)
 
-- **Field Inspector State Model**: Updated to 6-state model (todo, verified, modified, submitted, rfi, blocked)
+- **Field Inspector State Model**: Updated to 7-state model (todo, verified, modified, submitted, rfi_pending, rfi, blocked)
 - **RFI Workflow**: Fields stay in To Do queue until "Send RFI" clicked (rfi_pending intermediate state)
 - **Patch Editor Reset**: Form automatically clears after payload submission to prevent carry-over
 - **Verifier Payload Wiring**: RFI, Correction, and Blacklist submissions create payloads for Verifier queue
@@ -107,7 +107,7 @@ The Field Inspector functions as a **mini-queue** where each field has a discret
 - Filter chips: All / Changed / Unchanged
 - Field Cards with action buttons and state badges
 
-**Field States (6-State Model):**
+**Field States (7-State Model):**
 
 | State | Description | Color | Badge Label | Queue Behavior |
 |-------|-------------|-------|-------------|----------------|
@@ -160,22 +160,26 @@ When RFI action is clicked, the Patch Editor displays:
 
 ### Right Panel: Patch Editor + Evidence Pack (v1.4.19)
 
-**Patch Type Selector (Read-Only):**
-Patch Type is **auto-determined** by the field action and displayed as a read-only indicator:
+**Patch Type Selector (Chip Row):**
+Patch Type is displayed as a horizontal chip row with auto-selection based on field action:
 
-| Field Action | Auto Patch Type |
-|--------------|-----------------|
+| Field Action | Auto-Selected Chip |
+|--------------|-------------------|
 | Patch (edit) | Correction |
 | Blacklist Flag | Blacklist Flag |
 | RFI | RFI |
 
-The analyst cannot manually change the Patch Type; it reflects the semantic intent of the action taken. This ensures deterministic audit trails and consistent Evidence Pack requirements.
+**Chip Behavior:**
+- Single-row horizontal layout with scroll if needed
+- Auto-defaults based on last field action
+- Chips are selectable but default reflects semantic intent
+- Selection change updates Evidence Pack requirements dynamically
 
 **Changed Fields Section:**
 - Shows count of committed changes (PATCHED fields)
 - Per-field blocks with:
   - Field label + remove button
-  - Old value (locked, subdued, strikethrough)
+  - Old value (locked, subdued style — no strikethrough)
   - New value (editable input, prominent green border)
 - Editing new value syncs to Field Inspector display
 
@@ -197,7 +201,7 @@ The analyst cannot manually change the Patch Type; it reflects the semantic inte
 - Blacklist Subject: Read-only, auto-derived from selected field name and value
   - Format: `{field_label}: {current_value}`
   - Example: "Artist Name: John Doe"
-- Blacklist Category: Dropdown selector with options:
+- Blacklist Category: *(coming soon)* Dropdown selector with options:
   - Duplicate Entry
   - Invalid Format
   - Prohibited Value
@@ -211,7 +215,7 @@ The analyst cannot manually change the Patch Type; it reflects the semantic inte
 - RFI behavior: The Justification textarea **is** the question
   - Placeholder: "What is your question about this field?"
   - The entered text becomes the RFI question body
-- RFI Target: Optional routing field (Team Lead, Legal, Data Steward, etc.)
+- RFI Target: *(coming soon)* Optional routing field (Team Lead, Legal, Data Steward, etc.)
 - Field change: Optional (RFI does not require value edit)
 
 ## Evidence Pack (v1.4.19)

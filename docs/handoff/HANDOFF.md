@@ -24,7 +24,8 @@ Open PRs: unknown/none
 
 ## Constraints / Do-Not-Change List
 - **Canonical terminology only**: Data Source, All Data Grid, Single Row Review, Verifier Review, Admin Approval; Review States; Submit Patch Request; Evidence Pack blocks (Observation, Expected, Justification, Repro)
-- **Forbidden terms**: Queue, Load Data, Record Inspection, Apply Patch, Reviewer Hub
+- **Forbidden terms**: Queue, Load Data, Apply Patch, Reviewer Hub
+- **Exception**: "Record Inspection" is the UI label for Single Row Review (allowed as user-facing label; canonical name remains `single_row_review` in code/specs/audit)
 
 ## Files Likely to Touch
 - docs/ui/views/single_row_review_view.md
@@ -78,7 +79,7 @@ Queue items route patches between roles. All fields are required.
 | `division_id` | string | Organizational division |
 | `role` | string | Target role: `verifier`, `admin` |
 | `assigned_to_user_id` | string | Assigned actor (or empty) |
-| `status` | string | `pending`, `in_progress`, `completed` |
+| `status` | string | `pending_review`, `needs_clarification`, `sent_to_admin`, `resolved` |
 | `created_at` | ISO 8601 | Queue entry timestamp |
 
 ### Queue Types

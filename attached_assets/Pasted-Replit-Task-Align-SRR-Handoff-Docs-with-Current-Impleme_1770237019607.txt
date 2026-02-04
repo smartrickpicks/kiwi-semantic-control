@@ -1,0 +1,64 @@
+Replit Task: Align SRR/Handoff Docs with Current Implementation (7 Fixes)
+
+Please update the docs in /Users/zacharyholwerda/Downloads/docs 2 to resolve the 7 doc inconsistencies flagged in review.
+
+1) Artifact Store Prefixes (INTERFACES.md)
+Problem: Doc lists art:/pr:/evt:/thr: prefixes, but implementation uses fs: mock filesystem paths.
+Fix: Update the Artifact Store section to reflect fs: mock filesystem keying (e.g., fs:.orchestrate/workspaces/...) and note legacy prefix compatibility if needed.
+
+File: INTERFACES.md
+Location: Artifact Store (v1.5.2)
+
+2) Forbidden Term Conflict (HANDOFF.md)
+Problem: HANDOFF.md forbids “Record Inspection”, but SRR UI label explicitly uses it.
+Fix: Either:
+
+Remove “Record Inspection” from forbidden list, or
+Add an exception note like:
+“Record Inspection is the UI label for Single Row Review (allowed as UI label).”
+File: HANDOFF.md
+Location: Forbidden terms list
+
+3) State Model Count (Single Row Review doc)
+Problem: Doc claims 6‑state model but table lists 7 states (includes rfi_pending + rfi).
+Fix: Update the heading to 7‑state model or consolidate the states explicitly.
+Preferred: Update text to say 7‑state model.
+
+File: single_row_review_view.md
+Location: Recent Changes + Field State Model section
+
+4) Patch Type Read‑Only vs Chips
+Problem: Doc says Patch Type is read‑only, but UI uses chips.
+Fix: Update doc to reflect chip selector (single row, horizontal scroll) and clarify it still auto‑defaults based on action.
+
+File: single_row_review_view.md
+Location: Patch Type Selector section
+
+5) Changed Fields Strikethrough
+Problem: Doc says old values are strikethrough; current UI removed strikeout.
+Fix: Replace with “old values shown in subdued/locked style (no strikeout).”
+
+File: single_row_review_view.md
+Location: Changed Fields section
+
+6) RFI Target + Blacklist Category (Stubbed)
+Problem: Doc lists RFI target and blacklist category as active, but they’re stubbed/absent.
+Fix: Mark both as “coming soon” or remove.
+Preferred: keep but mark as stubbed.
+
+File: single_row_review_view.md
+Location: Blacklist + RFI sections
+
+7) Queue Status Values
+Problem: Queue schema lists pending/in_progress/completed, but workflow uses pending_review/needs_clarification/sent_to_admin/resolved.
+Fix: Update schema to match actual statuses or add a mapping note.
+Preferred: update to actual statuses.
+
+File: HANDOFF.md
+Location: Queue item schema/status
+
+Acceptance
+All 7 doc issues resolved.
+Docs reflect current UI + workflow.
+No contradictory terminology remains.
+Suggested commit: docs: align SRR handoff docs with current UI
