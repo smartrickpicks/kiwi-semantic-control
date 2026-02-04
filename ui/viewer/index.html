@@ -3732,9 +3732,31 @@
     }
     
     function persistRecordToStore(row, sheetName, rowIndex) {
-      if (!row || !row._identity) return null;
+      if (!row) return null;
       
+      // v1.5.3 Fix: Generate identity if missing
       var identity = row._identity;
+      if (!identity) {
+        // Generate stable record_id from row data
+        var tenantId = IDENTITY_CONTEXT.tenant_id || 'tenant_default';
+        var datasetId = IDENTITY_CONTEXT.dataset_id || sheetName || 'default';
+        var recordId = row.record_id || (sheetName + ':' + rowIndex);
+        
+        identity = {
+          tenant_id: tenantId,
+          division_id: IDENTITY_CONTEXT.division_id || 'div_default',
+          dataset_id: datasetId,
+          record_id: recordId,
+          source_pointers: { sheet_name: sheetName, row_index: rowIndex },
+          aliases: [sheetName + ':' + rowIndex]
+        };
+        
+        // Attach identity to row for future reference
+        row._identity = identity;
+        // Also set record_id directly on row for grid lookups
+        row.record_id = recordId;
+      }
+      
       var storageKey = getRecordStorageKey(
         identity.tenant_id,
         identity.dataset_id,
@@ -3753,7 +3775,7 @@
           file_name: (identity.source_pointers && identity.source_pointers.source_file_name) || '',
           file_url: row.file_url || ''
         },
-        aliases: identity.aliases || [],
+        aliases: identity.aliases || [sheetName + ':' + rowIndex],
         data: row,
         _stored_at: new Date().toISOString()
       };
@@ -3777,17 +3799,22 @@
     }
     
     function persistAllRecordsToStore() {
-      // v1.5.3: Persist all workbook records to canonical store
+      // v1.5.3 Fix: Persist all workbook records to canonical store
+      // Now works with or without pre-existing _identity - generates if missing
       var count = 0;
-      if (!workbook || !workbook.sheets) return count;
+      if (!workbook || !workbook.sheets) {
+        console.warn('[RecordStore] No workbook or sheets to persist');
+        return count;
+      }
       
       Object.keys(workbook.sheets).forEach(function(sheetName) {
         var sheet = workbook.sheets[sheetName];
         var rows = sheet ? sheet.rows : [];
-        if (!rows) return;
+        if (!rows || rows.length === 0) return;
         
         rows.forEach(function(row, idx) {
-          if (row && row._identity) {
+          if (row) {
+            // persistRecordToStore now generates identity if missing
             persistRecordToStore(row, sheetName, idx);
             count++;
           }
@@ -8287,6 +8314,11 @@
         // Create a workbook-compatible structure
         var sheetName = file.name.replace(/\.(csv|xlsx)$/i, '');
         
+        // v1.5.3 Fix: Set IDENTITY_CONTEXT.dataset_id before persisting
+        if (!IDENTITY_CONTEXT.dataset_id) {
+          IDENTITY_CONTEXT.dataset_id = sheetName;
+        }
+        
         // Clear any cached version of this sheet to treat re-import as fresh
         clearCachedDataset(sheetName);
         
@@ -8735,7 +8767,8 @@
           var statusClass = 'status-' + (r.status || '').toLowerCase().replace(/\s+/g, '_');
           var sheetName = escapeHtml(r.sheet || '');
           var sheetRowIdx = r._sheetRowIndex !== undefined ? r._sheetRowIndex : idx;
-          var recordId = r.record_id || r.contract_key || '';
+          // v1.5.3 Fix: Check _identity.record_id as well for newly loaded rows
+          var recordId = r.record_id || (r._identity && r._identity.record_id) || r.contract_key || '';
           
           // v1.5.2: Reviewer mode - apply PR status highlighting
           var rowStyle = '';
@@ -11343,36 +11376,48 @@
       
       allPRs.forEach(function(pr) {
         var recordId = pr.record_id || '';
+        var prInfo = {
+          status: pr.status,
+          patch_request_id: pr.request_id || pr.patch_request_id,
+          dataset_id: pr.dataset_id,
+          division_id: pr.division_id
+        };
+        
+        // v1.5.3 Fix: Index by multiple aliases for reliable lookup
         if (recordId) {
-          prStatusMap[recordId] = {
-            status: pr.status,
-            patch_request_id: pr.request_id || pr.patch_request_id
-          };
+          prStatusMap[recordId] = prInfo;
         }
-        // Also index by contract_key if present as alias
+        // Also index by contract_key if present
         if (pr.contract_key && pr.contract_key !== recordId) {
-          prStatusMap[pr.contract_key] = {
-            status: pr.status,
-            patch_request_id: pr.request_id || pr.patch_request_id
-          };
+          prStatusMap[pr.contract_key] = prInfo;
+        }
+        // Also index by record_identity.contract_key if different
+        if (pr.record_identity && pr.record_identity.contract_key) {
+          var ck = pr.record_identity.contract_key;
+          if (ck !== recordId) {
+            prStatusMap[ck] = prInfo;
+          }
         }
       });
       
       // Also scan verifier queue payloads
       verifierQueueState.payloads.forEach(function(p) {
         var recordId = p.record_id || '';
+        var prInfo = {
+          status: p.status,
+          patch_request_id: p.patch_request_id || p.id,
+          artifact_id: p.artifact_id || p.id,
+          dataset_id: p.dataset_id,
+          division_id: p.division_id
+        };
+        
+        // v1.5.3 Fix: Index by multiple aliases
         if (recordId) {
-          prStatusMap[recordId] = {
-            status: p.status,
-            patch_request_id: p.id
-          };
+          prStatusMap[recordId] = prInfo;
         }
         // Also index by contract_key as alias
         if (p.contract_key && p.contract_key !== recordId) {
-          prStatusMap[p.contract_key] = {
-            status: p.status,
-            patch_request_id: p.id
-          };
+          prStatusMap[p.contract_key] = prInfo;
         }
       });
       
@@ -11416,25 +11461,42 @@
     }
     
     function handleReviewerRowClick(recordId, sheetName, rowIndex) {
-      // v1.5.2: Reviewer row click - route to Verifier Review via patch_request_id
-      var prInfo = window.reviewerPrStatusMap ? window.reviewerPrStatusMap[recordId] : null;
+      // v1.5.3 Fix: Reviewer row click - route to Verifier Review via patch_request_id
+      // Try multiple lookup keys for robustness
+      var prInfo = null;
+      var keysChecked = [];
+      
+      if (window.reviewerPrStatusMap) {
+        // Try record_id first
+        if (recordId) {
+          keysChecked.push(recordId);
+          prInfo = window.reviewerPrStatusMap[recordId];
+        }
+        
+        // Fallback: try sheetName:rowIndex pattern
+        if (!prInfo) {
+          var aliasKey = sheetName + ':' + rowIndex;
+          keysChecked.push(aliasKey);
+          prInfo = window.reviewerPrStatusMap[aliasKey];
+        }
+      }
       
       if (prInfo && prInfo.patch_request_id) {
         // Open Verifier Review with this patch_request_id
+        console.log('[Reviewer] Opening Verifier Review for:', prInfo.patch_request_id, 'record:', recordId);
         openVerifierReviewDetail(prInfo.patch_request_id);
       } else {
-        // No PatchRequest found - provide debug info
-        var debugInfo = 'record_id=' + recordId;
-        var knownRecordIds = window.reviewerPrStatusMap ? Object.keys(window.reviewerPrStatusMap).slice(0, 5) : [];
+        // No PatchRequest found - provide detailed debug info
+        var knownRecordIds = window.reviewerPrStatusMap ? Object.keys(window.reviewerPrStatusMap) : [];
         
-        console.warn('[Reviewer] No PatchRequest for record:', recordId, 
-          'Known PRs:', knownRecordIds.length > 0 ? knownRecordIds.join(', ') : 'none');
+        console.warn('[Reviewer] No PatchRequest for record. Keys checked:', keysChecked.join(', '),
+          '| Known PRs (' + knownRecordIds.length + '):', knownRecordIds.slice(0, 8).join(', ') + (knownRecordIds.length > 8 ? '...' : ''));
         
         // Show more helpful message
         if (knownRecordIds.length === 0) {
-          showToast('No PatchRequests loaded. Try loading sample data first.', 'warning');
+          showToast('No PatchRequests loaded. Submit a patch from Analyst view first.', 'warning');
         } else {
-          showToast('No PatchRequest found for this record.', 'info');
+          showToast('No PatchRequest found for record ' + recordId + '. Checked keys: ' + keysChecked.join(', '), 'info');
         }
       }
     }
@@ -11742,13 +11804,33 @@
       var recordInfo = findRecordById(recordId, effectiveDatasetId, effectiveTenantId);
       
       if (!recordInfo) {
-        var fullKey = 'tenant=' + effectiveTenantId + 
-                      ', dataset=' + effectiveDatasetId +
-                      ', record=' + recordId;
+        // v1.5.3 Fix: Enhanced debug info for record not found
+        var storeKey = getRecordStorageKey(effectiveTenantId, effectiveDatasetId, recordId);
+        var workbookSheets = workbook && workbook.sheets ? Object.keys(workbook.sheets) : [];
+        var workbookRowCount = 0;
+        workbookSheets.forEach(function(s) {
+          if (workbook.sheets[s] && workbook.sheets[s].rows) {
+            workbookRowCount += workbook.sheets[s].rows.length;
+          }
+        });
+        
+        var debugInfo = [
+          'tenant_id: ' + effectiveTenantId,
+          'dataset_id: ' + effectiveDatasetId,
+          'record_id: ' + recordId,
+          'patch_request_id: ' + payloadId,
+          '',
+          'Store key checked: ' + storeKey,
+          'Workbook sheets: ' + workbookSheets.join(', '),
+          'Workbook rows: ' + workbookRowCount
+        ].join('\n');
+        
         showBlockingError('Record not found', 
-          'Cannot open record: No matching record in dataset or store.\n\n' +
-          'Key: ' + fullKey);
-        console.error('[Reviewer SRR] Record not found:', recordId, 'dataset:', effectiveDatasetId);
+          'Cannot open record: No matching record in dataset or store.\n\n' + debugInfo);
+        console.error('[Reviewer SRR] Record not found:', recordId, 
+          'dataset:', effectiveDatasetId, 
+          'storeKey:', storeKey,
+          'workbookSheets:', workbookSheets);
         return;
       }
       
