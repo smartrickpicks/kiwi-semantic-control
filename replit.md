@@ -144,13 +144,16 @@ This repository is a **governance-only semantic control plane** for DataDash + K
   - Patch Queue tab shows artifacts with status='sent_to_admin' (badge counts patch_request only)
   - Admin Review detail view (reuses Verifier Review with Finalize/Reject buttons)
   - Admin Finalize sets status='resolved' and logs ADMIN_APPROVED
-- Reviewer Patch Tester Tab:
-  - Reviewer-only tab in SSR right panel (Editor | Patch Tester)
-  - Shows patch summary (field, old value, proposed new value)
-  - Editable new value input for reviewer adjustments
-  - Reviewer notes textarea for analyst communication
-  - Send Back to Analyst button: sets status='needs_clarification', logs PATCH_TESTER_FEEDBACK
-  - Item appears in Analyst's Needs Clarification queue
+- Verifier/Admin SRR (Read-Only Inspector) + Patch Tester:
+  - SSR opens with artifact context: dataset_id + row_id + patch_request_id binding
+  - Row Inspector renders read-only (no edit actions, no inline editing)
+  - Action buttons hidden in read-only mode
+  - Patch Tester tab visible for Verifier AND Admin roles (not just Reviewer)
+  - Patch Tester hidden for RFI artifacts (only shows for Correction/Blacklist)
+  - vrOpenSingleRowReview() passes artifact context to SRR
+  - srrState.isReadOnly flag controls edit permissions
+  - Send Back to Analyst: status='needs_clarification', logs PATCH_TESTER_FEEDBACK, appends thread message
+  - Thread message includes: Field, Proposed Value, Adjusted Value (if different), Notes
 
 **What This Is NOT:**
 - Not a runtime system

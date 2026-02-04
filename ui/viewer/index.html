@@ -8448,6 +8448,10 @@
     var srrState = {
       currentRecord: null,
       currentRowId: null,
+      currentSheetName: null,
+      currentArtifactId: null,  // v1.5.1: Artifact ID for Verifier/Admin review context
+      currentDatasetId: null,   // v1.5.1: Dataset ID for record lookup
+      isReadOnly: false,        // v1.5.1: Read-only mode for Verifier/Admin
       originalValues: {},
       editedValues: {},
       proposedChanges: {},
@@ -8523,6 +8527,15 @@
     // Backwards compat: openRowReviewDrawer(rowId) for legacy callers
     // v1.4.16: Fixed rowId/undefined bug - always define rowId consistently
     function openRowReviewDrawer(arg1, arg2) {
+      // v1.5.1: Set read-only mode for Verifier/Admin if not already set via vrOpenSingleRowReview
+      // Note: isReadOnly should only be true when coming from Verifier/Admin review context with artifact
+      // Direct grid navigation should allow editing (analyst mode), even for verifier/admin
+      // Only preserve isReadOnly if it was explicitly set (via vrOpenSingleRowReview)
+      if (!srrState.currentArtifactId) {
+        // No artifact context - reset read-only (allow editing)
+        srrState.isReadOnly = false;
+      }
+      
       var record = null;
       var sheetName = null;
       var rowIndex = -1;
@@ -8819,19 +8832,22 @@
         var iconReset = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 110 8h-1"/></svg>';
         
         var actionsHtml = '<div class="srr-field-actions">';
-        if (fieldState === 'todo') {
-          actionsHtml += '<button class="srr-field-action blacklist" onclick="event.stopPropagation(); srrBlacklistField(\'' + key + '\')" title="Block this field">' + iconFlag + '</button>';
-          actionsHtml += '<button class="srr-field-action rfi" onclick="event.stopPropagation(); srrRfiField(\'' + key + '\')" title="Request for Info">' + iconEdit + '</button>';
-          actionsHtml += '<button class="srr-field-action verify" onclick="event.stopPropagation(); srrVerifyField(\'' + key + '\')" title="Verify (mark as correct)">' + iconCheck + '</button>';
-        } else if (fieldState === 'modified') {
-          // Modified: no action icons (user moved on after editing)
-        } else if (fieldState === 'verified') {
-          actionsHtml += '<button class="srr-field-action reset" onclick="event.stopPropagation(); srrResetFieldState(\'' + key + '\')" title="Reset to TODO">' + iconReset + '</button>';
-        } else if (fieldState === 'submitted') {
-          // Patch Submitted: no actions needed
-        } else {
-          // rfi, blocked, patched: show reset
-          actionsHtml += '<button class="srr-field-action reset" onclick="event.stopPropagation(); srrResetFieldState(\'' + key + '\')" title="Reset to TODO">' + iconReset + '</button>';
+        // v1.5.1: Hide action buttons in read-only mode (Verifier/Admin)
+        if (!srrState.isReadOnly) {
+          if (fieldState === 'todo') {
+            actionsHtml += '<button class="srr-field-action blacklist" onclick="event.stopPropagation(); srrBlacklistField(\'' + key + '\')" title="Block this field">' + iconFlag + '</button>';
+            actionsHtml += '<button class="srr-field-action rfi" onclick="event.stopPropagation(); srrRfiField(\'' + key + '\')" title="Request for Info">' + iconEdit + '</button>';
+            actionsHtml += '<button class="srr-field-action verify" onclick="event.stopPropagation(); srrVerifyField(\'' + key + '\')" title="Verify (mark as correct)">' + iconCheck + '</button>';
+          } else if (fieldState === 'modified') {
+            // Modified: no action icons (user moved on after editing)
+          } else if (fieldState === 'verified') {
+            actionsHtml += '<button class="srr-field-action reset" onclick="event.stopPropagation(); srrResetFieldState(\'' + key + '\')" title="Reset to TODO">' + iconReset + '</button>';
+          } else if (fieldState === 'submitted') {
+            // Patch Submitted: no actions needed
+          } else {
+            // rfi, blocked, patched: show reset
+            actionsHtml += '<button class="srr-field-action reset" onclick="event.stopPropagation(); srrResetFieldState(\'' + key + '\')" title="Reset to TODO">' + iconReset + '</button>';
+          }
         }
         actionsHtml += '</div>';
         
@@ -9061,6 +9077,12 @@
     
     // SRR Inline Edit functions
     function srrStartEdit(fieldKey) {
+      // v1.5.1: Prevent editing in read-only mode (Verifier/Admin)
+      if (srrState.isReadOnly) {
+        showToast('Read-only mode: Use Patch Tester tab to review', 'info');
+        return;
+      }
+      
       // v1.4.18: Prevent editing locked fields
       if (srrState.lockedFields.hasOwnProperty(fieldKey)) {
         showToast('Field is locked after change. Use Patch Editor to modify.', 'info');
@@ -9350,10 +9372,54 @@
     }
     
     function srrShowPatchTesterTabs() {
-      // Show tabs only for reviewer role
+      // v1.5.1: Show tabs for verifier (reviewer) AND admin roles (not analyst)
+      // Only show for explicit Correction/Blacklist types (not RFI, not unknown)
+      // Note: In codebase, 'reviewer' = Verifier role (UI name differs from internal name)
       var tabsEl = document.getElementById('srr-panel-tabs');
-      if (tabsEl) {
-        tabsEl.style.display = (currentMode === 'reviewer') ? 'flex' : 'none';
+      if (!tabsEl) return;
+      
+      var isVerifierOrAdmin = (currentMode === 'reviewer' || currentMode === 'admin');
+      
+      // Check current artifact type from srrState
+      var artifactId = srrState.currentArtifactId;
+      var artifact = artifactId ? getArtifact(artifactId) : null;
+      
+      // Explicitly require Correction or Blacklist patch type
+      // Hidden for: RFI, missing type, unknown type, generic patch_request without explicit type
+      var isCorrectionOrBlacklist = false;
+      if (artifact) {
+        // Prefer body.patch_type for explicit type, fall back to artifact_type only for blacklist
+        var patchType = artifact.body?.patch_type;
+        var artifactType = artifact.artifact_type;
+        
+        // Normalize to lowercase for comparison
+        var normalizedPatchType = patchType ? String(patchType).toLowerCase() : '';
+        var normalizedArtifactType = artifactType ? String(artifactType).toLowerCase() : '';
+        
+        // Check explicit patch_type first
+        if (normalizedPatchType === 'correction' || 
+            normalizedPatchType === 'blacklist' || 
+            normalizedPatchType === 'blacklist flag') {
+          isCorrectionOrBlacklist = true;
+        }
+        // Only accept artifact_type='blacklist' as secondary (not generic 'patch_request')
+        else if (normalizedArtifactType === 'blacklist') {
+          isCorrectionOrBlacklist = true;
+        }
+        // Reject RFI explicitly
+        if (normalizedPatchType === 'rfi' || normalizedArtifactType === 'rfi') {
+          isCorrectionOrBlacklist = false;
+        }
+      }
+      
+      console.log('[SRR_TABS] Role:', currentMode, 'isCorrectionOrBlacklist:', isCorrectionOrBlacklist, 'isVerifierOrAdmin:', isVerifierOrAdmin);
+      
+      // Show tabs only if: (verifier or admin) AND explicit Correction/Blacklist AND artifact exists
+      if (isVerifierOrAdmin && isCorrectionOrBlacklist && artifactId) {
+        tabsEl.style.display = 'flex';
+      } else {
+        tabsEl.style.display = 'none';
+        srrSwitchRightTab('editor');  // Reset to editor tab when hidden
       }
     }
     
@@ -9419,6 +9485,18 @@
         artifact.updated_at = Date.now();
         saveArtifact(artifact);
         
+        // v1.5.1: Append thread message with feedback details
+        if (artifact.thread_id) {
+          var feedbackMsg = 'Patch Tester Feedback:\n';
+          feedbackMsg += 'Field: ' + srrPatchTesterState.field + '\n';
+          feedbackMsg += 'Proposed Value: ' + srrPatchTesterState.proposedValue + '\n';
+          if (adjustedValue !== srrPatchTesterState.proposedValue) {
+            feedbackMsg += 'Adjusted Value: ' + adjustedValue + '\n';
+          }
+          feedbackMsg += 'Notes: ' + reviewerNotes;
+          addThreadMessage(artifact.thread_id, feedbackMsg);
+        }
+        
         // Log event
         logArtifactEvent({
           event_type: 'PATCH_TESTER_FEEDBACK',
@@ -9434,8 +9512,10 @@
       
       showToast('Sent back to Analyst for clarification', 'success');
       
-      // Clear tester state
+      // Clear tester state and SRR artifact context
       srrPatchTesterState = { artifactId: null, field: null, oldValue: null, proposedValue: null };
+      srrState.currentArtifactId = null;
+      srrState.isReadOnly = false;
       
       // Reset UI
       srrSwitchRightTab('editor');
@@ -10887,28 +10967,61 @@
     function vrOpenSingleRowReview() {
       var payload = vrState.currentPayload;
       if (payload && payload.record_id) {
-        // Navigate to Single Row Review for this record
-        // Need to find the row index in the dataset
+        // v1.5.1: Bind SRR using dataset_id + row_id + patch_request_id (not row index)
         var recordId = payload.record_id;
+        var foundSheet = null;
         var foundIdx = -1;
+        var foundRecord = null;
         
-        // Search across all sheets for the record
+        // Search across all sheets for the record by record_id
         Object.keys(globalDataset).forEach(function(sheetName) {
-          if (foundIdx >= 0) return;
+          if (foundRecord) return;
           var rows = globalDataset[sheetName];
           for (var i = 0; i < rows.length; i++) {
-            if (rows[i].contract_key === recordId || rows[i].record_id === recordId) {
-              srrState.currentSheetName = sheetName;
+            // Match by contract_key, record_id, or _row_id fields
+            if (rows[i].contract_key === recordId || 
+                rows[i].record_id === recordId || 
+                rows[i]._row_id === recordId) {
+              foundSheet = sheetName;
               foundIdx = i;
+              foundRecord = rows[i];
               break;
             }
           }
         });
         
-        if (foundIdx >= 0) {
+        if (foundRecord) {
+          // v1.5.1: Set SRR context with artifact binding
+          srrState.currentSheetName = foundSheet;
+          srrState.currentDatasetId = currentDatasetId || 'default';
+          srrState.currentArtifactId = payload.artifact?.artifact_id || vrState.selectedPayloadId || null;
+          srrState.isReadOnly = (currentMode === 'reviewer' || currentMode === 'admin');
+          
+          console.log('[VR_SRR] Opening SRR with context:', {
+            sheetName: foundSheet,
+            rowIdx: foundIdx,
+            recordId: recordId,
+            artifactId: srrState.currentArtifactId,
+            isReadOnly: srrState.isReadOnly
+          });
+          
           navigateTo('row/' + foundIdx);
+          
+          // Load Patch Tester data if artifact exists and not RFI
+          if (srrState.currentArtifactId) {
+            var artifact = getArtifact(srrState.currentArtifactId);
+            // Robust RFI detection
+            var isRfi = false;
+            if (artifact) {
+              if (artifact.artifact_type === 'rfi') isRfi = true;
+              if (artifact.body && artifact.body.patch_type === 'rfi') isRfi = true;
+            }
+            if (!isRfi) {
+              srrLoadPatchTesterData(srrState.currentArtifactId);
+            }
+          }
         } else {
-          showToast('Record not found in dataset', 'warning');
+          showToast('Record not found in dataset: ' + recordId, 'warning');
         }
       } else {
         showToast('No record linked to this review', 'info');
