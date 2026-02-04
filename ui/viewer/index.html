@@ -1441,9 +1441,30 @@
           <div class="page-header">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <h2>Verifier Triage</h2>
-              <span style="font-size: 0.7em; color: #999;">PAGE: VERIFIER-TRIAGE | BUILD v1.5.0</span>
+              <span style="font-size: 0.7em; color: #999;">PAGE: VERIFIER-TRIAGE | BUILD v1.5.2</span>
             </div>
             <p class="page-desc">Review submitted RFIs, Corrections, and Blacklist requests.</p>
+          </div>
+          
+          <!-- v1.5.2: Division + Status filter bar -->
+          <div class="reviewer-filter-bar" style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: #f8f9fa; border-radius: 8px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label style="font-size: 0.85em; color: #666; font-weight: 600;">Division:</label>
+              <select id="reviewer-filter-division" class="filter-select" style="min-width: 140px;" onchange="onReviewerFilterChange()">
+                <option value="">All Divisions</option>
+              </select>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label style="font-size: 0.85em; color: #666; font-weight: 600;">Status:</label>
+              <select id="reviewer-filter-status" class="filter-select" style="min-width: 140px;" onchange="onReviewerFilterChange()">
+                <option value="">All Statuses</option>
+                <option value="pending">Pending Review</option>
+                <option value="needs_clarification">Needs Clarification</option>
+                <option value="sent_to_admin">Sent to Admin</option>
+                <option value="resolved">Resolved</option>
+              </select>
+            </div>
+            <span id="reviewer-filter-count" style="font-size: 0.85em; color: #666; margin-left: auto;"></span>
           </div>
           
           <div class="verifier-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
@@ -1479,13 +1500,35 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>All-Data Grid</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: GRID | BUILD v1.4.5</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: GRID | BUILD v1.5.2</span>
           </div>
           <p class="page-desc">Dense spreadsheet view of all records with filtering and search.</p>
         </div>
+        
+        <!-- v1.5.2: Reviewer-only filter bar (mirrors triage filters) -->
+        <div id="reviewer-grid-filter-bar" class="reviewer-filter-bar" style="display: none; gap: 16px; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 8px; flex-wrap: wrap;">
+          <span style="font-size: 0.85em; font-weight: 600; color: #e65100;">Read-Only Mode</span>
+          <div style="display: flex; align-items: center; gap: 8px; margin-left: 16px;">
+            <label style="font-size: 0.85em; color: #666; font-weight: 600;">Division:</label>
+            <select id="reviewer-grid-filter-division" class="filter-select" style="min-width: 140px;" onchange="onReviewerGridFilterChange()">
+              <option value="">All Divisions</option>
+            </select>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <label style="font-size: 0.85em; color: #666; font-weight: 600;">Status:</label>
+            <select id="reviewer-grid-filter-status" class="filter-select" style="min-width: 140px;" onchange="onReviewerGridFilterChange()">
+              <option value="">All Statuses</option>
+              <option value="pending">Pending Review</option>
+              <option value="needs_clarification">Needs Clarification</option>
+              <option value="sent_to_admin">Sent to Admin</option>
+              <option value="resolved">Resolved</option>
+            </select>
+          </div>
+          <span id="reviewer-grid-filter-count" style="font-size: 0.85em; color: #666; margin-left: auto;"></span>
+        </div>
 
         <!-- Grid Controls -->
-        <div class="grid-controls" style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;">
+        <div id="analyst-grid-controls" class="grid-controls" style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <label style="font-size: 0.85em; color: #666;">Sheet:</label>
             <select id="grid-sheet-selector" class="filter-select" style="min-width: 160px;">
@@ -7564,7 +7607,14 @@
       
       // If navigating to grid, initialize grid
       if (page === 'grid') {
-        setTimeout(function() { initGrid(); }, 0);
+        setTimeout(function() { 
+          initGrid(); 
+          // v1.5.2: Initialize reviewer grid mode
+          if (currentMode === 'reviewer') {
+            initReviewerGridFilters();
+            renderReviewerGrid();
+          }
+        }, 0);
       }
       
       // If navigating to verifier-review, load data (only if we have a payload or haven't loaded yet)
@@ -7651,18 +7701,29 @@
         appLayout.classList.add(`mode-${mode}`);
       }
 
-      // v1.5.0: Toggle Triage view visibility
+      // v1.5.2: Toggle Triage view visibility + init filters
       const analystContent = document.getElementById('analyst-triage-content');
       const verifierContent = document.getElementById('verifier-triage-content');
       if (analystContent && verifierContent) {
         if (mode === 'reviewer') {
           analystContent.style.display = 'none';
           verifierContent.style.display = 'block';
+          initReviewerFilters();
           renderVerifierTriage();
         } else {
           analystContent.style.display = 'block';
           verifierContent.style.display = 'none';
         }
+      }
+      
+      // v1.5.2: Toggle Grid reviewer mode
+      var reviewerGridBar = document.getElementById('reviewer-grid-filter-bar');
+      var analystGridBar = document.getElementById('analyst-grid-controls');
+      if (reviewerGridBar) {
+        reviewerGridBar.style.display = mode === 'reviewer' ? 'flex' : 'none';
+      }
+      if (analystGridBar) {
+        // Keep analyst controls visible but disable inline editing for reviewers
       }
       
       // If downgrading from admin mode, teardown admin state
@@ -8443,6 +8504,33 @@
         });
       }
       
+      // v1.5.2: Reviewer mode - apply division/status filters from reviewerFilterState
+      if (currentMode === 'reviewer') {
+        // Refresh prStatusMap for accurate filtering
+        renderReviewerGrid();
+        
+        // Filter by division if set
+        if (reviewerFilterState.division) {
+          filtered = filtered.filter(function(r) {
+            return r.division_id === reviewerFilterState.division;
+          });
+        }
+        
+        // Filter by PR status if set - only show records with matching PatchRequest status
+        // Guard: only apply if prStatusMap is populated (PR data loaded)
+        if (reviewerFilterState.status && window.reviewerPrStatusMap && Object.keys(window.reviewerPrStatusMap).length > 0) {
+          filtered = filtered.filter(function(r) {
+            var recordId = r.record_id || r.contract_key || '';
+            var prInfo = window.reviewerPrStatusMap[recordId];
+            if (!prInfo) return false; // No PatchRequest = not shown when status filter active
+            return prInfo.status === reviewerFilterState.status;
+          });
+        } else if (reviewerFilterState.status && (!window.reviewerPrStatusMap || Object.keys(window.reviewerPrStatusMap).length === 0)) {
+          // PR data not yet loaded - skip status filter and show toast
+          console.log('[Reviewer] Status filter skipped - no PatchRequest data loaded yet');
+        }
+      }
+      
       // Deterministic sorting: severity -> identity triplet -> original index
       // Assign stable indices first
       filtered.forEach(function(r, i) { 
@@ -8519,12 +8607,30 @@
       } else {
         // Cleanup virtualization when not needed
         cleanupGridVirtualization();
-        // v1.4.15: Pass sheet name and original row index to click handler
+        // v1.5.2: Pass sheet name and original row index to click handler
+        // Also apply reviewer highlighting if in reviewer mode
+        var isReviewerMode = currentMode === 'reviewer';
+        
         tbody.innerHTML = filtered.map(function(r, idx) {
           var statusClass = 'status-' + (r.status || '').toLowerCase().replace(/\s+/g, '_');
           var sheetName = escapeHtml(r.sheet || '');
           var sheetRowIdx = r._sheetRowIndex !== undefined ? r._sheetRowIndex : idx;
-          return '<tr class="clickable" data-sheet-name="' + sheetName + '" data-record-index="' + sheetRowIdx + '" onclick="openRowReviewDrawer(\'' + sheetName + '\',' + sheetRowIdx + ')">' +
+          var recordId = r.record_id || r.contract_key || '';
+          
+          // v1.5.2: Reviewer mode - apply PR status highlighting
+          var rowStyle = '';
+          var clickHandler = 'openRowReviewDrawer(\'' + sheetName + '\',' + sheetRowIdx + ')';
+          
+          if (isReviewerMode) {
+            var highlight = getReviewerRowHighlight(recordId);
+            if (highlight) {
+              rowStyle = 'background: ' + highlight.bg + '; border-left: 3px solid ' + highlight.border + ';';
+            }
+            // Route reviewer clicks through handleReviewerRowClick
+            clickHandler = 'handleReviewerRowClick(\'' + escapeHtml(recordId) + '\', \'' + sheetName + '\', ' + sheetRowIdx + ')';
+          }
+          
+          return '<tr class="clickable" style="' + rowStyle + '" data-sheet-name="' + sheetName + '" data-record-index="' + sheetRowIdx + '" data-record-id="' + escapeHtml(recordId) + '" onclick="' + clickHandler + '">' +
             '<td class="row-index">' + (idx + 1) + '</td>' +
             gridState.visibleColumns.map(function(col) {
               var val = r[col];
@@ -10895,11 +11001,225 @@
       console.log('[SRR] Opening audit log for record: ' + srrState.currentRowId);
     }
 
-    // ========== VERIFIER TRIAGE & PAYLOAD SYSTEM (v1.5.0) ==========
+    // ========== VERIFIER TRIAGE & PAYLOAD SYSTEM (v1.5.2) ==========
     var verifierQueueState = {
       activeQueue: 'pending',
       payloads: JSON.parse(localStorage.getItem('srr_verifier_queue_v1') || '[]')
     };
+    
+    // v1.5.2: Reviewer filter state with persistence
+    var reviewerFilterState = {
+      division: localStorage.getItem('reviewer_filter_division') || '',
+      status: localStorage.getItem('reviewer_filter_status') || ''
+    };
+    
+    function onReviewerFilterChange() {
+      var divisionEl = document.getElementById('reviewer-filter-division');
+      var statusEl = document.getElementById('reviewer-filter-status');
+      
+      reviewerFilterState.division = divisionEl ? divisionEl.value : '';
+      reviewerFilterState.status = statusEl ? statusEl.value : '';
+      
+      // Persist to localStorage
+      localStorage.setItem('reviewer_filter_division', reviewerFilterState.division);
+      localStorage.setItem('reviewer_filter_status', reviewerFilterState.status);
+      
+      // Re-render triage with filters
+      renderVerifierTriage();
+      
+      // Also re-render grid if in reviewer mode
+      if (currentMode === 'reviewer') {
+        renderReviewerGrid();
+      }
+      
+      console.log('[Reviewer] Filter changed:', reviewerFilterState);
+    }
+    
+    function initReviewerFilters() {
+      // Populate division dropdown from PatchRequest store
+      var divisions = new Set();
+      var allPRs = PATCH_REQUEST_STORE.list();
+      
+      allPRs.forEach(function(pr) {
+        if (pr.division_id) divisions.add(pr.division_id);
+      });
+      
+      // Also scan verifier queue payloads
+      verifierQueueState.payloads.forEach(function(p) {
+        if (p.division_id) divisions.add(p.division_id);
+      });
+      
+      var divisionEl = document.getElementById('reviewer-filter-division');
+      if (divisionEl) {
+        divisionEl.innerHTML = '<option value="">All Divisions</option>';
+        Array.from(divisions).sort().forEach(function(div) {
+          var opt = document.createElement('option');
+          opt.value = div;
+          opt.textContent = div;
+          divisionEl.appendChild(opt);
+        });
+        
+        // Restore saved filter
+        divisionEl.value = reviewerFilterState.division;
+      }
+      
+      var statusEl = document.getElementById('reviewer-filter-status');
+      if (statusEl) {
+        statusEl.value = reviewerFilterState.status;
+      }
+      
+      // Also init grid filter dropdowns
+      initReviewerGridFilters();
+    }
+    
+    function initReviewerGridFilters() {
+      // Populate grid division dropdown (same data as triage)
+      var divisions = new Set();
+      var allPRs = PATCH_REQUEST_STORE.list();
+      
+      allPRs.forEach(function(pr) {
+        if (pr.division_id) divisions.add(pr.division_id);
+      });
+      
+      verifierQueueState.payloads.forEach(function(p) {
+        if (p.division_id) divisions.add(p.division_id);
+      });
+      
+      var divisionEl = document.getElementById('reviewer-grid-filter-division');
+      if (divisionEl) {
+        divisionEl.innerHTML = '<option value="">All Divisions</option>';
+        Array.from(divisions).sort().forEach(function(div) {
+          var opt = document.createElement('option');
+          opt.value = div;
+          opt.textContent = div;
+          divisionEl.appendChild(opt);
+        });
+        divisionEl.value = reviewerFilterState.division;
+      }
+      
+      var statusEl = document.getElementById('reviewer-grid-filter-status');
+      if (statusEl) {
+        statusEl.value = reviewerFilterState.status;
+      }
+    }
+    
+    function onReviewerGridFilterChange() {
+      var divisionEl = document.getElementById('reviewer-grid-filter-division');
+      var statusEl = document.getElementById('reviewer-grid-filter-status');
+      
+      reviewerFilterState.division = divisionEl ? divisionEl.value : '';
+      reviewerFilterState.status = statusEl ? statusEl.value : '';
+      
+      // Persist
+      localStorage.setItem('reviewer_filter_division', reviewerFilterState.division);
+      localStorage.setItem('reviewer_filter_status', reviewerFilterState.status);
+      
+      // Sync triage dropdowns
+      var triageDivisionEl = document.getElementById('reviewer-filter-division');
+      var triageStatusEl = document.getElementById('reviewer-filter-status');
+      if (triageDivisionEl) triageDivisionEl.value = reviewerFilterState.division;
+      if (triageStatusEl) triageStatusEl.value = reviewerFilterState.status;
+      
+      // Re-render grid with new filters applied
+      renderGrid();
+      
+      console.log('[Reviewer] Grid filter changed:', reviewerFilterState);
+    }
+    
+    function renderReviewerGrid() {
+      // v1.5.2: Reviewer-specific grid with status highlighting and read-only behavior
+      // This enhances the normal grid render with PR status highlighting
+      
+      // First, build a map of record_id -> PatchRequest status
+      var prStatusMap = {};
+      var allPRs = PATCH_REQUEST_STORE.list();
+      
+      allPRs.forEach(function(pr) {
+        var recordId = pr.record_id || '';
+        if (recordId) {
+          prStatusMap[recordId] = {
+            status: pr.status,
+            patch_request_id: pr.request_id || pr.patch_request_id
+          };
+        }
+        // Also index by contract_key if present as alias
+        if (pr.contract_key && pr.contract_key !== recordId) {
+          prStatusMap[pr.contract_key] = {
+            status: pr.status,
+            patch_request_id: pr.request_id || pr.patch_request_id
+          };
+        }
+      });
+      
+      // Also scan verifier queue payloads
+      verifierQueueState.payloads.forEach(function(p) {
+        var recordId = p.record_id || '';
+        if (recordId) {
+          prStatusMap[recordId] = {
+            status: p.status,
+            patch_request_id: p.id
+          };
+        }
+        // Also index by contract_key as alias
+        if (p.contract_key && p.contract_key !== recordId) {
+          prStatusMap[p.contract_key] = {
+            status: p.status,
+            patch_request_id: p.id
+          };
+        }
+      });
+      
+      // Store for use in row click handler and grid filtering
+      window.reviewerPrStatusMap = prStatusMap;
+      
+      // Update count display
+      var countEl = document.getElementById('reviewer-grid-filter-count');
+      if (countEl) {
+        var activeCount = Object.keys(prStatusMap).length;
+        var filterText = activeCount + ' records with active PatchRequests';
+        if (reviewerFilterState.division || reviewerFilterState.status) {
+          filterText += ' (filtered)';
+        }
+        countEl.textContent = filterText;
+      }
+      
+      console.log('[Reviewer] Grid status map built:', Object.keys(prStatusMap).length, 'records');
+    }
+    
+    function getReviewerRowHighlight(recordId) {
+      // v1.5.2: Return highlight color based on PatchRequest status
+      if (!window.reviewerPrStatusMap) return null;
+      var prInfo = window.reviewerPrStatusMap[recordId];
+      if (!prInfo) return null;
+      
+      var status = prInfo.status;
+      switch (status) {
+        case 'pending':
+        case 'pending_review':
+          return { bg: '#fffde7', border: '#fff59d' }; // Subtle yellow
+        case 'needs_clarification':
+          return { bg: '#fff3e0', border: '#ffcc80' }; // Orange
+        case 'sent_to_admin':
+          return { bg: '#e3f2fd', border: '#90caf9' }; // Blue
+        case 'resolved':
+          return { bg: '#e8f5e9', border: '#a5d6a7' }; // Green
+        default:
+          return null;
+      }
+    }
+    
+    function handleReviewerRowClick(recordId, sheetName, rowIndex) {
+      // v1.5.2: Reviewer row click - route to Verifier Review via patch_request_id
+      var prInfo = window.reviewerPrStatusMap ? window.reviewerPrStatusMap[recordId] : null;
+      
+      if (prInfo && prInfo.patch_request_id) {
+        // Open Verifier Review with this patch_request_id
+        openVerifierReviewDetail(prInfo.patch_request_id);
+      } else {
+        // No PatchRequest - show toast and offer to open read-only SRR
+        showToast('No PatchRequest available for this record.', 'info');
+      }
+    }
 
     function addVerifierPayload(payload) {
       verifierQueueState.payloads.push(payload);
@@ -10926,9 +11246,30 @@
       if (!container) return;
 
       const queue = verifierQueueState.activeQueue;
-      const filtered = verifierQueueState.payloads.filter(p => p.status === queue);
+      
+      // v1.5.2: Apply division + status filters
+      var filtered = verifierQueueState.payloads.filter(function(p) {
+        // Filter by queue tab first
+        if (p.status !== queue) return false;
+        
+        // Apply division filter
+        if (reviewerFilterState.division && p.division_id !== reviewerFilterState.division) {
+          return false;
+        }
+        
+        return true;
+      });
+      
+      // If status dropdown is set (overrides tab), apply that instead
+      if (reviewerFilterState.status) {
+        filtered = verifierQueueState.payloads.filter(function(p) {
+          if (p.status !== reviewerFilterState.status) return false;
+          if (reviewerFilterState.division && p.division_id !== reviewerFilterState.division) return false;
+          return true;
+        });
+      }
 
-      // Update counts
+      // Update counts (unfiltered by division for tab badges)
       const counts = { pending: 0, needs_clarification: 0, sent_to_admin: 0, resolved: 0 };
       verifierQueueState.payloads.forEach(p => counts[p.status] = (counts[p.status] || 0) + 1);
       
@@ -10936,9 +11277,24 @@
       document.getElementById('v-count-clarification').textContent = `(${counts.needs_clarification})`;
       document.getElementById('v-count-admin').textContent = `(${counts.sent_to_admin})`;
       document.getElementById('v-count-resolved').textContent = `(${counts.resolved})`;
+      
+      // Update filter count indicator (show queue-scoped count)
+      var filterCountEl = document.getElementById('reviewer-filter-count');
+      if (filterCountEl) {
+        var queueCount = verifierQueueState.payloads.filter(function(p) { return p.status === queue; }).length;
+        if (reviewerFilterState.division || reviewerFilterState.status) {
+          filterCountEl.textContent = filtered.length + ' of ' + queueCount + ' items (filtered)';
+        } else {
+          filterCountEl.textContent = queueCount + ' items';
+        }
+      }
 
       if (filtered.length === 0) {
-        container.innerHTML = '<tr><td colspan="7" style="padding: 40px; text-align: center; color: #999;">No payloads in this queue</td></tr>';
+        var msg = 'No reviewer items match the selected filters.';
+        if (!reviewerFilterState.division && !reviewerFilterState.status) {
+          msg = 'No payloads in this queue';
+        }
+        container.innerHTML = '<tr><td colspan="7" style="padding: 40px; text-align: center; color: #999;">' + msg + '</td></tr>';
         return;
       }
 

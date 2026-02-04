@@ -1,0 +1,67 @@
+Replit Task: Reviewer Mode — Triage + Grid + SRR (Filters, Read‑Only, Proper Routing)
+
+Please update index.html to fully align Reviewer role behavior across Triage, All‑Data Grid, and Record Inspection (SRR). Include division + status filtering, consistent routing, and read‑only behavior.
+
+Scope & Rules
+Reviewer mode only (do not change Analyst/Admin behavior).
+No row index routing. Always route by dataset_id + record_id + patch_request_id.
+Reviewer views are read‑only (no inline edits).
+1) Reviewer Triage (Reviewer mode only)
+Data source
+
+Build from shared PatchRequest store + reviewer queue items.
+Filter out anything not assigned to reviewer (role=reviewer/verifier).
+Filter bar
+
+Division dropdown (unique division_id from queue items)
+Status dropdown (pending_review, needs_clarification, sent_to_admin, resolved)
+Include All option for both.
+Row behavior
+
+Clicking a row opens Verifier Review (not Analyst SRR).
+RFI rows must not show Approve in table. Actions:
+Open Review
+Open Record (read‑only SRR with patch_request_id)
+Empty state
+
+If no items match filter: “No reviewer items match the selected filters.”
+2) Reviewer All‑Data Grid (Reviewer mode only)
+Read‑only
+
+Disable inline editing and field actions.
+Filter bar (same as triage)
+
+Division + Status (same state, shared across triage/grid for reviewer).
+Row highlight
+
+Highlight rows with active PatchRequest artifacts by status:
+pending_review (subtle yellow)
+needs_clarification (orange)
+sent_to_admin (blue)
+resolved (green)
+Row click
+
+If row has patch_request_id, open Verifier Review.
+If missing patch_request_id, show toast: “No PatchRequest available for this record.”
+3) Reviewer Record Inspection (SRR)
+Read‑only SRR
+
+Load PatchRequest by patch_request_id then record by dataset_id + record_id.
+Render:
+Proposed changes (diff)
+Evidence pack
+Thread
+Patch Tester tab only for Correction/Blacklist, hidden for RFI.
+4) Filter Persistence (Reviewer only)
+Store filter state in localStorage:
+reviewer_filter_division
+reviewer_filter_status
+Restore on reload.
+Acceptance
+Reviewer triage + grid share division/status filters and persist them.
+Reviewer grid is read‑only and highlights records by status.
+Reviewer row click always routes to Verifier Review via patch_request_id.
+RFI rows show view‑only actions (Open Review/Open Record).
+Reviewer SRR hydrates from PatchRequest and is read‑only.
+Suggested commit: ui(srr): reviewer triage/grid/srr alignment + filters
+
