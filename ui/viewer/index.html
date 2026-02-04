@@ -2378,11 +2378,11 @@
         </div>
         </div><!-- end admin-tab-governance -->
 
-        <!-- ADMIN QUEUE TAB (v1.5.1) -->
+        <!-- PATCH QUEUE TAB (v1.5.1) -->
         <div id="admin-tab-patch-queue" class="admin-tab-panel" data-admin-section="true" style="display: none;">
           <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Admin Review Queue <span class="info-icon" title="Items approved by Verifiers awaiting final Admin approval or action.">&#9432;</span></h3>
-            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Review Correction and Blacklist items approved by Verifiers. RFI items stay in Verifier workflow.</p>
+            <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Patch Queue <span class="info-icon" title="Patch requests approved by Verifiers awaiting final Admin approval.">&#9432;</span></h3>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Review Correction and Blacklist patch requests approved by Verifiers.</p>
             
             <div id="patch-queue-table-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
@@ -7526,7 +7526,7 @@
       }
       
       if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; text-align: center; color: #888;">No items pending Admin review</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; text-align: center; color: #888;">No patch requests pending Admin approval. Items appear here after Verifier approval.</td></tr>';
         return;
       }
       
