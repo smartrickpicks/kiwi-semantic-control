@@ -3531,6 +3531,65 @@
       }
     };
     
+    // ========== RECORD IDENTITY MODEL (v1.5.2) ==========
+    // Context for multi-tenant record identity
+    const IDENTITY_CONTEXT = {
+      tenant_id: 'tenant_default',
+      division_id: 'div_default',
+      dataset_id: null
+    };
+    
+    // UUID regex for alias detection (RFC4122 v1-5)
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    
+    // PatchRequest Store (shared between analyst/reviewer/admin)
+    const PATCH_REQUEST_STORE = {
+      _key: function(patch_request_id) {
+        return 'pr:' + ARTIFACT_STORE.environment + ':' + patch_request_id;
+      },
+      
+      get: function(patch_request_id) {
+        if (!patch_request_id) return null;
+        var data = localStorage.getItem(this._key(patch_request_id));
+        if (data) {
+          try {
+            return JSON.parse(data);
+          } catch (e) {
+            console.error('[PatchRequestStore] Parse error:', patch_request_id, e);
+            return null;
+          }
+        }
+        return null;
+      },
+      
+      save: function(patchRequest) {
+        if (!patchRequest || !patchRequest.request_id) {
+          console.error('[PatchRequestStore] Invalid patch request');
+          return false;
+        }
+        localStorage.setItem(this._key(patchRequest.request_id), JSON.stringify(patchRequest));
+        console.log('[PatchRequestStore] Saved:', patchRequest.request_id);
+        return true;
+      },
+      
+      list: function() {
+        var prefix = 'pr:' + ARTIFACT_STORE.environment + ':';
+        var results = [];
+        for (var i = 0; i < localStorage.length; i++) {
+          var key = localStorage.key(i);
+          if (key && key.startsWith(prefix)) {
+            var data = localStorage.getItem(key);
+            if (data) {
+              try {
+                results.push(JSON.parse(data));
+              } catch (e) {}
+            }
+          }
+        }
+        return results;
+      }
+    };
+    
     // Simple non-crypto hash for deterministic IDs
     function simpleHash(str) {
       var hash = 0;
@@ -3540,6 +3599,71 @@
         hash = hash & hash; // Convert to 32bit integer
       }
       return Math.abs(hash).toString(36);
+    }
+    
+    // Canonicalize row for fingerprinting (stable stringification)
+    function canonicalizeRowForFingerprint(row) {
+      if (!row || typeof row !== 'object') return '';
+      var keys = Object.keys(row).filter(function(k) {
+        return !k.startsWith('_'); // Skip internal fields
+      }).sort();
+      var parts = keys.map(function(k) {
+        var val = row[k];
+        if (val === null || val === undefined) return k + ':';
+        return k + ':' + String(val).trim();
+      });
+      return parts.join('|');
+    }
+    
+    // Generate stable record_id from tenant + dataset + row fingerprint
+    function generateStableRecordId(tenant_id, dataset_id, row) {
+      var seed = tenant_id + '|' + dataset_id + '|' + canonicalizeRowForFingerprint(row);
+      return 'rec_' + simpleHash(seed);
+    }
+    
+    // Detect UUIDs in row values and return as aliases
+    function extractUuidAliases(row) {
+      var aliases = [];
+      if (!row || typeof row !== 'object') return aliases;
+      
+      Object.keys(row).forEach(function(key) {
+        var val = row[key];
+        if (typeof val === 'string' && UUID_REGEX.test(val.trim())) {
+          aliases.push({ type: 'uuid', field: key, value: val.trim() });
+        }
+      });
+      return aliases;
+    }
+    
+    // Enhance row with record identity model
+    function enhanceRowWithIdentity(row, sheetName, rawRowIndex, sourceFileName, datasetId) {
+      var tid = IDENTITY_CONTEXT.tenant_id;
+      var did = datasetId || IDENTITY_CONTEXT.dataset_id || 'ds_' + Date.now().toString(36);
+      
+      // Generate stable record_id if not present
+      var record_id = row.record_id || generateStableRecordId(tid, did, row);
+      
+      // Extract UUID aliases
+      var aliases = extractUuidAliases(row);
+      
+      // Attach identity fields
+      row._identity = {
+        tenant_id: tid,
+        division_id: IDENTITY_CONTEXT.division_id,
+        dataset_id: did,
+        record_id: record_id,
+        source_pointers: {
+          sheet_name: sheetName,
+          source_file_name: sourceFileName || '',
+          raw_row_index: rawRowIndex
+        },
+        aliases: aliases
+      };
+      
+      // Also set top-level record_id for backwards compatibility
+      row.record_id = record_id;
+      
+      return row;
     }
     
     // Generate deterministic artifact ID
@@ -3808,8 +3932,9 @@
         if (!rows) return false;
         for (var i = 0; i < rows.length; i++) {
           var row = rows[i];
-          // Check various ID fields
-          if (row.record_id === record_id || 
+          // v1.5.2: Check record_id (including _identity.record_id), then fallbacks
+          var rowRecordId = row.record_id || (row._identity && row._identity.record_id);
+          if (rowRecordId === record_id || 
               row.contract_key === record_id ||
               (sheetName + ':' + i) === record_id) {
             result = { sheetName: sheetName, rowIndex: i, row: row };
@@ -3867,9 +3992,22 @@
     }
     
     function addSheet(sheetName, headers, rows, meta) {
+      // v1.5.2: Set dataset context if not set
+      var datasetId = IDENTITY_CONTEXT.dataset_id || 'ds_' + Date.now().toString(36);
+      if (!IDENTITY_CONTEXT.dataset_id) {
+        IDENTITY_CONTEXT.dataset_id = datasetId;
+      }
+      
+      var sourceFileName = (meta && meta.source_file_name) || '';
+      
+      // v1.5.2: Enhance each row with identity model
+      var enhancedRows = (rows || []).map(function(row, idx) {
+        return enhanceRowWithIdentity(row, sheetName, idx, sourceFileName, datasetId);
+      });
+      
       workbook.sheets[sheetName] = {
         headers: headers || [],
-        rows: rows || [],
+        rows: enhancedRows,
         meta: meta || {}
       };
       if (!workbook.order.includes(sheetName)) {
@@ -3880,7 +4018,7 @@
       if (!workbook.activeSheet) {
         workbook.activeSheet = sheetName;
       }
-      console.log('[Workbook] Added sheet:', sheetName, 'headers:', headers.length, 'rows:', rows.length);
+      console.log('[Workbook] Added sheet:', sheetName, 'headers:', headers.length, 'rows:', enhancedRows.length, 'dataset:', datasetId);
     }
     
     const STORAGE_KEY_SESSION = 'controlboard_session_v11';
@@ -4836,6 +4974,12 @@
         author_role: options.author_role || currentMode || 'Analyst',
         assigned_to: null,
         status: options.status || 'Draft',
+        // v1.5.2: Enhanced record identity with record_id
+        tenant_id: options.tenant_id || IDENTITY_CONTEXT.tenant_id,
+        division_id: options.division_id || IDENTITY_CONTEXT.division_id,
+        dataset_id: options.dataset_id || IDENTITY_CONTEXT.dataset_id || 'default',
+        record_id: options.record_id || null,
+        patch_kind: options.patch_kind || options.patch_type || 'correction',
         record_identity: {
           contract_key: options.contract_key || null,
           file_url: options.file_url || null,
@@ -4849,9 +4993,20 @@
         risk: options.risk || 'low',
         intent_structured: intentStructured,
         intent_rendered: intentRendered,
+        proposed_changes: options.proposed_changes || [{
+          field: options.field || null,
+          old_value: options.old_value || null,
+          new_value: options.new_value || null
+        }],
         proposed_change: {
           intent: intentRendered,
           rationale: options.rationale || ''
+        },
+        evidence_pack: {
+          observation: options.evidence_observation || '',
+          expected_behavior: options.evidence_expected || '',
+          rule_justification: options.evidence_justification || '',
+          repro_steps: options.evidence_repro || ''
         },
         evidence: {
           observation: options.evidence_observation || '',
@@ -4861,6 +5016,7 @@
           preflight_results: null,
           checklist_status: {}
         },
+        thread: options.thread || [],
         review_notes: '',
         clarification_questions: [],
         revisions: [],
@@ -4889,6 +5045,10 @@
       };
       patchRequestsStore.requests.push(request);
       savePatchRequests();
+      
+      // v1.5.2: Also save to PATCH_REQUEST_STORE for shared access
+      PATCH_REQUEST_STORE.save(request);
+      
       return request;
     }
     
@@ -10435,9 +10595,18 @@
       var whenText = patchType === 'correction' ? 'Field value is incorrect' : 
                      (patchType === 'blacklist' ? 'Value should be blacklisted' : 'Clarification needed');
       
+      // v1.5.2: Get stable record_id from record identity
+      var recordId = (record._identity && record._identity.record_id) || record.record_id || record.contract_key || srrState.currentRecordKey;
+      var datasetId = (record._identity && record._identity.dataset_id) || IDENTITY_CONTEXT.dataset_id || sessionState.fileName || 'default';
+      
       var request = createPatchRequest({
         author: author,
         author_role: currentMode || 'Analyst',
+        // v1.5.2: Include record_id and dataset_id
+        record_id: recordId,
+        dataset_id: datasetId,
+        tenant_id: IDENTITY_CONTEXT.tenant_id,
+        division_id: IDENTITY_CONTEXT.division_id,
         contract_key: record.contract_key || srrState.currentRecordKey,
         file_url: srrResolveFieldValue(record, 'file_url'),
         file_name: srrResolveFieldValue(record, 'file_name'),
@@ -10448,7 +10617,11 @@
         condition_type: 'FIELD_VALUE',
         action_type: actionType,
         patch_type: patchType,
+        patch_kind: patchType,
         override_enabled: srrState.overrideEnabled,
+        old_value: changes.length > 0 ? changes[0].from : '',
+        new_value: changes.length > 0 ? changes[0].to : '',
+        proposed_changes: changes.map(function(c) { return { field: c.field, old_value: c.from, new_value: c.to }; }),
         when: whenText,
         then: changeSummary,
         because: justification || '',
@@ -10465,9 +10638,10 @@
       
       // v1.5.1: Create artifact in artifact store (primary)
       var fieldKey = changes.length > 0 ? changes[0].field : (srrState.rfiField ? srrState.rfiField.key : 'N/A');
+      // v1.5.2: Use stable recordId and datasetId from identity model
       var artifact = createArtifact({
-        dataset_id: sessionState.fileName || 'default_dataset',
-        record_id: request.contract_key || srrState.currentRecordKey,
+        dataset_id: datasetId,
+        record_id: recordId,
         field_key: fieldKey,
         artifact_type: patchType === 'rfi' ? 'rfi' : 'patch_request',
         status: 'open',
@@ -10478,6 +10652,7 @@
         file_name: srrResolveFieldValue(record, 'file_name'),
         body: {
           patch_type: patchType,
+          patch_request_id: request.request_id,
           old_value: changes.length > 0 ? changes[0].from : (srrState.rfiField ? srrState.rfiField.value : ''),
           new_value: changes.length > 0 ? changes[0].to : '',
           comment: justification,
@@ -10493,11 +10668,15 @@
         }
       });
       
-      // v1.5.0: Also add to legacy verifier queue for backwards compatibility
+      // v1.5.2: Add to verifier queue with proper identity fields
       addVerifierPayload({
         id: artifact.artifact_id,
         type: patchType,
-        record_id: request.contract_key,
+        // v1.5.2: Use stable record_id and include dataset_id + patch_request_id
+        record_id: recordId,
+        dataset_id: datasetId,
+        patch_request_id: request.request_id,
+        division_id: IDENTITY_CONTEXT.division_id,
         field: fieldKey,
         old_value: changes.length > 0 ? changes[0].from : (srrState.rfiField ? srrState.rfiField.value : ''),
         new_value: changes.length > 0 ? changes[0].to : '',
@@ -10971,70 +11150,109 @@
     
     function vrOpenSingleRowReview() {
       var payload = vrState.currentPayload;
-      if (payload && payload.record_id) {
-        // v1.5.1: Bind SRR using dataset_id + row_id + patch_request_id (not row index)
-        var recordId = payload.record_id;
-        var foundSheet = null;
-        var foundIdx = -1;
-        var foundRecord = null;
+      
+      // v1.5.2: Load PatchRequest by patch_request_id first
+      var patchRequest = null;
+      var patchRequestId = payload?.patch_request_id || null;
+      
+      if (patchRequestId) {
+        patchRequest = PATCH_REQUEST_STORE.get(patchRequestId);
+        console.log('[VR_SRR] Loaded PatchRequest from store:', patchRequestId, patchRequest ? 'found' : 'NOT FOUND');
         
-        // Search across all sheets for the record by record_id
-        // Use workbook.sheets instead of globalDataset
-        if (workbook && workbook.sheets) {
-          Object.keys(workbook.sheets).forEach(function(sheetName) {
-            if (foundRecord) return;
-            var sheet = workbook.sheets[sheetName];
-            var rows = sheet ? sheet.rows : [];
-            if (!rows) return;
-            for (var i = 0; i < rows.length; i++) {
-              // Match by contract_key, record_id, or _row_id fields
-              if (rows[i].contract_key === recordId || 
-                  rows[i].record_id === recordId || 
-                  rows[i]._row_id === recordId) {
-                foundSheet = sheetName;
-                foundIdx = i;
-                foundRecord = rows[i];
-                break;
-              }
-            }
-          });
+        if (!patchRequest) {
+          // Show blocking error UI with exact storage key
+          var storageKey = 'pr:' + ARTIFACT_STORE.environment + ':' + patchRequestId;
+          showToast('PatchRequest not found: ' + storageKey, 'error');
+          console.error('[VR_SRR] BLOCKING: PatchRequest missing. Key:', storageKey);
+          // Update debug panel if visible
+          updateDebugPanel({ patchRequest_load: 'FAILED', storageKey: storageKey });
+          return;
         }
-        
-        if (foundRecord) {
-          // v1.5.1: Set SRR context with artifact binding
-          srrState.currentSheetName = foundSheet;
-          srrState.currentDatasetId = currentDatasetId || 'default';
-          srrState.currentArtifactId = payload.artifact?.artifact_id || vrState.selectedPayloadId || null;
-          srrState.isReadOnly = (currentMode === 'reviewer' || currentMode === 'admin');
-          
-          console.log('[VR_SRR] Opening SRR with context:', {
-            sheetName: foundSheet,
-            rowIdx: foundIdx,
-            recordId: recordId,
-            artifactId: srrState.currentArtifactId,
-            isReadOnly: srrState.isReadOnly
-          });
-          
-          navigateTo('row/' + foundIdx);
-          
-          // Load Patch Tester data if artifact exists and not RFI
-          if (srrState.currentArtifactId) {
-            var artifact = getArtifact(srrState.currentArtifactId);
-            // Robust RFI detection
-            var isRfi = false;
-            if (artifact) {
-              if (artifact.artifact_type === 'rfi') isRfi = true;
-              if (artifact.body && artifact.body.patch_type === 'rfi') isRfi = true;
-            }
-            if (!isRfi) {
-              srrLoadPatchTesterData(srrState.currentArtifactId);
+      }
+      
+      // v1.5.2: Use record_id from PatchRequest or payload
+      var recordId = (patchRequest && patchRequest.record_id) || (payload && payload.record_id) || null;
+      var datasetId = (patchRequest && patchRequest.dataset_id) || (payload && payload.dataset_id) || IDENTITY_CONTEXT.dataset_id || 'default';
+      
+      if (!recordId) {
+        showToast('No record_id linked to this review', 'info');
+        return;
+      }
+      
+      var foundSheet = null;
+      var foundIdx = -1;
+      var foundRecord = null;
+      
+      // Search across all sheets for the record by record_id
+      if (workbook && workbook.sheets) {
+        Object.keys(workbook.sheets).forEach(function(sheetName) {
+          if (foundRecord) return;
+          var sheet = workbook.sheets[sheetName];
+          var rows = sheet ? sheet.rows : [];
+          if (!rows) return;
+          for (var i = 0; i < rows.length; i++) {
+            var row = rows[i];
+            // Match by record_id (primary), _identity.record_id, or fallback to contract_key
+            var rowRecordId = row.record_id || (row._identity && row._identity.record_id);
+            if (rowRecordId === recordId || row.contract_key === recordId) {
+              foundSheet = sheetName;
+              foundIdx = i;
+              foundRecord = row;
+              break;
             }
           }
-        } else {
-          showToast('Record not found in dataset: ' + recordId, 'warning');
+        });
+      }
+      
+      if (foundRecord) {
+        // v1.5.2: Set SRR context with proper binding
+        srrState.currentSheetName = foundSheet;
+        srrState.currentDatasetId = datasetId;
+        srrState.currentRecordId = recordId;
+        srrState.currentPatchRequestId = patchRequestId;
+        srrState.currentArtifactId = payload?.artifact?.artifact_id || vrState.selectedPayloadId || null;
+        srrState.isReadOnly = (currentMode === 'reviewer' || currentMode === 'admin');
+        srrState.currentPatchRequest = patchRequest;  // Store for Patch Tester
+        
+        console.log('[VR_SRR] Opening SRR with context:', {
+          sheetName: foundSheet,
+          rowIdx: foundIdx,
+          recordId: recordId,
+          datasetId: datasetId,
+          patchRequestId: patchRequestId,
+          artifactId: srrState.currentArtifactId,
+          isReadOnly: srrState.isReadOnly
+        });
+        
+        // Update debug panel
+        updateDebugPanel({
+          role: currentMode,
+          tenant_id: IDENTITY_CONTEXT.tenant_id,
+          division_id: IDENTITY_CONTEXT.division_id,
+          dataset_id: datasetId,
+          record_id: recordId,
+          patch_request_id: patchRequestId,
+          patchRequest_load: patchRequest ? 'SUCCESS' : 'N/A',
+          record_load: 'SUCCESS'
+        });
+        
+        navigateTo('row/' + foundIdx);
+        
+        // Load Patch Tester data if artifact exists and not RFI
+        if (srrState.currentArtifactId) {
+          var artifact = getArtifact(srrState.currentArtifactId);
+          var isRfi = false;
+          if (artifact) {
+            if (artifact.artifact_type === 'rfi') isRfi = true;
+            if (artifact.body && artifact.body.patch_type === 'rfi') isRfi = true;
+          }
+          if (!isRfi) {
+            srrLoadPatchTesterData(srrState.currentArtifactId);
+          }
         }
       } else {
-        showToast('No record linked to this review', 'info');
+        showToast('Record not found in dataset: ' + recordId, 'warning');
+        updateDebugPanel({ record_load: 'FAILED', record_id: recordId });
       }
     }
     
@@ -12488,6 +12706,77 @@
       document.body.appendChild(toast);
       setTimeout(function() { toast.remove(); }, 3000);
     }
+    
+    // ========== DEBUG PANEL (v1.5.2) ==========
+    // Show debug panel when ?debug=1 is in URL
+    var debugPanelState = {
+      visible: false,
+      data: {}
+    };
+    
+    function initDebugPanel() {
+      var urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('debug') === '1') {
+        debugPanelState.visible = true;
+        createDebugPanelUI();
+        console.log('[DEBUG] Debug panel enabled via ?debug=1');
+      }
+    }
+    
+    function createDebugPanelUI() {
+      var panel = document.createElement('div');
+      panel.id = 'debug-panel';
+      panel.style.cssText = 'position: fixed; bottom: 80px; right: 20px; width: 320px; max-height: 400px; overflow-y: auto; background: #1a1a2e; color: #00ff88; font-family: monospace; font-size: 11px; padding: 12px; border-radius: 8px; z-index: 10002; box-shadow: 0 4px 20px rgba(0,0,0,0.5); border: 1px solid #00ff88;';
+      panel.innerHTML = '<div style="font-weight: bold; margin-bottom: 8px; color: #fff; font-size: 12px;">DEBUG PANEL</div><div id="debug-content">Initializing...</div>';
+      document.body.appendChild(panel);
+      
+      // Initial update
+      updateDebugPanel({
+        role: currentMode,
+        tenant_id: IDENTITY_CONTEXT.tenant_id,
+        division_id: IDENTITY_CONTEXT.division_id,
+        dataset_id: IDENTITY_CONTEXT.dataset_id || '(not set)',
+        record_id: '(none)',
+        patch_request_id: '(none)'
+      });
+    }
+    
+    function updateDebugPanel(data) {
+      if (!debugPanelState.visible) return;
+      
+      // Merge with existing data
+      Object.assign(debugPanelState.data, data);
+      
+      var content = document.getElementById('debug-content');
+      if (!content) return;
+      
+      var html = '';
+      var keys = ['role', 'tenant_id', 'division_id', 'dataset_id', 'record_id', 'patch_request_id', 'patchRequest_load', 'record_load', 'storageKey'];
+      keys.forEach(function(key) {
+        var val = debugPanelState.data[key];
+        if (val !== undefined) {
+          var color = '#00ff88';
+          if (val === 'FAILED') color = '#ff4444';
+          else if (val === 'SUCCESS') color = '#44ff44';
+          html += '<div style="margin: 4px 0;"><span style="color: #888;">' + key + ':</span> <span style="color: ' + color + ';">' + val + '</span></div>';
+        }
+      });
+      
+      // Add storage key info
+      var prKey = debugPanelState.data.patch_request_id;
+      if (prKey && prKey !== '(none)') {
+        var storageKey = 'pr:' + ARTIFACT_STORE.environment + ':' + prKey;
+        html += '<div style="margin: 8px 0 4px; color: #888; font-size: 10px;">Storage Key:</div>';
+        html += '<div style="color: #ffa500; word-break: break-all; font-size: 10px;">' + storageKey + '</div>';
+      }
+      
+      content.innerHTML = html;
+    }
+    
+    // Initialize debug panel on load
+    document.addEventListener('DOMContentLoaded', function() {
+      initDebugPanel();
+    });
     
     // Global Search Stub (V2)
     function handleGlobalSearchKeydown(event) {
