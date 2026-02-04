@@ -7844,13 +7844,16 @@
         appLayout.classList.add(`mode-${mode}`);
       }
 
-      // v1.5.2: Toggle Triage view visibility + init filters
+      // v1.5.3 Fix: Toggle Triage view visibility + ALWAYS reload queues from canonical store
       const analystContent = document.getElementById('analyst-triage-content');
       const verifierContent = document.getElementById('verifier-triage-content');
       if (analystContent && verifierContent) {
-        if (mode === 'reviewer') {
+        if (mode === 'reviewer' || mode === 'admin') {
           analystContent.style.display = 'none';
           verifierContent.style.display = 'block';
+          
+          // v1.5.3 Fix: Always reload reviewer queue from canonical stores (not dependent on analyst SRR state)
+          reloadReviewerQueuesFromStore();
           initReviewerFilters();
           renderVerifierTriage();
         } else {
@@ -11450,13 +11453,17 @@
           srrState.fieldStates[fieldKey] = 'submitted';
         });
       }
-      // RFI: Change rfi_pending to rfi (leaves To Do, stays in All)
+      // v1.5.3 Fix: RFI submit should only clear the selected field, preserve other pending RFIs
       if (patchType === 'rfi') {
-        Object.keys(srrState.fieldStates).forEach(function(fieldKey) {
-          if (srrState.fieldStates[fieldKey] === 'rfi_pending') {
-            srrState.fieldStates[fieldKey] = 'rfi';
-          }
-        });
+        // Only change the selected field's state, not all rfi_pending fields
+        var selectedField = srrState.selectedField || srrState.rfiField?.key;
+        if (selectedField && srrState.fieldStates[selectedField] === 'rfi_pending') {
+          srrState.fieldStates[selectedField] = 'rfi';
+        }
+        // If specific field from changes, use that
+        if (changes.length === 1 && changes[0].field) {
+          srrState.fieldStates[changes[0].field] = 'rfi';
+        }
       }
       // Blocked fields stay as 'blocked' (already set when Blacklist clicked)
       
@@ -11890,6 +11897,113 @@
       }
     }
 
+    // v1.5.3 Fix: Reload reviewer queues from canonical stores (independent of analyst SRR state)
+    function reloadReviewerQueuesFromStore() {
+      console.log('[Reviewer] Reloading queues from canonical stores...');
+      
+      // Step 1: Load from localStorage-persisted verifier queue
+      var savedQueue = localStorage.getItem('srr_verifier_queue_v1');
+      if (savedQueue) {
+        try {
+          var parsed = JSON.parse(savedQueue);
+          if (Array.isArray(parsed)) {
+            verifierQueueState.payloads = parsed;
+            console.log('[Reviewer] Loaded', parsed.length, 'items from saved queue');
+          }
+        } catch (e) {
+          console.warn('[Reviewer] Failed to parse saved queue:', e);
+        }
+      }
+      
+      // Step 2: Build comprehensive existingIds set (includes all ID types)
+      var existingIds = new Set();
+      verifierQueueState.payloads.forEach(function(p) {
+        if (p.id) existingIds.add(p.id);
+        if (p.patch_request_id) existingIds.add(p.patch_request_id);
+        if (p.artifact_id) existingIds.add(p.artifact_id);
+      });
+      
+      // Step 3: Sync with PATCH_REQUEST_STORE (canonical source) - add missing items
+      var allPRs = PATCH_REQUEST_STORE.list();
+      allPRs.forEach(function(pr) {
+        var prId = pr.request_id || pr.id;
+        var artId = pr.artifact_id;
+        
+        // Skip if already in queue (by any ID type)
+        if (existingIds.has(prId) || (artId && existingIds.has(artId))) return;
+        
+        // Add to queue as payload
+        var newPayload = {
+          id: artId || prId,
+          type: pr.patch_type || pr.patch_kind || 'correction',
+          record_id: pr.record_id,
+          dataset_id: pr.dataset_id,
+          patch_request_id: prId,
+          division_id: pr.division_id,
+          field: pr.field || pr.target_field,
+          old_value: pr.old_value || '',
+          new_value: pr.new_value || '',
+          comment: pr.because || pr.evidence_justification || '',
+          analyst_id: pr.author,
+          timestamp: pr.created_at,
+          status: pr.status || 'pending',
+          artifact_id: artId
+        };
+        verifierQueueState.payloads.push(newPayload);
+        
+        // v1.5.3 Fix: Update existingIds to prevent duplicates in Step 4
+        existingIds.add(prId);
+        if (artId) existingIds.add(artId);
+        console.log('[Reviewer] Added PR from store:', prId);
+      });
+      
+      // Step 4: Sync with ArtifactStore - add missing artifacts (checks updated existingIds)
+      var allArtifacts = listArtifacts ? listArtifacts() : [];
+      allArtifacts.forEach(function(art) {
+        // v1.5.3 Fix: Check all ID types to prevent duplicates
+        if (existingIds.has(art.artifact_id)) return;
+        var linkedPrId = art.body?.patch_request_id || art.body?.legacy_request_id;
+        if (linkedPrId && existingIds.has(linkedPrId)) return;
+        
+        // Add artifact to queue
+        var newPayload = {
+          id: art.artifact_id,
+          type: art.body?.patch_type || (art.artifact_type === 'rfi' ? 'rfi' : 'correction'),
+          record_id: art.record_id,
+          dataset_id: art.dataset_id,
+          patch_request_id: linkedPrId,
+          division_id: art.division_id,
+          field: art.field_key,
+          old_value: art.body?.old_value || '',
+          new_value: art.body?.new_value || '',
+          comment: art.body?.comment || '',
+          analyst_id: art.created_by_actor_id,
+          timestamp: art.created_at,
+          status: art.status || 'pending',
+          artifact_id: art.artifact_id
+        };
+        verifierQueueState.payloads.push(newPayload);
+        
+        // Update existingIds
+        existingIds.add(art.artifact_id);
+        if (linkedPrId) existingIds.add(linkedPrId);
+        console.log('[Reviewer] Added artifact from store:', art.artifact_id);
+      });
+      
+      // Step 5: Final de-dupe pass by id (safety net)
+      var seenIds = new Set();
+      verifierQueueState.payloads = verifierQueueState.payloads.filter(function(p) {
+        var key = p.id || p.patch_request_id || p.artifact_id;
+        if (seenIds.has(key)) return false;
+        seenIds.add(key);
+        return true;
+      });
+      
+      // Save merged queue
+      saveVerifierQueue();
+      console.log('[Reviewer] Queue reload complete. Total items:', verifierQueueState.payloads.length);
+    }
+    
     function addVerifierPayload(payload) {
       verifierQueueState.payloads.push(payload);
       saveVerifierQueue();
@@ -12009,7 +12123,7 @@
         }
 
         return `
-          <tr style="border-bottom: 1px solid #eee; cursor: pointer;" onclick="openVerifierReviewDetail('${p.id}')" onmouseover="this.style.background='#f5f8ff'" onmouseout="this.style.background='transparent'">
+          <tr style="border-bottom: 1px solid #eee; cursor: pointer;" onclick="openRecordFromPayload('${p.id}')" onmouseover="this.style.background='#f5f8ff'" onmouseout="this.style.background='transparent'">
             <td style="padding:12px;"><span style="background:${typeColor}; color:white; padding:2px 6px; border-radius:10px; font-size:0.8em;">${typeLabel}</span></td>
             <td style="padding:12px; font-weight:600;">${p.record_id}</td>
             <td style="padding:12px; font-family:monospace;">${p.field}</td>
@@ -12630,31 +12744,62 @@
     function loadVerifierReviewData(payloadId) {
       console.log('[VR_LOAD] loadVerifierReviewData called with payloadId:', payloadId);
       
-      // v1.5.1: Try artifact store first, then legacy payload
+      // v1.5.3 Fix: Handle both PR_ (PatchRequest) and art_ (Artifact) prefixes
       var artifact = null;
       var payload = null;
+      var patchRequest = null;
       
       if (payloadId) {
-        artifact = getArtifact(payloadId);
-        if (artifact) {
-          console.log('[VR_LOAD] Found artifact:', artifact.artifact_id, artifact.artifact_type);
-          // Convert artifact to payload-like structure for display
-          payload = {
-            id: artifact.artifact_id,
-            type: artifact.body.patch_type || (artifact.artifact_type === 'rfi' ? 'rfi' : 'correction'),
-            record_id: artifact.record_id,
-            field: artifact.field_key,
-            old_value: artifact.body.old_value || '',
-            new_value: artifact.body.new_value || '',
-            comment: artifact.body.comment || '',
-            analyst_id: artifact.created_by_actor_id,
-            timestamp: artifact.created_at,
-            status: artifact.status,
-            thread_id: artifact.thread_id,
-            artifact: artifact  // Keep reference to full artifact
-          };
-        } else {
-          // Fallback to legacy verifier queue
+        // v1.5.3: Check for PR_ prefix first - load from PATCH_REQUEST_STORE
+        if (payloadId.startsWith('PR_')) {
+          patchRequest = PATCH_REQUEST_STORE.get(payloadId);
+          if (patchRequest) {
+            console.log('[VR_LOAD] Found PatchRequest:', patchRequest.request_id);
+            // Convert PatchRequest to payload-like structure for display
+            payload = {
+              id: patchRequest.request_id,
+              type: patchRequest.patch_type || patchRequest.patch_kind || 'correction',
+              record_id: patchRequest.record_id,
+              dataset_id: patchRequest.dataset_id,
+              field: patchRequest.field || patchRequest.target_field,
+              old_value: patchRequest.old_value || '',
+              new_value: patchRequest.new_value || '',
+              comment: patchRequest.because || patchRequest.evidence_justification || '',
+              analyst_id: patchRequest.author || patchRequest.created_by,
+              timestamp: patchRequest.created_at,
+              status: patchRequest.status,
+              patch_request: patchRequest  // Keep reference to full PatchRequest
+            };
+          } else {
+            console.log('[VR_LOAD] PatchRequest not found:', payloadId);
+          }
+        }
+        
+        // Try artifact store if no PatchRequest or payloadId starts with art_
+        if (!payload) {
+          artifact = getArtifact(payloadId);
+          if (artifact) {
+            console.log('[VR_LOAD] Found artifact:', artifact.artifact_id, artifact.artifact_type);
+            // Convert artifact to payload-like structure for display
+            payload = {
+              id: artifact.artifact_id,
+              type: artifact.body.patch_type || (artifact.artifact_type === 'rfi' ? 'rfi' : 'correction'),
+              record_id: artifact.record_id,
+              field: artifact.field_key,
+              old_value: artifact.body.old_value || '',
+              new_value: artifact.body.new_value || '',
+              comment: artifact.body.comment || '',
+              analyst_id: artifact.created_by_actor_id,
+              timestamp: artifact.created_at,
+              status: artifact.status,
+              thread_id: artifact.thread_id,
+              artifact: artifact  // Keep reference to full artifact
+            };
+          }
+        }
+        
+        // Fallback to legacy verifier queue
+        if (!payload) {
           payload = verifierQueueState.payloads.find(function(p) { return p.id === payloadId; });
           console.log('[VR_LOAD] Found legacy payload:', payload ? 'yes' : 'no');
         }
