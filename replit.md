@@ -144,6 +144,13 @@ This repository is a **governance-only semantic control plane** for DataDash + K
   - Patch Queue tab shows artifacts with status='sent_to_admin' (badge counts patch_request only)
   - Admin Review detail view (reuses Verifier Review with Finalize/Reject buttons)
   - Admin Finalize sets status='resolved' and logs ADMIN_APPROVED
+- Reviewer Patch Tester Tab:
+  - Reviewer-only tab in SSR right panel (Editor | Patch Tester)
+  - Shows patch summary (field, old value, proposed new value)
+  - Editable new value input for reviewer adjustments
+  - Reviewer notes textarea for analyst communication
+  - Send Back to Analyst button: sets status='needs_clarification', logs PATCH_TESTER_FEEDBACK
+  - Item appears in Analyst's Needs Clarification queue
 
 **What This Is NOT:**
 - Not a runtime system

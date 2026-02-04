@@ -376,6 +376,10 @@
     .srr-panel-center { flex: 1; min-width: 300px; }
     .srr-panel-right { width: 360px; flex-shrink: 0; border-left: none; }
     .srr-panel-header { background: #f5f5f5; padding: 12px 16px; border-bottom: 1px solid #e0e0e0; font-weight: 600; font-size: 0.9em; color: #333; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 5; }
+    .srr-panel-tabs { display: flex; gap: 4px; }
+    .srr-panel-tab { padding: 4px 10px; font-size: 0.75em; border: 1px solid #ccc; background: #fff; border-radius: 4px; cursor: pointer; color: #666; }
+    .srr-panel-tab:hover { background: #f0f0f0; }
+    .srr-panel-tab.active { background: #1565c0; color: white; border-color: #1565c0; }
     .srr-panel-body { padding: 12px; }
     .srr-top-bar { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; padding: 12px 16px; background: #1a1a2e; border-radius: 8px; color: white; }
     .srr-identity { font-family: 'Courier New', monospace; font-size: 0.85em; background: #0f3460; padding: 6px 12px; border-radius: 4px; }
@@ -1632,10 +1636,17 @@
 
           <!-- Right Panel: Patch Editor + Evidence Pack + Submit -->
           <div class="srr-panel srr-panel-right">
-            <div class="srr-panel-header">
-              <span>Patch Editor</span>
+            <div class="srr-panel-header" style="display: flex; align-items: center; gap: 8px;">
+              <span id="srr-right-panel-title">Patch Editor</span>
+              <!-- v1.5.1: Reviewer-only Patch Tester tab -->
+              <div id="srr-panel-tabs" class="srr-panel-tabs" style="display: none; margin-left: auto;">
+                <button class="srr-panel-tab active" data-tab="editor" onclick="srrSwitchRightTab('editor')">Editor</button>
+                <button class="srr-panel-tab" data-tab="tester" onclick="srrSwitchRightTab('tester')">Patch Tester</button>
+              </div>
             </div>
-            <div class="srr-panel-body">
+            
+            <!-- Patch Editor Content (default, for analysts) -->
+            <div class="srr-panel-body" id="srr-tab-editor">
               <!-- Patch Type Chips (horizontal scroll) -->
               <div class="srr-patch-type-selector" style="margin-bottom: 16px;">
                 <div class="srr-patch-type-label" style="font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 6px;">Patch Type</div>
@@ -1744,7 +1755,48 @@
                   <button class="srr-btn srr-btn-primary" id="srr-submit-btn" onclick="srrSubmitPatchRequest()">Submit Patch Request</button>
                 </div>
               </div>
-            </div>
+            </div><!-- end srr-tab-editor -->
+            
+            <!-- v1.5.1: Patch Tester Content (reviewer only) -->
+            <div class="srr-panel-body" id="srr-tab-tester" style="display: none;">
+              <div style="margin-bottom: 16px;">
+                <div style="font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 8px;">Patch Summary</div>
+                <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #e0e0e0;">
+                  <div style="margin-bottom: 8px;">
+                    <span style="font-size: 0.75em; color: #888;">Field:</span>
+                    <span id="srr-tester-field" style="font-weight: 600; margin-left: 6px; font-family: monospace;">—</span>
+                  </div>
+                  <div style="margin-bottom: 8px;">
+                    <span style="font-size: 0.75em; color: #888;">Old Value:</span>
+                    <span id="srr-tester-old-value" style="margin-left: 6px; color: #888; text-decoration: line-through;">—</span>
+                  </div>
+                  <div>
+                    <span style="font-size: 0.75em; color: #888;">Proposed:</span>
+                    <span id="srr-tester-proposed-value" style="margin-left: 6px; color: #2e7d32; font-weight: 600;">—</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div style="margin-bottom: 16px;">
+                <div style="font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 8px;">Adjust New Value</div>
+                <input type="text" id="srr-tester-new-value" class="srr-evidence-select" style="width: 100%; padding: 10px; border: 1px solid #4caf50; border-radius: 6px; font-family: monospace;" placeholder="Edit proposed value...">
+                <div style="font-size: 0.75em; color: #888; margin-top: 4px;">Modify the proposed value before sending back for analyst confirmation.</div>
+              </div>
+              
+              <div style="margin-bottom: 16px;">
+                <div style="font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 8px;">Reviewer Notes to Analyst</div>
+                <textarea id="srr-tester-notes" class="srr-evidence-textarea" placeholder="Explain why you're adjusting this patch or what the analyst should verify..." style="min-height: 100px;"></textarea>
+              </div>
+              
+              <div style="flex-grow: 1; min-height: 20px;"></div>
+              
+              <div style="margin-top: auto; padding-top: 16px; border-top: 1px solid #e0e0e0;">
+                <button class="srr-btn srr-btn-primary" style="width: 100%; background: #ff9800;" onclick="srrSendBackToAnalyst()">
+                  ↩ Send Back to Analyst
+                </button>
+                <div style="font-size: 0.75em; color: #888; margin-top: 8px; text-align: center;">Item will appear in Analyst's Needs Clarification queue.</div>
+              </div>
+            </div><!-- end srr-tab-tester -->
           </div>
         </div>
       </div><!-- end page-row -->
@@ -7334,6 +7386,11 @@
         }
       }
       
+      // v1.5.1: Show/hide Patch Tester tab based on role when entering SSR
+      if (page === 'row') {
+        srrShowPatchTesterTabs();
+      }
+      
       // If navigating to grid, initialize grid
       if (page === 'grid') {
         setTimeout(function() { initGrid(); }, 0);
@@ -9262,6 +9319,129 @@
       srrState.patchDraft.changes = [];
       srrHideGuardModal();
       navigateTo('grid');
+    }
+    
+    // ========== v1.5.1: PATCH TESTER TAB (Reviewer SSR) ==========
+    var srrPatchTesterState = {
+      artifactId: null,
+      field: null,
+      oldValue: null,
+      proposedValue: null
+    };
+    
+    function srrSwitchRightTab(tabName) {
+      // Switch between editor and tester tabs
+      var editorTab = document.getElementById('srr-tab-editor');
+      var testerTab = document.getElementById('srr-tab-tester');
+      var tabBtns = document.querySelectorAll('.srr-panel-tab');
+      
+      tabBtns.forEach(function(btn) {
+        btn.classList.toggle('active', btn.dataset.tab === tabName);
+      });
+      
+      if (editorTab) editorTab.style.display = tabName === 'editor' ? 'block' : 'none';
+      if (testerTab) testerTab.style.display = tabName === 'tester' ? 'block' : 'none';
+      
+      // Update panel title
+      var titleEl = document.getElementById('srr-right-panel-title');
+      if (titleEl) {
+        titleEl.textContent = tabName === 'tester' ? 'Patch Tester' : 'Patch Editor';
+      }
+    }
+    
+    function srrShowPatchTesterTabs() {
+      // Show tabs only for reviewer role
+      var tabsEl = document.getElementById('srr-panel-tabs');
+      if (tabsEl) {
+        tabsEl.style.display = (currentMode === 'reviewer') ? 'flex' : 'none';
+      }
+    }
+    
+    function srrHidePatchTesterTabs() {
+      var tabsEl = document.getElementById('srr-panel-tabs');
+      if (tabsEl) tabsEl.style.display = 'none';
+      srrSwitchRightTab('editor');  // Reset to editor tab
+    }
+    
+    function srrLoadPatchTesterData(artifactId) {
+      // Load artifact data into Patch Tester tab
+      var artifact = getArtifact(artifactId);
+      if (!artifact) {
+        console.log('[SRR_TESTER] No artifact found:', artifactId);
+        return;
+      }
+      
+      srrPatchTesterState.artifactId = artifactId;
+      srrPatchTesterState.field = artifact.field_key || '—';
+      srrPatchTesterState.oldValue = artifact.old_value || '—';
+      srrPatchTesterState.proposedValue = artifact.new_value || '';
+      
+      // Populate UI
+      var fieldEl = document.getElementById('srr-tester-field');
+      var oldEl = document.getElementById('srr-tester-old-value');
+      var proposedEl = document.getElementById('srr-tester-proposed-value');
+      var newValueEl = document.getElementById('srr-tester-new-value');
+      
+      if (fieldEl) fieldEl.textContent = srrPatchTesterState.field;
+      if (oldEl) oldEl.textContent = srrPatchTesterState.oldValue;
+      if (proposedEl) proposedEl.textContent = srrPatchTesterState.proposedValue;
+      if (newValueEl) newValueEl.value = srrPatchTesterState.proposedValue;
+      
+      // Clear notes
+      var notesEl = document.getElementById('srr-tester-notes');
+      if (notesEl) notesEl.value = '';
+    }
+    
+    function srrSendBackToAnalyst() {
+      var artifactId = srrPatchTesterState.artifactId;
+      if (!artifactId) {
+        showToast('No patch loaded to send back', 'warning');
+        return;
+      }
+      
+      var newValueEl = document.getElementById('srr-tester-new-value');
+      var notesEl = document.getElementById('srr-tester-notes');
+      
+      var adjustedValue = newValueEl ? newValueEl.value.trim() : '';
+      var reviewerNotes = notesEl ? notesEl.value.trim() : '';
+      
+      if (!reviewerNotes) {
+        showToast('Please add reviewer notes explaining the changes', 'warning');
+        return;
+      }
+      
+      // Update artifact with reviewer feedback
+      var artifact = getArtifact(artifactId);
+      if (artifact) {
+        artifact.status = 'needs_clarification';
+        artifact.reviewer_adjusted_value = adjustedValue;
+        artifact.reviewer_notes = reviewerNotes;
+        artifact.updated_at = Date.now();
+        saveArtifact(artifact);
+        
+        // Log event
+        logArtifactEvent({
+          event_type: 'PATCH_TESTER_FEEDBACK',
+          artifact_id: artifactId,
+          actor: getActorForRole(currentMode),
+          payload: {
+            adjusted_value: adjustedValue,
+            reviewer_notes: reviewerNotes,
+            original_value: srrPatchTesterState.proposedValue
+          }
+        });
+      }
+      
+      showToast('Sent back to Analyst for clarification', 'success');
+      
+      // Clear tester state
+      srrPatchTesterState = { artifactId: null, field: null, oldValue: null, proposedValue: null };
+      
+      // Reset UI
+      srrSwitchRightTab('editor');
+      
+      // Navigate back to triage (reviewer remains in review workflow)
+      navigateTo('triage');
     }
     
     function srrSelectField(fieldKey) {
