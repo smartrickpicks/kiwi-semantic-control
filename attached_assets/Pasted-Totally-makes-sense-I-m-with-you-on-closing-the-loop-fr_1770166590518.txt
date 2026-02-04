@@ -1,0 +1,51 @@
+Totally makes sense — I’m with you on closing the loop from verifier approval into admin, and we can keep the UX refinements for the next pass.
+
+Here’s the **Replit task** to implement verifier approval → admin queue handoff, scoped cleanly so we can demo the full lifecycle:
+
+---
+
+**Replit Task: Verifier Approval → Admin Queue Handoff**
+
+Please update `ui/viewer/index.html` to allow **Verifier approval** of Corrections/Blacklist items and move them into the **Admin queue** (artifact store + UI). This completes the handoff stage before admin processing.
+
+**1) Status Transitions (Artifacts)**
+- When Verifier clicks **Approve** on a **Correction** or **Blacklist** artifact:
+  - Update artifact `status = "sent_to_admin"`
+  - Append event `VERIFIER_APPROVED` to events.jsonl
+- When Verifier clicks **Request Clarification**:
+  - `status = "needs_clarification"`
+  - Append event `VERIFIER_CLARIFICATION_REQUESTED`
+- When Verifier clicks **Reject**:
+  - `status = "rejected"`
+  - Append event `VERIFIER_REJECTED`
+
+**2) Admin Queue (UI + Filtering)**
+- In **Admin view**, add a queue list for:
+  - `status = sent_to_admin`
+- Show the same payload fields as Verifier Review (field, old/new values, comment, etc.).
+- This queue should be derived from artifact store (no UI state).
+
+**3) Reviewer/Verifier Actions**
+- Ensure **Approve** is only actionable for Correction/Blacklist.
+- RFI should **not** send to admin (keep in verifier flow).
+- If RFI is clicked, keep the actions limited to clarification/resolution.
+
+**4) Routing**
+- From Admin queue row click:
+  - Open a **detail view** (can reuse Verifier Review layout for now, with an “Admin Review” label).
+
+**Acceptance**
+- Verifier approvals move items into Admin queue (status changes persisted).
+- Admin queue renders from artifact store and survives refresh.
+- RFI does not appear in Admin queue.
+- Events log records approvals and clarifications.
+
+Suggested commit: `ui(srr): verifier approval to admin queue`
+
+---
+
+Quick confirm so I match your intent:
+1. **Should RFI ever move to Admin**, or should RFI stay in Verifier workflow only?  
+   - Recommended: keep RFI in verifier only.
+
+If you want a quick audit later, I’m happy to do it once you point me to the specific file(s) or paste the relevant diff.

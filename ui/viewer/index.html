@@ -2320,6 +2320,7 @@
         <!-- Admin Console Tabs -->
         <div class="admin-console-tabs" style="display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; padding-bottom: 0;">
           <button class="admin-tab active" data-admin-tab="governance" onclick="switchAdminTab('governance')" style="padding: 10px 20px; background: #1976d2; color: white; border: none; border-radius: 6px 6px 0 0; cursor: pointer; font-weight: 600;">Governance</button>
+          <button class="admin-tab" data-admin-tab="admin-queue" onclick="switchAdminTab('admin-queue')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Admin Queue <span id="admin-queue-count" style="background:#e91e63; color:white; padding:1px 6px; border-radius:10px; font-size:0.8em; margin-left:4px;">0</span></button>
           <button class="admin-tab" data-admin-tab="config" onclick="switchAdminTab('config')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Config</button>
           <button class="admin-tab" data-admin-tab="inspector" onclick="switchAdminTab('inspector')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Inspector</button>
           <button class="admin-tab" data-admin-tab="standardizer" onclick="switchAdminTab('standardizer')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Standardizer</button>
@@ -2376,6 +2377,33 @@
           </div>
         </div>
         </div><!-- end admin-tab-governance -->
+
+        <!-- ADMIN QUEUE TAB (v1.5.1) -->
+        <div id="admin-tab-admin-queue" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Admin Review Queue <span class="info-icon" title="Items approved by Verifiers awaiting final Admin approval or action.">&#9432;</span></h3>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Review Correction and Blacklist items approved by Verifiers. RFI items stay in Verifier workflow.</p>
+            
+            <div id="admin-queue-table-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                <thead style="background: #f5f5f5; position: sticky; top: 0;">
+                  <tr>
+                    <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Type</th>
+                    <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Record ID</th>
+                    <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Field</th>
+                    <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Old → New</th>
+                    <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Comment</th>
+                    <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0;">Submitted</th>
+                    <th style="padding: 12px 8px; text-align: center; border-bottom: 1px solid #e0e0e0;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-queue-tbody">
+                  <tr><td colspan="7" style="padding: 20px; text-align: center; color: #888;">No items pending Admin review</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div><!-- end admin-tab-admin-queue -->
 
         <!-- PATCH CONSOLE TAB -->
         <div id="admin-tab-patch-console" class="admin-tab-panel" data-admin-section="true" style="display: none;">
@@ -3708,7 +3736,10 @@
     }
     
     function getAdminQueue() {
-      return listArtifacts({ artifact_type: 'patch_request', status: 'submitted' });
+      // v1.5.1: Return artifacts approved by verifier (Correction/Blacklist only, not RFI)
+      return listArtifacts({ status: 'sent_to_admin' }).filter(function(a) {
+        return a.artifact_type === 'patch_request' || a.artifact_type === 'blacklist';
+      });
     }
     
     // ========== RECORD LOOKUP BY record_id ==========
@@ -7168,7 +7199,7 @@
       options = options || {};
       // Loader is now a drawer, not a page - redirect loader requests to triage
       if (page === 'loader') page = 'triage';
-      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-review', 'admin-approval', 'admin', 'row'];
+      var pages = ['triage', 'grid', 'patch', 'review', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'row'];
       // Handle row/:id routes
       // v1.4.16: Validate rowId - reject undefined/NaN/empty
       if (page.startsWith('row/')) {
@@ -7230,6 +7261,22 @@
         console.log('[Navigate] Admin Approval page requires admin mode');
         showToast('Admin access required', 'warning');
         page = 'triage';
+      }
+      // v1.5.1: Admin Review route (reuses verifier-review page with admin label)
+      if (page.startsWith('admin-review/') || page === 'admin-review') {
+        if (currentMode !== 'admin') {
+          console.log('[Navigate] Admin Review page requires admin mode');
+          showToast('Admin access required', 'warning');
+          page = 'triage';
+        } else {
+          // Extract artifact ID and load for admin review
+          var artifactId = page.split('/')[1];
+          if (artifactId) {
+            loadAdminReviewData(artifactId);
+          }
+          // Use verifier-review page but with admin context
+          page = 'verifier-review';
+        }
       }
       
       // Update current page tracking
@@ -7416,7 +7463,7 @@
     // Admin Console Tab Switching
     var currentAdminTab = 'governance';
     function switchAdminTab(tabName) {
-      const tabs = ['governance', 'config', 'inspector', 'standardizer', 'patch-console', 'evidence', 'unknown-cols'];
+      const tabs = ['governance', 'admin-queue', 'config', 'inspector', 'standardizer', 'patch-console', 'evidence', 'unknown-cols'];
       if (!tabs.includes(tabName)) tabName = 'governance';
       currentAdminTab = tabName;
       
@@ -7444,7 +7491,114 @@
         }
       });
       
+      // Render admin queue when tab is shown
+      if (tabName === 'admin-queue') {
+        renderAdminQueue();
+      }
+      
       console.log('[Admin] Switched to tab:', tabName);
+    }
+    
+    // ========== ADMIN QUEUE RENDERING (v1.5.1) ==========
+    function renderAdminQueue() {
+      var items = getAdminQueue();
+      var tbody = document.getElementById('admin-queue-tbody');
+      if (!tbody) return;
+      
+      // Update count badge
+      var countEl = document.getElementById('admin-queue-count');
+      if (countEl) {
+        countEl.textContent = items.length;
+        countEl.style.display = items.length > 0 ? 'inline' : 'none';
+      }
+      
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; text-align: center; color: #888;">No items pending Admin review</td></tr>';
+        return;
+      }
+      
+      // Also check legacy verifierQueueState for additional data
+      var legacyPayloads = {};
+      if (typeof verifierQueueState !== 'undefined' && verifierQueueState.payloads) {
+        verifierQueueState.payloads.forEach(function(p) {
+          legacyPayloads[p.id] = p;
+        });
+      }
+      
+      tbody.innerHTML = items.map(function(item) {
+        var legacy = legacyPayloads[item.id] || {};
+        var typeLabel = item.artifact_type === 'blacklist' ? 'Blacklist' : 'Correction';
+        var typeColor = item.artifact_type === 'blacklist' ? '#9c27b0' : '#2e7d32';
+        var oldVal = item.old_value || legacy.old_value || '—';
+        var newVal = item.new_value || legacy.new_value || '—';
+        var comment = item.comment || legacy.comment || '';
+        var time = item.created_at ? new Date(item.created_at).toLocaleString() : '—';
+        
+        return '<tr style="border-bottom: 1px solid #eee; cursor: pointer;" onclick="openAdminReviewDetail(\'' + item.id + '\')" onmouseover="this.style.background=\'#f5f8ff\'" onmouseout="this.style.background=\'transparent\'">' +
+          '<td style="padding:12px;"><span style="background:' + typeColor + '; color:white; padding:2px 6px; border-radius:10px; font-size:0.8em;">' + typeLabel + '</span></td>' +
+          '<td style="padding:12px; font-weight:600;">' + (item.record_id || '—') + '</td>' +
+          '<td style="padding:12px; font-family:monospace;">' + (item.field_key || legacy.field || '—') + '</td>' +
+          '<td style="padding:12px;"><span style="color:#888; text-decoration:line-through;">' + oldVal + '</span> → <span style="color:#2e7d32; font-weight:600;">' + newVal + '</span></td>' +
+          '<td style="padding:12px; color:#666; max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="' + comment + '">' + comment + '</td>' +
+          '<td style="padding:12px; color:#888;">' + time + '</td>' +
+          '<td style="padding:12px; display:flex; gap:6px;">' +
+            '<button onclick="event.stopPropagation(); adminApproveItem(\'' + item.id + '\')" style="background:#2e7d32; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Finalize</button>' +
+            '<button onclick="event.stopPropagation(); adminRejectItem(\'' + item.id + '\')" style="background:#d32f2f; color:white; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Reject</button>' +
+          '</td>' +
+        '</tr>';
+      }).join('');
+    }
+    
+    function openAdminReviewDetail(artifactId) {
+      // Load the artifact and open Admin Review page (reuses verifier review layout)
+      var artifact = getArtifact(artifactId);
+      if (!artifact) {
+        // Try legacy payload
+        var payload = verifierQueueState.payloads.find(function(p) { return p.id === artifactId; });
+        if (!payload) {
+          showToast('Item not found', 'warning');
+          return;
+        }
+        // Convert legacy to artifact-like object
+        artifact = {
+          id: payload.id,
+          artifact_type: payload.type === 'blacklist' ? 'blacklist' : 'patch_request',
+          record_id: payload.record_id,
+          field_key: payload.field,
+          old_value: payload.old_value,
+          new_value: payload.new_value,
+          comment: payload.comment,
+          status: payload.status
+        };
+      }
+      
+      // Set state for admin review (reuse verifier review state)
+      vrState.currentPatchId = artifactId;
+      vrState.reviewState = 'Verifier_Approved';
+      vrState.loadedPayload = artifact;
+      
+      navigateTo('admin-review/' + artifactId);
+    }
+    
+    function adminApproveItem(artifactId) {
+      updatePayloadStatus(artifactId, 'resolved');
+      renderAdminQueue();
+      showToast('Item finalized and resolved', 'success');
+    }
+    
+    function adminRejectItem(artifactId) {
+      updatePayloadStatus(artifactId, 'rejected');
+      renderAdminQueue();
+      showToast('Item rejected', 'warning');
+    }
+    
+    function updateAdminQueueCount() {
+      var items = getAdminQueue();
+      var countEl = document.getElementById('admin-queue-count');
+      if (countEl) {
+        countEl.textContent = items.length;
+        countEl.style.display = items.length > 0 ? 'inline' : 'none';
+      }
     }
 
     // Teardown admin state when leaving admin mode
@@ -10276,8 +10430,44 @@
       if (payload) {
         payload.status = newStatus;
         saveVerifierQueue();
+        
+        // v1.5.1: Also update artifact store and log event
+        var artifact = getArtifact(payloadId);
+        if (artifact) {
+          updateArtifact(payloadId, { status: newStatus });
+          
+          // Log appropriate event based on status change
+          var eventType = null;
+          if (newStatus === 'sent_to_admin') {
+            eventType = 'VERIFIER_APPROVED';
+          } else if (newStatus === 'needs_clarification') {
+            eventType = 'VERIFIER_CLARIFICATION_REQUESTED';
+          } else if (newStatus === 'rejected') {
+            eventType = 'VERIFIER_REJECTED';
+          } else if (newStatus === 'resolved') {
+            eventType = 'ADMIN_APPROVED';
+          }
+          
+          if (eventType) {
+            logArtifactEvent(eventType, {
+              artifact_id: payloadId,
+              artifact_type: artifact.artifact_type,
+              record_id: artifact.record_id,
+              field_key: artifact.field_key,
+              new_status: newStatus
+            });
+          }
+        }
+        
         renderVerifierTriage();
-        showToast(`Payload ${newStatus.replace(/_/g, ' ')}`, 'info');
+        
+        // Show appropriate toast
+        var toastMsg = newStatus === 'sent_to_admin' ? 'Approved — sent to Admin queue' : 
+                       newStatus === 'needs_clarification' ? 'Clarification requested' :
+                       newStatus === 'rejected' ? 'Rejected' :
+                       newStatus === 'resolved' ? 'Finalized' :
+                       newStatus.replace(/_/g, ' ');
+        showToast(toastMsg, newStatus === 'rejected' ? 'warning' : 'success');
       }
     }
     
@@ -10322,15 +10512,47 @@
       notes: '',
       fromVerifierTriage: false,  // v1.5.0: Track if navigated from Verifier Triage
       currentPayload: null,       // v1.5.0: Store current payload for actions
-      selectedPayloadId: null     // v1.5.0: Store selected payload ID for navigation
+      selectedPayloadId: null,    // v1.5.0: Store selected payload ID for navigation
+      isAdminReview: false        // v1.5.1: Track if this is admin review context
     };
     
     function navigateBackFromVerifierReview() {
-      if (vrState.fromVerifierTriage) {
+      // Reset header back to Verifier Review defaults
+      var headerEl = document.querySelector('#page-verifier-review h2');
+      if (headerEl) headerEl.textContent = 'Verifier Review';
+      var descEl = document.querySelector('#page-verifier-review .page-desc');
+      if (descEl) descEl.textContent = 'Review submitted Patch Requests, request clarification, approve or reject.';
+      
+      // Reset button handlers
+      resetVerifierReviewButtons();
+      
+      // v1.5.1: Navigate back to appropriate queue
+      if (vrState.isAdminReview) {
+        vrState.isAdminReview = false;
+        vrState.fromVerifierTriage = false;
+        navigateTo('admin/admin-queue');
+      } else if (vrState.fromVerifierTriage) {
         vrState.fromVerifierTriage = false;
         navigateTo('triage');  // Returns to triage which shows Verifier Triage in reviewer mode
       } else {
         navigateTo('triage');
+      }
+    }
+    
+    function resetVerifierReviewButtons() {
+      var btnBegin = document.getElementById('vr-btn-begin');
+      var btnClarify = document.getElementById('vr-btn-clarify');
+      var btnApprove = document.getElementById('vr-btn-approve');
+      var btnReject = document.getElementById('vr-btn-reject');
+      
+      if (btnBegin) btnBegin.style.display = '';
+      if (btnClarify) btnClarify.style.display = '';
+      if (btnApprove) {
+        btnApprove.textContent = 'Approve';
+        btnApprove.onclick = function() { vrApprove(); };
+      }
+      if (btnReject) {
+        btnReject.onclick = function() { vrReject(); };
       }
     }
     
@@ -10502,9 +10724,81 @@
     function openVerifierReviewDetail(payloadId) {
       console.log('[VR_OPEN] Opening verifier review for payload:', payloadId);
       vrState.fromVerifierTriage = true;  // Track navigation source
+      vrState.isAdminReview = false;  // Not admin review
       vrState.selectedPayloadId = payloadId;  // Store selected payload ID for navigation handler
       console.log('[VR_OPEN] vrState.selectedPayloadId set to:', vrState.selectedPayloadId);
       navigateTo('verifier-review');
+    }
+    
+    // v1.5.1: Load data for Admin Review (from Admin Queue)
+    function loadAdminReviewData(artifactId) {
+      console.log('[AR_LOAD] loadAdminReviewData called with artifactId:', artifactId);
+      
+      vrState.isAdminReview = true;  // Track admin context
+      vrState.fromVerifierTriage = true;
+      vrState.selectedPayloadId = artifactId;
+      
+      // Update page header to show "Admin Review"
+      var headerEl = document.querySelector('#page-verifier-review h2');
+      if (headerEl) {
+        headerEl.textContent = 'Admin Review';
+      }
+      var descEl = document.querySelector('#page-verifier-review .page-desc');
+      if (descEl) {
+        descEl.textContent = 'Final Admin review of Verifier-approved items. Finalize or reject.';
+      }
+      
+      // Load the data (reuses verifier review data loading)
+      loadVerifierReviewData(artifactId);
+      
+      // Update action buttons for admin context
+      setTimeout(function() {
+        vrUpdateActionButtonsForAdmin();
+      }, 100);
+    }
+    
+    function vrUpdateActionButtonsForAdmin() {
+      // In admin review, show Finalize/Reject instead of Begin Review/Approve/Reject
+      var btnBegin = document.getElementById('vr-btn-begin');
+      var btnClarify = document.getElementById('vr-btn-clarify');
+      var btnApprove = document.getElementById('vr-btn-approve');
+      var btnReject = document.getElementById('vr-btn-reject');
+      
+      if (vrState.isAdminReview) {
+        // Hide Begin Review for admin (already reviewed by verifier)
+        if (btnBegin) btnBegin.style.display = 'none';
+        if (btnClarify) btnClarify.style.display = 'none';
+        
+        // Rename Approve to Finalize
+        if (btnApprove) {
+          btnApprove.textContent = 'Finalize';
+          btnApprove.disabled = false;
+          btnApprove.onclick = function() { adminFinalizeFromReview(); };
+        }
+        if (btnReject) {
+          btnReject.disabled = false;
+          btnReject.onclick = function() { adminRejectFromReview(); };
+        }
+      }
+    }
+    
+    function adminFinalizeFromReview() {
+      if (!vrState.selectedPayloadId) return;
+      updatePayloadStatus(vrState.selectedPayloadId, 'resolved');
+      showToast('Item finalized and resolved', 'success');
+      navigateTo('admin/admin-queue');
+    }
+    
+    function adminRejectFromReview() {
+      var notes = document.getElementById('vr-notes')?.value?.trim();
+      if (!notes) {
+        showToast('Please add notes explaining the rejection', 'warning');
+        return;
+      }
+      if (!vrState.selectedPayloadId) return;
+      updatePayloadStatus(vrState.selectedPayloadId, 'rejected');
+      showToast('Item rejected', 'warning');
+      navigateTo('admin/admin-queue');
     }
     
     function vrUpdateStateBadge() {
