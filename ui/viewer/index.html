@@ -7874,6 +7874,27 @@
         teardownAdminState();
       }
       
+      // v1.5.3 Fix: Reset SRR state when switching roles to prevent stale isReadOnly
+      if (mode === 'analyst') {
+        // Analyst: ensure editing is enabled
+        srrState.isReadOnly = false;
+        srrState.reviewerMode = false;
+        // Reset reviewer SRR mode to restore analyst UI (tabs, chips, etc.)
+        if (srrState.currentRecord) {
+          resetReviewerSRRMode();
+          renderSrrFields(srrState.currentRecord);
+        }
+      } else if (mode === 'reviewer' || mode === 'admin') {
+        // Reviewer/Admin: set read-only mode
+        srrState.isReadOnly = true;
+        // Initialize reviewer SRR mode if SRR is open (tabs, panel state)
+        if (srrState.currentRecord) {
+          srrState.reviewerMode = true;
+          initReviewerSRRMode();
+          renderSrrFields(srrState.currentRecord);
+        }
+      }
+      
       // If on admin page but not admin mode, redirect to triage
       if (window.location.hash.includes('admin') && mode !== 'admin') {
         showToast('Role changed - returning to Triage', 'info');
@@ -8957,12 +8978,20 @@
     // Backwards compat: openRowReviewDrawer(rowId) for legacy callers
     // v1.4.16: Fixed rowId/undefined bug - always define rowId consistently
     function openRowReviewDrawer(arg1, arg2) {
-      // v1.5.1: Set read-only mode for Verifier/Admin if not already set via vrOpenSingleRowReview
-      // Note: isReadOnly should only be true when coming from Verifier/Admin review context with artifact
-      // Direct grid navigation should allow editing (analyst mode), even for verifier/admin
-      // Only preserve isReadOnly if it was explicitly set (via vrOpenSingleRowReview)
-      if (!srrState.currentArtifactId) {
-        // No artifact context - reset read-only (allow editing)
+      // v1.5.3 Fix: Determine read-only mode based on current role at render time
+      // Analyst mode: always editable (isReadOnly = false)
+      // Reviewer/Admin mode WITH artifact context: read-only (isReadOnly = true)
+      // Reviewer/Admin mode WITHOUT artifact context (direct grid nav): still read-only for field inspector
+      if (currentMode === 'analyst') {
+        // Analyst can always edit - reset read-only state
+        srrState.isReadOnly = false;
+        srrState.reviewerMode = false;
+      } else if (currentMode === 'reviewer' || currentMode === 'admin') {
+        // Reviewer/Admin: read-only mode for field inspector
+        // Only set reviewerMode if coming from artifact context (vrOpenSingleRowReview sets this)
+        srrState.isReadOnly = true;
+      } else {
+        // Default to editable
         srrState.isReadOnly = false;
       }
       
@@ -12375,8 +12404,51 @@
           }
         }
       } else {
-        showToast('Record not found in dataset: ' + recordId, 'warning');
-        updateDebugPanel({ record_load: 'FAILED', record_id: recordId });
+        // v1.5.3 Fix: Fallback to record store when workbook lookup fails
+        console.log('[VR_SRR] Workbook lookup failed, trying record store...');
+        var fallbackTenantId = (patchRequest && patchRequest.tenant_id) || IDENTITY_CONTEXT.tenant_id || 'tenant_default';
+        var storedRecord = loadRecordFromStore(fallbackTenantId, datasetId, recordId);
+        
+        if (storedRecord && storedRecord.data) {
+          console.log('[VR_SRR] Found record in store:', storedRecord.record_id);
+          foundRecord = storedRecord.data;
+          var srcPointers = storedRecord.source_pointers || {};
+          foundSheet = srcPointers.sheet_name || datasetId;
+          foundIdx = srcPointers.row_index || 0;
+          
+          // Inject into workbook for subsequent lookups
+          if (!workbook.sheets[foundSheet]) {
+            workbook.sheets[foundSheet] = { name: foundSheet, headers: Object.keys(foundRecord), rows: [] };
+            if (workbook.order.indexOf(foundSheet) < 0) workbook.order.push(foundSheet);
+          }
+          if (!workbook.sheets[foundSheet].rows[foundIdx]) {
+            workbook.sheets[foundSheet].rows[foundIdx] = foundRecord;
+          }
+          
+          // Set SRR context and open
+          srrState.currentSheetName = foundSheet;
+          srrState.currentDatasetId = datasetId;
+          srrState.currentRecordId = recordId;
+          srrState.currentPatchRequestId = patchRequestId;
+          var artifactId = (payload && payload.artifact && payload.artifact.artifact_id) || vrState.selectedPayloadId || null;
+          srrState.currentArtifactId = artifactId;
+          srrState.isReadOnly = (currentMode === 'reviewer' || currentMode === 'admin');
+          srrState.currentPatchRequest = patchRequest;
+          
+          updateDebugPanel({
+            role: currentMode,
+            tenant_id: fallbackTenantId,
+            dataset_id: datasetId,
+            record_id: recordId,
+            record_load: 'STORE_FALLBACK'
+          });
+          
+          navigateTo('row/' + foundIdx);
+        } else {
+          var storeKey = 'kiwi/v1/' + fallbackTenantId + '/records/' + datasetId + '/' + recordId + '.json';
+          showToast('Record not found in dataset or store: ' + recordId, 'warning');
+          updateDebugPanel({ record_load: 'FAILED', record_id: recordId, store_key: storeKey });
+        }
       }
     }
     

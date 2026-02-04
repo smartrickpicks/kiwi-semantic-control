@@ -1,0 +1,70 @@
+Got it — thanks for the detailed repro and logs, this is super helpful and we can definitely tighten this up. Below is a **single Replit task** that targets all three issues you saw: reviewer SRR using analyst UI, record_id not found on reopen, and analyst field‑inspector actions disappearing.
+
+---
+
+**Replit Task: Fix Reviewer SRR View + Reopen Mapping + Analyst Actions Missing**
+
+**Goal**  
+Stabilize SRR role rendering and record resolution across Analyst/Reviewer, and restore analyst field‑inspector actions.
+
+---
+
+## Issue 1 — Reviewer SRR shows Analyst UI
+**Problem:** Reviewer opens SRR but sees Analyst UI with editable patch editor.
+
+**Fix:**
+- When SRR opens in Reviewer/Verifier/Admin role, force **read‑only SRR mode**:
+  - Hide analyst actions (Blacklist/RFI/Verify buttons)
+  - Replace Patch Editor with Reviewer patch review / patch tester tabs
+- Ensure the role is determined **at render time** and not leaking from previous role state.
+
+**Acceptance:** Reviewer SRR always shows reviewer layout, even after role switching.
+
+---
+
+## Issue 2 — record_id not found on reopen
+**Problem:** First open works, second open fails with record_id not found.
+
+**Fix:**
+- Ensure `record_id` remains stable across:
+  - initial load
+  - role switch
+  - reopen
+- Do not regenerate `_identity.record_id` on each load.
+- On reopen:
+  - load PatchRequest by `patch_request_id`
+  - resolve record via `record_id`
+  - if workbook lookup fails, load from record store
+
+**Add debug log on failure:**
+- `dataset_id`, `record_id`, `patch_request_id`
+- store key path used
+
+**Acceptance:** Reviewer can open the same record multiple times without failure.
+
+---
+
+## Issue 3 — Analyst field‑inspector actions missing
+**Problem:** Analyst view no longer shows field action icons/buttons.
+
+**Fix:**
+- Verify analyst role UI controls are not hidden by read‑only logic.
+- Ensure any shared SRR role flags are scoped per role and reset on role change.
+- Restore field inspector action buttons for analyst.
+
+**Acceptance:** Analyst has full field inspector actions after switching roles and resetting playground.
+
+---
+
+## Smoke Checks
+1. Analyst SRR shows action buttons  
+2. Reviewer SRR shows reviewer UI (not analyst)  
+3. Reviewer can open same record twice  
+4. Switching roles doesn’t break SRR mode  
+
+**Suggested commit**  
+`fix(srr): role-specific SRR render + stable record reopen + restore analyst actions`
+
+---
+
+If you want, I can add a tiny “Role Debug” banner in SRR during dev to confirm the active role and mode for faster testing.
