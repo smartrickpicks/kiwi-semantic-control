@@ -7326,8 +7326,12 @@
       }
       
       // If navigating to admin with a specific tab, switch to it
-      if (page === 'admin' && adminTab) {
-        switchAdminTab(adminTab);
+      if (page === 'admin') {
+        // Update admin queue count
+        updateAdminQueueCount();
+        if (adminTab) {
+          switchAdminTab(adminTab);
+        }
       }
       
       // If navigating to grid, initialize grid
@@ -7337,6 +7341,15 @@
       
       // If navigating to verifier-review, load data (only if we have a payload or haven't loaded yet)
       if (page === 'verifier-review') {
+        // v1.5.1: Reset header/buttons if not in admin review mode
+        if (!vrState.isAdminReview) {
+          var headerEl = document.querySelector('#page-verifier-review h2');
+          if (headerEl) headerEl.textContent = 'Verifier Review';
+          var descEl = document.querySelector('#page-verifier-review .page-desc');
+          if (descEl) descEl.textContent = 'Review submitted Patch Requests, request clarification, approve or reject.';
+          resetVerifierReviewButtons();
+        }
+        
         setTimeout(function() {
           // Skip re-loading if we already have a loaded payload and no new selection
           if (!vrState.selectedPayloadId && vrState.currentPayload) {

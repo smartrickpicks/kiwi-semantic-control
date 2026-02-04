@@ -130,12 +130,19 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - localStorage-backed mock filesystem (fs: prefix) with environment scoping
 - Artifact envelope contract: workspace_id, environment, dataset_id, record_id, field_key, artifact_type, status, thread_id
 - Deterministic artifact IDs: hash(dataset_id + record_id + field_key + timestamp)
-- Event log (events.jsonl): RFI_CREATED, RFI_REPLIED, PATCH_DRAFT_CREATED, PATCH_REQUEST_SUBMITTED
+- Event log (events.jsonl): RFI_CREATED, RFI_REPLIED, PATCH_DRAFT_CREATED, PATCH_REQUEST_SUBMITTED, VERIFIER_APPROVED, VERIFIER_REJECTED, VERIFIER_CLARIFICATION_REQUESTED, ADMIN_APPROVED
 - Thread system for RFI conversations with message history
 - Queue routing via record_id lookup (not row index) for stable navigation
 - Playground mode: Environment selector (Playground/Prod), Reset Playground button
 - Environment scoping: playground keys isolated, prod locked for now
 - Backwards compatibility: Legacy verifierQueueState preserved alongside artifact store
+- Verifier Approval → Admin Queue handoff:
+  - Verifier Approve on Correction/Blacklist sets status='sent_to_admin' and logs VERIFIER_APPROVED
+  - Verifier Request Clarification sets status='needs_clarification' and logs VERIFIER_CLARIFICATION_REQUESTED
+  - Verifier Reject sets status='rejected' and logs VERIFIER_REJECTED
+  - Admin Queue tab in Admin Console shows artifacts with status='sent_to_admin' (excludes RFI)
+  - Admin Review detail view (reuses Verifier Review with Finalize/Reject buttons)
+  - Admin Finalize sets status='resolved' and logs ADMIN_APPROVED
 
 **What This Is NOT:**
 - Not a runtime system
