@@ -136,11 +136,12 @@ This repository is a **governance-only semantic control plane** for DataDash + K
 - Playground mode: Environment selector (Playground/Prod), Reset Playground button
 - Environment scoping: playground keys isolated, prod locked for now
 - Backwards compatibility: Legacy verifierQueueState preserved alongside artifact store
-- Verifier Approval → Admin Queue handoff:
+- Verifier Approval → Admin Patch Queue handoff:
   - Verifier Approve on Correction/Blacklist sets status='sent_to_admin' and logs VERIFIER_APPROVED
   - Verifier Request Clarification sets status='needs_clarification' and logs VERIFIER_CLARIFICATION_REQUESTED
   - Verifier Reject sets status='rejected' and logs VERIFIER_REJECTED
-  - Admin Queue tab in Admin Console shows artifacts with status='sent_to_admin' (excludes RFI)
+  - Admin Panel (renamed from Admin Console) with Patch Queue as second tab
+  - Patch Queue tab shows artifacts with status='sent_to_admin' (badge counts patch_request only)
   - Admin Review detail view (reuses Verifier Review with Finalize/Reject buttons)
   - Admin Finalize sets status='resolved' and logs ADMIN_APPROVED
 
