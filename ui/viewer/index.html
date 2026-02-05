@@ -3066,18 +3066,38 @@
           <input type="text" id="data-source-search-input" placeholder="Search coming with Drive integration..." disabled style="width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 0.9em; box-sizing: border-box; background: #f5f5f5; color: #999; cursor: not-allowed;">
         </div>
         
-        <!-- Demo Dataset Section (v1.6.4) -->
+        <!-- Saved Datasets Section (v1.6.8) -->
         <div id="data-source-demo-section" style="margin-bottom: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-            <span style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase;">Demo Dataset</span>
+            <span style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase;">Saved Datasets</span>
           </div>
-          <div id="demo-dataset-card" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f0f7ff; border: 1px solid #90caf9; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onclick="loadSampleDataset({ autoRedirect: true })" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#f0f7ff'">
+          
+          <!-- v1.6.8: In-Progress Banner (shown when modified dataset is active) -->
+          <div id="demo-modified-banner" style="display: none; margin-bottom: 10px; padding: 8px 12px; background: #fff3e0; border: 1px solid #ffb74d; border-radius: 6px; font-size: 0.8em; color: #e65100;">
+            <span style="margin-right: 6px;">⚠️</span> Demo dataset is in-progress (partial completion).
+          </div>
+          
+          <!-- Original Dataset Card -->
+          <div id="demo-dataset-card-original" class="demo-dataset-card" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f0f7ff; border: 2px solid #90caf9; border-radius: 8px; cursor: pointer; transition: all 0.2s; margin-bottom: 8px;" onclick="loadSampleDataset({ variant: 'original', autoRedirect: true })" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background=this.classList.contains('active') ? '#e3f2fd' : '#f0f7ff'">
             <span style="font-size: 1.3em;">📋</span>
             <div style="flex: 1;">
-              <div id="demo-dataset-name" style="font-weight: 600; font-size: 0.9em; color: #1565c0;">ostereo_demo_original.json</div>
-              <div id="demo-dataset-desc" style="font-size: 0.75em; color: #666;">Baseline dataset (clean)</div>
+              <div style="font-weight: 600; font-size: 0.9em; color: #1565c0;">Ostereo (Original)</div>
+              <div style="font-size: 0.75em; color: #666;">Baseline dataset (clean)</div>
             </div>
-            <span style="color: #1976d2; font-size: 0.8em; font-weight: 600;">Load →</span>
+            <span class="demo-card-load-arrow" style="color: #1976d2; font-size: 0.8em; font-weight: 600;">Load →</span>
+          </div>
+          
+          <!-- Modified Dataset Card -->
+          <div id="demo-dataset-card-modified" class="demo-dataset-card" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; transition: all 0.2s;" onclick="loadSampleDataset({ variant: 'modified', autoRedirect: true })" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=this.classList.contains('active') ? '#fff3e0' : '#fafafa'">
+            <span style="font-size: 1.3em;">📝</span>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-weight: 600; font-size: 0.9em; color: #e65100;">Ostereo (Modified / In-Progress)</span>
+                <span style="font-size: 0.65em; background: #ff9800; color: white; padding: 2px 6px; border-radius: 3px; font-weight: 600;">In-Progress</span>
+              </div>
+              <div style="font-size: 0.75em; color: #666;">Partial completion with sample edits</div>
+            </div>
+            <span class="demo-card-load-arrow" style="color: #e65100; font-size: 0.8em; font-weight: 600;">Load →</span>
           </div>
         </div>
         
@@ -4745,10 +4765,9 @@
         return;
       }
       
-      // v1.6.4: On cold start, load demo dataset based on toggle state (default = original)
-      var demoName = demoToggleState.isModified() ? 'ostereo_demo_v1.json' : 'ostereo_demo_original.json';
-      console.log('[Masterline] Cold start - loading demo dataset:', demoName);
-      await loadSampleDataset({ autoRedirect: false });
+      // v1.6.8: On cold start, load original demo dataset
+      console.log('[Masterline] Cold start - loading demo dataset: ostereo_demo_original.json');
+      await loadSampleDataset({ variant: 'original', autoRedirect: false });
       
       // Check artifacts for registry display (after loading demo data)
       await checkAllArtifacts();
@@ -19938,17 +19957,57 @@ Add any additional notes here.
     }
     
     // ========== LOADER HANDLERS (v1.4.3) ==========
-    // v1.6.4: Load demo dataset (original or modified based on toggle)
+    // v1.6.8: Load demo dataset (original or modified based on variant parameter)
     var cachedOriginalDataset = null;
     var cachedModifiedDataset = null;
+    var activeDatasetVariant = 'original';  // Track which dataset is currently active
+    
+    // v1.6.8: Update saved datasets UI to show active indicator
+    function updateSavedDatasetsUI(activeVariant) {
+      var originalCard = document.getElementById('demo-dataset-card-original');
+      var modifiedCard = document.getElementById('demo-dataset-card-modified');
+      var modifiedBanner = document.getElementById('demo-modified-banner');
+      
+      if (originalCard && modifiedCard) {
+        if (activeVariant === 'modified') {
+          // Modified is active
+          originalCard.style.background = '#fafafa';
+          originalCard.style.border = '1px solid #e0e0e0';
+          originalCard.classList.remove('active');
+          
+          modifiedCard.style.background = '#fff3e0';
+          modifiedCard.style.border = '2px solid #ff9800';
+          modifiedCard.classList.add('active');
+          
+          // Show in-progress banner
+          if (modifiedBanner) modifiedBanner.style.display = 'block';
+        } else {
+          // Original is active (default)
+          originalCard.style.background = '#e3f2fd';
+          originalCard.style.border = '2px solid #1976d2';
+          originalCard.classList.add('active');
+          
+          modifiedCard.style.background = '#fafafa';
+          modifiedCard.style.border = '1px solid #e0e0e0';
+          modifiedCard.classList.remove('active');
+          
+          // Hide in-progress banner
+          if (modifiedBanner) modifiedBanner.style.display = 'none';
+        }
+      }
+    }
     
     async function loadSampleDataset(options) {
       options = options || {};
       try {
-        // v1.6.4: Select dataset URL based on demo toggle
-        var isModified = demoToggleState.isModified();
+        // v1.6.8: Select dataset URL based on explicit variant parameter (default: original)
+        var variant = options.variant || 'original';
+        var isModified = (variant === 'modified');
         var datasetUrl = isModified ? MODIFIED_DATASET_URL : DEFAULT_DATASET_URL;
         var datasetName = isModified ? 'ostereo_demo_v1.json' : 'ostereo_demo_original.json';
+        
+        // Update active variant tracker
+        activeDatasetVariant = variant;
         
         // Fetch the dataset if not cached
         var cached = isModified ? cachedModifiedDataset : cachedOriginalDataset;
@@ -20025,6 +20084,9 @@ Add any additional notes here.
         showToast('Ostereo demo dataset loaded successfully', 'success');
         updateSidebarSheetSelector();
         updateActiveDataSourceBar(datasetName);
+        
+        // v1.6.8: Update saved datasets UI to show active indicator
+        updateSavedDatasetsUI(variant);
         
         // Auto-redirect after loading (v1.4.4) - always go to grid after load
         if (options.autoRedirect !== false) {
