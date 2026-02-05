@@ -10790,6 +10790,11 @@
       // Update per-sheet mini stats
       updateGridSheetStats(records, filtered);
       perfLog('renderGrid', perfT);
+      
+      // v1.6.40: Always hide upload loading after grid renders (catches non-virtualized path)
+      if (typeof hideUploadLoading === 'function') {
+        hideUploadLoading();
+      }
     }
     
     function updateGridSheetStats(allRecords, filtered) {
