@@ -29,6 +29,38 @@
       text-align: center;
       color: white;
     }
+    /* v1.6.37: Excel upload loading overlay */
+    .upload-loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 20000;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .upload-loading-overlay.visible { display: flex; }
+    .upload-loading-spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #1a73e8;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    .upload-loading-text {
+      color: white;
+      font-size: 1.1em;
+      font-weight: 500;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
     .staged-loader-spinner {
       width: 48px;
       height: 48px;
@@ -1365,6 +1397,12 @@
   </style>
 </head>
 <body>
+  <!-- v1.6.37: Excel upload loading overlay -->
+  <div id="upload-loading-overlay" class="upload-loading-overlay">
+    <div class="upload-loading-spinner"></div>
+    <div class="upload-loading-text">Loading Excel file...</div>
+  </div>
+  
   <!-- Debug HUD (v1.2.8) -->
   <div id="debug-hud" class="admin-only-content" style="position: fixed; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: #0f0; font-family: monospace; font-size: 11px; padding: 4px 8px; border-radius: 4px; z-index: 99999;">Route: - | Data: - | Mode: -</div>
   
@@ -18488,10 +18526,23 @@
       input.value = '';  // Reset input for future uploads
     }
     
+    // v1.6.37: Show/hide upload loading overlay
+    function showUploadLoading(message) {
+      var overlay = document.getElementById('upload-loading-overlay');
+      var textEl = overlay ? overlay.querySelector('.upload-loading-text') : null;
+      if (textEl) textEl.textContent = message || 'Loading Excel file...';
+      if (overlay) overlay.classList.add('visible');
+    }
+    function hideUploadLoading() {
+      var overlay = document.getElementById('upload-loading-overlay');
+      if (overlay) overlay.classList.remove('visible');
+    }
+    
     // v1.4.12: Unified file import handler with XLSX support via parseWorkbook
     function handleFileImport(file) {
       hideLoaderError();
       hideColumnMappingBanner();
+      showUploadLoading('Processing ' + file.name + '...');
       
       var ext = (file.name.split('.').pop() || '').toLowerCase();
       
@@ -18597,9 +18648,12 @@
             return;
           }
           closeLoaderModal();
+          hideUploadLoading();
           navigateTo('grid');
+          showToast('Dataset loaded: ' + file.name, 'success');
         } catch (err) {
           console.error('[Loader] Import error:', err);
+          hideUploadLoading();
           showLoaderError('Failed to import file: ' + err.message);
         }
       };
