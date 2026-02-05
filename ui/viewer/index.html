@@ -2564,6 +2564,22 @@
           <div id="workflow-map" class="workflow-map"></div>
         </div>
 
+        <!-- Demo Dataset Toggle (v1.6.4) -->
+        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0; font-size: 1.1em; color: #333;">Demo Dataset <span class="info-icon" title="Toggle between the Original (blank baseline) and Modified (in-progress) demo datasets. The modified dataset contains sample audit log entries.">&#9432;</span></h3>
+            <span id="demo-mode-badge" style="display: none; font-size: 0.7em; background: #ff9800; color: white; padding: 3px 8px; border-radius: 4px; font-weight: 600;">Demo: Modified (In-Progress)</span>
+          </div>
+          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Switch between Original (clean baseline) and Modified (in-progress with audit log data) demo datasets.</p>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="demo-toggle-original" class="toolbar-btn" onclick="setDemoMode('original')" style="flex: 1;">Original (Baseline)</button>
+            <button id="demo-toggle-modified" class="toolbar-btn" onclick="setDemoMode('modified')" style="flex: 1;">Modified (In-Progress)</button>
+          </div>
+          <div id="demo-partial-banner" style="display: none; margin-top: 12px; padding: 10px; background: #fff3e0; border: 1px solid #ffb74d; border-radius: 6px; font-size: 0.85em; color: #e65100;">
+            ⚠️ Demo dataset is in-progress (partial completion). Audit log entries show sample data.
+          </div>
+        </div>
+
         <!-- Governance Notes -->
         <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Governance Notes</h3>
@@ -3004,7 +3020,7 @@
           <input type="text" id="data-source-search-input" placeholder="Search coming with Drive integration..." disabled style="width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 0.9em; box-sizing: border-box; background: #f5f5f5; color: #999; cursor: not-allowed;">
         </div>
         
-        <!-- Demo Dataset Section (v1.6.3) -->
+        <!-- Demo Dataset Section (v1.6.4) -->
         <div id="data-source-demo-section" style="margin-bottom: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
             <span style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase;">Demo Dataset</span>
@@ -3012,8 +3028,8 @@
           <div id="demo-dataset-card" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: #f0f7ff; border: 1px solid #90caf9; border-radius: 8px; cursor: pointer; transition: background 0.2s;" onclick="loadSampleDataset({ autoRedirect: true })" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#f0f7ff'">
             <span style="font-size: 1.3em;">📋</span>
             <div style="flex: 1;">
-              <div style="font-weight: 600; font-size: 0.9em; color: #1565c0;">ostereo_demo_v1.json</div>
-              <div style="font-size: 0.75em; color: #666;">Sample dataset with 8 sheets, 442 fields</div>
+              <div id="demo-dataset-name" style="font-weight: 600; font-size: 0.9em; color: #1565c0;">ostereo_demo_original.json</div>
+              <div id="demo-dataset-desc" style="font-size: 0.75em; color: #666;">Baseline dataset (clean)</div>
             </div>
             <span style="color: #1976d2; font-size: 0.8em; font-weight: 600;">Load →</span>
           </div>
@@ -3578,15 +3594,26 @@
 
   <script>
     const PRIMARY_PATH = 'out/sf_packet.preview.json';
-    const FALLBACK_PATH = 'examples/datasets/ostereo_demo_v1.json';
+    const FALLBACK_PATH = 'examples/datasets/ostereo_demo_original.json';
     const RELATIVE_PRIMARY = '../../out/sf_packet.preview.json';
-    const RELATIVE_FALLBACK = '../../examples/datasets/ostereo_demo_v1.json';
-    const DEFAULT_DATASET_URL = '/examples/datasets/ostereo_demo_v1.json';
+    const RELATIVE_FALLBACK = '../../examples/datasets/ostereo_demo_original.json';
+    const DEFAULT_DATASET_URL = '/examples/datasets/ostereo_demo_original.json';
+    const MODIFIED_DATASET_URL = '/examples/datasets/ostereo_demo_v1.json';
     const COMMANDS_PATH = 'run_commands.json';
     const STORAGE_KEY = 'viewer_selection_v10';
     const PREFLIGHT_STORAGE_KEY = 'viewer_preflight_v10';
     const SETTINGS_STORAGE_KEY = 'viewer_settings_v12';
     const FIRST_RUN_DISMISSED_KEY = 'viewer_first_run_dismissed_v12';
+    const DEMO_TOGGLE_KEY = 'viewer_demo_toggle_v1';
+    
+    // v1.6.4: Demo toggle state (Original = baseline, Modified = in-progress)
+    var demoToggleState = {
+      mode: localStorage.getItem(DEMO_TOGGLE_KEY) || 'original', // 'original' or 'modified'
+      isModified: function() { return this.mode === 'modified'; }
+    };
+    
+    // Meta sheet patterns - these are audit log sheets, not data sheets
+    const META_SHEET_PATTERNS = ['_change_log', 'RFIs & Analyst Notes', '_meta', '_audit'];
     
     // Default settings (used when no user config exists)
     const DEFAULT_SETTINGS = {
@@ -4494,7 +4521,7 @@
     
     // ========== DEFAULT DATASET (V1.6.3) ==========
     // Ostereo Demo is now the sole default dataset - loaded from JSON file
-    var cachedDefaultDataset = null;
+    // v1.6.4: Moved to loadSampleDataset section - cachedOriginalDataset and cachedModifiedDataset
     
     // ========== NOMENCLATURE PACK (D4) ==========
     // Maps internal tokens to human-readable labels
@@ -4639,8 +4666,9 @@
         return;
       }
       
-      // v1.6.3: On cold start (no localStorage session), always load ostereo_demo_v1 as default
-      console.log('[Masterline] Cold start - loading default dataset (ostereo_demo_v1.json)...');
+      // v1.6.4: On cold start, load demo dataset based on toggle state (default = original)
+      var demoName = demoToggleState.isModified() ? 'ostereo_demo_v1.json' : 'ostereo_demo_original.json';
+      console.log('[Masterline] Cold start - loading demo dataset:', demoName);
       await loadSampleDataset({ autoRedirect: false });
       
       // Check artifacts for registry display (after loading demo data)
@@ -7217,12 +7245,70 @@
       }
     }
 
+    // v1.6.4: Check if a sheet is a meta sheet (audit log, change log, etc.)
+    function isMetaSheet(sheetName) {
+      if (!sheetName) return false;
+      return META_SHEET_PATTERNS.some(function(pattern) {
+        return sheetName.includes(pattern);
+      });
+    }
+    
+    // v1.6.4: Get all meta sheets from workbook
+    function getMetaSheets() {
+      if (!workbook || !workbook.order) return [];
+      return workbook.order.filter(isMetaSheet);
+    }
+    
+    // v1.6.4: Get data sheets (non-meta) from workbook
+    function getDataSheets() {
+      if (!workbook || !workbook.order) return [];
+      return workbook.order.filter(function(s) { return !isMetaSheet(s); });
+    }
+    
+    // v1.6.4: Set demo mode (original or modified)
+    function setDemoMode(mode) {
+      if (mode !== 'original' && mode !== 'modified') return;
+      demoToggleState.mode = mode;
+      localStorage.setItem(DEMO_TOGGLE_KEY, mode);
+      updateDemoToggleUI();
+      
+      // Reload the appropriate dataset
+      console.log('[DemoToggle] Switching to:', mode);
+      loadSampleDataset({ autoRedirect: false });
+      showToast('Switched to ' + (mode === 'modified' ? 'Modified (In-Progress)' : 'Original (Baseline)') + ' demo dataset', 'success');
+    }
+    
+    // v1.6.4: Update demo toggle UI state
+    function updateDemoToggleUI() {
+      var isModified = demoToggleState.isModified();
+      var originalBtn = document.getElementById('demo-toggle-original');
+      var modifiedBtn = document.getElementById('demo-toggle-modified');
+      var badge = document.getElementById('demo-mode-badge');
+      var banner = document.getElementById('demo-partial-banner');
+      var nameEl = document.getElementById('demo-dataset-name');
+      var descEl = document.getElementById('demo-dataset-desc');
+      
+      if (originalBtn) {
+        originalBtn.style.background = isModified ? '#f5f5f5' : '#1976d2';
+        originalBtn.style.color = isModified ? '#333' : 'white';
+      }
+      if (modifiedBtn) {
+        modifiedBtn.style.background = isModified ? '#ff9800' : '#f5f5f5';
+        modifiedBtn.style.color = isModified ? 'white' : '#333';
+      }
+      if (badge) badge.style.display = isModified ? 'inline-block' : 'none';
+      if (banner) banner.style.display = isModified ? 'block' : 'none';
+      if (nameEl) nameEl.textContent = isModified ? 'ostereo_demo_v1.json' : 'ostereo_demo_original.json';
+      if (descEl) descEl.textContent = isModified ? 'Modified dataset (in-progress)' : 'Baseline dataset (clean)';
+    }
+
     function updateSidebarSheetSelector() {
       var selector = document.getElementById('sidebar-sheet-selector');
       if (!selector || !workbook || !workbook.order) return;
       
       selector.innerHTML = '<option value="all">All Sheets</option>';
-      workbook.order.forEach(function(sheetName) {
+      // v1.6.4: Only show data sheets, hide meta sheets
+      getDataSheets().forEach(function(sheetName) {
         var sheet = workbook.sheets[sheetName];
         if (!sheet) return;
         var opt = document.createElement('option');
@@ -8928,6 +9014,9 @@
           sheets = Array.from(sheetSet).sort();
         }
       }
+      
+      // v1.6.4: Filter out meta sheets (change_log, RFIs, etc.)
+      sheets = sheets.filter(function(s) { return !isMetaSheet(s); });
       
       // Sort deterministically
       sheets.sort().forEach(function(sheet) {
@@ -12485,9 +12574,102 @@
       console.log('[SRR] Patch Editor state reset');
     }
     
+    // v1.6.4: Show audit log for current record using meta sheet data
     function showAuditLogForRecord() {
-      showToast('Audit Log view coming soon', 'info');
-      console.log('[SRR] Opening audit log for record: ' + srrState.currentRowId);
+      var rowId = srrState.currentRowId;
+      console.log('[SRR] Opening audit log for record:', rowId);
+      
+      // Find the record to get its identity
+      var record = null;
+      if (rowId && canonicalRecordStore[rowId]) {
+        record = canonicalRecordStore[rowId];
+      }
+      
+      // Get audit entries from meta sheets
+      var auditEntries = getAuditEntriesForRecord(record);
+      
+      if (auditEntries.length === 0) {
+        showToast('No audit log entries for this record', 'info');
+        return;
+      }
+      
+      // Show audit log in a modal or drawer
+      showAuditLogModal(auditEntries);
+    }
+    
+    // v1.6.4: Get audit entries from meta sheets for a record
+    function getAuditEntriesForRecord(record) {
+      var entries = [];
+      if (!workbook || !workbook.sheets) return entries;
+      
+      var metaSheets = getMetaSheets();
+      metaSheets.forEach(function(sheetName) {
+        var sheet = workbook.sheets[sheetName];
+        if (!sheet || !sheet.rows) return;
+        
+        sheet.rows.forEach(function(row, idx) {
+          // Map meta sheet row to audit entry
+          entries.push({
+            sheet: sheetName,
+            row_index: idx,
+            timestamp: row.Timestamp || row.timestamp || row.Created_Date || new Date().toISOString(),
+            action: row.Action || row.action || row.Change_Type || row.Note_Type || 'Update',
+            field: row.Field || row.field || row.Changed_Field || '',
+            old_value: row.Old_Value || row.old_value || row.Previous || '',
+            new_value: row.New_Value || row.new_value || row.Current || '',
+            summary: row.Summary || row.summary || row.Notes || row.Comment || '',
+            done_by: 'Done by user' // v1.6.4: All entries show "Done by user"
+          });
+        });
+      });
+      
+      // Sort by timestamp descending
+      entries.sort(function(a, b) {
+        return new Date(b.timestamp) - new Date(a.timestamp);
+      });
+      
+      return entries;
+    }
+    
+    // v1.6.4: Show audit log modal
+    function showAuditLogModal(entries) {
+      var html = '<div style="max-height: 60vh; overflow-y: auto;">';
+      html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">';
+      html += '<thead><tr style="background: #f5f5f5;"><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Action</th><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Field</th><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Summary</th><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Done By</th></tr></thead>';
+      html += '<tbody>';
+      
+      entries.slice(0, 50).forEach(function(entry) {
+        html += '<tr style="border-bottom: 1px solid #eee;">';
+        html += '<td style="padding: 8px;"><span style="background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">' + escapeHtml(entry.action) + '</span></td>';
+        html += '<td style="padding: 8px; font-family: monospace; font-size: 0.85em;">' + escapeHtml(entry.field || '-') + '</td>';
+        html += '<td style="padding: 8px;">' + escapeHtml(entry.summary || '-') + '</td>';
+        html += '<td style="padding: 8px; color: #666;">' + escapeHtml(entry.done_by) + '</td>';
+        html += '</tr>';
+      });
+      
+      html += '</tbody></table>';
+      if (entries.length > 50) {
+        html += '<div style="padding: 10px; text-align: center; color: #666;">Showing 50 of ' + entries.length + ' entries</div>';
+      }
+      html += '</div>';
+      
+      showInfoModal('Audit Log (' + entries.length + ' entries)', html);
+    }
+    
+    // v1.6.4: Simple info modal helper
+    function showInfoModal(title, contentHtml) {
+      var overlay = document.createElement('div');
+      overlay.className = 'modal-overlay active';
+      overlay.id = 'info-modal-overlay';
+      overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+      
+      overlay.innerHTML = '<div class="modal" style="max-width: 700px;">' +
+        '<div class="modal-header"><h3>' + escapeHtml(title) + '</h3><button class="modal-close" onclick="document.getElementById(\'info-modal-overlay\').remove()">&times;</button></div>' +
+        '<div class="modal-body">' + contentHtml + '</div>' +
+        '<div class="modal-footer"><button class="modal-btn modal-btn-secondary" onclick="document.getElementById(\'info-modal-overlay\').remove()">Close</button></div>' +
+        '</div>';
+      
+      document.body.appendChild(overlay);
     }
 
     // ========== VERIFIER TRIAGE & PAYLOAD SYSTEM (v1.5.2) ==========
@@ -19362,22 +19544,36 @@ Add any additional notes here.
     }
     
     // ========== LOADER HANDLERS (v1.4.3) ==========
-    // v1.6.3: Load default dataset (ostereo_demo_v1.json) - async fetch
+    // v1.6.4: Load demo dataset (original or modified based on toggle)
+    var cachedOriginalDataset = null;
+    var cachedModifiedDataset = null;
+    
     async function loadSampleDataset(options) {
       options = options || {};
       try {
-        // Fetch the default dataset if not cached
-        if (!cachedDefaultDataset) {
-          console.log('[Loader] Fetching default dataset from:', DEFAULT_DATASET_URL);
-          var resp = await fetch(DEFAULT_DATASET_URL);
+        // v1.6.4: Select dataset URL based on demo toggle
+        var isModified = demoToggleState.isModified();
+        var datasetUrl = isModified ? MODIFIED_DATASET_URL : DEFAULT_DATASET_URL;
+        var datasetName = isModified ? 'ostereo_demo_v1.json' : 'ostereo_demo_original.json';
+        
+        // Fetch the dataset if not cached
+        var cached = isModified ? cachedModifiedDataset : cachedOriginalDataset;
+        if (!cached) {
+          console.log('[Loader] Fetching demo dataset from:', datasetUrl);
+          var resp = await fetch(datasetUrl);
           if (!resp.ok) {
-            throw new Error('Failed to fetch default dataset: ' + resp.status);
+            throw new Error('Failed to fetch demo dataset: ' + resp.status);
           }
-          cachedDefaultDataset = await resp.json();
-          console.log('[Loader] Default dataset fetched:', cachedDefaultDataset.dataset_id);
+          cached = await resp.json();
+          if (isModified) {
+            cachedModifiedDataset = cached;
+          } else {
+            cachedOriginalDataset = cached;
+          }
+          console.log('[Loader] Demo dataset fetched:', cached.dataset_id || datasetName);
         }
         
-        var dataset = cachedDefaultDataset;
+        var dataset = cached;
         
         // Reset workbook and populate from dataset sheets
         resetWorkbook();
@@ -19406,7 +19602,7 @@ Add any additional notes here.
         saveToUploadLibrary(dataset, 'Ostereo Demo Dataset', 'ostereo_demo');
         
         dataLoaded = true;
-        currentArtifactPath = 'ostereo_demo_v1.json';
+        currentArtifactPath = datasetName;
         currentDataset = null; // Reset cache
         updateUIForDataState();
         updateSessionChip();
@@ -19426,7 +19622,7 @@ Add any additional notes here.
         console.log('[Loader] Ostereo demo dataset loaded:', workbook.order.length, 'sheets');
         showToast('Ostereo demo dataset loaded successfully', 'success');
         updateSidebarSheetSelector();
-        updateActiveDataSourceBar('ostereo_demo_v1.json');
+        updateActiveDataSourceBar(datasetName);
         
         // Auto-redirect after loading (v1.4.4) - always go to grid after load
         if (options.autoRedirect !== false) {
@@ -20102,6 +20298,7 @@ Add any additional notes here.
     // Initialize Masterline Artifact Registry
     loadArtifactRegistry();
     updateDevMasterlineUI();
+    updateDemoToggleUI(); // v1.6.4: Initialize demo toggle UI state
     renderArtifactRegistryTable();
     renderWorkflowMap();
     setupStandardizerDropZone();
