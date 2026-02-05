@@ -5085,7 +5085,7 @@
           var arrayBuffer = data instanceof ArrayBuffer ? data : data.buffer;
           var workbookXLSX = XLSX.read(arrayBuffer, { type: 'array' });
           
-          var firstSheetMapping = null;
+          // v1.6.39: Apply column mapping per-sheet, not just first sheet
           workbookXLSX.SheetNames.forEach(function(sheetName, idx) {
             var sheet = workbookXLSX.Sheets[sheetName];
             var jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
@@ -5110,13 +5110,14 @@
               rows.push(rowObj);
             }
             
+            // v1.6.39: Resolve column mapping for each sheet individually
+            var sheetMapping = resolveColumnMapping(headers);
             if (idx === 0) {
-              firstSheetMapping = resolveColumnMapping(headers);
-              result.mapping = firstSheetMapping;
+              result.mapping = sheetMapping; // Keep first sheet mapping as result.mapping for legacy
             }
             
-            var normalizedRows = applyColumnMapping(rows, headers, firstSheetMapping || { mappingResolved: false });
-            result.sheets[sheetName] = { headers: headers, rows: normalizedRows, meta: { sheetIndex: idx } };
+            var normalizedRows = applyColumnMapping(rows, headers, sheetMapping);
+            result.sheets[sheetName] = { headers: headers, rows: normalizedRows, meta: { sheetIndex: idx, mapping: sheetMapping } };
             result.order.push(sheetName);
           });
           
@@ -10465,6 +10466,11 @@
         gridState.sheet = selector.value;
         updateGridURL();
         renderGrid();
+        
+        // v1.6.39: Update field dropdown when sheet changes (for Patch Studio)
+        if (typeof populateTargetFieldDropdown === 'function') {
+          populateTargetFieldDropdown();
+        }
       };
     }
 
@@ -11142,7 +11148,7 @@
       verified: { bg: '#DDF5DD', border: '#4caf50', label: 'Verified', emoji: '✓', priority: 5 }
     };
     
-    // v1.6.38: Clear all cell-level stores to prevent stale highlights on new dataset load
+    // v1.6.39: Clear all cell-level stores to prevent stale highlights on new dataset load
     function clearAllCellStores() {
       console.log('[CellStores] Clearing all cell-level caches for new dataset');
       
@@ -11154,6 +11160,21 @@
       changeMapStore.changes_by_cell = {};
       changeMapStore.stats = { total: 0, by_type: {} };
       changeMapStore.enabled = false;
+      
+      // v1.6.39: Clear cell styles store (grid highlighting)
+      if (typeof cellStylesStore !== 'undefined') {
+        cellStylesStore = {};
+      }
+      
+      // v1.6.39: Clear record patch summary store
+      if (typeof recordPatchSummaryStore !== 'undefined') {
+        recordPatchSummaryStore = {};
+      }
+      
+      // v1.6.39: Clear grid virtual state to force full re-render
+      if (typeof gridVirtualState !== 'undefined') {
+        gridVirtualState = { data: [], rendered: 0, columns: [], active: false };
+      }
       
       console.log('[CellStores] All cell stores cleared');
     }
@@ -18610,6 +18631,14 @@
             addSheet(sheetName, sheet.headers, sheet.rows, sheet.meta);
           });
           
+          // v1.6.39: Reset gridState.sheet if it doesn't exist in the new workbook
+          if (gridState.sheet && result.order.indexOf(gridState.sheet) === -1) {
+            console.log('[Grid] Resetting invalid sheet selection from:', gridState.sheet, 'to:', result.order[0] || '');
+            gridState.sheet = result.order[0] || '';
+          } else if (!gridState.sheet && result.order.length > 0) {
+            gridState.sheet = result.order[0];
+          }
+          
           // Also populate allData for legacy compatibility
           var allRows = [];
           result.order.forEach(function(sheetName) {
@@ -20711,30 +20740,45 @@
     
     function populateTargetFieldDropdown() {
       var select = document.getElementById('ps-target-field');
-      if (!select || !allData) return;
+      if (!select) return;
       
       select.innerHTML = '<option value="">-- Select field --</option>';
       var fields = new Set();
       
-      // Primary source: use field_index from bundle (computed from sheet_packets)
-      var bundle = getCurrentBundle();
-      if (bundle && bundle.field_index) {
-        bundle.field_index.forEach(function(entry) {
-          fields.add(entry.full_path);
+      // v1.6.39: Get active sheet - use grid selector, SRR sheet, or workbook.activeSheet
+      var activeSheet = gridState.sheet || workbook.activeSheet || (workbook.order && workbook.order[0]) || null;
+      
+      // v1.6.39: Filter to only fields from the active sheet's headers
+      if (activeSheet && workbook.sheets && workbook.sheets[activeSheet]) {
+        var sheetHeaders = workbook.sheets[activeSheet].headers || [];
+        sheetHeaders.forEach(function(h) {
+          if (h && h.trim()) {
+            fields.add(activeSheet + '.' + h);
+          }
         });
+      } else {
+        // Fallback: use field_index from bundle but filter to active sheet
+        var bundle = getCurrentBundle();
+        if (bundle && bundle.field_index) {
+          bundle.field_index.forEach(function(entry) {
+            if (!activeSheet || entry.full_path.startsWith(activeSheet + '.')) {
+              fields.add(entry.full_path);
+            }
+          });
+        }
       }
       
-      // Fallback: also add fields from issues and field_actions
-      if (allData.issues) {
+      // Fallback: also add fields from issues and field_actions for active sheet only
+      if (allData && allData.issues) {
         allData.issues.forEach(function(issue) {
-          if (issue.sheet && issue.field) {
+          if (issue.sheet && issue.field && (!activeSheet || issue.sheet === activeSheet)) {
             fields.add(issue.sheet + '.' + issue.field);
           }
         });
       }
-      if (allData.fieldActions) {
+      if (allData && allData.fieldActions) {
         allData.fieldActions.forEach(function(action) {
-          if (action.sheet && action.field) {
+          if (action.sheet && action.field && (!activeSheet || action.sheet === activeSheet)) {
             fields.add(action.sheet + '.' + action.field);
           }
         });
@@ -22735,6 +22779,9 @@ Add any additional notes here.
     }
     
     function activateDataset(datasetId) {
+      // v1.6.39: Clear all cell stores before loading new dataset
+      clearAllCellStores();
+      
       try {
         var stored = localStorage.getItem(STORAGE_KEY_DATASET);
         var dataset = stored ? JSON.parse(stored) : null;
@@ -22854,6 +22901,10 @@ Add any additional notes here.
     
     async function loadSampleDataset(options) {
       options = options || {};
+      
+      // v1.6.39: Clear all cell stores before loading new dataset
+      clearAllCellStores();
+      
       try {
         // Start staged loader
         stagedLoader.start();
