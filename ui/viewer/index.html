@@ -1401,7 +1401,7 @@
       <div class="page" id="page-triage">
         <div id="analyst-triage-content">
           <div class="page-header" style="position: relative;">
-            <h2>Triage</h2>
+            <h2 id="triage-page-title">Triage</h2>
             <p class="page-desc">All items requiring analyst review and action.</p>
             <!-- Sticky Search Bar (top right) - frosted glass style with scroll-aware behavior -->
             <div id="triage-search-bar" style="position: fixed; top: 12px; right: 24px; z-index: 100; display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: opacity 0.2s ease, transform 0.2s ease;">
@@ -7915,6 +7915,13 @@
       const modes = ['analyst', 'reviewer', 'admin'];
       if (!modes.includes(mode)) mode = 'analyst';
       currentMode = mode;
+      
+      // Update triage page title with role
+      var triageTitle = document.getElementById('triage-page-title');
+      if (triageTitle) {
+        var roleLabel = mode === 'analyst' ? 'Analyst' : mode === 'reviewer' ? 'Reviewer' : 'Admin';
+        triageTitle.textContent = 'Triage - ' + roleLabel;
+      }
       
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
       const modeBtn = document.querySelector(`.mode-btn[data-mode="${mode}"]`);
