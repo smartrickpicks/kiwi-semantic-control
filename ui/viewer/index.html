@@ -22022,11 +22022,16 @@ Add any additional notes here.
     }
     
     // v1.4.24: Clear stale reviewer queue and patch request data
+    // v1.6.26: Also clears artifact store to prevent stale queue counts
     function clearStaleReviewerData() {
       console.log('[FirstRun] Clearing stale reviewer queue data');
       
       // Clear verifier queue
       localStorage.removeItem('srr_verifier_queue_v1');
+      
+      // v1.6.26: Clear artifact store (clears stale art_* files that cause phantom queue counts)
+      var artifactCleared = ARTIFACT_STORE.resetPlayground();
+      console.log('[FirstRun] Cleared', artifactCleared, 'stale artifacts');
       
       // Clear all patch requests from PATCH_REQUEST_STORE
       var keysToRemove = [];
@@ -22045,6 +22050,11 @@ Add any additional notes here.
       // Reset in-memory verifier queue state
       if (typeof verifierQueueState !== 'undefined') {
         verifierQueueState.payloads = [];
+      }
+      
+      // Reset in-memory reviewer queue state
+      if (typeof reviewerQueueState !== 'undefined') {
+        reviewerQueueState.items = [];
       }
     }
     
