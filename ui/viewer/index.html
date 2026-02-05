@@ -5096,6 +5096,13 @@
             var rows = [];
             for (var i = 1; i < jsonData.length; i++) {
               var rowArr = jsonData[i];
+              
+              // v1.6.38: Skip empty rows (all cells empty, null, or whitespace-only)
+              var hasData = rowArr.some(function(cell) {
+                return cell !== undefined && cell !== null && cell !== '' && String(cell).trim() !== '';
+              });
+              if (!hasData) continue;
+              
               var rowObj = {};
               headers.forEach(function(h, colIdx) {
                 rowObj[h] = rowArr[colIdx] !== undefined ? String(rowArr[colIdx]) : null;
