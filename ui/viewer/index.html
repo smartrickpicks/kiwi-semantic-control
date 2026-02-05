@@ -685,7 +685,61 @@
     .srr-field-card.edited { border-color: #ff9800; background: #fff8e1; }
     .srr-field-card-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: #f5f5f5; border-bottom: 1px solid #eee; cursor: pointer; }
     .srr-field-card.edited .srr-field-card-header { background: #fff3e0; }
-    .srr-field-card-label { font-weight: 600; font-size: 0.85em; color: #333; }
+    .srr-field-card-label { font-weight: 600; font-size: 0.85em; color: #333; display: flex; align-items: center; gap: 4px; }
+    
+    /* v1.6.36: Glossary tooltip styles */
+    .glossary-tooltip-wrapper { position: relative; display: inline-flex; align-items: center; }
+    .glossary-icon { 
+      font-size: 0.75em; 
+      color: #9e9e9e; 
+      cursor: help; 
+      transition: color 0.2s;
+      line-height: 1;
+    }
+    .glossary-icon:hover { color: #1976d2; }
+    .glossary-tooltip {
+      display: none;
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.8em;
+      font-weight: normal;
+      width: 260px;
+      max-width: 300px;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .glossary-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #333;
+    }
+    .glossary-icon:hover + .glossary-tooltip,
+    .glossary-tooltip:hover { display: block; }
+    .glossary-tooltip-row { margin-bottom: 4px; }
+    .glossary-tooltip-label { color: #aaa; font-size: 0.85em; }
+    .glossary-tooltip-value { color: #fff; }
+    .glossary-tooltip-options { 
+      background: rgba(255,255,255,0.1); 
+      padding: 4px 6px; 
+      border-radius: 4px; 
+      margin-top: 4px;
+      font-family: monospace;
+      font-size: 0.9em;
+      max-height: 80px;
+      overflow-y: auto;
+    }
     .srr-field-card-api { font-size: 0.7em; color: #888; font-family: 'Courier New', monospace; }
     .srr-field-card-chips { display: flex; gap: 4px; }
     .srr-chip { padding: 2px 6px; border-radius: 8px; font-size: 0.65em; font-weight: 600; text-transform: uppercase; }
@@ -11965,6 +12019,60 @@
       return null;
     }
     
+    // v1.6.36: Build glossary hover tooltip from field metadata
+    function buildGlossaryTooltip(fieldMeta, fieldKey, sheetName) {
+      var tooltipContent = '';
+      
+      if (!fieldMeta) {
+        // No glossary data available
+        tooltipContent = '<div class="glossary-tooltip-row">No glossary data available.</div>';
+      } else {
+        // Build tooltip content from metadata
+        var label = fieldMeta.field_label || fieldKey;
+        var type = fieldMeta.return_format || 'Unknown';
+        var required = fieldMeta.requiredness || 'not_needed';
+        var requiredLabel = required === 'required' ? 'Required' : 
+                           required === 'optional' ? 'Optional' : 'Not Required';
+        var definition = fieldMeta.definition || '';
+        var options = fieldMeta.options || [];
+        var hingeGroup = '';
+        // Look up hinge group from hinge_groups bundle
+        if (rulesBundleCache.hingeGroups && rulesBundleCache.hingeGroups.hinges) {
+          var normKey = normalizeFieldKey(fieldKey);
+          for (var i = 0; i < rulesBundleCache.hingeGroups.hinges.length; i++) {
+            var hinge = rulesBundleCache.hingeGroups.hinges[i];
+            if (hinge.fields && hinge.fields.some(function(f) { return normalizeFieldKey(f) === normKey; })) {
+              hingeGroup = hinge.hinge_group || hinge.name || '';
+              break;
+            }
+          }
+        }
+        
+        tooltipContent += '<div class="glossary-tooltip-row"><span class="glossary-tooltip-label">Field:</span> <span class="glossary-tooltip-value">' + escapeHtml(label) + '</span></div>';
+        tooltipContent += '<div class="glossary-tooltip-row"><span class="glossary-tooltip-label">Type:</span> <span class="glossary-tooltip-value">' + escapeHtml(type) + '</span></div>';
+        tooltipContent += '<div class="glossary-tooltip-row"><span class="glossary-tooltip-label">Status:</span> <span class="glossary-tooltip-value">' + requiredLabel + '</span></div>';
+        
+        if (hingeGroup) {
+          tooltipContent += '<div class="glossary-tooltip-row"><span class="glossary-tooltip-label">Group:</span> <span class="glossary-tooltip-value">' + escapeHtml(hingeGroup) + '</span></div>';
+        }
+        
+        if (definition) {
+          tooltipContent += '<div class="glossary-tooltip-row" style="margin-top: 6px;"><span class="glossary-tooltip-label">Definition:</span><br><span class="glossary-tooltip-value" style="font-style: italic;">' + escapeHtml(definition) + '</span></div>';
+        }
+        
+        if (options && options.length > 0) {
+          var optionsDisplay = options.slice(0, 10).join(', ');
+          if (options.length > 10) optionsDisplay += ', ... (' + options.length + ' total)';
+          tooltipContent += '<div class="glossary-tooltip-row" style="margin-top: 6px;"><span class="glossary-tooltip-label">Options:</span><div class="glossary-tooltip-options">' + escapeHtml(optionsDisplay) + '</div></div>';
+        }
+      }
+      
+      return '<span class="glossary-tooltip-wrapper">' +
+             '<span class="glossary-icon" title="Field glossary">ⓘ</span>' +
+             '<div class="glossary-tooltip">' + tooltipContent + '</div>' +
+             '</span>';
+    }
+    
     // Check if value is blank (empty, null, undefined, whitespace only, or common null-like strings)
     // v1.6.8: Expanded to include N/A, NULL, — to avoid false positive picklist signals
     var BLANK_VALUE_STRINGS = ['', 'n/a', 'na', 'null', '—', '-', 'none', 'undefined'];
@@ -12909,6 +13017,9 @@
           labelSuffix += '<span class="srr-invalid-marker" title="Value not in options list">**</span>';
         }
         
+        // v1.6.36: Build glossary tooltip from field metadata
+        var glossaryTooltipHtml = buildGlossaryTooltip(fieldMeta, key, srrState.currentSheet);
+        
         // Add state-based classes (patched→submitted, rfi_pending→rfi for styling)
         var cardClass = 'srr-field-card';
         var displayState = fieldState === 'patched' ? 'submitted' : (fieldState === 'rfi_pending' ? 'rfi' : fieldState);
@@ -12973,7 +13084,7 @@
         var cardHtml = '<div class="' + cardClass + '" data-field="' + key + '">' +
           '<div class="srr-field-card-header" onclick="srrSelectField(\'' + key + '\')">' +
             '<div>' +
-              '<div class="srr-field-card-label">' + label + labelSuffix + '</div>' +
+              '<div class="srr-field-card-label">' + label + labelSuffix + glossaryTooltipHtml + '</div>' +
               '<div class="srr-field-card-api">' + key + '</div>' +
             '</div>' +
             '<div class="srr-field-card-chips">' + chips + patchIndicatorHtml + '</div>' +
