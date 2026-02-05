@@ -7872,7 +7872,8 @@
       return (bytes / 1024 / 1024).toFixed(1) + ' MB';
     }
 
-    // v1.6.33: Update progress block from actual data (signals + patch requests)
+    // v1.6.40: Update progress block from actual data (signals + patch requests)
+    // Now filters by current sheet view
     function updateProgressBlock() {
       var todoEl = document.getElementById('progress-todo');
       var reviewEl = document.getElementById('progress-review');
@@ -7881,19 +7882,35 @@
       
       if (!todoEl || !reviewEl || !doneEl) return;
       
+      // v1.6.40: Get current sheet filter
+      var currentSheet = gridState.sheet || '';
+      
       // v1.6.33: Count from actual data sources
       var todo = 0;      // Records with signals/issues needing analyst attention
       var review = 0;    // Patch requests submitted for reviewer/admin review
       var done = 0;      // Approved/promoted/verified records
       
-      // TO DO: Count records with active signals (from signalStore)
-      if (typeof signalStore !== 'undefined' && signalStore.stats) {
-        todo = signalStore.stats.total || 0;
+      // v1.6.40: TO DO: Count signals filtered by current sheet
+      if (typeof signalStore !== 'undefined' && signalStore.signals_by_cell) {
+        Object.keys(signalStore.signals_by_cell).forEach(function(recordId) {
+          // Record IDs are formatted as "SheetName:rowIndex"
+          var recordSheet = recordId.split(':')[0] || '';
+          if (!currentSheet || recordSheet === currentSheet) {
+            var cellSignals = signalStore.signals_by_cell[recordId];
+            Object.keys(cellSignals).forEach(function(field) {
+              todo += (cellSignals[field] || []).length;
+            });
+          }
+        });
       }
       
-      // REVIEW + DONE: Count from patch requests by status
+      // v1.6.40: REVIEW + DONE: Count from patch requests by status, filtered by sheet
       var patchRequests = PATCH_REQUEST_STORE.list();
       patchRequests.forEach(function(pr) {
+        // Check if patch request matches current sheet
+        var prSheet = pr.sheet || (pr.record_id ? pr.record_id.split(':')[0] : '');
+        if (currentSheet && prSheet !== currentSheet) return;
+        
         var status = pr.status || '';
         // In review: Submitted, Pending_Review, Sent_to_Admin, Verifier_Approved, Admin_Hold, Reviewer_Responded
         if (['Submitted', 'Pending_Review', 'Sent_to_Admin', 'Verifier_Approved', 'Admin_Hold', 'Needs_Clarification', 'Reviewer_Responded'].includes(status)) {
@@ -7908,18 +7925,6 @@
           todo++;
         }
       });
-      
-      // Also count from triage queue if available
-      var manualCount = parseInt(document.getElementById('manual-queue-count')?.textContent?.match(/\d+/)?.[0] || '0', 10);
-      var sflogicCount = parseInt(document.getElementById('sflogic-queue-count')?.textContent?.match(/\d+/)?.[0] || '0', 10);
-      var patchCount = parseInt(document.getElementById('patch-queue-count')?.textContent?.match(/\d+/)?.[0] || '0', 10);
-      var systemCount = parseInt(document.getElementById('system-queue-count')?.textContent?.match(/\d+/)?.[0] || '0', 10);
-      
-      // Use triage counts if available and higher than signal count
-      var triageTotal = manualCount + sflogicCount + patchCount + systemCount;
-      if (triageTotal > 0 && triageTotal !== todo) {
-        todo = Math.max(todo, triageTotal);
-      }
       
       var total = todo + review + done;
       var progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -8042,6 +8047,7 @@
         gridState.sheet = value;
       }
       renderGrid();
+      updateProgressBlock();
     }
 
     function openRecordInspectionFromNav() {
