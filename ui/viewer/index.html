@@ -781,6 +781,17 @@
     .grid-table td.status-flagged { color: #7b1fa2; }
     .grid-table td.truncated { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
     .grid-table .row-index { color: #999; font-size: 0.8em; }
+    /* v1.6.2: Row badges for signal counts */
+    .row-badges { display: inline-flex; gap: 3px; margin-left: 6px; }
+    .row-badge { 
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 16px; height: 16px; padding: 0 4px;
+      border-radius: 8px; font-size: 0.7em; font-weight: 600;
+    }
+    .badge-patch { background: #e3f2fd; color: #1565c0; }
+    .badge-sflogic { background: #fff3e0; color: #e65100; }
+    .badge-manual { background: #fffde7; color: #f57f17; }
+    .badge-system { background: #f5f5f5; color: #616161; }
     .filter-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em; min-width: 150px; }
 
     .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); display: none; z-index: 900; }
@@ -9127,7 +9138,11 @@
           var sheetName = escapeHtml(r.sheet || '');
           var sheetRowIdx = r._sheetRowIndex !== undefined ? r._sheetRowIndex : idx;
           // v1.5.3 Fix: Check _identity.record_id as well for newly loaded rows
+          // v1.6.2 Fix: Match signalStore recordId derivation (sheetName:idx fallback)
           var recordId = r.record_id || (r._identity && r._identity.record_id) || r.contract_key || '';
+          if (!recordId) {
+            recordId = sheetName + ':' + sheetRowIdx;
+          }
           
           // v1.5.2: Reviewer mode - apply PR status highlighting
           var rowStyle = '';
@@ -9142,14 +9157,19 @@
             clickHandler = 'handleReviewerRowClick(\'' + escapeHtml(recordId) + '\', \'' + sheetName + '\', ' + sheetRowIdx + ')';
           }
           
+          // v1.6.2: Add row badges for signal counts
+          var rowBadgesHtml = renderRowBadges(recordId);
+          
           return '<tr class="clickable" style="' + rowStyle + '" data-sheet-name="' + sheetName + '" data-record-index="' + sheetRowIdx + '" data-record-id="' + escapeHtml(recordId) + '" onclick="' + clickHandler + '">' +
-            '<td class="row-index">' + (idx + 1) + '</td>' +
+            '<td class="row-index">' + (idx + 1) + rowBadgesHtml + '</td>' +
             gridState.visibleColumns.map(function(col) {
               var val = r[col];
               if (val === null || val === undefined) val = '';
               if (typeof val === 'object') val = JSON.stringify(val);
               var cellClass = col === 'status' ? statusClass : '';
-              return '<td class="' + cellClass + ' truncated" title="' + String(val).replace(/"/g, '&quot;') + '">' + String(val) + '</td>';
+              // v1.6.2: Apply signal-based cell coloring
+              var cellStyle = getGridCellStyle(recordId, col);
+              return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + String(val).replace(/"/g, '&quot;') + '">' + String(val) + '</td>';
             }).join('') +
             '</tr>';
         }).join('');
@@ -9467,6 +9487,142 @@
       MOJIBAKE_DETECTED: { severity: 'warning', source: 'encoding_check' }
     };
     
+    // v1.6.2: Central Signal Style Map - single source of truth for UI and export
+    var SIGNAL_STYLE_MAP = {
+      PATCH_REQUIRED: { 
+        label: 'Patch Required', 
+        bg: '#e3f2fd',  // soft blue
+        text: '#1565c0',
+        priority: 1
+      },
+      SALESFORCE_LOGIC: { 
+        label: 'Salesforce Logic', 
+        bg: '#fff3e0',  // soft orange
+        text: '#e65100',
+        priority: 2
+      },
+      MANUAL_REVIEW: { 
+        label: 'Manual Review', 
+        bg: '#fffde7',  // soft yellow
+        text: '#f57f17',
+        priority: 3
+      },
+      SYSTEM_CHANGE: { 
+        label: 'System Change', 
+        bg: '#f5f5f5',  // neutral gray
+        text: '#616161',
+        priority: 4
+      },
+      CLEAN: { 
+        label: 'Validated', 
+        bg: '#e8f5e9',  // very light green
+        text: '#2e7d32',
+        priority: 5
+      }
+    };
+    
+    // Cell styles metadata for export alignment
+    var cellStylesStore = {};
+    
+    // Map raw signal types to style categories
+    function mapSignalToStyleCategory(signalType, severity) {
+      switch (signalType) {
+        case 'MISSING_REQUIRED':
+        case 'PICKLIST_INVALID':
+          return 'PATCH_REQUIRED';
+        case 'QA_FLAG':
+          if (severity === 'error' || severity === 'warning') return 'SALESFORCE_LOGIC';
+          return 'SYSTEM_CHANGE';
+        case 'MOJIBAKE_DETECTED':
+          return 'MANUAL_REVIEW';
+        default:
+          return 'CLEAN';
+      }
+    }
+    
+    // Get highest priority style for a cell (priority: 1=highest)
+    function getCellHighestPriorityStyle(recordId, fieldKey) {
+      var signals = getSignalsForCell(recordId, fieldKey);
+      if (!signals || signals.length === 0) {
+        return SIGNAL_STYLE_MAP.CLEAN;
+      }
+      
+      var bestCategory = 'CLEAN';
+      var bestPriority = 99;
+      
+      for (var i = 0; i < signals.length; i++) {
+        var sig = signals[i];
+        var category = mapSignalToStyleCategory(sig.signal_type, sig.severity);
+        var style = SIGNAL_STYLE_MAP[category];
+        if (style && style.priority < bestPriority) {
+          bestPriority = style.priority;
+          bestCategory = category;
+        }
+      }
+      
+      return SIGNAL_STYLE_MAP[bestCategory];
+    }
+    
+    // Get row signal counts for badge display
+    function getRowSignalCounts(recordId) {
+      var recordSignals = signalStore.signals_by_cell[recordId];
+      if (!recordSignals) return null;
+      
+      var counts = {
+        PATCH_REQUIRED: 0,
+        SALESFORCE_LOGIC: 0,
+        MANUAL_REVIEW: 0,
+        SYSTEM_CHANGE: 0
+      };
+      
+      var fieldKeys = Object.keys(recordSignals);
+      for (var i = 0; i < fieldKeys.length; i++) {
+        var signals = recordSignals[fieldKeys[i]];
+        for (var j = 0; j < signals.length; j++) {
+          var category = mapSignalToStyleCategory(signals[j].signal_type, signals[j].severity);
+          if (counts[category] !== undefined) {
+            counts[category]++;
+          }
+        }
+      }
+      
+      var total = counts.PATCH_REQUIRED + counts.SALESFORCE_LOGIC + counts.MANUAL_REVIEW + counts.SYSTEM_CHANGE;
+      return total > 0 ? counts : null;
+    }
+    
+    // Populate cell_styles metadata for export alignment
+    function populateCellStyles() {
+      cellStylesStore = {};
+      var recordIds = Object.keys(signalStore.signals_by_cell);
+      
+      for (var i = 0; i < recordIds.length; i++) {
+        var recordId = recordIds[i];
+        var recordSignals = signalStore.signals_by_cell[recordId];
+        cellStylesStore[recordId] = {};
+        
+        var fieldKeys = Object.keys(recordSignals);
+        for (var j = 0; j < fieldKeys.length; j++) {
+          var fieldKey = fieldKeys[j];
+          var style = getCellHighestPriorityStyle(recordId, fieldKey);
+          var signals = recordSignals[fieldKey];
+          var category = 'CLEAN';
+          
+          if (signals.length > 0) {
+            category = mapSignalToStyleCategory(signals[0].signal_type, signals[0].severity);
+          }
+          
+          cellStylesStore[recordId][fieldKey] = {
+            status: category,
+            color: style.bg,
+            label: style.label
+          };
+        }
+      }
+      
+      console.log('[CellStyles] Populated metadata for', recordIds.length, 'records');
+      return cellStylesStore;
+    }
+    
     // Get field metadata from rules bundle (normalized lookup)
     function getFieldMeta(sheetName, fieldKey) {
       if (!rulesBundleCache.fieldMeta || !rulesBundleCache.fieldMeta.fields) return null;
@@ -9644,6 +9800,9 @@
         });
       }
       
+      // v1.6.2: Populate cell_styles metadata for export alignment
+      populateCellStyles();
+      
       return signalStore;
     }
     
@@ -9662,6 +9821,36 @@
     // Get signal stats
     function getSignalStats() {
       return signalStore.stats;
+    }
+    
+    // v1.6.2: Render row badges HTML for grid
+    function renderRowBadges(recordId) {
+      var counts = getRowSignalCounts(recordId);
+      if (!counts) return '';
+      
+      var badges = [];
+      if (counts.PATCH_REQUIRED > 0) {
+        badges.push('<span class="row-badge badge-patch" title="Patch Required">' + counts.PATCH_REQUIRED + '</span>');
+      }
+      if (counts.SALESFORCE_LOGIC > 0) {
+        badges.push('<span class="row-badge badge-sflogic" title="Salesforce Logic">' + counts.SALESFORCE_LOGIC + '</span>');
+      }
+      if (counts.MANUAL_REVIEW > 0) {
+        badges.push('<span class="row-badge badge-manual" title="Manual Review">' + counts.MANUAL_REVIEW + '</span>');
+      }
+      if (counts.SYSTEM_CHANGE > 0) {
+        badges.push('<span class="row-badge badge-system" title="System Change">' + counts.SYSTEM_CHANGE + '</span>');
+      }
+      
+      return badges.length > 0 ? '<div class="row-badges">' + badges.join('') + '</div>' : '';
+    }
+    
+    // v1.6.2: Get cell style for grid coloring
+    function getGridCellStyle(recordId, fieldKey) {
+      var normKey = normalizeFieldKey(fieldKey);
+      var style = getCellHighestPriorityStyle(recordId, normKey);
+      if (!style || style.priority >= 5) return ''; // CLEAN cells get no extra coloring
+      return 'background: ' + style.bg + ';';
     }
     
     // ========================================================================
@@ -14750,18 +14939,29 @@
         // v1.4.15: Pass sheet name and original row index to click handler
         var sheetName = r.sheet || '';
         var sheetRowIdx = r._sheetRowIndex !== undefined ? r._sheetRowIndex : idx;
+        // v1.6.2: Get record ID for signal styling (match signalStore derivation)
+        var recordId = r.record_id || (r._identity && r._identity.record_id) || r.contract_key || '';
+        if (!recordId) {
+          recordId = sheetName + ':' + sheetRowIdx;
+        }
         tr.dataset.sheetName = sheetName;
         tr.dataset.recordIndex = sheetRowIdx;
+        tr.dataset.recordId = recordId;
         tr.onclick = (function(sn, sri) { return function() { openRowReviewDrawer(sn, sri); }; })(sheetName, sheetRowIdx);
         
         var statusClass = 'status-' + (r.status || '').toLowerCase().replace(/\s+/g, '_');
-        tr.innerHTML = '<td class="row-index">' + (idx + 1) + '</td>' +
+        // v1.6.2: Add row badges for signal counts
+        var rowBadgesHtml = renderRowBadges(recordId);
+        
+        tr.innerHTML = '<td class="row-index">' + (idx + 1) + rowBadgesHtml + '</td>' +
           columns.map(function(col) {
             var val = r[col];
             if (val === null || val === undefined) val = '';
             if (typeof val === 'object') val = JSON.stringify(val);
             var cellClass = col === 'status' ? statusClass : '';
-            return '<td class="' + cellClass + ' truncated" title="' + String(val).replace(/"/g, '&quot;') + '">' + String(val) + '</td>';
+            // v1.6.2: Apply signal-based cell coloring
+            var cellStyle = getGridCellStyle(recordId, col);
+            return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + String(val).replace(/"/g, '&quot;') + '">' + String(val) + '</td>';
           }).join('');
         
         fragment.appendChild(tr);
