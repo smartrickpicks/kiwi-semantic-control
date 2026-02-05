@@ -261,26 +261,47 @@
   
   <script>
     (function() {
-      // Role assignment based on email domain and specific emails
-      var adminEmails = [
-        'emily.rodriguez@createmusicgroup.com',
-        'admin@createmusicgroup.com'
-      ];
-      var reviewerEmails = [
-        'marcus.johnson@createmusicgroup.com',
-        'reviewer@createmusicgroup.com'
-      ];
+      // v1.6.27: Role assignment from saved user list
+      var DEMO_USERS_KEY = 'orchestrate_demo_users';
       var allowedDomain = 'createmusicgroup.com';
+      
+      // Get saved users from localStorage (shared with viewer)
+      function getSavedUsers() {
+        try {
+          var stored = localStorage.getItem(DEMO_USERS_KEY);
+          if (stored) return JSON.parse(stored);
+        } catch (e) {}
+        return [];
+      }
       
       function getRoleFromEmail(email) {
         var lowerEmail = (email || '').toLowerCase();
-        for (var i = 0; i < adminEmails.length; i++) {
-          if (adminEmails[i].toLowerCase() === lowerEmail) return 'admin';
+        var users = getSavedUsers();
+        
+        // Check saved user list for matching email
+        for (var i = 0; i < users.length; i++) {
+          if (users[i].email && users[i].email.toLowerCase() === lowerEmail) {
+            // Check if user is active
+            if (users[i].status === 'disabled') {
+              return null; // Disabled user
+            }
+            return users[i].role || 'analyst';
+          }
         }
-        for (var i = 0; i < reviewerEmails.length; i++) {
-          if (reviewerEmails[i].toLowerCase() === lowerEmail) return 'reviewer';
+        
+        // No match in user list - deny access
+        return null;
+      }
+      
+      function isUserConfigured(email) {
+        var users = getSavedUsers();
+        var lowerEmail = (email || '').toLowerCase();
+        for (var i = 0; i < users.length; i++) {
+          if (users[i].email && users[i].email.toLowerCase() === lowerEmail) {
+            return true;
+          }
         }
-        return 'analyst';
+        return false;
       }
       
       function showError(message) {
@@ -308,8 +329,19 @@
           return;
         }
         
-        // Determine role from email
+        // v1.6.27: Check if user is configured in the user list
+        if (!isUserConfigured(email)) {
+          showError('User not configured. Contact your administrator to add your email to the user list.');
+          return;
+        }
+        
+        // Determine role from saved user list
         var role = getRoleFromEmail(email);
+        
+        if (role === null) {
+          showError('Your account is disabled. Contact your administrator.');
+          return;
+        }
         
         // Store user session
         localStorage.setItem('currentRole', role);
