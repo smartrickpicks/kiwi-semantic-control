@@ -12579,11 +12579,12 @@
       var rowId = srrState.currentRowId;
       console.log('[SRR] Opening audit log for record:', rowId);
       
-      // Find the record to get its identity
-      var record = null;
-      if (rowId && canonicalRecordStore[rowId]) {
-        record = canonicalRecordStore[rowId];
-      }
+      // Build record object with current SRR context
+      var record = {
+        sheet: srrState.currentSheet,
+        rowIndex: srrState.currentRowIndex,
+        recordKey: srrState.currentSheet + ':' + srrState.currentRowIndex
+      };
       
       // Get audit entries from meta sheets
       var auditEntries = getAuditEntriesForRecord(record);
@@ -12597,10 +12598,27 @@
       showAuditLogModal(auditEntries);
     }
     
-    // v1.6.4: Get audit entries from meta sheets for a record
+    // v1.6.4: Get audit entries from meta sheets for a specific record
     function getAuditEntriesForRecord(record) {
       var entries = [];
       if (!workbook || !workbook.sheets) return entries;
+      
+      // Get current record info for filtering - use record param if available, else srrState
+      var currentSheet = '';
+      var currentRowIndex = -1;
+      var recordKey = '';
+      
+      if (record && record.sheet && typeof record.rowIndex !== 'undefined') {
+        currentSheet = record.sheet;
+        currentRowIndex = record.rowIndex;
+        recordKey = record.recordKey || (record.sheet + ':' + record.rowIndex);
+      } else {
+        currentSheet = srrState.currentSheet || '';
+        currentRowIndex = typeof srrState.currentRowIndex === 'number' ? srrState.currentRowIndex : -1;
+        recordKey = currentSheet + ':' + currentRowIndex;
+      }
+      
+      if (!currentSheet || currentRowIndex < 0) return entries;
       
       var metaSheets = getMetaSheets();
       metaSheets.forEach(function(sheetName) {
@@ -12608,18 +12626,36 @@
         if (!sheet || !sheet.rows) return;
         
         sheet.rows.forEach(function(row, idx) {
-          // Map meta sheet row to audit entry
-          entries.push({
-            sheet: sheetName,
-            row_index: idx,
-            timestamp: row.Timestamp || row.timestamp || row.Created_Date || new Date().toISOString(),
-            action: row.Action || row.action || row.Change_Type || row.Note_Type || 'Update',
-            field: row.Field || row.field || row.Changed_Field || '',
-            old_value: row.Old_Value || row.old_value || row.Previous || '',
-            new_value: row.New_Value || row.new_value || row.Current || '',
-            summary: row.Summary || row.summary || row.Notes || row.Comment || '',
-            done_by: 'Done by user' // v1.6.4: All entries show "Done by user"
-          });
+          // v1.6.4: Filter entries to match current record
+          var rowSheet = row.Sheet || row.sheet || row.Source_Sheet || '';
+          var rowNumRaw = row['Row #'] || row.Row || row.row_index || row.RowIndex || '';
+          var rowRecordKey = row.RecordKey || row.record_key || row.Record_ID || '';
+          
+          // Normalize row number: meta sheets typically use 1-based, SRR uses 0-based
+          var rowNum = rowNumRaw !== '' ? parseInt(rowNumRaw, 10) : -1;
+          var matchesRow0Based = rowNum === currentRowIndex;
+          var matchesRow1Based = rowNum === (currentRowIndex + 1);
+          
+          // Exact sheet match only
+          var matchesSheet = rowSheet === currentSheet;
+          
+          // Match by sheet+row (either 0-based or 1-based) OR by record key
+          var matchesByRecordKey = rowRecordKey && rowRecordKey === recordKey;
+          var matchesBySheetRow = matchesSheet && (matchesRow0Based || matchesRow1Based);
+          
+          if (matchesBySheetRow || matchesByRecordKey) {
+            entries.push({
+              sheet: sheetName,
+              row_index: idx,
+              timestamp: row.Timestamp || row.timestamp || row.Created_Date || new Date().toISOString(),
+              action: row.Action || row.action || row.Change_Type || row.Note_Type || 'Update',
+              field: row.Field || row.field || row.Changed_Field || row['Field Name'] || '',
+              old_value: row.Old_Value || row.old_value || row.Previous || '',
+              new_value: row.New_Value || row.new_value || row.Current || '',
+              summary: row.Summary || row.summary || row.Notes || row.Comment || row.Note_Text || '',
+              done_by: 'Done by user' // v1.6.4: All entries show "Done by user"
+            });
+          }
         });
       });
       
