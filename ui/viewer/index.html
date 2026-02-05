@@ -1495,7 +1495,7 @@
       <!-- Loader Page (DEPRECATED - v1.2.9 uses drawer instead) -->
       <div class="page-content" id="page-loader" style="display: none !important;">
         <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-          <div style="font-size: 0.75em; color: #999; text-align: right; margin-bottom: 10px;">PAGE: LOADER | BUILD v1.2.8</div>
+          <div style="font-size: 0.75em; color: #999; text-align: right; margin-bottom: 10px;">PAGE: LOADER | BUILD v1.6.28</div>
           
           <!-- PRIMARY ACTION PANEL: Continue to Triage (shown when dataset active) -->
           <div id="loader-continue-panel" style="display: none; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; color: white; text-align: center;">
@@ -1582,7 +1582,10 @@
       <div class="page" id="page-triage">
         <div id="analyst-triage-content">
           <div class="page-header" style="position: relative;">
-            <h2 id="triage-page-title">Triage</h2>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <h2 id="triage-page-title">Triage</h2>
+              <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.6.28</span>
+            </div>
             <p class="page-desc">All items requiring analyst review and action.</p>
             <!-- Sticky Search Bar (top right) - frosted glass style with scroll-aware behavior -->
             <div id="triage-search-bar" style="position: fixed; top: 12px; right: 24px; z-index: 100; display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: opacity 0.2s ease, transform 0.2s ease;">
@@ -1760,7 +1763,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>All-Data Grid</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: GRID | BUILD v1.5.2</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ALL-DATA-GRID | BUILD v1.6.28</span>
           </div>
           <p class="page-desc">Dense spreadsheet view of all records with filtering and search.</p>
         </div>
@@ -1863,6 +1866,7 @@
         <div class="grid-footer" style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; color: #666; font-size: 0.85em;">
           <span id="grid-row-count">0 records</span>
           <span id="grid-filter-info"></span>
+          <span style="font-size: 0.75em; color: #aaa;">PAGE: ALL-DATA-GRID | BUILD v1.6.28</span>
         </div>
       </div><!-- end page-grid -->
 
@@ -1871,7 +1875,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2 id="srr-page-title">Record Inspection</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: SINGLE-ROW-REVIEW | BUILD v1.4.13</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: SINGLE-ROW-REVIEW | BUILD v1.6.28</span>
           </div>
           <p class="page-desc">Per-record inspection with Evidence Pack authoring and Patch Request creation.</p>
         </div>
@@ -2165,7 +2169,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Patch Studio</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH-STUDIO | BUILD v1.4.0</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH-STUDIO | BUILD v1.6.28</span>
           </div>
           <p class="page-desc">Select records, build rule patches, validate with preflight gate, and export.</p>
         </div>
@@ -2235,7 +2239,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Review</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: CONFIG-INSPECTOR | BUILD v1.4.0</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: CONFIG-INSPECTOR | BUILD v1.6.28</span>
           </div>
           <p class="page-desc">Inspect config deltas, compare artifact versions, and generate evidence summaries.</p>
         </div>
@@ -2310,7 +2314,7 @@
               <h2 style="margin: 0;">Verifier Review</h2>
               <span class="vr-state-badge" id="vr-state-badge">Submitted</span>
             </div>
-            <span style="font-size: 0.7em; color: #999;">PAGE: VERIFIER-REVIEW | BUILD v1.4.5</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: VERIFIER-REVIEW | BUILD v1.6.28</span>
           </div>
           <p class="page-desc">Review submitted Patch Requests, request clarification, approve or reject.</p>
         </div>
@@ -2535,7 +2539,7 @@
               <h2 style="margin: 0;">Admin Approval</h2>
               <span class="aa-state-badge" id="aa-state-badge">Verifier Approved</span>
             </div>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-APPROVAL | BUILD v1.4.5</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-APPROVAL | BUILD v1.6.28</span>
           </div>
           <p class="page-desc">Final approval surface before Promote Patch to Baseline.</p>
         </div>
@@ -2723,7 +2727,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Admin Panel</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-PANEL | BUILD v1.5.1</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-PANEL | BUILD v1.6.28</span>
           </div>
           <p class="page-desc">Centralized admin tools for governance, config, standardization, and patch management.</p>
         </div>
