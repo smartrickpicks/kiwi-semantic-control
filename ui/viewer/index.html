@@ -1298,10 +1298,7 @@
       <!-- Top Toolbar (visible when data loaded) -->
       <div class="top-toolbar" id="top-toolbar" style="display: none;">
         <div class="top-toolbar-left">
-          <input type="text" id="global-search-input" placeholder="Search agreements, accounts, record IDs…" 
-                 style="padding: 8px 14px; border: none; background: transparent; font-size: 0.85em; width: 280px; color: #666; outline: none;" 
-                 onkeydown="handleGlobalSearchKeydown(event)">
-          <span id="config-status-chip" style="display: none; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600; margin-left: 12px;"></span>
+          <span id="config-status-chip" style="display: none; padding: 4px 10px; border-radius: 12px; font-size: 0.75em; font-weight: 600;"></span>
         </div>
         <div class="top-toolbar-right">
           <button class="top-toolbar-btn configure-btn admin-only-content" id="btn-configure" title="Configure Kiwi settings and defaults">Configure</button>
@@ -1414,9 +1411,16 @@
       <!-- TRIAGE PAGE (default after data loaded) -->
       <div class="page" id="page-triage">
         <div id="analyst-triage-content">
-          <div class="page-header">
+          <div class="page-header" style="position: relative;">
             <h2>Triage</h2>
             <p class="page-desc">All items requiring analyst review and action.</p>
+            <!-- Sticky Search Bar (top right) -->
+            <div id="triage-search-bar" style="position: fixed; top: 12px; right: 24px; z-index: 100; display: flex; align-items: center; gap: 8px; background: rgba(30, 41, 59, 0.95); padding: 8px 12px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+              <input type="text" id="global-search-input" placeholder="Search records…" 
+                     style="padding: 6px 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); border-radius: 4px; font-size: 0.8em; width: 180px; color: #e0e0e0; outline: none;" 
+                     onkeydown="handleGlobalSearchKeydown(event)" onfocus="this.style.borderColor='rgba(255,255,255,0.3)'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'">
+              <span style="font-size: 0.65em; color: rgba(255,255,255,0.4);">⌘K</span>
+            </div>
           </div>
 
           <!-- QUEUE 1: Manual Review -->
