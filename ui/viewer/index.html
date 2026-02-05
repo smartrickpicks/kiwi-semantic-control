@@ -18189,6 +18189,8 @@ Add any additional notes here.
         return e.dataset_id !== 'ds-sample' && e.source !== 'sample'; 
       });
       var activeId = localStorage.getItem(STORAGE_KEY_ACTIVE_DATASET);
+      // v1.4.23: Only show as Active if data is actually loaded in memory
+      var isReallyActive = dataLoaded && sessionState.status === 'loaded';
       
       if (realLibrary.length === 0) {
         listEl.innerHTML = '<div class="upload-library-empty" style="text-align: center; padding: 40px 20px; color: #888; background: #f5f5f5; border-radius: 8px; border: 2px dashed #ddd;">' +
@@ -18200,7 +18202,8 @@ Add any additional notes here.
       }
       
       var html = realLibrary.map(function(entry) {
-        var isActive = entry.dataset_id === activeId;
+        // v1.4.23: Only show as Active if data is actually loaded AND matches this entry
+        var isActive = isReallyActive && entry.dataset_id === activeId;
         var dateStr = new Date(entry.created_at).toLocaleDateString();
         return '<div class="upload-library-item" style="background: ' + (isActive ? '#e3f2fd' : 'white') + '; border: 1px solid ' + (isActive ? '#1976d2' : '#e0e0e0') + '; border-radius: 8px; padding: 15px;">' +
           '<div style="display: flex; justify-content: space-between; align-items: flex-start;">' +
