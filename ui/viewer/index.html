@@ -8959,9 +8959,9 @@
     }
     
     function recoverNavigation() {
-      var currentHash = window.location.hash.replace('#/', '') || (dataLoaded ? 'grid' : 'triage');
+      var currentHash = window.location.hash.replace('#/', '') || 'grid';
       // Loader is now a drawer, redirect appropriately
-      if (currentHash === 'loader') currentHash = dataLoaded ? 'grid' : 'triage';
+      if (currentHash === 'loader') currentHash = 'grid';
       // Handle grid query params
       if (currentHash.startsWith('grid?')) {
         var queryPart = currentHash.split('?')[1];
@@ -9241,12 +9241,13 @@
     }
 
     // v1.4.22: Navigate to role-specific default landing page
+    // v1.6.37: Default to All Data Grid (Accounts sheet) instead of Triage
     function navigateToRoleDefault() {
       if (currentMode === 'admin') {
         navigateTo('admin');
       } else {
-        // Analyst and Reviewer both default to Triage
-        navigateTo('triage');
+        // Analyst and Reviewer default to All Data Grid
+        navigateTo('grid');
       }
     }
     
