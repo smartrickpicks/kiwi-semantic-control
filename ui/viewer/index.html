@@ -1512,10 +1512,7 @@
 
         <div id="verifier-triage-content" style="display: none;">
           <div class="page-header">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-              <h2>Verifier Triage</h2>
-              <span style="font-size: 0.7em; color: #999;">PAGE: VERIFIER-TRIAGE | BUILD v1.5.2</span>
-            </div>
+            <h2 id="verifier-triage-title">Triage - Reviewer</h2>
             <p class="page-desc">Review submitted RFIs, Corrections, and Blacklist requests.</p>
           </div>
           
@@ -7916,12 +7913,12 @@
       if (!modes.includes(mode)) mode = 'analyst';
       currentMode = mode;
       
-      // Update triage page title with role
+      // Update triage page titles with role
+      var roleLabel = mode === 'analyst' ? 'Analyst' : mode === 'reviewer' ? 'Reviewer' : 'Admin';
       var triageTitle = document.getElementById('triage-page-title');
-      if (triageTitle) {
-        var roleLabel = mode === 'analyst' ? 'Analyst' : mode === 'reviewer' ? 'Reviewer' : 'Admin';
-        triageTitle.textContent = 'Triage - ' + roleLabel;
-      }
+      var verifierTitle = document.getElementById('verifier-triage-title');
+      if (triageTitle) triageTitle.textContent = 'Triage - ' + roleLabel;
+      if (verifierTitle) verifierTitle.textContent = 'Triage - ' + roleLabel;
       
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
       const modeBtn = document.querySelector(`.mode-btn[data-mode="${mode}"]`);
