@@ -2440,6 +2440,7 @@
         <!-- Admin Panel Tabs -->
         <div class="admin-console-tabs" style="display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; padding-bottom: 0;">
           <button class="admin-tab active" data-admin-tab="governance" onclick="switchAdminTab('governance')" style="padding: 10px 20px; background: #1976d2; color: white; border: none; border-radius: 6px 6px 0 0; cursor: pointer; font-weight: 600;">Governance</button>
+          <button class="admin-tab" data-admin-tab="users" onclick="switchAdminTab('users')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Users</button>
           <button class="admin-tab" data-admin-tab="patch-queue" onclick="switchAdminTab('patch-queue')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Patch Queue <span id="patch-queue-count" style="display:none; background:#e91e63; color:white; padding:1px 6px; border-radius:10px; font-size:0.8em; margin-left:4px;">0</span></button>
           <button class="admin-tab" data-admin-tab="config" onclick="switchAdminTab('config')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Config</button>
           <button class="admin-tab" data-admin-tab="inspector" onclick="switchAdminTab('inspector')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Inspector</button>
@@ -2497,6 +2498,38 @@
           </div>
         </div>
         </div><!-- end admin-tab-governance -->
+
+        <!-- USERS TAB (v1.4.21) -->
+        <div id="admin-tab-users" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <h3 style="margin: 0; font-size: 1.1em; color: #333;">User Access <span class="info-icon" title="Manage user roles for the demo environment. Changes are stored locally.">&#9432;</span></h3>
+              <span style="font-size: 0.75em; background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 4px;">Demo Mode</span>
+            </div>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Assign roles to demo users. Changes persist in local storage only.</p>
+            
+            <div id="users-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                <thead style="background: #f5f5f5;">
+                  <tr>
+                    <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 20%;">User</th>
+                    <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 28%;">Email</th>
+                    <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 18%;">Role</th>
+                    <th style="padding: 12px 8px; text-align: center; border-bottom: 1px solid #e0e0e0; width: 14%;">Status</th>
+                    <th style="padding: 12px 8px; text-align: center; border-bottom: 1px solid #e0e0e0; width: 20%;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="users-table-body">
+                </tbody>
+              </table>
+            </div>
+            
+            <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
+              <button class="toolbar-btn" onclick="resetDemoUsers()">Reset to Defaults</button>
+              <span style="font-size: 0.8em; color: #888;">Last updated: <span id="users-last-updated">—</span></span>
+            </div>
+          </div>
+        </div><!-- end admin-tab-users -->
 
         <!-- PATCH QUEUE TAB (v1.5.1) -->
         <div id="admin-tab-patch-queue" class="admin-tab-panel" data-admin-section="true" style="display: none;">
@@ -7912,11 +7945,158 @@
       });
     }
 
+    // =========================================================================
+    // ADMIN USER PANEL (v1.4.21) - Demo role assignment
+    // =========================================================================
+    
+    var DEMO_USERS_KEY = 'orchestrate_demo_users';
+    var DEFAULT_DEMO_USERS = [
+      { id: 'user_001', name: 'Alice Chen', email: 'alice.chen@demo.orchestrate.os', role: 'analyst', status: 'active' },
+      { id: 'user_002', name: 'Bob Martinez', email: 'bob.martinez@demo.orchestrate.os', role: 'analyst', status: 'active' },
+      { id: 'user_003', name: 'Carol Johnson', email: 'carol.johnson@demo.orchestrate.os', role: 'reviewer', status: 'active' },
+      { id: 'user_004', name: 'David Kim', email: 'david.kim@demo.orchestrate.os', role: 'reviewer', status: 'active' },
+      { id: 'user_005', name: 'Eva Williams', email: 'eva.williams@demo.orchestrate.os', role: 'admin', status: 'active' },
+      { id: 'user_006', name: 'Frank Brown', email: 'frank.brown@demo.orchestrate.os', role: 'analyst', status: 'active' },
+      { id: 'user_007', name: 'Grace Lee', email: 'grace.lee@demo.orchestrate.os', role: 'reviewer', status: 'active' },
+      { id: 'user_008', name: 'Henry Davis', email: 'henry.davis@demo.orchestrate.os', role: 'admin', status: 'active' }
+    ];
+    
+    function getDemoUsers() {
+      try {
+        var stored = localStorage.getItem(DEMO_USERS_KEY);
+        if (stored) {
+          return JSON.parse(stored);
+        }
+      } catch (e) {
+        console.log('[Users] Error loading demo users:', e);
+      }
+      return JSON.parse(JSON.stringify(DEFAULT_DEMO_USERS));
+    }
+    
+    function saveDemoUsers(users) {
+      try {
+        localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(users));
+        localStorage.setItem(DEMO_USERS_KEY + '_updated', new Date().toISOString());
+        return true;
+      } catch (e) {
+        console.log('[Users] Error saving demo users:', e);
+        return false;
+      }
+    }
+    
+    function renderUsersTable() {
+      var tbody = document.getElementById('users-table-body');
+      if (!tbody) return;
+      
+      var users = getDemoUsers();
+      var currentUserEmail = null;
+      try {
+        var demoUser = JSON.parse(localStorage.getItem('demoUser') || '{}');
+        currentUserEmail = demoUser.email;
+      } catch (e) {}
+      
+      var html = '';
+      users.forEach(function(user, idx) {
+        var isCurrentUser = currentUserEmail && currentUserEmail.toLowerCase() === user.email.toLowerCase();
+        html += '<tr style="' + (isCurrentUser ? 'background: #fffde7;' : '') + '">';
+        html += '<td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0;">';
+        html += '<div style="display: flex; align-items: center; gap: 8px;">';
+        html += '<div style="width: 32px; height: 32px; border-radius: 50%; background: ' + getUserColor(user.name) + '; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.85em;">' + getInitials(user.name) + '</div>';
+        html += '<span>' + user.name + (isCurrentUser ? ' <span style="font-size:0.75em; color:#ff9800;">(you)</span>' : '') + '</span>';
+        html += '</div></td>';
+        html += '<td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; color: #666;">' + user.email + '</td>';
+        html += '<td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0;">';
+        html += '<select id="user-role-' + idx + '" data-user-idx="' + idx + '" data-original-role="' + user.role + '" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; cursor: pointer;">';
+        html += '<option value="analyst"' + (user.role === 'analyst' ? ' selected' : '') + '>Analyst</option>';
+        html += '<option value="reviewer"' + (user.role === 'reviewer' ? ' selected' : '') + '>Reviewer</option>';
+        html += '<option value="admin"' + (user.role === 'admin' ? ' selected' : '') + '>Admin</option>';
+        html += '</select></td>';
+        html += '<td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: center;">';
+        html += '<span style="background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 12px; font-size: 0.8em; font-weight: 500;">Active</span>';
+        html += '</td>';
+        html += '<td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0; text-align: center;">';
+        html += '<button onclick="saveUserRole(' + idx + ')" class="toolbar-btn" style="padding: 6px 14px; font-size: 0.85em;">Save</button>';
+        html += '</td>';
+        html += '</tr>';
+      });
+      
+      tbody.innerHTML = html;
+      
+      var lastUpdated = localStorage.getItem(DEMO_USERS_KEY + '_updated');
+      var updatedEl = document.getElementById('users-last-updated');
+      if (updatedEl) {
+        updatedEl.textContent = lastUpdated ? new Date(lastUpdated).toLocaleString() : 'Never';
+      }
+    }
+    
+    function getUserColor(name) {
+      var colors = ['#1976d2', '#388e3c', '#7b1fa2', '#d32f2f', '#f57c00', '#0288d1', '#689f38', '#512da8'];
+      var hash = 0;
+      for (var i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return colors[Math.abs(hash) % colors.length];
+    }
+    
+    function getInitials(name) {
+      return name.split(' ').map(function(n) { return n[0]; }).join('').substring(0, 2).toUpperCase();
+    }
+    
+    function saveUserRole(idx) {
+      var users = getDemoUsers();
+      var select = document.getElementById('user-role-' + idx);
+      if (!select || !users[idx]) return;
+      
+      var newRole = select.value;
+      var oldRole = users[idx].role;
+      var userName = users[idx].name;
+      var userEmail = users[idx].email;
+      
+      if (newRole === oldRole) {
+        showToast('No changes to save', 'info');
+        return;
+      }
+      
+      users[idx].role = newRole;
+      saveDemoUsers(users);
+      
+      // Check if this is the currently logged-in user
+      var currentUserEmail = null;
+      try {
+        var demoUser = JSON.parse(localStorage.getItem('demoUser') || '{}');
+        currentUserEmail = demoUser.email;
+      } catch (e) {}
+      
+      if (currentUserEmail && currentUserEmail.toLowerCase() === userEmail.toLowerCase()) {
+        // Update the current user's role in localStorage
+        localStorage.setItem('currentRole', newRole);
+        showToast('Your role updated to ' + newRole.charAt(0).toUpperCase() + newRole.slice(1) + '. Reload to apply.', 'warning');
+      } else {
+        showToast(userName + ' role updated to ' + newRole.charAt(0).toUpperCase() + newRole.slice(1), 'success');
+      }
+      
+      select.dataset.originalRole = newRole;
+      renderUsersTable();
+    }
+    
+    function resetDemoUsers() {
+      if (!confirm('Reset all demo users to default roles?')) return;
+      localStorage.removeItem(DEMO_USERS_KEY);
+      localStorage.removeItem(DEMO_USERS_KEY + '_updated');
+      renderUsersTable();
+      showToast('Demo users reset to defaults', 'info');
+    }
+    
     // Admin Console Tab Switching
     var currentAdminTab = 'governance';
     function switchAdminTab(tabName) {
-      const tabs = ['governance', 'patch-queue', 'config', 'inspector', 'standardizer', 'patch-console', 'evidence', 'unknown-cols'];
+      const tabs = ['governance', 'users', 'patch-queue', 'config', 'inspector', 'standardizer', 'patch-console', 'evidence', 'unknown-cols'];
       if (!tabs.includes(tabName)) tabName = 'governance';
+      
+      // Render users table when switching to users tab
+      if (tabName === 'users') {
+        renderUsersTable();
+      }
       currentAdminTab = tabName;
       
       // Hide all tab panels
