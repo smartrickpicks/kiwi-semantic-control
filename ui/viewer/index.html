@@ -739,6 +739,30 @@
     .aa-hold-modal textarea { width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 12px; }
     .aa-hold-modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
+    /* Folder Selection Modal (v1.4.23) */
+    .folder-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 9999; }
+    .folder-modal-overlay.active { display: flex; }
+    .folder-modal { background: white; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); animation: folderModalSlide 0.2s ease; }
+    @keyframes folderModalSlide { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    .folder-modal-header { padding: 20px 24px; border-bottom: 1px solid #e0e0e0; }
+    .folder-modal-header h3 { margin: 0 0 6px 0; font-size: 1.1em; color: #1a1a2e; }
+    .folder-modal-header p { margin: 0; font-size: 0.85em; color: #666; }
+    .folder-modal-body { padding: 24px; }
+    .folder-select-wrapper { margin-bottom: 16px; }
+    .folder-select-label { font-size: 0.8em; color: #666; margin-bottom: 6px; font-weight: 500; }
+    .folder-select { width: 100%; padding: 12px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95em; cursor: pointer; background: white; }
+    .folder-select:focus { outline: none; border-color: #1976d2; box-shadow: 0 0 0 3px rgba(25,118,210,0.1); }
+    .folder-modal-footer { padding: 16px 24px; border-top: 1px solid #e0e0e0; display: flex; justify-content: flex-end; gap: 10px; }
+    .folder-modal-btn { padding: 10px 20px; border-radius: 6px; font-size: 0.9em; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+    .folder-modal-btn.primary { background: #1976d2; color: white; border: none; }
+    .folder-modal-btn.primary:hover { background: #1565c0; }
+    .folder-modal-btn.primary:disabled { background: #90caf9; cursor: not-allowed; }
+    .folder-connected-card { background: #e8f5e9; border: 1px solid #81c784; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    .folder-connected-icon { font-size: 1.5em; margin-bottom: 8px; }
+    .folder-connected-label { font-size: 0.75em; color: #2e7d32; text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
+    .folder-connected-name { font-size: 1em; color: #1b5e20; font-weight: 600; }
+    .folder-sync-time { font-size: 0.8em; color: #558b2f; margin-top: 6px; }
+
     /* Grid Table Styles */
     .grid-table { min-width: 800px; }
     .grid-table th, .grid-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e0e0e0; white-space: nowrap; }
@@ -1337,12 +1361,8 @@
             <button id="btn-import-csv-primary" class="empty-queue-cta" style="background: white; color: #37474f; font-size: 1.1em; padding: 14px 28px; border-radius: 8px;">Import CSV</button>
           </div>
           
-          <!-- SECONDARY ACTION: Load Sample Dataset -->
-          <div id="loader-sample-panel" style="display: none; background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 8px; padding: 16px; margin-bottom: 20px; text-align: center;">
-            <span style="margin-right: 10px;">📦</span>
-            <span style="font-size: 0.95em; color: #333;">Or try the demo:</span>
-            <button id="btn-load-sample-secondary" class="top-toolbar-btn" style="margin-left: 10px; padding: 8px 16px;">Load Sample Dataset</button>
-          </div>
+          <!-- SECONDARY ACTION: Load Sample Dataset (hidden v1.4.23 - folder-based workflow) -->
+          <div id="loader-sample-panel" style="display: none !important;"></div>
           
           <!-- COLLAPSIBLE: Other Actions -->
           <div id="loader-other-actions" style="background: #fafafa; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
@@ -1352,14 +1372,7 @@
             </button>
             <div id="loader-actions-content" style="display: none; padding: 0 20px 20px 20px;">
               <div style="display: grid; gap: 12px;">
-                <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: white; border: 1px solid #e0e0e0; border-radius: 6px;">
-                  <span>📦</span>
-                  <div style="flex: 1;">
-                    <div style="font-weight: 600; font-size: 0.9em;">Load Sample Dataset</div>
-                    <div style="font-size: 0.8em; color: #666;">Demo dataset for testing</div>
-                  </div>
-                  <button id="btn-load-sample" class="top-toolbar-btn" style="padding: 8px 16px;">Load</button>
-                </div>
+                <!-- Sample dataset hidden (v1.4.23 - folder-based workflow) -->
                 
                 <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: white; border: 1px solid #e0e0e0; border-radius: 6px;">
                   <span>📄</span>
@@ -2887,43 +2900,35 @@
         <button class="drawer-close" onclick="closeDataSourceDrawer()">&times;</button>
       </div>
       <div class="drawer-body">
-        <!-- Empty State Section (shown when no data loaded) -->
+        <!-- Connected Folder Section (v1.4.23 - shown when folder mapped) -->
+        <div id="data-source-folder-section" style="display: none; margin-bottom: 20px;">
+          <div class="folder-connected-card">
+            <div class="folder-connected-icon">📁</div>
+            <div class="folder-connected-label">Connected Folder</div>
+            <div class="folder-connected-name" id="connected-folder-name">—</div>
+            <div class="folder-sync-time" id="folder-sync-time">Last sync: —</div>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button class="modal-btn modal-btn-secondary" onclick="openFolderSelectionModal()" style="flex: 1;">
+              <span style="margin-right: 6px;">📂</span> Change Folder
+            </button>
+            <button class="modal-btn modal-btn-secondary" disabled style="flex: 1; opacity: 0.5; cursor: not-allowed;" title="Coming with Drive integration">
+              <span style="margin-right: 6px;">🔄</span> Sync Now <span style="font-size: 0.7em; background: #e0e0e0; padding: 1px 5px; border-radius: 3px; margin-left: 4px;">V2</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Empty State Section (shown when no folder mapped) -->
         <div id="data-source-empty-section" style="display: none;">
           <div style="text-align: center; padding: 24px 20px; color: #888; background: #f5f5f5; border-radius: 8px; border: 2px dashed #ddd; margin-bottom: 20px;">
             <div style="font-size: 2em; margin-bottom: 10px;">📁</div>
-            <div style="font-weight: 600; color: #333; margin-bottom: 8px;">No Active Dataset</div>
-            <p style="margin: 0; font-size: 0.9em;">Upload a file or connect a source to get started.</p>
+            <div style="font-weight: 600; color: #333; margin-bottom: 8px;">No Folder Connected</div>
+            <p style="margin: 0; font-size: 0.9em;">Select your assigned ingestion folder to get started.</p>
           </div>
           
-          <!-- Upload | Connect Row (Two Columns) -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-            <!-- Upload Tile -->
-            <div style="background: #fff; border: 2px dashed #1976d2; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; transition: background 0.15s;" onclick="document.getElementById('drawer-upload-file').click();" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'">
-              <div style="font-size: 1.5em; margin-bottom: 8px;">📄</div>
-              <div style="font-weight: 600; font-size: 0.85em; color: #1976d2; margin-bottom: 4px;">Upload File</div>
-              <div style="font-size: 0.7em; color: #666;">CSV or XLSX (multi-sheet)</div>
-            </div>
-            <input type="file" id="drawer-upload-file" accept=".csv,.xlsx" style="display: none;" onchange="handleDrawerFileUpload(this)">
-            
-            <!-- Connect Tile -->
-            <div style="background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; text-align: center; opacity: 0.6;">
-              <div style="font-size: 1.5em; margin-bottom: 8px;">🔌</div>
-              <div style="font-weight: 600; font-size: 0.85em; color: #666; margin-bottom: 4px;">Connect Source</div>
-              <div style="font-size: 0.7em; color: #888;">Google Drive, MCP <span style="background: #e0e0e0; padding: 1px 5px; border-radius: 3px; font-weight: 600;">V2</span></div>
-            </div>
-          </div>
-          
-          <!-- Sample Dataset Button -->
-          <div style="margin-bottom: 16px; padding: 12px 15px; background: #f5f5f5; border-radius: 8px; border: 1px dashed #ccc;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 1.2em;">📦</span>
-              <div style="flex: 1;">
-                <div style="font-weight: 600; font-size: 0.9em;">Demo Dataset</div>
-                <div style="font-size: 0.8em; color: #666;">5 sample contracts</div>
-              </div>
-              <button class="modal-btn modal-btn-primary" onclick="loadSampleDataset(true); closeDataSourceDrawer();">Load</button>
-            </div>
-          </div>
+          <button class="modal-btn modal-btn-primary" onclick="openFolderSelectionModal()" style="width: 100%; padding: 14px; font-size: 1em;">
+            <span style="margin-right: 8px;">📂</span> Select Ingestion Folder
+          </button>
         </div>
         
         <!-- Active Dataset Section (shown when data loaded) -->
@@ -2948,40 +2953,22 @@
           </div>
         </div>
         
-        <!-- Upload | Connect Row (Active State - Two Columns) -->
-        <div id="data-source-upload-section" style="display: none; margin-bottom: 16px;">
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <!-- Upload Tile -->
-            <div style="background: #fff; border: 2px dashed #1976d2; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; transition: background 0.15s;" onclick="document.getElementById('drawer-upload-new-file').click();" onmouseover="this.style.background='#e3f2fd'" onmouseout="this.style.background='#fff'">
-              <div style="font-size: 1.5em; margin-bottom: 8px;">📄</div>
-              <div style="font-weight: 600; font-size: 0.85em; color: #1976d2; margin-bottom: 4px;">Upload New</div>
-              <div style="font-size: 0.7em; color: #666;">CSV or XLSX (multi-sheet)</div>
-            </div>
-            <input type="file" id="drawer-upload-new-file" accept=".csv,.xlsx" style="display: none;" onchange="handleDrawerFileUpload(this)">
-            
-            <!-- Connect Tile -->
-            <div style="background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; text-align: center; opacity: 0.6;">
-              <div style="font-size: 1.5em; margin-bottom: 8px;">🔌</div>
-              <div style="font-weight: 600; font-size: 0.85em; color: #666; margin-bottom: 4px;">Connect Source</div>
-              <div style="font-size: 0.7em; color: #888;">Google Drive, MCP <span style="background: #e0e0e0; padding: 1px 5px; border-radius: 3px; font-weight: 600;">V2</span></div>
-            </div>
-          </div>
-          <p style="color: #888; font-size: 0.75em; margin-top: 8px; text-align: center;">Uploading rotates current active dataset to Saved.</p>
-        </div>
+        <!-- Upload Section removed (v1.4.23 - folder-based workflow) -->
+        <div id="data-source-upload-section" style="display: none;"></div>
         
-        <!-- Search Stub (V2) -->
+        <!-- Search Stub (V2) - Disabled -->
         <div id="data-source-search-section" style="display: none; margin-bottom: 16px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
           <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-            <span style="font-weight: 600; font-size: 0.85em; color: #666;">Search</span>
-            <span style="font-size: 0.7em; background: #e0e0e0; padding: 1px 5px; border-radius: 3px; font-weight: 600; color: #666;">V2</span>
+            <span style="font-weight: 600; font-size: 0.85em; color: #999;">Search</span>
+            <span style="font-size: 0.7em; background: #e0e0e0; padding: 1px 5px; border-radius: 3px; font-weight: 600; color: #666;">Coming Soon</span>
           </div>
-          <input type="text" id="data-source-search-input" placeholder="Search agreements, accounts, record IDs..." style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em; box-sizing: border-box;" oninput="showDataSourceSearchToast()" onkeydown="if(event.key==='Enter') showDataSourceSearchToast()">
+          <input type="text" id="data-source-search-input" placeholder="Search coming with Drive integration..." disabled style="width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 0.9em; box-sizing: border-box; background: #f5f5f5; color: #999; cursor: not-allowed;">
         </div>
         
         <!-- Library Header (shown when saved datasets exist) -->
         <div id="data-source-library-header" style="display: none; margin-bottom: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">
-          <div style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 6px;">Saved Datasets</div>
-          <p style="color: #888; font-size: 0.8em; margin: 0;">Select to activate. Active dataset cannot be deleted.</p>
+          <div style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 6px;">Locally Cached Files</div>
+          <p style="color: #888; font-size: 0.8em; margin: 0;">Previously worked files saved locally.</p>
         </div>
         
         <!-- Dataset List -->
@@ -3032,15 +3019,24 @@
           <div style="font-size: 0.75em; color: #888; margin-top: 6px;">Supported: CSV, XLSX files</div>
         </div>
         
-        <!-- Sample Dataset Section -->
-        <div id="loader-drawer-sample-section" style="margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px; border: 1px dashed #ccc;">
+        <!-- Folder Connection Info (v1.4.23) -->
+        <div id="loader-folder-info" style="margin-bottom: 20px; padding: 15px; background: #e8f5e9; border-radius: 8px; border: 1px solid #81c784; display: none;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 1.2em;">📦</span>
+            <span style="font-size: 1.2em;">📁</span>
             <div style="flex: 1;">
-              <div style="font-weight: 600; font-size: 0.9em;">Demo Dataset</div>
-              <div style="font-size: 0.8em; color: #666;">5 sample contracts for testing</div>
+              <div style="font-weight: 600; font-size: 0.9em; color: #2e7d32;">Connected Folder</div>
+              <div id="loader-folder-name" style="font-size: 0.85em; color: #558b2f;">—</div>
             </div>
-            <button class="top-toolbar-btn" id="btn-load-sample-drawer" style="padding: 8px 16px;">Load Sample</button>
+            <button class="top-toolbar-btn" onclick="openFolderSelectionModal()" style="padding: 8px 16px;">Change</button>
+          </div>
+        </div>
+        
+        <!-- Empty Folder State (v1.4.23) -->
+        <div id="loader-no-folder" style="margin-bottom: 20px; padding: 15px; background: #fff3e0; border-radius: 8px; border: 1px solid #ff9800; display: none;">
+          <div style="text-align: center;">
+            <div style="font-size: 1.5em; margin-bottom: 8px;">📂</div>
+            <div style="font-weight: 600; font-size: 0.9em; color: #e65100; margin-bottom: 8px;">No Folder Selected</div>
+            <button class="modal-btn modal-btn-primary" onclick="openFolderSelectionModal()" style="padding: 10px 20px;">Select Ingestion Folder</button>
           </div>
         </div>
         
@@ -3052,6 +3048,35 @@
             <button class="top-toolbar-btn" onclick="rebuildFieldIndex();">Rebuild Index</button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Folder Selection Modal (v1.4.23) -->
+  <div class="folder-modal-overlay" id="folder-modal-overlay">
+    <div class="folder-modal">
+      <div class="folder-modal-header">
+        <h3>Select Your Ingestion Folder</h3>
+        <p>Choose your assigned data source folder to load datasets from.</p>
+      </div>
+      <div class="folder-modal-body">
+        <div class="folder-select-wrapper">
+          <div class="folder-select-label">Assigned Folder</div>
+          <select class="folder-select" id="folder-select">
+            <option value="">-- Select a folder --</option>
+            <option value="Sarah Chen - West Region">Sarah Chen - West Region</option>
+            <option value="Marcus Johnson - East Region">Marcus Johnson - East Region</option>
+            <option value="Emily Rodriguez - Central">Emily Rodriguez - Central</option>
+            <option value="David Kim - Enterprise">David Kim - Enterprise</option>
+            <option value="Jennifer Lee - SMB">Jennifer Lee - SMB</option>
+          </select>
+        </div>
+        <div style="font-size: 0.8em; color: #888; padding: 12px; background: #f5f5f5; border-radius: 6px;">
+          <strong>Note:</strong> This is a demo. In production, folders will sync from Google Drive.
+        </div>
+      </div>
+      <div class="folder-modal-footer">
+        <button class="folder-modal-btn primary" id="folder-confirm-btn" disabled onclick="confirmFolderSelection()">Connect Folder</button>
       </div>
     </div>
   </div>
@@ -8375,29 +8400,49 @@
       document.getElementById('data-source-drawer').classList.remove('active');
     }
     
-    // Update Data Source drawer to show current state
+    // Update Data Source drawer to show current state (v1.4.23 folder-based)
     function updateDataSourceDrawerState() {
       var drawer = document.getElementById('data-source-drawer');
       if (!drawer) return;
       
       var headerEl = drawer.querySelector('.drawer-header h3');
+      var folderSection = document.getElementById('data-source-folder-section');
       var emptySection = document.getElementById('data-source-empty-section');
       var activeSection = document.getElementById('data-source-active-section');
       var uploadSection = document.getElementById('data-source-upload-section');
       var searchSection = document.getElementById('data-source-search-section');
       var libraryHeader = document.getElementById('data-source-library-header');
       var uploadLibrary = getUploadLibrary();
-      var count = uploadLibrary ? uploadLibrary.length : 0;
+      // v1.4.23: Filter out sample dataset from library count
+      var realLibrary = uploadLibrary.filter(function(e) { return e.dataset_id !== 'ds-sample' && e.source !== 'sample'; });
+      var count = realLibrary.length;
       var hasData = dataLoaded && sessionState.status === 'loaded';
+      var mappedFolder = localStorage.getItem('ingestion_folder_name');
       
       // Update header
       if (headerEl) {
         headerEl.textContent = 'Data Source';
       }
       
-      // Show empty section when no data
+      // v1.4.23: Show folder section if folder is mapped
+      if (folderSection) {
+        if (mappedFolder) {
+          folderSection.style.display = 'block';
+          var folderNameEl = document.getElementById('connected-folder-name');
+          var syncTimeEl = document.getElementById('folder-sync-time');
+          if (folderNameEl) folderNameEl.textContent = mappedFolder;
+          if (syncTimeEl) {
+            var syncTime = localStorage.getItem('ingestion_folder_sync_time');
+            syncTimeEl.textContent = 'Last sync: ' + (syncTime ? new Date(syncTime).toLocaleString() : 'Not synced yet');
+          }
+        } else {
+          folderSection.style.display = 'none';
+        }
+      }
+      
+      // Show empty section when no folder mapped
       if (emptySection) {
-        emptySection.style.display = hasData ? 'none' : 'block';
+        emptySection.style.display = mappedFolder ? 'none' : 'block';
       }
       
       // Show active dataset section when data loaded
@@ -8419,24 +8464,103 @@
         }
       }
       
-      // Show upload section when active dataset exists
+      // Hide upload section (v1.4.23 - folder-based workflow)
       if (uploadSection) {
-        uploadSection.style.display = hasData ? 'block' : 'none';
+        uploadSection.style.display = 'none';
       }
       
-      // Show search section when active dataset exists
+      // Show search section when folder mapped (disabled)
       if (searchSection) {
-        searchSection.style.display = hasData ? 'block' : 'none';
+        searchSection.style.display = mappedFolder ? 'block' : 'none';
       }
       
-      // Show library header only when there are saved datasets (excluding active)
+      // Show library header only when there are real cached datasets
       if (libraryHeader) {
-        libraryHeader.style.display = count > 0 ? 'block' : 'none';
+        if (count > 0) {
+          libraryHeader.style.display = 'block';
+        } else {
+          // Show empty state message
+          libraryHeader.style.display = 'block';
+          libraryHeader.innerHTML = '<div style="font-weight: 600; font-size: 0.85em; color: #666; text-transform: uppercase; margin-bottom: 6px;">Locally Cached Files</div><p style="color: #888; font-size: 0.8em; margin: 0;">No cached datasets yet. Work on a file to save it here.</p>';
+        }
       }
       
       // Close disconnect menu
       var disconnectMenu = document.getElementById('disconnect-menu');
       if (disconnectMenu) disconnectMenu.style.display = 'none';
+    }
+    
+    // ========== FOLDER SELECTION (v1.4.23) ==========
+    function openFolderSelectionModal() {
+      var modal = document.getElementById('folder-modal-overlay');
+      if (modal) {
+        modal.classList.add('active');
+        // Reset selection
+        var select = document.getElementById('folder-select');
+        var confirmBtn = document.getElementById('folder-confirm-btn');
+        if (select) {
+          var currentFolder = localStorage.getItem('ingestion_folder_name');
+          select.value = currentFolder || '';
+          if (confirmBtn) confirmBtn.disabled = !currentFolder;
+        }
+      }
+    }
+    
+    function closeFolderSelectionModal() {
+      var modal = document.getElementById('folder-modal-overlay');
+      if (modal) modal.classList.remove('active');
+    }
+    
+    function confirmFolderSelection() {
+      var select = document.getElementById('folder-select');
+      if (!select || !select.value) return;
+      
+      var folderName = select.value;
+      localStorage.setItem('ingestion_folder_name', folderName);
+      localStorage.setItem('ingestion_folder_sync_time', new Date().toISOString());
+      
+      closeFolderSelectionModal();
+      updateDataSourceDrawerState();
+      updateActiveDataSourceBar();
+      updateLoaderFolderState();
+      showToast('Connected to: ' + folderName, 'success');
+      console.log('[Folder] Mapped to:', folderName);
+    }
+    
+    function updateActiveDataSourceBar() {
+      var nameEl = document.getElementById('active-data-source-name');
+      var actionBtn = document.getElementById('active-data-source-action');
+      var mappedFolder = localStorage.getItem('ingestion_folder_name');
+      
+      if (nameEl) {
+        if (mappedFolder) {
+          nameEl.textContent = 'Connected: ' + mappedFolder;
+        } else if (dataLoaded && sessionState.fileName) {
+          nameEl.textContent = sessionState.fileName;
+        } else {
+          nameEl.textContent = 'No folder connected';
+        }
+      }
+      if (actionBtn) {
+        actionBtn.textContent = mappedFolder ? 'Change' : 'Connect';
+        actionBtn.onclick = mappedFolder ? openDataSourcePanel : openFolderSelectionModal;
+      }
+    }
+    
+    function updateLoaderFolderState() {
+      var folderInfo = document.getElementById('loader-folder-info');
+      var noFolder = document.getElementById('loader-no-folder');
+      var folderName = document.getElementById('loader-folder-name');
+      var mappedFolder = localStorage.getItem('ingestion_folder_name');
+      
+      if (mappedFolder) {
+        if (folderInfo) folderInfo.style.display = 'block';
+        if (noFolder) noFolder.style.display = 'none';
+        if (folderName) folderName.textContent = mappedFolder;
+      } else {
+        if (folderInfo) folderInfo.style.display = 'none';
+        if (noFolder) noFolder.style.display = 'block';
+      }
     }
     
     // Toggle disconnect menu on ACTIVE badge click
@@ -18060,18 +18184,22 @@ Add any additional notes here.
       if (!listEl) return;
       
       var library = getUploadLibrary();
+      // v1.4.23: Filter out sample/demo datasets
+      var realLibrary = library.filter(function(e) { 
+        return e.dataset_id !== 'ds-sample' && e.source !== 'sample'; 
+      });
       var activeId = localStorage.getItem(STORAGE_KEY_ACTIVE_DATASET);
       
-      if (library.length === 0) {
+      if (realLibrary.length === 0) {
         listEl.innerHTML = '<div class="upload-library-empty" style="text-align: center; padding: 40px 20px; color: #888; background: #f5f5f5; border-radius: 8px; border: 2px dashed #ddd;">' +
           '<div style="font-size: 2em; margin-bottom: 10px;">📁</div>' +
-          '<p style="margin: 0 0 15px;">No datasets saved yet.</p>' +
-          '<button class="modal-btn modal-btn-primary" onclick="closeDataSourceDrawer(); navigateTo(\'loader\');">Go to Loader</button>' +
+          '<p style="margin: 0 0 15px;">No cached datasets yet.</p>' +
+          '<p style="margin: 0; font-size: 0.85em; color: #aaa;">Work on a file to save it here.</p>' +
           '</div>';
         return;
       }
       
-      var html = library.map(function(entry) {
+      var html = realLibrary.map(function(entry) {
         var isActive = entry.dataset_id === activeId;
         var dateStr = new Date(entry.created_at).toLocaleDateString();
         return '<div class="upload-library-item" style="background: ' + (isActive ? '#e3f2fd' : 'white') + '; border: 1px solid ' + (isActive ? '#1976d2' : '#e0e0e0') + '; border-radius: 8px; padding: 15px;">' +
@@ -18432,35 +18560,27 @@ Add any additional notes here.
     }
     
     function seedSampleDatasetOnFirstRun() {
-      // Check if sample dataset is already in library
-      var library = JSON.parse(localStorage.getItem(STORAGE_KEY_LIBRARY) || '[]');
-      var hasSample = library.some(function(entry) {
-        return entry.dataset_id === 'ds-sample';
-      });
+      // v1.4.23: Removed demo dataset auto-seeding - folder-based workflow
+      // Also clean up any existing sample dataset from localStorage
+      try {
+        var library = JSON.parse(localStorage.getItem(STORAGE_KEY_LIBRARY) || '[]');
+        var filtered = library.filter(function(e) { 
+          return e.dataset_id !== 'ds-sample' && e.source !== 'sample'; 
+        });
+        if (filtered.length !== library.length) {
+          console.log('[FirstRun] Removing demo dataset from library');
+          localStorage.setItem(STORAGE_KEY_LIBRARY, JSON.stringify(filtered));
+        }
+      } catch (e) { console.warn('[FirstRun] Error cleaning demo data:', e); }
       
-      if (!hasSample) {
-        console.log('[FirstRun] Seeding sample dataset into cache');
-        // Seed sample dataset into library
-        var entry = {
-          dataset_id: 'ds-sample',
-          filename: 'Sample Dataset',
-          source: 'sample',
-          revision: 1,
-          created_at: new Date().toISOString(),
-          dataset: SAMPLE_DATASET
-        };
-        library.push(entry);
-        localStorage.setItem(STORAGE_KEY_LIBRARY, JSON.stringify(library));
-      }
-      
-      // Check if no active dataset - auto-activate sample on first run
-      var activeDataset = localStorage.getItem(STORAGE_KEY_ACTIVE_DATASET);
-      var hasStoredData = localStorage.getItem(STORAGE_KEY_DATASET);
-      
-      if (!activeDataset && !hasStoredData && !dataLoaded) {
-        console.log('[FirstRun] No active dataset, auto-activating sample dataset');
-        // Auto-load sample dataset but don't redirect yet (let user click Continue)
-        loadSampleDataset({ autoRedirect: false });
+      // Check if first-time user (no folder mapped) - show folder selection modal
+      var mappedFolder = localStorage.getItem('ingestion_folder_name');
+      if (!mappedFolder) {
+        console.log('[FirstRun] No folder mapped, will prompt for folder selection');
+        // Delay to let page render first
+        setTimeout(function() {
+          openFolderSelectionModal();
+        }, 500);
       }
     }
     
@@ -18678,6 +18798,19 @@ Add any additional notes here.
     document.getElementById('data-source-drawer')?.addEventListener('click', e => {
       if (e.target.id === 'data-source-drawer') closeDataSourceDrawer();
     });
+    
+    // v1.4.23: Folder selection modal events
+    document.getElementById('folder-modal-overlay')?.addEventListener('click', e => {
+      if (e.target.id === 'folder-modal-overlay') closeFolderSelectionModal();
+    });
+    document.getElementById('folder-select')?.addEventListener('change', function(e) {
+      var confirmBtn = document.getElementById('folder-confirm-btn');
+      if (confirmBtn) confirmBtn.disabled = !e.target.value;
+    });
+    
+    // v1.4.23: Initialize folder state on load
+    updateActiveDataSourceBar();
+    updateLoaderFolderState();
     
     // Record drawer events
     document.getElementById('record-drawer')?.addEventListener('click', e => {
