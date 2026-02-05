@@ -11974,9 +11974,16 @@
       }
       
       // v1.6.10: Render dropdown for picklist fields, text input for others
+      // v1.6.21: Fixed double-click issue - track editing state and prevent re-creation
       if (isPicklist && picklistOptions.length > 0) {
+        // Check if we're already editing this field (prevent double-click recreation)
+        if (srrState.editingField === fieldKey) {
+          return; // Already editing, don't recreate
+        }
+        srrState.editingField = fieldKey;
+        
         // Build dropdown HTML
-        var selectHtml = '<select class="srr-field-value-select" id="srr-edit-input-' + fieldKey + '">';
+        var selectHtml = '<select class="srr-field-value-select" id="srr-edit-input-' + fieldKey + '" onclick="event.stopPropagation();">';
         // Add empty option
         selectHtml += '<option value=""' + (!currentVal ? ' selected' : '') + '>-- Select --</option>';
         // Check if current value is in options (for invalid value handling)
@@ -11997,7 +12004,12 @@
         var select = document.getElementById('srr-edit-input-' + fieldKey);
         if (!select) return;
         
+        // v1.6.21: Open dropdown automatically on first click
         select.focus();
+        // Try to programmatically open the dropdown (works in modern browsers)
+        if (typeof select.showPicker === 'function') {
+          try { select.showPicker(); } catch (e) {}
+        }
         
         // Handle change and blur
         select.addEventListener('change', function() {
@@ -12009,11 +12021,17 @@
             if (srrState.editingField === fieldKey) {
               srrCommitEdit(fieldKey, select.value);
             }
-          }, 100);
+          }, 150);
         });
       } else {
         // Regular text input
-        valueDisplay.innerHTML = '<input type="text" class="srr-field-value-input" id="srr-edit-input-' + fieldKey + '" value="' + String(currentVal).replace(/"/g, '&quot;') + '">';
+        // v1.6.21: Track editing state for text inputs too
+        if (srrState.editingField === fieldKey) {
+          return; // Already editing, don't recreate
+        }
+        srrState.editingField = fieldKey;
+        
+        valueDisplay.innerHTML = '<input type="text" class="srr-field-value-input" id="srr-edit-input-' + fieldKey + '" value="' + String(currentVal).replace(/"/g, '&quot;') + '" onclick="event.stopPropagation();">';
         
         var input = document.getElementById('srr-edit-input-' + fieldKey);
         if (!input) return;
