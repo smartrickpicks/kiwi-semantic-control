@@ -799,6 +799,7 @@
     .badge-sflogic { background: #fff3e0; color: #e65100; }
     .badge-manual { background: #fffde7; color: #f57f17; }
     .badge-system { background: #f5f5f5; color: #616161; }
+    .badge-blacklist { background: #ffebee; color: #c62828; }
     /* v1.6.6: Patch tooltip styles */
     .row-badge { position: relative; cursor: pointer; }
     .patch-tooltip { 
@@ -9712,6 +9713,212 @@
     // Cell styles metadata for export alignment
     var cellStylesStore = {};
     
+    // ========================================================================
+    // CHANGE MAP ENGINE v1.6.8
+    // Parses meta sheets (change logs, RFIs) to build cell-level change map
+    // ========================================================================
+    
+    // Change map storage: changeMapStore[record_id][field_key] = { type, actor, ... }
+    var changeMapStore = {
+      changes_by_cell: {},  // record_id -> field_key -> change info
+      stats: { total: 0, by_type: {} },
+      enabled: false  // Only enabled for modified dataset
+    };
+    
+    // Change type colors for grid highlighting
+    var CHANGE_TYPE_STYLES = {
+      correction: { bg: '#e3f2fd', border: '#1976d2', label: 'Correction', emoji: '✏️' },
+      rfi: { bg: '#fff8e1', border: '#ff9800', label: 'RFI', emoji: '❓' },
+      system_change: { bg: '#f5f5f5', border: '#9e9e9e', label: 'System Change', emoji: '⚙️' },
+      blacklist: { bg: '#ffebee', border: '#f44336', label: 'Blacklist', emoji: '🚫' }
+    };
+    
+    // Build change map from meta sheets in workbook
+    function buildChangeMapFromMetaSheets() {
+      changeMapStore.changes_by_cell = {};
+      changeMapStore.stats = { total: 0, by_type: {} };
+      changeMapStore.enabled = false;
+      
+      if (!workbook || !workbook.sheets) {
+        console.log('[ChangeMap] No workbook data');
+        return;
+      }
+      
+      // Check if modified dataset (has meta sheets)
+      var hasMetaSheets = Object.keys(workbook.sheets).some(function(name) {
+        return name.endsWith('_change_log') || name === 'RFIs & Analyst Notes';
+      });
+      
+      if (!hasMetaSheets) {
+        console.log('[ChangeMap] No meta sheets found - baseline dataset');
+        return;
+      }
+      
+      changeMapStore.enabled = true;
+      var changeCount = 0;
+      
+      // 1. Parse change log sheets (*_change_log)
+      Object.keys(workbook.sheets).forEach(function(sheetName) {
+        if (!sheetName.endsWith('_change_log')) return;
+        
+        var sheet = workbook.sheets[sheetName];
+        var rows = sheet.rows || [];
+        
+        rows.forEach(function(row) {
+          if (!row) return;
+          
+          var targetSheet = row.sheet_name || '';
+          var rowIndex = parseFloat(row.row_index);
+          var fieldName = row.field_name || '';
+          var category = (row.category || '').toUpperCase();
+          var changedBy = (row.changed_by || '').toLowerCase();
+          
+          if (!targetSheet || isNaN(rowIndex) || !fieldName) return;
+          
+          // Determine change type
+          var changeType = 'correction';  // default
+          if (category === 'SYSTEM_CHANGE' || changedBy === 'system') {
+            changeType = 'system_change';
+          } else if (category === 'BLACKLIST' || row.blacklist_value) {
+            changeType = 'blacklist';
+          }
+          
+          // Build record ID (sheet:index)
+          var recordId = targetSheet + ':' + Math.floor(rowIndex);
+          
+          // Store change
+          if (!changeMapStore.changes_by_cell[recordId]) {
+            changeMapStore.changes_by_cell[recordId] = {};
+          }
+          
+          changeMapStore.changes_by_cell[recordId][fieldName] = {
+            type: changeType,
+            actor: changedBy === 'system' ? 'System' : 'Analyst',
+            old_value: row.old_value || '',
+            new_value: row.new_value || '',
+            reason: row.reason || '',
+            timestamp: row.changed_at || '',
+            source: 'change_log'
+          };
+          
+          changeCount++;
+          changeMapStore.stats.by_type[changeType] = (changeMapStore.stats.by_type[changeType] || 0) + 1;
+        });
+      });
+      
+      // 2. Parse RFIs & Analyst Notes
+      var rfiSheet = workbook.sheets['RFIs & Analyst Notes'];
+      if (rfiSheet && rfiSheet.rows) {
+        rfiSheet.rows.forEach(function(row) {
+          if (!row) return;
+          
+          var targetSheet = row['Sheet'] || '';
+          var rowNum = parseFloat(row['Row #']);
+          var fieldName = row['Field Name'] || '';
+          var noteType = (row['Note Type'] || '').toUpperCase();
+          var detectedBy = (row['Detected By'] || '').toLowerCase();
+          
+          if (!targetSheet || isNaN(rowNum) || !fieldName) return;
+          
+          // Determine change type from RFI data
+          var changeType = 'rfi';  // default for this sheet
+          if (noteType === 'BLACKLIST') {
+            changeType = 'blacklist';
+          } else if (detectedBy === 'system' || (row['Category'] || '').includes('AUTO')) {
+            changeType = 'system_change';
+          }
+          
+          var recordId = targetSheet + ':' + Math.floor(rowNum);
+          
+          if (!changeMapStore.changes_by_cell[recordId]) {
+            changeMapStore.changes_by_cell[recordId] = {};
+          }
+          
+          // Don't overwrite existing change log entries (they have more detail)
+          if (!changeMapStore.changes_by_cell[recordId][fieldName]) {
+            changeMapStore.changes_by_cell[recordId][fieldName] = {
+              type: changeType,
+              actor: detectedBy === 'system' ? 'System' : 'Analyst',
+              summary: row['Summary'] || '',
+              details: row['Details'] || '',
+              timestamp: row['Timestamp'] || '',
+              source: 'rfi_notes'
+            };
+            
+            changeCount++;
+            changeMapStore.stats.by_type[changeType] = (changeMapStore.stats.by_type[changeType] || 0) + 1;
+          }
+        });
+      }
+      
+      changeMapStore.stats.total = changeCount;
+      
+      console.log('[ChangeMap] Built change map:', changeCount, 'changes across', 
+        Object.keys(changeMapStore.changes_by_cell).length, 'records');
+      console.log('[ChangeMap] By type:', JSON.stringify(changeMapStore.stats.by_type));
+    }
+    
+    // Get change info for a specific cell
+    function getCellChangeInfo(recordId, fieldKey) {
+      if (!changeMapStore.enabled) return null;
+      var recordChanges = changeMapStore.changes_by_cell[recordId];
+      if (!recordChanges) return null;
+      
+      // Try exact match first
+      if (recordChanges[fieldKey]) return recordChanges[fieldKey];
+      
+      // Try normalized match
+      var normKey = normalizeFieldKey(fieldKey);
+      for (var key in recordChanges) {
+        if (normalizeFieldKey(key) === normKey) {
+          return recordChanges[key];
+        }
+      }
+      return null;
+    }
+    
+    // Get all changes for a record (for badge tooltips)
+    function getRecordChanges(recordId) {
+      if (!changeMapStore.enabled) return {};
+      return changeMapStore.changes_by_cell[recordId] || {};
+    }
+    
+    // Get change summary for a record (for badge display)
+    function getRecordChangeSummary(recordId) {
+      var changes = getRecordChanges(recordId);
+      var fieldKeys = Object.keys(changes);
+      if (fieldKeys.length === 0) return null;
+      
+      var byType = {};
+      fieldKeys.forEach(function(key) {
+        var type = changes[key].type || 'correction';
+        byType[type] = (byType[type] || 0) + 1;
+      });
+      
+      return {
+        total: fieldKeys.length,
+        by_type: byType,
+        fields: fieldKeys
+      };
+    }
+    
+    // Build tooltip text from change summary
+    function buildChangeTooltip(summary) {
+      if (!summary || summary.total === 0) return '';
+      
+      var parts = [];
+      var typeOrder = ['correction', 'rfi', 'system_change', 'blacklist'];
+      typeOrder.forEach(function(type) {
+        var count = summary.by_type[type];
+        if (count) {
+          var style = CHANGE_TYPE_STYLES[type];
+          parts.push(style.label + ' (' + count + ')');
+        }
+      });
+      
+      return summary.total + ' change' + (summary.total > 1 ? 's' : '') + ': ' + parts.join(', ');
+    }
+    
     // Map raw signal types to style categories
     function mapSignalToStyleCategory(signalType, severity) {
       switch (signalType) {
@@ -10023,6 +10230,9 @@
       // v1.6.2: Populate cell_styles metadata for export alignment
       populateCellStyles();
       
+      // v1.6.8: Build change map from meta sheets (for modified dataset)
+      buildChangeMapFromMetaSheets();
+      
       return signalStore;
     }
     
@@ -10044,7 +10254,36 @@
     }
     
     // v1.6.2: Render row badges HTML for grid (v1.6.6: with detailed tooltips)
+    // v1.6.8: Enhanced with change map integration for modified dataset
     function renderRowBadges(recordId) {
+      // v1.6.8: Check change map first for modified dataset
+      var changeSummary = getRecordChangeSummary(recordId);
+      if (changeSummary && changeSummary.total > 0) {
+        // Use change map for badge rendering
+        var badges = [];
+        var byType = changeSummary.by_type;
+        
+        if (byType.correction > 0) {
+          var tooltip = buildChangeTooltip({ total: byType.correction, by_type: { correction: byType.correction } });
+          badges.push('<span class="row-badge badge-patch" title="' + escapeHtml(tooltip) + '">' + byType.correction + '</span>');
+        }
+        if (byType.rfi > 0) {
+          var tooltip = buildChangeTooltip({ total: byType.rfi, by_type: { rfi: byType.rfi } });
+          badges.push('<span class="row-badge badge-sflogic" title="' + escapeHtml(tooltip) + '">' + byType.rfi + '</span>');
+        }
+        if (byType.system_change > 0) {
+          var tooltip = buildChangeTooltip({ total: byType.system_change, by_type: { system_change: byType.system_change } });
+          badges.push('<span class="row-badge badge-system" title="' + escapeHtml(tooltip) + '">' + byType.system_change + '</span>');
+        }
+        if (byType.blacklist > 0) {
+          var tooltip = buildChangeTooltip({ total: byType.blacklist, by_type: { blacklist: byType.blacklist } });
+          badges.push('<span class="row-badge badge-blacklist" title="' + escapeHtml(tooltip) + '">' + byType.blacklist + '</span>');
+        }
+        
+        return badges.length > 0 ? '<div class="row-badges">' + badges.join('') + '</div>' : '';
+      }
+      
+      // Fallback to signal-based badges (for baseline dataset)
       var counts = getRowSignalCounts(recordId);
       if (!counts) return '';
       
@@ -10131,8 +10370,20 @@
     }
     
     // v1.6.2: Get cell style for grid coloring
+    // v1.6.8: Enhanced with change map highlighting for modified dataset
     function getGridCellStyle(recordId, fieldKey) {
       var normKey = normalizeFieldKey(fieldKey);
+      
+      // v1.6.8: Check change map first (for modified dataset)
+      var changeInfo = getCellChangeInfo(recordId, fieldKey);
+      if (changeInfo) {
+        var changeStyle = CHANGE_TYPE_STYLES[changeInfo.type];
+        if (changeStyle) {
+          return 'background: ' + changeStyle.bg + '; border-left: 3px solid ' + changeStyle.border + ';';
+        }
+      }
+      
+      // Fallback to signal-based styling
       var style = getCellHighestPriorityStyle(recordId, normKey);
       if (!style || style.priority >= 5) return ''; // CLEAN cells get no extra coloring
       return 'background: ' + style.bg + ';';
@@ -10216,7 +10467,21 @@
     }
     
     // Get patch summary item for a specific field
+    // v1.6.8: Enhanced to use change map first (for modified dataset)
     function getFieldPatchInfo(recordId, fieldKey) {
+      // v1.6.8: Check change map first (takes precedence for modified dataset)
+      var changeInfo = getCellChangeInfo(recordId, fieldKey);
+      if (changeInfo) {
+        return {
+          field_key: fieldKey,
+          patch_kind: changeInfo.type,
+          source: changeInfo.source,
+          reason: changeInfo.reason || changeInfo.summary || '',
+          actor: changeInfo.actor
+        };
+      }
+      
+      // Fallback to signal-based patch summary
       var summary = getRecordPatchSummary(recordId);
       if (!summary) return null;
       
