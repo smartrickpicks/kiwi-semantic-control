@@ -18266,6 +18266,11 @@
       tbody.appendChild(fragment);
       gridVirtualState.rendered = endIdx;
       perfLog('renderGridBatch (' + (endIdx - startIdx) + ' rows)', perfT);
+      
+      // v1.6.37: Hide upload loading after first batch renders (grid is now visible)
+      if (isFirst && typeof hideUploadLoading === 'function') {
+        hideUploadLoading();
+      }
     }
     
     function gridLazyLoadHandler() {
@@ -18648,7 +18653,7 @@
             return;
           }
           closeLoaderModal();
-          hideUploadLoading();
+          // v1.6.37: Keep loading visible until grid renders with Accounts data
           navigateTo('grid');
           showToast('Dataset loaded: ' + file.name, 'success');
         } catch (err) {
