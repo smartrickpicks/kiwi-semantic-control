@@ -9858,6 +9858,146 @@
       console.log('[ChangeMap] By type:', JSON.stringify(changeMapStore.stats.by_type));
     }
     
+    // ========== v1.6.9: SEED VERIFIER RFI QUEUE FROM META SHEET ==========
+    // Parse RFIs & Analyst Notes sheet and populate Verifier queue with RFI items
+    function seedVerifierRFIQueueFromMetaSheet() {
+      if (!workbook || !workbook.sheets) return;
+      
+      var rfiSheet = workbook.sheets['RFIs & Analyst Notes'];
+      if (!rfiSheet || !rfiSheet.rows || rfiSheet.rows.length === 0) {
+        console.log('[RFI Seed] No RFIs & Analyst Notes sheet found');
+        return;
+      }
+      
+      var rfiCount = 0;
+      var skippedDupes = 0;
+      var importedRFIs = [];
+      
+      // Build a set of existing RFI keys for deduplication
+      var existingKeys = new Set();
+      verifierQueueState.payloads.forEach(function(p) {
+        if (p.type === 'rfi' && p.source === 'legacy_rfi_import') {
+          var key = (p.dataset_id || '') + '|' + p.record_id + '|' + p.field + '|' + (p.summary || '');
+          existingKeys.add(key);
+        }
+      });
+      
+      rfiSheet.rows.forEach(function(row, rowIdx) {
+        if (!row) return;
+        
+        // Only process rows where Note Type == "RFI"
+        var noteType = (row['Note Type'] || '').trim().toUpperCase();
+        if (noteType !== 'RFI') return;
+        
+        var targetSheet = row['Sheet'] || '';
+        var rowNum = parseFloat(row['Row #']);
+        var fieldName = row['Field Name'] || '';
+        var summary = row['Summary'] || '';
+        var details = row['Details'] || '';
+        var timestamp = row['Timestamp'] || new Date().toISOString();
+        var category = row['Category'] || '';
+        var detectedBy = row['Detected By'] || 'Analyst';
+        var sourceUrl = row['Source URL'] || '';
+        
+        if (!targetSheet || isNaN(rowNum) || !fieldName) return;
+        
+        // Build record_id (sheet + row mapping)
+        var recordId = targetSheet + ':' + Math.floor(rowNum);
+        var datasetId = ARTIFACT_STORE.current_dataset_id || 'ds_default';
+        
+        // Deduplication key: dataset_id + record_id + field_key + summary
+        var dupeKey = datasetId + '|' + recordId + '|' + fieldName + '|' + summary;
+        if (existingKeys.has(dupeKey)) {
+          skippedDupes++;
+          return;
+        }
+        existingKeys.add(dupeKey);
+        
+        // Generate artifact ID
+        var artifactId = 'art_rfi_' + targetSheet.toLowerCase().replace(/\s+/g, '_') + '_' + Math.floor(rowNum) + '_' + Date.now() + '_' + rowIdx;
+        
+        // Build comment from Summary + Details
+        var comment = summary;
+        if (details && details !== summary) {
+          comment += (comment ? ' — ' : '') + details;
+        }
+        
+        // Create artifact
+        var artifact = createArtifact({
+          artifact_id: artifactId,
+          dataset_id: datasetId,
+          record_id: recordId,
+          field_key: fieldName,
+          artifact_type: 'rfi',
+          status: 'pending_review',
+          created_by_actor_id: 'user',
+          created_by_role: 'analyst',
+          sheet_name: targetSheet,
+          body: {
+            summary: summary,
+            details: details,
+            category: category,
+            source_url: sourceUrl,
+            detected_by: detectedBy,
+            original_timestamp: timestamp
+          }
+        });
+        
+        // Create verifier queue payload
+        var payload = {
+          id: artifactId,
+          artifact_id: artifactId,
+          type: 'rfi',
+          status: 'pending',
+          record_id: recordId,
+          dataset_id: datasetId,
+          field: fieldName,
+          old_value: '',
+          new_value: '',
+          comment: comment,
+          summary: summary,
+          details: details,
+          timestamp: timestamp,
+          source: 'legacy_rfi_import',
+          sheet_name: targetSheet,
+          row_number: Math.floor(rowNum),
+          category: category,
+          detected_by: detectedBy,
+          source_url: sourceUrl
+        };
+        
+        verifierQueueState.payloads.push(payload);
+        importedRFIs.push(payload);
+        rfiCount++;
+        
+        // Create audit log entry
+        logArtifactEvent('RFI_IMPORTED', {
+          artifact_id: artifactId,
+          artifact_type: 'rfi',
+          record_id: recordId,
+          field_key: fieldName,
+          action: 'RFI_IMPORTED',
+          actor: 'user',
+          source: 'legacy_rfi_import',
+          summary: summary
+        });
+      });
+      
+      // Persist verifier queue to localStorage
+      if (rfiCount > 0) {
+        saveVerifierQueue();
+      }
+      
+      console.log('[RFI Seed] Imported', rfiCount, 'RFIs to Verifier queue (', skippedDupes, 'duplicates skipped)');
+      
+      // Re-render verifier triage if visible
+      if (typeof renderVerifierTriage === 'function') {
+        renderVerifierTriage();
+      }
+      
+      return { imported: rfiCount, skipped: skippedDupes, items: importedRFIs };
+    }
+    
     // Get change info for a specific cell
     function getCellChangeInfo(recordId, fieldKey) {
       if (!changeMapStore.enabled) return null;
@@ -10232,6 +10372,9 @@
       
       // v1.6.8: Build change map from meta sheets (for modified dataset)
       buildChangeMapFromMetaSheets();
+      
+      // v1.6.9: Seed Verifier RFI queue from meta sheet
+      seedVerifierRFIQueueFromMetaSheet();
       
       return signalStore;
     }
@@ -14796,21 +14939,65 @@
     
     function showRFICommentThread(payload) {
       // v1.5.3: For RFI type, show comment thread instead of Patch Tester
+      // v1.6.9: Enhanced for legacy RFI imports with summary, details, category
       var editorTab = document.getElementById('srr-tab-editor');
       if (!editorTab) return;
       
+      // Determine if this is a legacy RFI import
+      var isLegacyImport = payload.source === 'legacy_rfi_import';
+      
       // Replace editor content with RFI comment thread
       var rfiHtml = '<div style="margin-bottom: 16px; padding: 12px; background: #fff3e0; border-radius: 8px; border-left: 4px solid #ff9800;">';
-      rfiHtml += '<div style="font-weight: 600; margin-bottom: 8px; color: #e65100;">Request for Information</div>';
+      rfiHtml += '<div style="font-weight: 600; margin-bottom: 8px; color: #e65100;">Request for Information';
+      if (isLegacyImport) {
+        rfiHtml += ' <span style="font-size: 0.7em; background: #78909c; color: white; padding: 2px 6px; border-radius: 3px; margin-left: 8px;">Imported</span>';
+      }
+      rfiHtml += '</div>';
       rfiHtml += '<div style="margin-bottom: 8px;">';
       rfiHtml += '<span style="font-size: 0.75em; color: #888;">Field:</span> ';
-      rfiHtml += '<span style="font-family: monospace;">' + (payload.field || '—') + '</span>';
+      rfiHtml += '<span style="font-family: monospace;">' + escapeHtml(payload.field || payload.field_key || '—') + '</span>';
       rfiHtml += '</div>';
+      
+      // Show category if available (from legacy import)
+      if (payload.category) {
+        rfiHtml += '<div style="margin-bottom: 8px;">';
+        rfiHtml += '<span style="font-size: 0.75em; color: #888;">Category:</span> ';
+        rfiHtml += '<span style="background: #e3f2fd; padding: 2px 6px; border-radius: 4px; font-size: 0.85em;">' + escapeHtml(payload.category) + '</span>';
+        rfiHtml += '</div>';
+      }
+      
+      // Show detected by if available
+      if (payload.detected_by) {
+        rfiHtml += '<div style="margin-bottom: 8px;">';
+        rfiHtml += '<span style="font-size: 0.75em; color: #888;">Detected By:</span> ';
+        rfiHtml += '<span>' + escapeHtml(payload.detected_by) + '</span>';
+        rfiHtml += '</div>';
+      }
+      
       rfiHtml += '<div style="margin-bottom: 8px;">';
       rfiHtml += '<span style="font-size: 0.75em; color: #888;">Current Value:</span> ';
-      rfiHtml += '<span>' + (payload.old_value || '(empty)') + '</span>';
+      rfiHtml += '<span>' + escapeHtml(payload.old_value || '(empty)') + '</span>';
       rfiHtml += '</div>';
-      rfiHtml += '<div style="font-style: italic; color: #666;">"' + (payload.comment || 'No question provided') + '"</div>';
+      
+      // Show summary and details separately if available
+      if (payload.summary || payload.details) {
+        if (payload.summary) {
+          rfiHtml += '<div style="margin-bottom: 8px; font-weight: 500; color: #333;">' + escapeHtml(payload.summary) + '</div>';
+        }
+        if (payload.details && payload.details !== payload.summary) {
+          rfiHtml += '<div style="font-style: italic; color: #666; padding: 8px; background: #fafafa; border-radius: 4px;">' + escapeHtml(payload.details) + '</div>';
+        }
+      } else {
+        rfiHtml += '<div style="font-style: italic; color: #666;">"' + escapeHtml(payload.comment || 'No question provided') + '"</div>';
+      }
+      
+      // Show source URL if available
+      if (payload.source_url) {
+        rfiHtml += '<div style="margin-top: 8px;">';
+        rfiHtml += '<a href="' + escapeHtml(payload.source_url) + '" target="_blank" style="font-size: 0.85em; color: #1565c0;">View Source Document</a>';
+        rfiHtml += '</div>';
+      }
+      
       rfiHtml += '</div>';
       
       // Comment thread section
