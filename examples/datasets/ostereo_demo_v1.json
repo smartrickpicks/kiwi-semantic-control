@@ -4,6 +4,7 @@
   "created_at": "2026-02-05T05:40:44.708593Z",
   "description": "Demo dataset converted from Ostereo Distribution Agreement Extractions (2).xlsx",
   "source_file": "/Users/zacharyholwerda/Desktop/CreateMusicFiles/Orchestrate_OS/Ostereo Distribution Agreement Extractions (2).xlsx",
+  "enable_picklist_validation": true,
   "sheets": {
     "Accounts": {
       "headers": [

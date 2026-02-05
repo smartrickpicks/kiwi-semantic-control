@@ -9825,10 +9825,15 @@
       return null;
     }
     
-    // Check if value is blank (empty, null, undefined, whitespace only)
+    // Check if value is blank (empty, null, undefined, whitespace only, or common null-like strings)
+    // v1.6.8: Expanded to include N/A, NULL, — to avoid false positive picklist signals
+    var BLANK_VALUE_STRINGS = ['', 'n/a', 'na', 'null', '—', '-', 'none', 'undefined'];
     function isBlankValue(value) {
       if (value === null || value === undefined) return true;
-      if (typeof value === 'string' && value.trim() === '') return true;
+      if (typeof value === 'string') {
+        var normalized = value.trim().toLowerCase();
+        if (normalized === '' || BLANK_VALUE_STRINGS.indexOf(normalized) >= 0) return true;
+      }
       return false;
     }
     
@@ -9850,20 +9855,28 @@
       }
       
       // 2. PICKLIST_INVALID: Picklist field with value not in options
-      if (meta && meta.picklist && meta.options && meta.options.length > 0 && !isBlankValue(value)) {
-        var valueStr = String(value).trim();
-        var isValid = meta.options.some(function(opt) {
-          return String(opt).trim().toLowerCase() === valueStr.toLowerCase();
-        });
-        if (!isValid) {
-          signals.push({
-            signal_type: 'PICKLIST_INVALID',
-            severity: 'warning',
-            message: 'Value "' + valueStr + '" not in picklist options',
-            source: 'field_meta',
-            field_label: meta.field_label || fieldKey,
-            valid_options: meta.options.slice(0, 5) // Show first 5 options
+      // v1.6.8: Only validate if:
+      //   a) Dataset has enable_picklist_validation = true
+      //   b) Field is explicitly marked as picklist (meta.picklist === true)
+      //   c) Field has defined options (meta.options.length > 0)
+      //   d) Value is not blank/empty/null-like
+      if (meta && meta.picklist === true && meta.options && meta.options.length > 0 && !isBlankValue(value)) {
+        // Check dataset-level toggle before validating
+        if (isPicklistValidationEnabled()) {
+          var valueStr = String(value).trim();
+          var isValid = meta.options.some(function(opt) {
+            return String(opt).trim().toLowerCase() === valueStr.toLowerCase();
           });
+          if (!isValid) {
+            signals.push({
+              signal_type: 'PICKLIST_INVALID',
+              severity: 'warning',
+              message: 'Value "' + valueStr + '" not in picklist options',
+              source: 'field_meta',
+              field_label: meta.field_label || fieldKey,
+              valid_options: meta.options.slice(0, 5) // Show first 5 options
+            });
+          }
         }
       }
       
@@ -9906,12 +9919,31 @@
       return signals;
     }
     
+    // v1.6.8: Check if picklist validation is enabled for current dataset
+    function isPicklistValidationEnabled() {
+      // Check for dataset-level flag (from loaded JSON)
+      try {
+        var storedDataset = localStorage.getItem(STORAGE_KEY_DATASET);
+        if (storedDataset) {
+          var dataset = JSON.parse(storedDataset);
+          // Default to false if flag is missing (avoid noisy signals)
+          if (dataset.enable_picklist_validation === true) return true;
+          return false;
+        }
+      } catch (e) { /* ignore parse errors */ }
+      return false;  // Default: disabled
+    }
+    
     // Generate signals for entire dataset
     function generateSignalsForDataset() {
       if (!rulesBundleCache.loaded) {
         console.warn('[SignalEngine] Rules bundle not loaded, skipping signal generation');
         return;
       }
+      
+      // v1.6.8: Check dataset-level picklist validation toggle
+      var picklistEnabled = isPicklistValidationEnabled();
+      console.log('[SignalEngine] Picklist validation enabled:', picklistEnabled);
       
       // Reset signal store
       signalStore.signals_by_cell = {};
