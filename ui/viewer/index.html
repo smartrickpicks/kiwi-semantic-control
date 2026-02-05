@@ -3871,6 +3871,20 @@
     let dataLoaded = false;
     let currentArtifactPath = '';
     
+    // v1.6.18: Performance logging toggle (add ?perf=1 to URL)
+    const PERF_ENABLED = new URLSearchParams(window.location.search).get('perf') === '1';
+    function perfLog(label, startTime) {
+      if (!PERF_ENABLED) return;
+      console.log('[Perf] ' + label + ': ' + (performance.now() - startTime).toFixed(2) + 'ms');
+    }
+    function perfStart() {
+      return PERF_ENABLED ? performance.now() : 0;
+    }
+    
+    // v1.6.18: Dataset revision for cache invalidation
+    let datasetRevision = 0;
+    let flattenCache = { revision: -1, result: null };
+    
     // Session state tracking
     const sessionState = {
       status: 'not-loaded', // 'not-loaded', 'loaded', 'fallback'
@@ -9194,6 +9208,7 @@
         
         // Update state
         dataLoaded = true;
+        datasetRevision++; // v1.6.18: Bump revision for cache invalidation
         sessionState.status = 'loaded';
         sessionState.loadedAt = new Date().toISOString();
         sessionState.source = 'file:' + file.name;
@@ -9470,6 +9485,7 @@
     }
 
     function renderGrid() {
+      var perfT = perfStart();
       // v1.6.11: Show/hide change legend based on whether change map is active
       var legendEl = document.getElementById('grid-change-legend');
       if (legendEl) {
@@ -9553,12 +9569,15 @@
       }
       
       // Deterministic sorting: severity -> identity triplet -> original index
-      // Assign stable indices first
-      filtered.forEach(function(r, i) { 
-        if (r._originalIdx === undefined) {
-          r._originalIdx = records.indexOf(r);
+      // v1.6.18: Seed _originalIdx in O(n) upfront on full records array (not on filtered)
+      // This avoids O(n^2) indexOf calls in the loop
+      var perfT2 = perfStart();
+      for (var i = 0; i < records.length; i++) {
+        if (records[i]._originalIdx === undefined) {
+          records[i]._originalIdx = i;
         }
-      });
+      }
+      perfLog('Seed _originalIdx', perfT2);
       
       filtered.sort(function(a, b) {
         // Severity order: blocking > warning > info
@@ -9631,9 +9650,16 @@
         // v1.5.2: Pass sheet name and original row index to click handler
         // Also apply reviewer highlighting if in reviewer mode
         var isReviewerMode = currentMode === 'reviewer';
+        // v1.6.18: Status key normalization
+        var STATUS_KEYS = ['status', 'Status', 'sf_contract_status', 'review_state', 'Review_State'];
         
         tbody.innerHTML = filtered.map(function(r, idx) {
-          var statusClass = 'status-' + (r.status || '').toLowerCase().replace(/\s+/g, '_');
+          // v1.6.18: Normalize status field lookup
+          var statusVal = '';
+          for (var si = 0; si < STATUS_KEYS.length; si++) {
+            if (r[STATUS_KEYS[si]]) { statusVal = r[STATUS_KEYS[si]]; break; }
+          }
+          var statusClass = 'status-' + (statusVal || '').toLowerCase().replace(/\s+/g, '_');
           var sheetName = escapeHtml(r.sheet || '');
           var sheetRowIdx = r._sheetRowIndex !== undefined ? r._sheetRowIndex : idx;
           // v1.5.3 Fix: Check _identity.record_id as well for newly loaded rows
@@ -9641,6 +9667,16 @@
           var recordId = r.record_id || (r._identity && r._identity.record_id) || r.contract_key || '';
           if (!recordId) {
             recordId = sheetName + ':' + sheetRowIdx;
+          }
+          
+          // v1.6.18: Build row classes with change highlighting
+          var rowClasses = ['clickable'];
+          var changeSummary = getRecordChangeSummary(recordId);
+          if (changeSummary && changeSummary.total > 0) {
+            if (changeSummary.by_type.added) rowClasses.push('row-added');
+            else if (changeSummary.by_type.blacklist) rowClasses.push('row-removed');
+            else if (changeSummary.by_type.removed) rowClasses.push('row-removed');
+            else rowClasses.push('row-changed'); // correction, rfi, system_change
           }
           
           // v1.5.2: Reviewer mode - apply PR status highlighting
@@ -9659,15 +9695,17 @@
           // v1.6.2: Add row badges for signal counts
           var rowBadgesHtml = renderRowBadges(recordId);
           
-          return '<tr class="clickable" style="' + rowStyle + '" data-sheet-name="' + sheetName + '" data-record-index="' + sheetRowIdx + '" data-record-id="' + escapeHtml(recordId) + '" onclick="' + clickHandler + '">' +
+          return '<tr class="' + rowClasses.join(' ') + '" style="' + rowStyle + '" data-sheet-name="' + sheetName + '" data-record-index="' + sheetRowIdx + '" data-record-id="' + escapeHtml(recordId) + '" onclick="' + clickHandler + '">' +
             '<td class="row-index">' + (idx + 1) + rowBadgesHtml + '</td>' +
             gridState.visibleColumns.map(function(col) {
               var val = r[col];
               if (val === null || val === undefined) val = '';
               if (typeof val === 'object') val = JSON.stringify(val);
-              var cellClass = col === 'status' ? statusClass : '';
-              // v1.6.2: Apply signal-based cell coloring
-              var cellStyle = getGridCellStyle(recordId, col);
+              // v1.6.18: Apply status class for any status-variant column
+              var isStatusCol = STATUS_KEYS.indexOf(col) >= 0 || col.toLowerCase() === 'status';
+              var cellClass = isStatusCol ? statusClass : '';
+              // v1.6.2: Apply signal-based cell coloring (v1.6.18: pass record)
+              var cellStyle = getGridCellStyle(recordId, col, r);
               return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + String(val).replace(/"/g, '&quot;') + '">' + String(val) + '</td>';
             }).join('') +
             '</tr>';
@@ -9685,6 +9723,7 @@
       
       // Update per-sheet mini stats
       updateGridSheetStats(records, filtered);
+      perfLog('renderGrid', perfT);
     }
     
     function updateGridSheetStats(allRecords, filtered) {
@@ -10051,6 +10090,7 @@
     
     // Build change map from meta sheets in workbook
     function buildChangeMapFromMetaSheets() {
+      var perfT = perfStart();
       changeMapStore.changes_by_cell = {};
       changeMapStore.stats = { total: 0, by_type: {} };
       changeMapStore.enabled = false;
@@ -10261,6 +10301,7 @@
       console.log('[ChangeMap] Built change map:', changeCount, 'changes across', 
         Object.keys(changeMapStore.changes_by_cell).length, 'records');
       console.log('[ChangeMap] By type:', JSON.stringify(changeMapStore.stats.by_type));
+      perfLog('buildChangeMapFromMetaSheets', perfT);
     }
     
     // ========== v1.6.9: SEED VERIFIER RFI QUEUE FROM META SHEET ==========
@@ -10411,9 +10452,35 @@
     
     // Get change info for a specific cell
     // v1.6.14: Also check for row-level changes as fallback
-    function getCellChangeInfo(recordId, fieldKey) {
+    // v1.6.18: Helper to get record changes with key fallback
+    function getRecordChangesWithFallback(recordId, record) {
       if (!changeMapStore.enabled) return null;
+      
+      // Try primary key first
       var recordChanges = changeMapStore.changes_by_cell[recordId];
+      if (recordChanges) return recordChanges;
+      
+      // v1.6.18: Fallback 1 - try record_id if join triplet failed
+      if (record && record.record_id && record.record_id !== recordId) {
+        recordChanges = changeMapStore.changes_by_cell[record.record_id];
+        if (recordChanges) return recordChanges;
+      }
+      
+      // v1.6.18: Fallback 2 - try sheet:rowIndex format
+      if (record && record.sheet && record._sheetRowIndex !== undefined) {
+        var sheetRowKey = record.sheet + ':' + record._sheetRowIndex;
+        if (sheetRowKey !== recordId) {
+          recordChanges = changeMapStore.changes_by_cell[sheetRowKey];
+          if (recordChanges) return recordChanges;
+        }
+      }
+      
+      return null;
+    }
+    
+    function getCellChangeInfo(recordId, fieldKey, record) {
+      if (!changeMapStore.enabled) return null;
+      var recordChanges = getRecordChangesWithFallback(recordId, record);
       if (!recordChanges) return null;
       
       // Try exact match first
@@ -10436,9 +10503,10 @@
     }
     
     // Get all changes for a record (for badge tooltips)
-    function getRecordChanges(recordId) {
+    // v1.6.18: Updated to use fallback key resolution
+    function getRecordChanges(recordId, record) {
       if (!changeMapStore.enabled) return {};
-      return changeMapStore.changes_by_cell[recordId] || {};
+      return getRecordChangesWithFallback(recordId, record) || {};
     }
     
     // Get change summary for a record (for badge display)
@@ -10940,11 +11008,12 @@
     
     // v1.6.2: Get cell style for grid coloring
     // v1.6.8: Enhanced with change map highlighting for modified dataset
-    function getGridCellStyle(recordId, fieldKey) {
+    // v1.6.18: Updated to pass record for key fallback
+    function getGridCellStyle(recordId, fieldKey, record) {
       var normKey = normalizeFieldKey(fieldKey);
       
       // v1.6.8: Check change map first (for modified dataset)
-      var changeInfo = getCellChangeInfo(recordId, fieldKey);
+      var changeInfo = getCellChangeInfo(recordId, fieldKey, record);
       if (changeInfo) {
         var changeStyle = CHANGE_TYPE_STYLES[changeInfo.type];
         if (changeStyle) {
@@ -16586,6 +16655,7 @@
     }
     
     function renderGridBatch(data, startIdx, batchSize, columns, isFirst) {
+      var perfT = perfStart();
       var tbody = document.getElementById('grid-tbody');
       if (isFirst) {
         cleanupGridVirtualization();
@@ -16601,10 +16671,13 @@
       var endIdx = Math.min(startIdx + batchSize, data.length);
       var fragment = document.createDocumentFragment();
       
+      // v1.6.18: Status key normalization - check multiple possible header variants
+      var STATUS_KEYS = ['status', 'Status', 'sf_contract_status', 'review_state', 'Review_State'];
+      
       for (var idx = startIdx; idx < endIdx; idx++) {
         var r = data[idx];
         var tr = document.createElement('tr');
-        tr.className = 'clickable';
+        
         // v1.4.15: Pass sheet name and original row index to click handler
         var sheetName = r.sheet || '';
         var sheetRowIdx = r._sheetRowIndex !== undefined ? r._sheetRowIndex : idx;
@@ -16613,12 +16686,34 @@
         if (!recordId) {
           recordId = sheetName + ':' + sheetRowIdx;
         }
+        
+        // v1.6.18: Build row classes - clickable + row-change classes
+        var rowClasses = ['clickable'];
+        var changeSummary = getRecordChangeSummary(recordId);
+        if (changeSummary && changeSummary.total > 0) {
+          // Determine primary change type for row class
+          if (changeSummary.by_type.added) rowClasses.push('row-added');
+          else if (changeSummary.by_type.blacklist) rowClasses.push('row-removed');
+          else if (changeSummary.by_type.removed) rowClasses.push('row-removed');
+          else rowClasses.push('row-changed'); // correction, rfi, system_change
+        }
+        tr.className = rowClasses.join(' ');
+        
         tr.dataset.sheetName = sheetName;
         tr.dataset.recordIndex = sheetRowIdx;
         tr.dataset.recordId = recordId;
         tr.onclick = (function(sn, sri) { return function() { openRowReviewDrawer(sn, sri); }; })(sheetName, sheetRowIdx);
         
-        var statusClass = 'status-' + (r.status || '').toLowerCase().replace(/\s+/g, '_');
+        // v1.6.18: Normalize status field lookup - try multiple header variants
+        var statusVal = '';
+        for (var si = 0; si < STATUS_KEYS.length; si++) {
+          if (r[STATUS_KEYS[si]]) {
+            statusVal = r[STATUS_KEYS[si]];
+            break;
+          }
+        }
+        var statusClass = 'status-' + (statusVal || '').toLowerCase().replace(/\s+/g, '_');
+        
         // v1.6.2: Add row badges for signal counts
         var rowBadgesHtml = renderRowBadges(recordId);
         
@@ -16627,9 +16722,11 @@
             var val = r[col];
             if (val === null || val === undefined) val = '';
             if (typeof val === 'object') val = JSON.stringify(val);
-            var cellClass = col === 'status' ? statusClass : '';
-            // v1.6.2: Apply signal-based cell coloring
-            var cellStyle = getGridCellStyle(recordId, col);
+            // v1.6.18: Apply status class for any status-variant column
+            var isStatusCol = STATUS_KEYS.indexOf(col) >= 0 || col.toLowerCase() === 'status';
+            var cellClass = isStatusCol ? statusClass : '';
+            // v1.6.2: Apply signal-based cell coloring (v1.6.18: pass record for fallback)
+            var cellStyle = getGridCellStyle(recordId, col, r);
             return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + String(val).replace(/"/g, '&quot;') + '">' + String(val) + '</td>';
           }).join('');
         
@@ -16638,6 +16735,7 @@
       
       tbody.appendChild(fragment);
       gridVirtualState.rendered = endIdx;
+      perfLog('renderGridBatch (' + (endIdx - startIdx) + ' rows)', perfT);
     }
     
     function gridLazyLoadHandler() {
@@ -21022,6 +21120,7 @@ Add any additional notes here.
         
         localStorage.setItem(STORAGE_KEY_ACTIVE_DATASET, datasetId);
         dataLoaded = true;
+        datasetRevision++; // v1.6.18: Bump revision for cache invalidation
         currentArtifactPath = datasetId;
         updateUIForDataState();
         updateSessionChip();
