@@ -9967,7 +9967,14 @@
       sheets = sheets.filter(function(s) { return !isMetaSheet(s); });
       
       // Sort deterministically
-      sheets.sort().forEach(function(sheet) {
+      sheets.sort();
+      
+      // v1.6.29: Default to first sheet instead of "All Sheets"
+      if (!gridState.sheet && sheets.length > 0) {
+        gridState.sheet = sheets[0];
+      }
+      
+      sheets.forEach(function(sheet) {
         var opt = document.createElement('option');
         opt.value = sheet;
         opt.textContent = sheet;
