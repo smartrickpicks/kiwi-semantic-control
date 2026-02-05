@@ -792,6 +792,40 @@
     .badge-sflogic { background: #fff3e0; color: #e65100; }
     .badge-manual { background: #fffde7; color: #f57f17; }
     .badge-system { background: #f5f5f5; color: #616161; }
+    /* v1.6.6: Patch tooltip styles */
+    .row-badge { position: relative; cursor: pointer; }
+    .patch-tooltip { 
+      display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      background: #1a1a2e; color: white; padding: 10px 12px; border-radius: 6px;
+      font-size: 0.8em; white-space: nowrap; z-index: 1000; min-width: 180px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-top: 6px;
+    }
+    .patch-tooltip::before {
+      content: ''; position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
+      border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1a1a2e;
+    }
+    .row-badge:hover .patch-tooltip { display: block; }
+    .patch-tooltip-title { font-weight: 600; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #333; }
+    .patch-tooltip-item { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
+    .patch-tooltip-field { flex: 1; font-family: 'Courier New', monospace; font-size: 0.9em; }
+    .patch-chip { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 0.75em; font-weight: 500; }
+    .patch-chip-correction { background: #1565c0; color: white; }
+    .patch-chip-rfi { background: #e65100; color: white; }
+    .patch-chip-blacklist { background: #c62828; color: white; }
+    .patch-chip-system { background: #616161; color: white; }
+    .patch-chip-legacy { background: #78909c; color: white; }
+    /* v1.6.6: Field Inspector patch highlight */
+    .srr-field-card.has-patch { border-left: 3px solid #1565c0; background: #f8fbff; }
+    .srr-field-card.has-patch.patch-rfi { border-left-color: #e65100; background: #fff8f5; }
+    .srr-field-card.has-patch.patch-blacklist { border-left-color: #c62828; background: #fff5f5; }
+    .srr-field-card.has-patch.patch-system { border-left-color: #616161; background: #fafafa; }
+    .field-patch-indicator { display: inline-flex; gap: 4px; margin-left: 8px; }
+    .field-patch-chip { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 0.7em; font-weight: 500; }
+    .field-patch-chip.correction { background: #e3f2fd; color: #1565c0; }
+    .field-patch-chip.rfi { background: #fff3e0; color: #e65100; }
+    .field-patch-chip.blacklist { background: #ffebee; color: #c62828; }
+    .field-patch-chip.system_change { background: #f5f5f5; color: #616161; }
+    .field-patch-chip.legacy { background: #eceff1; color: #546e7a; font-style: italic; }
     .filter-select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em; min-width: 150px; }
 
     .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); display: none; z-index: 900; }
@@ -9945,26 +9979,76 @@
       return signalStore.stats;
     }
     
-    // v1.6.2: Render row badges HTML for grid
+    // v1.6.2: Render row badges HTML for grid (v1.6.6: with detailed tooltips)
     function renderRowBadges(recordId) {
       var counts = getRowSignalCounts(recordId);
       if (!counts) return '';
       
+      // v1.6.6: Build patch summary for tooltip
+      var summary = getRecordPatchSummary(recordId);
+      
       var badges = [];
       if (counts.PATCH_REQUIRED > 0) {
-        badges.push('<span class="row-badge badge-patch" title="Patch Required">' + counts.PATCH_REQUIRED + '</span>');
+        var tooltip = buildPatchBadgeTooltip(summary, 'correction');
+        badges.push('<span class="row-badge badge-patch">' + counts.PATCH_REQUIRED + tooltip + '</span>');
       }
       if (counts.SALESFORCE_LOGIC > 0) {
-        badges.push('<span class="row-badge badge-sflogic" title="Salesforce Logic">' + counts.SALESFORCE_LOGIC + '</span>');
+        var tooltip = buildPatchBadgeTooltip(summary, 'rfi');
+        badges.push('<span class="row-badge badge-sflogic">' + counts.SALESFORCE_LOGIC + tooltip + '</span>');
       }
       if (counts.MANUAL_REVIEW > 0) {
-        badges.push('<span class="row-badge badge-manual" title="Manual Review">' + counts.MANUAL_REVIEW + '</span>');
+        var tooltip = buildPatchBadgeTooltip(summary, 'correction');
+        badges.push('<span class="row-badge badge-manual">' + counts.MANUAL_REVIEW + tooltip + '</span>');
       }
       if (counts.SYSTEM_CHANGE > 0) {
-        badges.push('<span class="row-badge badge-system" title="System Change">' + counts.SYSTEM_CHANGE + '</span>');
+        var tooltip = buildPatchBadgeTooltip(summary, 'system_change');
+        badges.push('<span class="row-badge badge-system">' + counts.SYSTEM_CHANGE + tooltip + '</span>');
       }
       
       return badges.length > 0 ? '<div class="row-badges">' + badges.join('') + '</div>' : '';
+    }
+    
+    // v1.6.6: Build tooltip HTML for patch badge
+    function buildPatchBadgeTooltip(summary, filterKind) {
+      if (!summary || !summary.items || summary.items.length === 0) {
+        return '<div class="patch-tooltip"><div class="patch-tooltip-title">No details</div></div>';
+      }
+      
+      // Get unique fields for this summary (may include all or filtered by kind)
+      var seenFields = {};
+      var items = [];
+      for (var i = 0; i < summary.items.length; i++) {
+        var item = summary.items[i];
+        var fieldNorm = normalizeFieldKey(item.field_key);
+        if (!seenFields[fieldNorm]) {
+          seenFields[fieldNorm] = true;
+          items.push(item);
+        }
+      }
+      
+      // Limit to first 5 fields to keep tooltip readable
+      var displayItems = items.slice(0, 5);
+      var hasMore = items.length > 5;
+      
+      var html = '<div class="patch-tooltip">';
+      html += '<div class="patch-tooltip-title">' + summary.total_count + ' patch' + (summary.total_count !== 1 ? 'es' : '') + '</div>';
+      
+      for (var j = 0; j < displayItems.length; j++) {
+        var item = displayItems[j];
+        var chipClass = getPatchChipClass(item.patch_kind);
+        var sourceLabel = item.source === 'legacy_diff_import' ? ' (legacy)' : '';
+        html += '<div class="patch-tooltip-item">';
+        html += '<span class="patch-tooltip-field">' + escapeHtml(item.field_key) + '</span>';
+        html += '<span class="patch-chip ' + chipClass + '">' + formatPatchKind(item.patch_kind) + sourceLabel + '</span>';
+        html += '</div>';
+      }
+      
+      if (hasMore) {
+        html += '<div class="patch-tooltip-item" style="color: #888; font-style: italic;">+' + (items.length - 5) + ' more...</div>';
+      }
+      
+      html += '</div>';
+      return html;
     }
     
     // v1.6.2: Get cell style for grid coloring
@@ -9977,6 +10061,139 @@
     
     // ========================================================================
     // END SIGNAL ENGINE
+    // ========================================================================
+    
+    // ========================================================================
+    // v1.6.6: PATCH SUMMARY ENGINE
+    // ========================================================================
+    
+    // Store for per-record patch summaries
+    var recordPatchSummaryStore = {};
+    
+    // Build patch summary for a record from signals
+    function buildPatchSummaryForRecord(recordId) {
+      var recordSignals = signalStore.signals_by_cell[recordId];
+      if (!recordSignals) return null;
+      
+      var items = [];
+      var fieldKeys = Object.keys(recordSignals);
+      
+      for (var i = 0; i < fieldKeys.length; i++) {
+        var fieldKey = fieldKeys[i];
+        var signals = recordSignals[fieldKey];
+        
+        for (var j = 0; j < signals.length; j++) {
+          var sig = signals[j];
+          var patchKind = 'correction';  // default
+          var source = 'system_rule';
+          var reasonCategory = sig.signal_type || 'unknown';
+          
+          // Determine patch_kind from signal type
+          if (sig.signal_type === 'SYSTEM_CHANGE' || reasonCategory.indexOf('system') >= 0) {
+            patchKind = 'system_change';
+            source = 'system_rule';
+          } else if (sig.signal_type === 'QA_FLAG' || reasonCategory.indexOf('qa') >= 0) {
+            patchKind = 'rfi';
+            source = 'qa_flag';
+          } else if (sig.signal_type === 'BLACKLIST' || reasonCategory.indexOf('blacklist') >= 0) {
+            patchKind = 'blacklist';
+            source = 'system_rule';
+          } else if (sig.signal_type === 'PICKLIST_INVALID' || sig.signal_type === 'MISSING_REQUIRED') {
+            patchKind = 'correction';
+            source = 'field_meta';
+          } else if (sig.signal_type === 'LEGACY_DIFF' || reasonCategory.indexOf('legacy') >= 0) {
+            patchKind = 'correction';
+            source = 'legacy_diff_import';
+          }
+          
+          items.push({
+            field_key: fieldKey,
+            patch_kind: patchKind,
+            reason_category: reasonCategory,
+            source: source,
+            severity: sig.severity || 'info'
+          });
+        }
+      }
+      
+      if (items.length === 0) return null;
+      
+      var summary = {
+        record_id: recordId,
+        total_count: items.length,
+        items: items
+      };
+      
+      recordPatchSummaryStore[recordId] = summary;
+      return summary;
+    }
+    
+    // Get or build patch summary for record
+    function getRecordPatchSummary(recordId) {
+      if (recordPatchSummaryStore[recordId]) {
+        return recordPatchSummaryStore[recordId];
+      }
+      return buildPatchSummaryForRecord(recordId);
+    }
+    
+    // Get patch summary item for a specific field
+    function getFieldPatchInfo(recordId, fieldKey) {
+      var summary = getRecordPatchSummary(recordId);
+      if (!summary) return null;
+      
+      var normKey = normalizeFieldKey(fieldKey);
+      for (var i = 0; i < summary.items.length; i++) {
+        if (normalizeFieldKey(summary.items[i].field_key) === normKey) {
+          return summary.items[i];
+        }
+      }
+      return null;
+    }
+    
+    // Format patch kind for display
+    function formatPatchKind(kind) {
+      var labels = {
+        'correction': 'Correction',
+        'rfi': 'RFI',
+        'blacklist': 'Blacklist',
+        'system_change': 'System Change'
+      };
+      return labels[kind] || kind;
+    }
+    
+    // Get CSS class for patch chip
+    function getPatchChipClass(kind) {
+      var classes = {
+        'correction': 'patch-chip-correction',
+        'rfi': 'patch-chip-rfi',
+        'blacklist': 'patch-chip-blacklist',
+        'system_change': 'patch-chip-system'
+      };
+      return classes[kind] || 'patch-chip-correction';
+    }
+    
+    // v1.6.6: Auto-scroll to first patch field in Field Inspector
+    function srrScrollToFirstPatchField() {
+      var container = document.getElementById('srr-field-list');
+      if (!container) return;
+      
+      // Find first field card with has-patch class
+      var firstPatchField = container.querySelector('.srr-field-card.has-patch');
+      if (firstPatchField) {
+        // Scroll smoothly into view
+        firstPatchField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Briefly highlight with pulse
+        firstPatchField.style.transition = 'box-shadow 0.3s ease';
+        firstPatchField.style.boxShadow = '0 0 12px rgba(21, 101, 192, 0.5)';
+        setTimeout(function() {
+          firstPatchField.style.boxShadow = '';
+        }, 1500);
+        console.log('[SRR] Auto-scrolled to first patch field:', firstPatchField.dataset.field);
+      }
+    }
+    
+    // ========================================================================
+    // END PATCH SUMMARY ENGINE
     // ========================================================================
     
     // Stub field groups (legacy - now derived from hinge_groups.json)
@@ -10220,6 +10437,11 @@
       // Render Field Inspector
       renderSrrFields(record);
       
+      // v1.6.6: Auto-scroll to first patch field if any
+      setTimeout(function() {
+        srrScrollToFirstPatchField();
+      }, 100);
+      
       // v1.4.19: Reset patch type and override state
       srrState.patchType = srrState.patchDraft.patch_type || 'correction';
       srrState.overrideEnabled = srrState.patchDraft.override_enabled || false;
@@ -10370,6 +10592,23 @@
         if (isLocked) cardClass += ' locked';
         if (srrState.selectedField === key) cardClass += ' active';
         
+        // v1.6.6: Check for patch highlight
+        var patchInfo = getFieldPatchInfo(srrState.currentRecordKey, key);
+        var patchIndicatorHtml = '';
+        if (patchInfo) {
+          cardClass += ' has-patch';
+          if (patchInfo.patch_kind === 'rfi') cardClass += ' patch-rfi';
+          else if (patchInfo.patch_kind === 'blacklist') cardClass += ' patch-blacklist';
+          else if (patchInfo.patch_kind === 'system_change') cardClass += ' patch-system';
+          // Build inline patch chip
+          var patchChipClass = patchInfo.patch_kind;
+          var sourceLabel = patchInfo.source === 'legacy_diff_import' ? 'legacy' : '';
+          patchIndicatorHtml = '<div class="field-patch-indicator">' +
+            '<span class="field-patch-chip ' + patchChipClass + '">' + formatPatchKind(patchInfo.patch_kind) + '</span>' +
+            (sourceLabel ? '<span class="field-patch-chip legacy">' + sourceLabel + '</span>' : '') +
+          '</div>';
+        }
+        
         // v1.4.20: Build action buttons based on state
         // v1.4.20: Feather SVGs for field actions (order: Blacklist, RFI, Verify)
         var iconFlag = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>';
@@ -10411,7 +10650,7 @@
               '<div class="srr-field-card-label">' + label + '</div>' +
               '<div class="srr-field-card-api">' + key + '</div>' +
             '</div>' +
-            '<div class="srr-field-card-chips">' + chips + '</div>' +
+            '<div class="srr-field-card-chips">' + chips + patchIndicatorHtml + '</div>' +
             actionsHtml +
           '</div>' +
           '<div class="srr-field-card-body">' +
