@@ -9783,8 +9783,103 @@
       sheet: '',
       search: '',
       visibleColumns: [],
-      allColumns: []
+      allColumns: [],
+      // v1.6.28: Column ordering and display preferences
+      columnOrder: null,  // User-defined column order (null = use default)
+      hiddenColumns: ['file_url', 'File_URL_c', '_row_index', '_originalIdx', '_sheetRowIndex', 'sheet']  // Columns hidden by default
     };
+    
+    // v1.6.28: Get Excel-style column letter (A, B, C, ... Z, AA, AB, etc.)
+    function getColumnLetter(index) {
+      var letter = '';
+      while (index >= 0) {
+        letter = String.fromCharCode(65 + (index % 26)) + letter;
+        index = Math.floor(index / 26) - 1;
+      }
+      return letter;
+    }
+    
+    // v1.6.28: Get preferred column order for display
+    function getPreferredColumnOrder(columns) {
+      // Priority columns to show first (account/identity fields)
+      var priorityFields = [
+        'File_Name_c', 'file_name', 
+        'Account_Name_c', 'account_name',
+        'Artist_Name_pka_or_dba_c', 'artist_name',
+        'contract_key'
+      ];
+      
+      var ordered = [];
+      var remaining = columns.slice();
+      
+      // Add priority fields first (in order)
+      priorityFields.forEach(function(field) {
+        var idx = remaining.findIndex(function(c) { 
+          return c.toLowerCase() === field.toLowerCase(); 
+        });
+        if (idx !== -1) {
+          ordered.push(remaining.splice(idx, 1)[0]);
+        }
+      });
+      
+      // Add remaining fields
+      ordered = ordered.concat(remaining);
+      
+      // Filter out hidden columns for display
+      return ordered.filter(function(col) {
+        return !gridState.hiddenColumns.includes(col);
+      });
+    }
+    
+    // v1.6.28: Column drag and drop handlers
+    var draggedColumnIdx = null;
+    
+    function handleColumnDragStart(event) {
+      draggedColumnIdx = parseInt(event.target.closest('th').dataset.colIdx);
+      event.target.closest('th').style.opacity = '0.5';
+      event.dataTransfer.effectAllowed = 'move';
+    }
+    
+    function handleColumnDragOver(event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      var th = event.target.closest('th');
+      if (th && th.dataset.colIdx !== undefined) {
+        th.style.borderLeft = '3px solid #1976d2';
+      }
+    }
+    
+    function handleColumnDrop(event) {
+      event.preventDefault();
+      var targetTh = event.target.closest('th');
+      if (!targetTh || draggedColumnIdx === null) return;
+      
+      var targetIdx = parseInt(targetTh.dataset.colIdx);
+      if (targetIdx === draggedColumnIdx) return;
+      
+      // Reorder columns
+      var cols = gridState.visibleColumns.slice();
+      var draggedCol = cols.splice(draggedColumnIdx, 1)[0];
+      cols.splice(targetIdx, 0, draggedCol);
+      
+      // Save new order
+      gridState.visibleColumns = cols;
+      gridState.columnOrder = cols.slice();
+      
+      // Re-render grid with new column order
+      renderGrid();
+      showToast('Column order updated', 'success');
+    }
+    
+    function handleColumnDragEnd(event) {
+      // Reset styling on all headers
+      var headers = document.querySelectorAll('#grid-header-row th');
+      headers.forEach(function(th) {
+        th.style.opacity = '1';
+        th.style.borderLeft = '';
+      });
+      draggedColumnIdx = null;
+    }
     
     function getGridDataset() {
       // Priority: workbook > allData > localStorage cache
@@ -10051,16 +10146,25 @@
         });
       }
       
-      // Always update visible columns
-      gridState.visibleColumns = columns.slice();
+      // v1.6.28: Apply preferred column order for display
       gridState.allColumns = columns.slice();
+      gridState.visibleColumns = getPreferredColumnOrder(columns);
       
-      // Render header
+      // Render header with Excel-style column letters (A, B, C...)
       var headerRow = document.getElementById('grid-header-row');
-      headerRow.innerHTML = '<th class="row-index">#</th>' + 
-        gridState.visibleColumns.map(function(col) {
-          return '<th>' + col.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); }) + '</th>';
-        }).join('');
+      var headerHtml = '<th class="row-index" style="background: #f0f0f0; font-weight: 600;">#</th>';
+      gridState.visibleColumns.forEach(function(col, idx) {
+        var colLetter = getColumnLetter(idx);
+        var displayName = col.replace(/_c$/i, '').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+        if (displayName.length > 20) displayName = displayName.substring(0, 18) + '...';
+        headerHtml += '<th draggable="true" data-col-idx="' + idx + '" data-col-name="' + col + '" ' +
+          'ondragstart="handleColumnDragStart(event)" ondragover="handleColumnDragOver(event)" ' +
+          'ondrop="handleColumnDrop(event)" ondragend="handleColumnDragEnd(event)" ' +
+          'style="cursor: grab; user-select: none; min-width: 80px;">' +
+          '<div style="font-size: 0.7em; color: #888; margin-bottom: 2px; font-weight: 600;">' + colLetter + '</div>' +
+          '<div title="' + col + '" style="font-size: 0.85em;">' + displayName + '</div></th>';
+      });
+      headerRow.innerHTML = headerHtml;
       
       // Render body with virtualization for large datasets
       var tbody = document.getElementById('grid-tbody');
@@ -10131,12 +10235,24 @@
               var val = r[col];
               if (val === null || val === undefined) val = '';
               if (typeof val === 'object') val = JSON.stringify(val);
+              
+              // v1.6.28: Make File_Name a clickable link using file_url
+              var isFileNameCol = col.toLowerCase().includes('file_name');
+              var cellContent = String(val);
+              if (isFileNameCol && val) {
+                var fileUrl = r.file_url || r.File_URL_c || '';
+                if (fileUrl) {
+                  var shortName = val.length > 40 ? val.substring(0, 38) + '...' : val;
+                  cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" style="color: #1976d2; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><span style="font-size: 0.9em;">&#128279;</span>' + shortName + '</a>';
+                }
+              }
+              
               // v1.6.18: Apply status class for any status-variant column
               var isStatusCol = STATUS_KEYS.indexOf(col) >= 0 || col.toLowerCase() === 'status';
               var cellClass = isStatusCol ? statusClass : '';
               // v1.6.2: Apply signal-based cell coloring (v1.6.18: pass record)
               var cellStyle = getGridCellStyle(recordId, col, r);
-              return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + String(val).replace(/"/g, '&quot;') + '">' + String(val) + '</td>';
+              return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
             }).join('') +
             '</tr>';
         }).join('');
@@ -17163,12 +17279,26 @@
             var val = r[col];
             if (val === null || val === undefined) val = '';
             if (typeof val === 'object') val = JSON.stringify(val);
+            
+            // v1.6.28: Make File_Name a clickable link using file_url
+            var isFileNameCol = col.toLowerCase().includes('file_name');
+            var cellContent = String(val);
+            if (isFileNameCol && val) {
+              var fileUrl = r.file_url || r.File_URL_c || '';
+              if (fileUrl) {
+                // Show truncated file name with link icon
+                var shortName = val.length > 40 ? val.substring(0, 38) + '...' : val;
+                cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" style="color: #1976d2; text-decoration: none; display: flex; align-items: center; gap: 4px;">' +
+                  '<span style="font-size: 0.9em;">&#128279;</span>' + shortName + '</a>';
+              }
+            }
+            
             // v1.6.18: Apply status class for any status-variant column
             var isStatusCol = STATUS_KEYS.indexOf(col) >= 0 || col.toLowerCase() === 'status';
             var cellClass = isStatusCol ? statusClass : '';
             // v1.6.2: Apply signal-based cell coloring (v1.6.18: pass record for fallback)
             var cellStyle = getGridCellStyle(recordId, col, r);
-            return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + String(val).replace(/"/g, '&quot;') + '">' + String(val) + '</td>';
+            return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
           }).join('');
         
         fragment.appendChild(tr);
