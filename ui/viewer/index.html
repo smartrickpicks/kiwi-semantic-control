@@ -199,12 +199,12 @@
     .toolbar-confirm input { width: 18px; height: 18px; cursor: pointer; }
     .toolbar-confirm label { cursor: pointer; }
 
-    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center;  }
     .modal-overlay.active { display: flex; }
     .modal { background: white; border-radius: 8px; max-width: 700px; width: 90%; max-height: 80vh; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
     
     /* Drawer (right-side slide-over panel) */
-    .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: none; z-index: 1000; }
+    .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.4); display: none;  }
     .drawer-overlay.active { display: block; }
     .drawer { position: fixed; top: 0; right: -420px; width: 400px; height: 100vh; background: white; box-shadow: -4px 0 20px rgba(0,0,0,0.2); transition: right 0.25s ease-out; z-index: 1001; display: flex; flex-direction: column; }
     .drawer-overlay.active .drawer { right: 0; }
@@ -741,7 +741,7 @@
       font-weight: normal;
       width: 260px;
       max-width: 300px;
-      z-index: 1000;
+      
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       margin-bottom: 8px;
       line-height: 1.5;
@@ -1008,7 +1008,7 @@
     .patch-tooltip { 
       display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
       background: #1a1a2e; color: white; padding: 10px 12px; border-radius: 6px;
-      font-size: 0.8em; white-space: nowrap; z-index: 1000; min-width: 180px;
+      font-size: 0.8em; white-space: nowrap;  min-width: 180px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-top: 6px;
     }
     .patch-tooltip::before {
@@ -10991,29 +10991,7 @@
     // v1.5.7: Get all hinges for a sheet, grouped by level (stores normalized keys for lookup)
     function getSheetHinges(sheetName) {
       if (!rulesBundleCache.hingeGroups || !rulesBundleCache.hingeGroups.hinges) return { primary: [], secondary: [], primaryNorm: [], secondaryNorm: [] };
-      var hinges = rulesBundleCache.hingeGroups.hinges.filter(function(h) { return h.sheet === sheetName; 
-    // v1.6.36: Glossary tooltip positioning (fixed positioning to escape container bounds)
-    document.addEventListener('mouseover', function(e) {
-      if (e.target.classList.contains('glossary-icon')) {
-        var tooltip = e.target.nextElementSibling;
-        if (tooltip && tooltip.classList.contains('glossary-tooltip')) {
-          var rect = e.target.getBoundingClientRect();
-          tooltip.style.left = (rect.left + rect.width / 2) + 'px';
-          tooltip.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
-          tooltip.style.transform = 'translateX(-50%)';
-          tooltip.classList.add('visible');
-        }
-      }
-    });
-    document.addEventListener('mouseout', function(e) {
-      if (e.target.classList.contains('glossary-icon')) {
-        var tooltip = e.target.nextElementSibling;
-        if (tooltip && tooltip.classList.contains('glossary-tooltip')) {
-          tooltip.classList.remove('visible');
-        }
-      }
-    });
-});
+      var hinges = rulesBundleCache.hingeGroups.hinges.filter(function(h) { return h.sheet === sheetName; });
       var primary = hinges.filter(function(h) { return h.hinge_level === 'Primary'; }).map(function(h) { return h.field_key; });
       var secondary = hinges.filter(function(h) { return h.hinge_level === 'Secondary'; }).map(function(h) { return h.field_key; });
       return {
@@ -19424,6 +19402,28 @@
     document.addEventListener('DOMContentLoaded', function() {
       initDebugPanel();
       loadRulesBundle();  // v1.5.7: Load rules bundle for Field Inspector ordering
+    });
+    
+    // v1.6.36: Glossary tooltip positioning (fixed positioning to escape container bounds)
+    document.addEventListener('mouseover', function(e) {
+      if (e.target.classList.contains('glossary-icon')) {
+        var tooltip = e.target.nextElementSibling;
+        if (tooltip && tooltip.classList.contains('glossary-tooltip')) {
+          var rect = e.target.getBoundingClientRect();
+          tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+          tooltip.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
+          tooltip.style.transform = 'translateX(-50%)';
+          tooltip.classList.add('visible');
+        }
+      }
+    });
+    document.addEventListener('mouseout', function(e) {
+      if (e.target.classList.contains('glossary-icon')) {
+        var tooltip = e.target.nextElementSibling;
+        if (tooltip && tooltip.classList.contains('glossary-tooltip')) {
+          tooltip.classList.remove('visible');
+        }
+      }
     });
     
     // Global Search Stub (V2)
