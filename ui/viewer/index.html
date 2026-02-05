@@ -1704,9 +1704,9 @@
         <div class="srr-layout">
           <!-- Left Panel: Field Inspector with Search, Filters, Field Cards -->
           <div class="srr-panel srr-panel-left">
-            <div class="srr-panel-header">
-              <span>Field Inspector</span>
-              <span id="srr-field-count" style="font-weight: normal; color: #666; font-size: 0.85em;">0 fields</span>
+            <div class="srr-panel-header" style="flex-direction: column; align-items: flex-start; gap: 2px;">
+              <span id="srr-inspector-title" style="font-size: 0.95em;">Record Inspection</span>
+              <span id="srr-field-count" style="font-weight: normal; color: #666; font-size: 0.8em;">0 fields</span>
             </div>
             <!-- v1.4.18: Search input -->
             <div class="srr-search-bar">
@@ -9955,6 +9955,33 @@
     
     // Stub required fields (schema stub)
     var SRR_REQUIRED_FIELDS = ['contract_key', 'status'];
+    
+    // v1.6.5: Hidden fields - not shown in Field Inspector (analyst view)
+    // File_Name_c: shown in header only, File_URL_c: internal for PDF loading
+    // Metrics fields: internal change tracking, not for analyst review
+    var SRR_HIDDEN_FIELDS = [
+      'File_Name_c', 'File_URL_c',  // File fields
+      'Change_Count', 'System_Change_Count', 'User_Change_Count',  // Exact keys
+      'Row_Complete', 'Row_Verified'  // Status flags
+    ];
+    
+    // v1.6.5: Pattern-based hidden field matching (for variations)
+    var SRR_HIDDEN_PATTERNS = [
+      'change count', 'system change', 'user change', 
+      'row complete', 'row verified'
+    ];
+    
+    // v1.6.5: Check if a field should be hidden from analyst view
+    function isHiddenField(fieldKey) {
+      if (!fieldKey) return false;
+      // Check exact match
+      if (SRR_HIDDEN_FIELDS.indexOf(fieldKey) >= 0) return true;
+      // Check pattern match (case-insensitive)
+      var keyLower = fieldKey.toLowerCase().replace(/_/g, ' ');
+      return SRR_HIDDEN_PATTERNS.some(function(pattern) {
+        return keyLower.indexOf(pattern) >= 0;
+      });
+    }
 
     // v1.4.15: Get active sheet name from grid state or sidebar
     function getActiveSheetName() {
@@ -10115,6 +10142,21 @@
       stateBadge.textContent = record.status || 'Unknown';
       stateBadge.className = 'srr-state-badge ' + status;
       
+      // v1.6.5: Update Field Inspector header with file name
+      var fileName = srrResolveFieldValue(record, 'file_name');
+      var headerTitleEl = document.getElementById('srr-inspector-title');
+      if (headerTitleEl) {
+        if (fileName) {
+          // Truncate long file names for display
+          var displayName = fileName.length > 40 ? fileName.substring(0, 40) + '...' : fileName;
+          headerTitleEl.textContent = 'Record Inspection — ' + displayName;
+          headerTitleEl.title = fileName;  // Full name on hover
+        } else {
+          headerTitleEl.textContent = 'Record Inspection';
+          headerTitleEl.title = '';
+        }
+      }
+      
       // Store original values for edit tracking
       srrState.originalValues = {};
       Object.keys(record).forEach(function(k) {
@@ -10216,6 +10258,9 @@
       // Get all keys from groups for filtering
       var allKeys = [];
       ordering.groups.forEach(function(g) { allKeys = allKeys.concat(g.fields); });
+      
+      // v1.6.5: Filter out hidden fields (File_Name_c shown in header, File_URL_c internal, metrics hidden)
+      allKeys = allKeys.filter(function(k) { return !isHiddenField(k); });
       
       // v1.4.18: Apply search filter to orderedKeys
       var filteredKeys = allKeys;
@@ -10401,7 +10446,8 @@
     
     // v1.4.20: Update filter chip counts
     function srrUpdateFilterCounts() {
-      var allKeys = Object.keys(srrState.originalValues);
+      // v1.6.5: Exclude hidden fields from counts
+      var allKeys = Object.keys(srrState.originalValues).filter(function(k) { return !isHiddenField(k); });
       var counts = { all: allKeys.length, todo: 0, verified: 0, modified: 0, submitted: 0, rfi: 0, blocked: 0, patched: 0 };
       allKeys.forEach(function(k) {
         var state = srrState.fieldStates[k] || 'todo';
