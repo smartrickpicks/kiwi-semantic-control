@@ -7731,7 +7731,7 @@
       return (bytes / 1024 / 1024).toFixed(1) + ' MB';
     }
 
-    // v1.6.30: Update progress block from actual data (signals + patch requests)
+    // v1.6.31: Update progress block from actual data (signals + patch requests)
     function updateProgressBlock() {
       var todoEl = document.getElementById('progress-todo');
       var reviewEl = document.getElementById('progress-review');
@@ -7740,7 +7740,7 @@
       
       if (!todoEl || !reviewEl || !doneEl) return;
       
-      // v1.6.30: Count from actual data sources
+      // v1.6.31: Count from actual data sources
       var todo = 0;      // Records with signals/issues needing analyst attention
       var review = 0;    // Patch requests submitted for reviewer/admin review
       var done = 0;      // Approved/promoted/verified records
@@ -7921,7 +7921,7 @@
       });
     }
 
-    // ========== EXPORT / SAVE FUNCTIONALITY (v1.6.30) ==========
+    // ========== EXPORT / SAVE FUNCTIONALITY (v1.6.31) ==========
     function handleExportSave() {
       if (typeof XLSX === 'undefined') {
         showToast('Excel library not loaded. Please refresh and try again.', 'error');
@@ -7938,7 +7938,7 @@
       try {
         var wb = XLSX.utils.book_new();
         
-        // v1.6.30: Export all data sheets with styling metadata
+        // v1.6.31: Export all data sheets with styling metadata
         var dataSheets = getDataSheets();
         dataSheets.forEach(function(sheetName) {
           var sheetData = workbook.sheets[sheetName];
@@ -7960,7 +7960,7 @@
           
           var ws = XLSX.utils.aoa_to_sheet(sheetArray);
           
-          // v1.6.30: Apply column widths
+          // v1.6.31: Apply column widths
           var colWidths = sheetData.headers.map(function(h) {
             return { wch: Math.min(30, Math.max(10, h.length + 2)) };
           });
@@ -7969,25 +7969,25 @@
           XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31));
         });
         
-        // v1.6.30: Add _change_log sheet with all changes
+        // v1.6.31: Add _change_log sheet with all changes
         var changeLogWs = buildChangeLogSheet();
         if (changeLogWs) {
           XLSX.utils.book_append_sheet(wb, changeLogWs, '_change_log');
         }
         
-        // v1.6.30: Add RFIs & Analyst Notes sheet
+        // v1.6.31: Add RFIs & Analyst Notes sheet
         var rfiWs = buildRFISheet();
         if (rfiWs) {
           XLSX.utils.book_append_sheet(wb, rfiWs, 'RFIs & Analyst Notes');
         }
         
-        // v1.6.30: Add Signals Summary sheet
+        // v1.6.31: Add Signals Summary sheet
         var signalsWs = buildSignalsSummarySheet();
         if (signalsWs) {
           XLSX.utils.book_append_sheet(wb, signalsWs, '_signals_summary');
         }
         
-        // v1.6.30: Add Orchestrate OS Metadata sheet
+        // v1.6.31: Add Orchestrate OS Metadata sheet
         var metaWs = buildMetadataSheet();
         XLSX.utils.book_append_sheet(wb, metaWs, '_orchestrate_meta');
         
@@ -8008,7 +8008,7 @@
       }
     }
     
-    // v1.6.30: Build _change_log sheet from patch requests and changeMap
+    // v1.6.31: Build _change_log sheet from patch requests and changeMap
     function buildChangeLogSheet() {
       var headers = [
         'record_id', 'sheet', 'field', 'change_type', 'old_value', 'new_value',
@@ -8068,7 +8068,7 @@
       return ws;
     }
     
-    // v1.6.30: Build RFIs & Analyst Notes sheet (includes all escalations)
+    // v1.6.31: Build RFIs & Analyst Notes sheet (includes all escalations)
     function buildRFISheet() {
       var headers = [
         'record_id', 'sheet', 'field', 'type', 'comment_or_question', 'current_value',
@@ -8077,7 +8077,7 @@
       ];
       var rows = [headers];
       
-      // v1.6.30: Include ALL patch requests that have been promoted/escalated
+      // v1.6.31: Include ALL patch requests that have been promoted/escalated
       // This tracks the full escalation trail through the role hierarchy
       var patchRequests = PATCH_REQUEST_STORE.list();
       
@@ -8137,7 +8137,7 @@
       return ws;
     }
     
-    // v1.6.30: Build Signals Summary sheet
+    // v1.6.31: Build Signals Summary sheet
     function buildSignalsSummarySheet() {
       var headers = [
         'record_id', 'sheet', 'field', 'signal_type', 'severity', 'message', 'value'
@@ -8174,14 +8174,14 @@
       return ws;
     }
     
-    // v1.6.30: Build Orchestrate OS Metadata sheet
+    // v1.6.31: Build Orchestrate OS Metadata sheet
     function buildMetadataSheet() {
       var metadata = [
         ['Orchestrate OS Export Metadata'],
         [''],
         ['Property', 'Value'],
         ['Export Date', new Date().toISOString()],
-        ['Export Version', 'v1.6.30'],
+        ['Export Version', 'v1.6.31'],
         ['Dataset ID', IDENTITY_CONTEXT.dataset_id || ''],
         ['Tenant ID', IDENTITY_CONTEXT.tenant_id || ''],
         ['Division ID', IDENTITY_CONTEXT.division_id || ''],
@@ -8210,7 +8210,7 @@
       return ws;
     }
     
-    // v1.6.30: Get total record count across all sheets
+    // v1.6.31: Get total record count across all sheets
     function getTotalRecordCount() {
       var count = 0;
       if (workbook && workbook.sheets) {
@@ -8274,6 +8274,9 @@
       
       // v1.6.0: Generate signals for dataset
       generateSignalsForDataset();
+      
+      // v1.6.31: Seed patch requests from RFI meta sheet (if present in modified dataset)
+      seedPatchRequestsFromMetaSheet();
       
       // Finish staged loader
       stagedLoader.finish();
@@ -8413,6 +8416,9 @@
             
             // v1.6.0: Generate signals for dataset
             generateSignalsForDataset();
+            
+            // v1.6.31: Seed patch requests from RFI meta sheet
+            seedPatchRequestsFromMetaSheet();
             
             return true;
           }
@@ -8969,7 +8975,7 @@
       }
     }
     
-    // v1.6.30: Get current user's display name for audit/export attribution
+    // v1.6.31: Get current user's display name for audit/export attribution
     function getCurrentUserName() {
       try {
         var demoUser = JSON.parse(localStorage.getItem('demoUser') || '{}');
@@ -10321,7 +10327,7 @@
       // Sort deterministically
       sheets.sort();
       
-      // v1.6.30: Default to first sheet instead of "All Sheets"
+      // v1.6.31: Default to first sheet instead of "All Sheets"
       if (!gridState.sheet && sheets.length > 0) {
         gridState.sheet = sheets[0];
       }
@@ -11213,6 +11219,160 @@
       perfLog('buildChangeMapFromMetaSheets', perfT);
     }
     
+    // ========== v1.6.31: SEED PATCH REQUESTS FROM META SHEET ==========
+    // Parse RFIs & Analyst Notes sheet and create patch requests for Analyst Patch Queue
+    // v1.6.31: Track if already seeded for this dataset
+    var _patchSeedDatasetId = null;
+    
+    function seedPatchRequestsFromMetaSheet() {
+      if (!workbook || !workbook.sheets) return;
+      
+      // v1.6.31: Only seed once per dataset
+      var currentDatasetId = ARTIFACT_STORE.current_dataset_id || IDENTITY_CONTEXT.dataset_id || 'ds_default';
+      if (_patchSeedDatasetId === currentDatasetId) {
+        console.log('[PatchSeed] Already seeded for dataset:', currentDatasetId);
+        return { imported: 0, skipped: 0 };
+      }
+      
+      var rfiSheet = workbook.sheets['RFIs & Analyst Notes'];
+      if (!rfiSheet || !rfiSheet.rows || rfiSheet.rows.length === 0) {
+        console.log('[PatchSeed] No RFIs & Analyst Notes sheet found');
+        return { imported: 0, skipped: 0 };
+      }
+      
+      var imported = 0;
+      var skipped = 0;
+      
+      // Build a set of existing request keys for deduplication
+      var existingKeys = new Set();
+      PATCH_REQUEST_STORE.list().forEach(function(pr) {
+        if (pr.source === 'meta_sheet_import') {
+          var key = (pr.dataset_id || '') + '|' + (pr.record_id || '') + '|' + (pr.field_name || '') + '|' + (pr.summary || '');
+          existingKeys.add(key);
+        }
+      });
+      
+      rfiSheet.rows.forEach(function(row, rowIdx) {
+        if (!row) return;
+        
+        // Only process rows where Note Type == "RFI"
+        var noteType = (row['Note Type'] || '').trim().toUpperCase();
+        if (noteType !== 'RFI') return;
+        
+        var targetSheet = row['Sheet'] || '';
+        var rowNum = parseFloat(row['Row #']);
+        var fieldName = row['Field Name'] || '';
+        var summary = row['Summary'] || '';
+        var details = row['Details'] || '';
+        var timestamp = row['Timestamp'] || new Date().toISOString();
+        var category = row['Category'] || '';
+        var detectedBy = row['Detected By'] || 'Analyst';
+        var status = row['Status'] || 'Submitted';
+        var response = row['Response'] || '';
+        
+        // v1.6.31: Field name may be empty for RFI comments - extract from summary if possible
+        if (!fieldName && summary) {
+          var match = summary.match(/on\s+([A-Za-z0-9_]+)$/);
+          if (match) fieldName = match[1];
+          else fieldName = '(general)';
+        }
+        if (!targetSheet || isNaN(rowNum)) return;
+        
+        // Build record_id (sheet + row mapping)
+        var recordId = targetSheet + ':' + Math.floor(rowNum);
+        var datasetId = ARTIFACT_STORE.current_dataset_id || IDENTITY_CONTEXT.dataset_id || 'ds_default';
+        
+        // Deduplication key
+        var dupeKey = datasetId + '|' + recordId + '|' + fieldName + '|' + summary;
+        if (existingKeys.has(dupeKey)) {
+          skipped++;
+          return;
+        }
+        existingKeys.add(dupeKey);
+        
+        // Map status from meta sheet to patch request status
+        var prStatus = 'Submitted';
+        var statusLower = (status || '').toLowerCase().trim();
+        if (statusLower === 'pending' || statusLower === 'open') prStatus = 'Submitted';
+        else if (statusLower === 'resolved' || statusLower === 'closed') prStatus = 'Approved';
+        else if (statusLower === 'rejected') prStatus = 'Rejected';
+        else if (statusLower === 'draft') prStatus = 'Draft';
+        else if (statusLower.includes('review')) prStatus = 'Pending_Review';
+        
+        // Generate request ID
+        var requestId = 'pr_rfi_' + targetSheet.toLowerCase().replace(/\s+/g, '_') + '_r' + Math.floor(rowNum) + '_' + rowIdx;
+        
+        // Build description from Summary + Details
+        var description = summary;
+        if (details && details !== summary) {
+          description += ' — ' + details;
+        }
+        
+        // Create the patch request directly
+        var now = timestamp || new Date().toISOString();
+        var request = {
+          request_id: requestId,
+          version: 1,
+          status: prStatus,
+          artifact_type: 'rfi',
+          type: 'rfi',
+          source: 'meta_sheet_import',
+          dataset_id: datasetId,
+          record_id: recordId,
+          sheet: targetSheet,
+          field_name: fieldName,
+          summary: summary,
+          description: description,
+          category: category,
+          target: 'field_clarification',
+          when: 'Field requires clarification',
+          then: summary,
+          because: details || summary,
+          rationale: details || summary,
+          analyst: detectedBy,
+          submitted_by: detectedBy,
+          response: response,
+          created_at_utc: now,
+          submitted_at_utc: now,
+          updated_at_utc: now,
+          thread: [],
+          history: [
+            {
+              at_utc: now,
+              actor: detectedBy,
+              role: 'Analyst',
+              action: 'Created from RFI sheet',
+              from_status: null,
+              to_status: prStatus
+            }
+          ]
+        };
+        
+        // Add response as a thread item if present
+        if (response && response.trim()) {
+          request.thread.push({
+            id: requestId + '_resp_0',
+            timestamp: now,
+            author: 'Reviewer',
+            role: 'reviewer',
+            content: response,
+            type: 'response'
+          });
+        }
+        
+        // Save to store
+        PATCH_REQUEST_STORE.save(request);
+        imported++;
+      });
+      
+      console.log('[PatchSeed] Imported', imported, 'RFIs to Patch Request store (', skipped, 'duplicates skipped)');
+      
+      // v1.6.31: Mark as seeded for this dataset
+      _patchSeedDatasetId = currentDatasetId;
+      
+      return { imported: imported, skipped: skipped };
+    }
+    
     // ========== v1.6.9: SEED VERIFIER RFI QUEUE FROM META SHEET ==========
     // Parse RFIs & Analyst Notes sheet and populate Verifier queue with RFI items
     function seedVerifierRFIQueueFromMetaSheet() {
@@ -11260,7 +11420,13 @@
         var detectedBy = row['Detected By'] || 'Analyst';
         var sourceUrl = row['Source URL'] || '';
         
-        if (!targetSheet || isNaN(rowNum) || !fieldName) return;
+        // v1.6.31: Field name may be empty for RFI comments - extract from summary if possible
+        if (!fieldName && summary) {
+          var match = summary.match(/on\s+([A-Za-z0-9_]+)$/);
+          if (match) fieldName = match[1];
+          else fieldName = '(general)';
+        }
+        if (!targetSheet || isNaN(rowNum)) return;
         
         // Build record_id (sheet + row mapping)
         var recordId = targetSheet + ':' + Math.floor(rowNum);
@@ -11772,7 +11938,7 @@
       
       // Note: v1.6.9 RFI seeding is done in loadAnalystTriageFromStore after verifierQueueState is ready
       
-      // v1.6.30: Update progress block after signals generated
+      // v1.6.31: Update progress block after signals generated
       if (typeof updateProgressBlock === 'function') {
         updateProgressBlock();
       }
@@ -14766,7 +14932,7 @@
       }).join('; ') : '(no field changes)';
       
       var record = srrState.currentRecord || {};
-      var author = getCurrentUserName();  // v1.6.30: Use logged-in user
+      var author = getCurrentUserName();  // v1.6.31: Use logged-in user
       
       // Determine action type based on patch type
       var actionType = patchType === 'correction' ? 'SET_VALUE' : (patchType === 'blacklist' ? 'BLACKLIST' : 'RFI');
@@ -15615,6 +15781,9 @@
     var datasetLoadTimestamp = null;
     
     function loadAnalystTriageFromStore() {
+      // v1.6.31: Seed Patch Requests from meta sheet (RFIs from modified dataset)
+      seedPatchRequestsFromMetaSheet();
+      
       // v1.6.9: Seed Verifier RFI queue from meta sheet (if not already done)
       seedVerifierRFIQueueFromMetaSheet();
       
@@ -15662,21 +15831,21 @@
         return item.signal_type === 'QA_FLAG' && (item.severity === 'error' || item.severity === 'warning');
       });
       
-      // Patch Queue: MISSING_REQUIRED, PICKLIST_INVALID + patch requests
-      // Sort combined list by record_id asc, then field_key asc for determinism
-      var actionableSignals = signalItems.filter(function(item) {
+      // v1.6.31: Patch Queue - only show actual patch requests (RFIs, corrections, etc.)
+      // Validation signals (MISSING_REQUIRED, PICKLIST_INVALID) moved to Manual Review
+      // Sort by updated_at descending to show most recent first
+      patchRequestItems.sort(function(a, b) {
+        var aTime = a.updated_at || a.updated_at_utc || '';
+        var bTime = b.updated_at || b.updated_at_utc || '';
+        return bTime.localeCompare(aTime);
+      });
+      analystTriageState.patchItems = patchRequestItems;
+      
+      // v1.6.31: Add validation signals to Manual Review queue (not Patch Queue)
+      var validationSignals = signalItems.filter(function(item) {
         return item.signal_type === 'MISSING_REQUIRED' || item.signal_type === 'PICKLIST_INVALID';
       });
-      var combinedPatchItems = actionableSignals.concat(patchRequestItems);
-      combinedPatchItems.sort(function(a, b) {
-        var recCmp = (a.record_id || '').localeCompare(b.record_id || '');
-        if (recCmp !== 0) return recCmp;
-        // Use field_key for signals, fallback to field_name for patch requests
-        var aKey = a.field_key || a.field_name || '';
-        var bKey = b.field_key || b.field_name || '';
-        return aKey.localeCompare(bKey);
-      });
-      analystTriageState.patchItems = combinedPatchItems;
+      analystTriageState.manualItems = analystTriageState.manualItems.concat(validationSignals);
       
       // System Changes: QA_FLAG with INFO severity
       analystTriageState.systemItems = signalItems.filter(function(item) {
