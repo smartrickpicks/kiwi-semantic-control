@@ -19,9 +19,54 @@
       align-items: center;
       justify-content: center;
       color: #e2e8f0;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* Subtle starfield background */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        radial-gradient(1px 1px at 20px 30px, rgba(255,255,255,0.3), transparent),
+        radial-gradient(1px 1px at 40px 70px, rgba(255,255,255,0.2), transparent),
+        radial-gradient(1px 1px at 50px 160px, rgba(255,255,255,0.3), transparent),
+        radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.2), transparent),
+        radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.15), transparent),
+        radial-gradient(1.5px 1.5px at 160px 120px, rgba(100,200,255,0.4), transparent),
+        radial-gradient(1px 1px at 200px 150px, rgba(255,255,255,0.2), transparent),
+        radial-gradient(1px 1px at 220px 50px, rgba(255,255,255,0.25), transparent),
+        radial-gradient(1px 1px at 250px 200px, rgba(255,255,255,0.2), transparent),
+        radial-gradient(1.5px 1.5px at 280px 100px, rgba(100,200,255,0.35), transparent),
+        radial-gradient(1px 1px at 320px 180px, rgba(255,255,255,0.2), transparent),
+        radial-gradient(1px 1px at 350px 30px, rgba(255,255,255,0.3), transparent),
+        radial-gradient(1px 1px at 380px 220px, rgba(255,255,255,0.15), transparent),
+        radial-gradient(1px 1px at 420px 90px, rgba(255,255,255,0.2), transparent),
+        radial-gradient(1.5px 1.5px at 450px 160px, rgba(100,200,255,0.3), transparent),
+        radial-gradient(1px 1px at 500px 60px, rgba(255,255,255,0.25), transparent),
+        radial-gradient(1px 1px at 540px 140px, rgba(255,255,255,0.2), transparent),
+        radial-gradient(1px 1px at 580px 200px, rgba(255,255,255,0.3), transparent),
+        radial-gradient(1px 1px at 620px 80px, rgba(255,255,255,0.15), transparent),
+        radial-gradient(1.5px 1.5px at 660px 180px, rgba(100,200,255,0.35), transparent);
+      background-size: 700px 250px;
+      animation: starfield 60s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    /* Slow gentle drift animation */
+    @keyframes starfield {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-250px); }
     }
     
     .login-container {
+      position: relative;
+      z-index: 1;
       background: #1e2533;
       border-radius: 16px;
       padding: 48px;
