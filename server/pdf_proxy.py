@@ -66,21 +66,6 @@ app.add_middleware(
 )
 
 
-@app.options("/proxy/pdf")
-async def proxy_pdf_options():
-    """Explicit OPTIONS handler for CORS preflight."""
-    from fastapi.responses import Response
-    return Response(
-        status_code=204,
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-            "Access-Control-Max-Age": "86400",
-        }
-    )
-
-
 def is_private_ip(hostname: str) -> bool:
     """Check if hostname resolves to a private IP (SSRF guard)."""
     try:
