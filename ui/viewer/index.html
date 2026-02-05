@@ -3830,6 +3830,15 @@
     // Meta sheet patterns - these are audit log sheets, not data sheets
     const META_SHEET_PATTERNS = ['_change_log', 'RFIs & Analyst Notes', '_meta', '_audit'];
     
+    // v1.6.20: Reference/glossary sheets - supporting data, not actionable records
+    // These should be excluded from triage queues (sf_issues, sf_field_actions)
+    const REFERENCE_SHEET_PATTERNS = [
+      'glossary', 'field_dictionary', 'field dictionary', 
+      'opportunity_field_catalog', 'opportunity field catalog',
+      'qa_flags', 'hinge', 'mapping', 'dictionary', 'catalog_meta',
+      'field_catalog', 'field catalog', 'reference', 'lookup'
+    ];
+    
     // Default settings (used when no user config exists)
     const DEFAULT_SETTINGS = {
       use_repo_masters: true,
@@ -7529,6 +7538,24 @@
       });
     }
     
+    // v1.6.20: Check if sheet is a reference/glossary sheet (supporting data, not actionable)
+    function isReferenceSheet(sheetName) {
+      if (!sheetName) return false;
+      var lowerName = sheetName.toLowerCase();
+      return REFERENCE_SHEET_PATTERNS.some(function(pattern) {
+        return lowerName.includes(pattern.toLowerCase());
+      });
+    }
+    
+    // v1.6.20: Filter out reference/glossary rows from issues/field_actions arrays
+    function filterOutReferenceData(items) {
+      if (!items || !Array.isArray(items)) return [];
+      return items.filter(function(item) {
+        var sheet = item.sheet || item.sheet_name || '';
+        return !isReferenceSheet(sheet) && !isMetaSheet(sheet);
+      });
+    }
+    
     // v1.6.4: Get all meta sheets from workbook
     function getMetaSheets() {
       if (!workbook || !workbook.order) return [];
@@ -7650,8 +7677,9 @@
       sessionState.fileName = fileName || null;
       
       allData.contractResults = sortByJoinTriplet(data.sf_contract_results || []);
-      allData.issues = sortBySeverityFirst(data.sf_issues || [], ['sheet', 'field', 'issue_type']);
-      allData.fieldActions = sortBySeverityFirst(data.sf_field_actions || [], ['sheet', 'field', 'action']);
+      // v1.6.20: Filter out reference/glossary sheets from issues and fieldActions
+      allData.issues = filterOutReferenceData(sortBySeverityFirst(data.sf_issues || [], ['sheet', 'field', 'issue_type']));
+      allData.fieldActions = filterOutReferenceData(sortBySeverityFirst(data.sf_field_actions || [], ['sheet', 'field', 'action']));
       allData.changeLog = sortBySeverityFirst(data.sf_change_log || [], ['sheet', 'field', 'notes']);
       allData.summary = data.sf_summary || {};
       
@@ -7785,8 +7813,9 @@
             
             const data = session.previewData;
             allData.contractResults = sortByJoinTriplet(data.sf_contract_results || []);
-            allData.issues = sortBySeverityFirst(data.sf_issues || [], ['sheet', 'field', 'issue_type']);
-            allData.fieldActions = sortBySeverityFirst(data.sf_field_actions || [], ['sheet', 'field', 'action']);
+            // v1.6.20: Filter out reference/glossary sheets from issues and fieldActions
+            allData.issues = filterOutReferenceData(sortBySeverityFirst(data.sf_issues || [], ['sheet', 'field', 'issue_type']));
+            allData.fieldActions = filterOutReferenceData(sortBySeverityFirst(data.sf_field_actions || [], ['sheet', 'field', 'action']));
             allData.changeLog = sortBySeverityFirst(data.sf_change_log || [], ['sheet', 'field', 'notes']);
             allData.summary = data.sf_summary || {};
             
@@ -17388,8 +17417,9 @@
           const data = await response.json();
           if (data.sf_summary || data.sf_contract_results) {
             allData.contractResults = data.sf_contract_results || [];
-            allData.issues = data.sf_issues || [];
-            allData.fieldActions = data.sf_field_actions || [];
+            // v1.6.20: Filter out reference/glossary sheets from issues and fieldActions
+            allData.issues = filterOutReferenceData(data.sf_issues || []);
+            allData.fieldActions = filterOutReferenceData(data.sf_field_actions || []);
             allData.summary = data.sf_summary || {};
             allData.changeLog = data.changelog || [];
             dataLoaded = true;
@@ -18932,8 +18962,9 @@
       renderSummary(data.sf_summary || {});
       
       allData.contractResults = sortByJoinTriplet(data.sf_contract_results || []);
-      allData.issues = sortBySeverityFirst(data.sf_issues || [], ['sheet', 'field', 'issue_type']);
-      allData.fieldActions = sortBySeverityFirst(data.sf_field_actions || [], ['sheet', 'field', 'action']);
+      // v1.6.20: Filter out reference/glossary sheets from issues and fieldActions
+      allData.issues = filterOutReferenceData(sortBySeverityFirst(data.sf_issues || [], ['sheet', 'field', 'issue_type']));
+      allData.fieldActions = filterOutReferenceData(sortBySeverityFirst(data.sf_field_actions || [], ['sheet', 'field', 'action']));
       allData.changeLog = sortBySeverityFirst(data.sf_change_log || [], ['sheet', 'field', 'notes']);
       allData.summary = data.sf_summary || {};
       
@@ -20766,8 +20797,9 @@ Add any additional notes here.
         
         renderSummary(primaryData.sf_summary || {});
         allData.contractResults = sortByJoinTriplet(primaryData.sf_contract_results || []);
-        allData.issues = sortBySeverityFirst(primaryData.sf_issues || [], ['sheet', 'field', 'issue_type']);
-        allData.fieldActions = sortBySeverityFirst(primaryData.sf_field_actions || [], ['sheet', 'field', 'action']);
+        // v1.6.20: Filter out reference/glossary sheets from issues and fieldActions
+        allData.issues = filterOutReferenceData(sortBySeverityFirst(primaryData.sf_issues || [], ['sheet', 'field', 'issue_type']));
+        allData.fieldActions = filterOutReferenceData(sortBySeverityFirst(primaryData.sf_field_actions || [], ['sheet', 'field', 'action']));
         allData.changeLog = sortBySeverityFirst(primaryData.sf_change_log || [], ['sheet', 'field', 'notes']);
         
         sourceInfo.textContent = `Primary: ${primaryPath}`;
@@ -21857,8 +21889,9 @@ Add any additional notes here.
         const data = await response.json();
         if (data.sf_summary || data.sf_contract_results || data.sf_issues || data.sf_field_actions) {
           allData.contractResults = data.sf_contract_results || [];
-          allData.issues = data.sf_issues || [];
-          allData.fieldActions = data.sf_field_actions || [];
+          // v1.6.20: Filter out reference/glossary sheets from issues and fieldActions
+          allData.issues = filterOutReferenceData(data.sf_issues || []);
+          allData.fieldActions = filterOutReferenceData(data.sf_field_actions || []);
           allData.summary = data.sf_summary || {};
           allData.changeLog = data.sf_changelog || [];
           dataLoaded = true;
