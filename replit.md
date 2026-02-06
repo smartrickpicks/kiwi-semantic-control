@@ -23,6 +23,15 @@ The system generates deterministic cell-level signals on dataset load using `fie
 ### Identity and Authentication
 Record identity is defined by `tenant_id`, `division_id`, `dataset_id`, `record_id`, with `record_id` generated based on a canonicalized row fingerprint. A production-style landing page with Google sign-in handles user authentication, supporting `?role=admin|verifier` URL parameters for testing. Admin-only Playground mode allows role switching, while Analyst/Verifier users are locked to their roles. As of v1.6.45, all "Reviewer" terminology has been unified to "Verifier" across UI, statuses, and documentation; legacy `Reviewer_*` status values are normalized via `normalizeLegacyStatus()` and `normalizeLegacyRole()` for backward compatibility. User creation and management are available in the Admin Panel for Demo/Playground mode, with changes persisting to localStorage. Production Google OAuth login checks a configured user list for role assignment.
 
+### Batch Add Missing Rows (v1.6.47)
+The Batch Add feature allows analysts to batch-add missing rows from a single-column list. The feature is OFF by default for all sheets, and Admins must enable it per sheet from the Admin Panel > Governance tab ("Batch Add Settings"). The enablement state is stored in localStorage (`orchestrate_batch_add_sheets`). When enabled, an "Add Missing Items" button appears in the Record Inspection header for Analyst and Admin roles.
+
+**Group Anchor Model:** Any record can be marked as a Group Anchor. Child rows inherit `group_id` from the anchor and copy baseline fields. The data model adds `_group` (containing `group_id`, `group_label`, `is_anchor`) and `_batch_added` (containing `timestamp`, `actor`, `anchor_record_id`, `source`) to row objects.
+
+**Wizard Flow:** A 3-step modal (Paste List → Preview → Confirm) collects one-per-line items, lets the user pick the target field, previews the rows, then creates them. Maximum 500 items per batch. Each created row emits a `MANUAL_ROW_ADD` audit event and is flagged for Manual Review in META_TRIAGE_STORE.
+
+**Grid Nesting:** Anchor rows display an expand/collapse caret (▼) in the row-index cell. Child rows are visually indented. Collapsed state persists in localStorage (`orchestrate_group_collapsed`). Export remains flat — all rows are included without grouping hierarchy.
+
 ### Export / Save Functionality
 The Export/Save button generates an XLSX file using SheetJS with all data sheets, changelog, RFI notes, and signals summary. The export includes:
 - All data sheets with original structure preserved

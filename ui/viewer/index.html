@@ -1397,6 +1397,54 @@
     .record-state-card.partial .count { color: #e65100; }
     .record-state-card.waiting .count { color: #1565c0; }
     .record-state-card.blocked .count { color: #c62828; }
+
+    /* ========== BATCH ADD MODAL (v1.6.47) ========== */
+    .batch-add-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; }
+    .batch-add-content { background: white; border-radius: 12px; max-width: 560px; width: 95%; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.3); animation: modalFadeIn 0.2s ease-out; }
+    .batch-add-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e0e0e0; }
+    .batch-add-header h3 { margin: 0; font-size: 1.1em; font-weight: 600; color: #1a1a2e; }
+    .batch-add-close { background: none; border: none; font-size: 1.6em; cursor: pointer; color: #999; line-height: 1; padding: 0 4px; }
+    .batch-add-close:hover { color: #333; }
+    .batch-add-steps { display: flex; justify-content: center; gap: 32px; padding: 16px 20px; border-bottom: 1px solid #f0f0f0; }
+    .batch-add-step { display: flex; align-items: center; gap: 8px; color: #bbb; font-size: 0.85em; }
+    .batch-add-step .step-num { width: 26px; height: 26px; border-radius: 50%; background: #e0e0e0; color: #999; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.85em; }
+    .batch-add-step.active { color: #1565c0; }
+    .batch-add-step.active .step-num { background: #1565c0; color: white; }
+    .batch-add-step.done { color: #2e7d32; }
+    .batch-add-step.done .step-num { background: #2e7d32; color: white; }
+    .batch-add-body { flex: 1; overflow-y: auto; padding: 20px; }
+    .batch-add-textarea { width: 100%; min-height: 160px; padding: 10px 12px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; font-size: 0.9em; resize: vertical; }
+    .batch-add-textarea:focus { border-color: #1565c0; outline: none; }
+    .batch-add-select { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em; }
+    .batch-add-preview { max-height: 350px; overflow-y: auto; }
+    .batch-add-preview-list { border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; }
+    .batch-add-preview-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; font-size: 0.85em; border-bottom: 1px solid #f0f0f0; }
+    .batch-add-preview-row:last-child { border-bottom: none; }
+    .batch-add-preview-num { color: #999; font-size: 0.8em; min-width: 28px; text-align: right; }
+    .batch-add-preview-text { flex: 1; word-break: break-word; }
+    .batch-add-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 20px; border-top: 1px solid #e0e0e0; }
+    .batch-add-btn-cancel { padding: 8px 18px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; font-size: 0.9em; color: #666; }
+    .batch-add-btn-cancel:hover { background: #f5f5f5; }
+    .batch-add-btn-back { padding: 8px 18px; border: 1px solid #ddd; background: white; border-radius: 6px; cursor: pointer; font-size: 0.9em; color: #333; }
+    .batch-add-btn-back:hover { background: #f5f5f5; }
+    .batch-add-btn-next { padding: 8px 18px; border: none; background: #1565c0; color: white; border-radius: 6px; cursor: pointer; font-size: 0.9em; font-weight: 500; }
+    .batch-add-btn-next:hover { background: #1976d2; }
+    .batch-add-btn-confirm { padding: 8px 18px; border: none; background: #2e7d32; color: white; border-radius: 6px; cursor: pointer; font-size: 0.9em; font-weight: 500; }
+    .batch-add-btn-confirm:hover { background: #388e3c; }
+    .group-anchor-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; background: #e3f2fd; color: #1565c0; border-radius: 12px; font-size: 0.75em; font-weight: 600; }
+    .grid-group-caret { display: inline-block; cursor: pointer; font-size: 0.7em; margin-right: 4px; transition: transform 0.15s; color: #1565c0; user-select: none; }
+    .grid-group-caret.collapsed { transform: rotate(-90deg); }
+    .grid-child-indent { display: inline-block; width: 18px; border-left: 2px solid #bbdefb; margin-right: 4px; height: 1em; vertical-align: middle; }
+    .grid-child-row { background: #f8fbff !important; }
+    .grid-child-row:hover { background: #e8f4fd !important; }
+    .batch-add-toggle { position: relative; display: inline-block; width: 40px; height: 22px; }
+    .batch-add-toggle input { opacity: 0; width: 0; height: 0; }
+    .batch-add-toggle .slider { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #ccc; border-radius: 22px; cursor: pointer; transition: background 0.2s; }
+    .batch-add-toggle .slider:before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: transform 0.2s; }
+    .batch-add-toggle input:checked + .slider { background: #2e7d32; }
+    .batch-add-toggle input:checked + .slider:before { transform: translateX(18px); }
+    .batch-add-btn { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.8em; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s; }
+    .batch-add-btn:hover { background: #2e7d32; color: white; border-color: #2e7d32; }
   </style>
 </head>
 <body>
@@ -1587,7 +1635,7 @@
       <!-- Loader Page (DEPRECATED - v1.2.9 uses drawer instead) -->
       <div class="page-content" id="page-loader" style="display: none !important;">
         <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-          <div style="font-size: 0.75em; color: #999; text-align: right; margin-bottom: 10px;">PAGE: LOADER | BUILD v1.6.46</div>
+          <div style="font-size: 0.75em; color: #999; text-align: right; margin-bottom: 10px;">PAGE: LOADER | BUILD v1.6.47</div>
           
           <!-- PRIMARY ACTION PANEL: Continue to Triage (shown when dataset active) -->
           <div id="loader-continue-panel" style="display: none; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; color: white; text-align: center;">
@@ -1676,7 +1724,7 @@
           <div class="page-header" style="position: relative;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <h2 id="triage-page-title">Triage</h2>
-              <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.6.46</span>
+              <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.6.47</span>
             </div>
             <p class="page-desc">All items requiring analyst review and action.</p>
             <!-- Sticky Search Bar (top right) - frosted glass style with scroll-aware behavior -->
@@ -1869,7 +1917,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>All-Data Grid</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ALL-DATA-GRID | BUILD v1.6.46</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ALL-DATA-GRID | BUILD v1.6.47</span>
           </div>
           <p class="page-desc">Dense spreadsheet view of all records with filtering and search.</p>
         </div>
@@ -1972,7 +2020,7 @@
         <div class="grid-footer" style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; color: #666; font-size: 0.85em;">
           <span id="grid-row-count">0 records</span>
           <span id="grid-filter-info"></span>
-          <span style="font-size: 0.75em; color: #aaa;">PAGE: ALL-DATA-GRID | BUILD v1.6.46</span>
+          <span style="font-size: 0.75em; color: #aaa;">PAGE: ALL-DATA-GRID | BUILD v1.6.47</span>
         </div>
       </div><!-- end page-grid -->
 
@@ -1981,7 +2029,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2 id="srr-page-title">Record Inspection</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: SINGLE-ROW-REVIEW | BUILD v1.6.46</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: SINGLE-ROW-REVIEW | BUILD v1.6.47</span>
           </div>
           <p class="page-desc">Per-record inspection with Evidence Pack authoring and Patch Request creation.</p>
         </div>
@@ -1998,6 +2046,8 @@
             <span class="srr-state-badge" id="srr-state-badge">—</span>
           </div>
           <button class="srr-back-btn" onclick="showAuditLogForRecord()" title="View audit log for this record">Audit Log</button>
+          <span id="srr-group-badge" style="display:none;"></span>
+          <button id="srr-batch-add-btn" class="batch-add-btn" onclick="openBatchAddModal()" style="display:none;" title="Add missing items as child rows under this record">+ Add Missing Items</button>
         </div>
 
         <!-- Three-Panel Layout -->
@@ -2275,7 +2325,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Patch Studio</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH-STUDIO | BUILD v1.6.46</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH-STUDIO | BUILD v1.6.47</span>
           </div>
           <p class="page-desc">Select records, build rule patches, validate with preflight gate, and export.</p>
         </div>
@@ -2345,7 +2395,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Review</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: CONFIG-INSPECTOR | BUILD v1.6.46</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: CONFIG-INSPECTOR | BUILD v1.6.47</span>
           </div>
           <p class="page-desc">Inspect config deltas, compare artifact versions, and generate evidence summaries.</p>
         </div>
@@ -2420,7 +2470,7 @@
               <h2 style="margin: 0;">Verifier Review</h2>
               <span class="vr-state-badge" id="vr-state-badge">Submitted</span>
             </div>
-            <span style="font-size: 0.7em; color: #999;">PAGE: VERIFIER-REVIEW | BUILD v1.6.46</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: VERIFIER-REVIEW | BUILD v1.6.47</span>
           </div>
           <p class="page-desc">Review submitted Patch Requests, request clarification, approve or reject.</p>
         </div>
@@ -2662,7 +2712,7 @@
               <h2 style="margin: 0;">Admin Approval</h2>
               <span class="aa-state-badge" id="aa-state-badge">Verifier Approved</span>
             </div>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-APPROVAL | BUILD v1.6.46</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-APPROVAL | BUILD v1.6.47</span>
           </div>
           <p class="page-desc">Final approval surface before Promote Patch to Baseline.</p>
         </div>
@@ -2862,7 +2912,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Admin Panel</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-PANEL | BUILD v1.6.46</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-PANEL | BUILD v1.6.47</span>
           </div>
           <p class="page-desc">Centralized admin tools for governance, config, standardization, and patch management.</p>
         </div>
@@ -2943,6 +2993,14 @@
             <button class="toolbar-btn" onclick="switchAdminTab('inspector')">Open Inspector</button>
           </div>
         </div>
+          <!-- v1.6.47: Batch Add Settings -->
+          <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Batch Add Settings <span class="info-icon" title="Enable or disable the 'Add Missing Items' feature per sheet. When enabled, Analysts can batch-add rows from Record Inspection.">&#9432;</span></h3>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Control which sheets allow batch row addition. Feature is OFF by default for all sheets.</p>
+            <div id="admin-batch-add-toggles" style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="color: #999; font-size: 0.85em; font-style: italic;">Load a dataset to see available sheets.</div>
+            </div>
+          </div>
         </div><!-- end admin-tab-governance -->
 
         <!-- USERS TAB (v1.4.21) -->
@@ -4556,6 +4614,199 @@
       return row;
     }
     
+    // ========== BATCH ADD: GROUP ANCHOR MODEL (v1.6.47) ==========
+
+    var BATCH_ADD_STORAGE_KEY = 'orchestrate_batch_add_sheets';
+    var GROUP_COLLAPSED_KEY = 'orchestrate_group_collapsed';
+
+    function getBatchAddEnabledSheets() {
+      try {
+        var stored = localStorage.getItem(BATCH_ADD_STORAGE_KEY);
+        return stored ? JSON.parse(stored) : {};
+      } catch(e) { return {}; }
+    }
+
+    function setBatchAddEnabled(sheetName, enabled) {
+      var sheets = getBatchAddEnabledSheets();
+      if (enabled) {
+        sheets[sheetName] = true;
+      } else {
+        delete sheets[sheetName];
+      }
+      localStorage.setItem(BATCH_ADD_STORAGE_KEY, JSON.stringify(sheets));
+    }
+
+    function isBatchAddEnabled(sheetName) {
+      var sheets = getBatchAddEnabledSheets();
+      return !!sheets[sheetName];
+    }
+
+    function getCollapsedGroups() {
+      try {
+        var stored = localStorage.getItem(GROUP_COLLAPSED_KEY);
+        return stored ? JSON.parse(stored) : {};
+      } catch(e) { return {}; }
+    }
+
+    function setGroupCollapsed(groupId, collapsed) {
+      var groups = getCollapsedGroups();
+      if (collapsed) {
+        groups[groupId] = true;
+      } else {
+        delete groups[groupId];
+      }
+      localStorage.setItem(GROUP_COLLAPSED_KEY, JSON.stringify(groups));
+    }
+
+    function isGroupCollapsed(groupId) {
+      return !!getCollapsedGroups()[groupId];
+    }
+
+    function generateGroupId() {
+      return 'grp_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6);
+    }
+
+    function markAsGroupAnchor(sheetName, rowIndex) {
+      var sheet = workbook.sheets[sheetName];
+      if (!sheet || !sheet.rows[rowIndex]) return null;
+      var row = sheet.rows[rowIndex];
+      if (!row._group) {
+        var groupId = generateGroupId();
+        row._group = {
+          group_id: groupId,
+          group_label: row[sheet.headers[0]] || 'Group ' + (rowIndex + 1),
+          is_anchor: true
+        };
+      }
+      return row._group.group_id;
+    }
+
+    function getGroupChildren(sheetName, groupId) {
+      var sheet = workbook.sheets[sheetName];
+      if (!sheet || !sheet.rows) return [];
+      return sheet.rows.filter(function(r) {
+        return r._group && r._group.group_id === groupId && !r._group.is_anchor;
+      });
+    }
+
+    function getSheetAnchors(sheetName) {
+      var sheet = workbook.sheets[sheetName];
+      if (!sheet || !sheet.rows) return [];
+      return sheet.rows.filter(function(r) {
+        return r._group && r._group.is_anchor;
+      });
+    }
+
+    function guessTargetField(sheetName) {
+      var sheet = workbook.sheets[sheetName];
+      if (!sheet || !sheet.headers) return null;
+      var candidates = ['Title', 'Item Name', 'Name', 'Item_Name', 'Description', 'Subject', 'Label'];
+      for (var i = 0; i < candidates.length; i++) {
+        if (sheet.headers.indexOf(candidates[i]) >= 0) return candidates[i];
+      }
+      var lowerHeaders = sheet.headers.map(function(h) { return h.toLowerCase(); });
+      for (var i = 0; i < candidates.length; i++) {
+        var idx = lowerHeaders.indexOf(candidates[i].toLowerCase());
+        if (idx >= 0) return sheet.headers[idx];
+      }
+      for (var i = 0; i < sheet.headers.length; i++) {
+        if (!sheet.headers[i].startsWith('_')) return sheet.headers[i];
+      }
+      return sheet.headers[0] || null;
+    }
+
+    function batchAddRows(sheetName, anchorRowIndex, items, targetField) {
+      var sheet = workbook.sheets[sheetName];
+      if (!sheet || !sheet.rows) return [];
+
+      var anchor = sheet.rows[anchorRowIndex];
+      if (!anchor) return [];
+
+      var groupId = markAsGroupAnchor(sheetName, anchorRowIndex);
+      if (!groupId) return [];
+
+      var datasetId = (anchor._identity && anchor._identity.dataset_id) || IDENTITY_CONTEXT.dataset_id || 'ds_unknown';
+      var sourceFileName = (anchor._identity && anchor._identity.source_pointers && anchor._identity.source_pointers.source_file_name) || '';
+      var newRows = [];
+      var insertIdx = anchorRowIndex + 1;
+      for (var i = anchorRowIndex + 1; i < sheet.rows.length; i++) {
+        if (sheet.rows[i]._group && sheet.rows[i]._group.group_id === groupId) {
+          insertIdx = i + 1;
+        } else {
+          break;
+        }
+      }
+
+      items.forEach(function(itemText, idx) {
+        var newRow = {};
+        sheet.headers.forEach(function(h) {
+          if (anchor[h] !== undefined && anchor[h] !== null) {
+            newRow[h] = anchor[h];
+          }
+        });
+        newRow[targetField] = itemText;
+
+        var globalIdx = sheet.rows.length + idx;
+        enhanceRowWithIdentity(newRow, sheetName, globalIdx, sourceFileName, datasetId);
+
+        newRow._group = {
+          group_id: groupId,
+          group_label: anchor._group.group_label,
+          is_anchor: false
+        };
+
+        newRow._batch_added = {
+          timestamp: new Date().toISOString(),
+          actor: currentUser ? (currentUser.name || currentUser.email || 'Unknown') : 'Unknown',
+          anchor_record_id: anchor.record_id || '',
+          source: 'batch_add'
+        };
+
+        newRows.push(newRow);
+      });
+
+      var args = [insertIdx, 0].concat(newRows);
+      Array.prototype.splice.apply(sheet.rows, args);
+
+      newRows.forEach(function(row) {
+        var auditEvent = {
+          event_type: 'MANUAL_ROW_ADD',
+          record_id: row.record_id,
+          sheet: sheetName,
+          group_id: groupId,
+          actor: row._batch_added.actor,
+          timestamp: row._batch_added.timestamp,
+          target_field: targetField,
+          target_value: row[targetField]
+        };
+        console.log('[BatchAdd] MANUAL_ROW_ADD:', JSON.stringify(auditEvent));
+      });
+
+      var existingItems = META_TRIAGE_STORE.getManualReview() || [];
+      newRows.forEach(function(row) {
+        existingItems.push({
+          record_id: row.record_id,
+          sheet: sheetName,
+          request_id: 'manual_review_batch_' + row.record_id,
+          type: 'manual_review',
+          note_type: 'Manual Review',
+          subject: 'Batch-added row: ' + (row[targetField] || ''),
+          analyst_note: 'Row added via Batch Add Missing Items',
+          status: 'open',
+          created_at: row._batch_added.timestamp,
+          created_by: row._batch_added.actor
+        });
+      });
+      META_TRIAGE_STORE.setManualReview(existingItems, IDENTITY_CONTEXT.dataset_id || '');
+
+      if (typeof saveWorkbookToCache === 'function') {
+        saveWorkbookToCache();
+      }
+
+      console.log('[BatchAdd] Added', newRows.length, 'rows to', sheetName, 'under group', groupId);
+      return newRows;
+    }
+
     // ========== CANONICAL RECORD STORE (v1.5.3) ==========
     // Path: kiwi/v1/{tenant_id}/records/{dataset_id}/{record_id}.json
     
@@ -9936,7 +10187,42 @@
         renderAdminQueue();
       }
       
+      // v1.6.47: Render batch add toggles when governance tab is shown
+      if (tabName === 'governance') {
+        if (typeof renderBatchAddAdminToggles === 'function') renderBatchAddAdminToggles();
+      }
+      
       console.log('[Admin] Switched to tab:', tabName);
+    }
+
+    function renderBatchAddAdminToggles() {
+      var container = document.getElementById('admin-batch-add-toggles');
+      if (!container) return;
+      
+      var sheets = getDataSheets();
+      if (sheets.length === 0) {
+        container.innerHTML = '<div style="color: #999; font-size: 0.85em; font-style: italic;">Load a dataset to see available sheets.</div>';
+        return;
+      }
+      
+      var html = '';
+      sheets.forEach(function(sheetName) {
+        var enabled = isBatchAddEnabled(sheetName);
+        html += '<div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: ' + (enabled ? '#e8f5e9' : '#f5f5f5') + '; border-radius: 6px;">' +
+          '<span style="font-size: 0.9em; font-weight: 500;">' + escapeHtml(sheetName) + '</span>' +
+          '<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">' +
+            '<span style="font-size: 0.8em; color: ' + (enabled ? '#2e7d32' : '#999') + ';">' + (enabled ? 'Enabled' : 'Disabled') + '</span>' +
+            '<input type="checkbox" ' + (enabled ? 'checked' : '') + ' onchange="toggleBatchAddForSheet(\'' + escapeHtml(sheetName.replace(/'/g, "\\'")) + '\', this.checked)" style="width: 18px; height: 18px; cursor: pointer;">' +
+          '</label>' +
+        '</div>';
+      });
+      container.innerHTML = html;
+    }
+
+    function toggleBatchAddForSheet(sheetName, enabled) {
+      setBatchAddEnabled(sheetName, enabled);
+      renderBatchAddAdminToggles();
+      showToast('Batch Add ' + (enabled ? 'enabled' : 'disabled') + ' for ' + sheetName, 'success');
     }
     
     // ========== ADMIN QUEUE RENDERING (v1.5.1) ==========
@@ -13126,6 +13412,14 @@
       srrState.currentSheetName = sheetName;
       srrState.currentRowIndex = rowIndex;
       srrState.currentRecordKey = recordKey;
+
+      // v1.6.47: Show/hide batch add button based on feature gate
+      var batchBtn = document.getElementById('srr-batch-add-btn');
+      if (batchBtn) {
+        var batchEnabled = isBatchAddEnabled(sheetName) && (currentMode === 'analyst' || currentMode === 'admin');
+        batchBtn.style.display = batchEnabled ? 'inline-block' : 'none';
+      }
+      if (typeof updateSrrGroupBadge === 'function') updateSrrGroupBadge();
       
       // v1.4.15: Single structured log per SRR open (use field resolver for Salesforce-style columns)
       var fileUrl = srrResolveFieldValue(record, 'file_url');
@@ -18581,15 +18875,23 @@
           recordId = sheetName + ':' + sheetRowIdx;
         }
         
+        // v1.6.47: Skip collapsed group children
+        if (r._group && !r._group.is_anchor && isGroupCollapsed(r._group.group_id)) {
+          continue;
+        }
+
         // v1.6.18: Build row classes - clickable + row-change classes
         var rowClasses = ['clickable'];
+        // v1.6.47: Add child row class for visual indent
+        if (r._group && !r._group.is_anchor) {
+          rowClasses.push('grid-child-row');
+        }
         var changeSummary = getRecordChangeSummary(recordId);
         if (changeSummary && changeSummary.total > 0) {
-          // Determine primary change type for row class
           if (changeSummary.by_type.added) rowClasses.push('row-added');
           else if (changeSummary.by_type.blacklist) rowClasses.push('row-removed');
           else if (changeSummary.by_type.removed) rowClasses.push('row-removed');
-          else rowClasses.push('row-changed'); // correction, rfi, system_change
+          else rowClasses.push('row-changed');
         }
         tr.className = rowClasses.join(' ');
         
@@ -18611,7 +18913,18 @@
         // v1.6.2: Add row badges for signal counts
         var rowBadgesHtml = renderRowBadges(recordId);
         
-        tr.innerHTML = '<td class="row-index">' + (idx + 1) + rowBadgesHtml + '</td>' +
+        // v1.6.47: Group nesting - caret and indent
+        var groupCaret = '';
+        var childIndent = '';
+        if (r._group) {
+          if (r._group.is_anchor) {
+            var isCollapsed = isGroupCollapsed(r._group.group_id);
+            groupCaret = '<span class="grid-group-caret' + (isCollapsed ? ' collapsed' : '') + '" onclick="event.stopPropagation(); toggleGridGroup(\'' + r._group.group_id + '\', this);" title="' + (isCollapsed ? 'Expand' : 'Collapse') + ' group">&#9660;</span>';
+          } else {
+            childIndent = '<span class="grid-child-indent"></span>';
+          }
+        }
+        tr.innerHTML = '<td class="row-index">' + groupCaret + childIndent + (idx + 1) + rowBadgesHtml + '</td>' +
           columns.map(function(col) {
             var val = r[col];
             if (val === null || val === undefined) val = '';
@@ -18651,6 +18964,12 @@
       }
     }
     
+    function toggleGridGroup(groupId, caretEl) {
+      var collapsed = isGroupCollapsed(groupId);
+      setGroupCollapsed(groupId, !collapsed);
+      renderGrid();
+    }
+
     function gridLazyLoadHandler() {
       var container = document.querySelector('.grid-table-container');
       if (!container || gridVirtualState.rendered >= gridVirtualState.data.length) return;
@@ -24185,5 +24504,207 @@ Add any additional notes here.
       });
     })();
     </script>
+
+<!-- Batch Add Missing Items Modal (v1.6.47) -->
+<div id="batch-add-modal" class="batch-add-modal" style="display:none;">
+  <div class="batch-add-content">
+    <div class="batch-add-header">
+      <h3 id="batch-add-title">Add Missing Items</h3>
+      <button class="batch-add-close" onclick="closeBatchAddModal()">&times;</button>
+    </div>
+    <div class="batch-add-steps">
+      <div class="batch-add-step active" data-step="1"><span class="step-num">1</span><span class="step-label">Paste List</span></div>
+      <div class="batch-add-step" data-step="2"><span class="step-num">2</span><span class="step-label">Preview</span></div>
+      <div class="batch-add-step" data-step="3"><span class="step-num">3</span><span class="step-label">Confirm</span></div>
+    </div>
+    <div class="batch-add-body" id="batch-add-body">
+    </div>
+    <div class="batch-add-footer" id="batch-add-footer">
+    </div>
+  </div>
+</div>
+<script>
+(function() {
+  var batchAddState = {
+    step: 1,
+    sheetName: '',
+    anchorRowIndex: -1,
+    targetField: '',
+    items: [],
+    rawText: ''
+  };
+
+  window.openBatchAddModal = function() {
+    var sheetName = srrState.currentSheetName;
+    var rowIndex = srrState.currentRowIndex;
+    if (!sheetName || rowIndex < 0) {
+      showToast('Select a record first to use as the Group Anchor.', 'warning');
+      return;
+    }
+    if (!isBatchAddEnabled(sheetName)) {
+      showToast('Batch Add is not enabled for this sheet. Ask an Admin to enable it.', 'warning');
+      return;
+    }
+
+    batchAddState.step = 1;
+    batchAddState.sheetName = sheetName;
+    batchAddState.anchorRowIndex = rowIndex;
+    batchAddState.targetField = guessTargetField(sheetName);
+    batchAddState.items = [];
+    batchAddState.rawText = '';
+
+    document.getElementById('batch-add-modal').style.display = 'flex';
+    renderBatchAddStep();
+  };
+
+  window.closeBatchAddModal = function() {
+    document.getElementById('batch-add-modal').style.display = 'none';
+  };
+
+  function renderBatchAddStep() {
+    var body = document.getElementById('batch-add-body');
+    var footer = document.getElementById('batch-add-footer');
+    var steps = document.querySelectorAll('.batch-add-step');
+    steps.forEach(function(s) {
+      var sn = parseInt(s.getAttribute('data-step'));
+      s.classList.toggle('active', sn === batchAddState.step);
+      s.classList.toggle('done', sn < batchAddState.step);
+    });
+
+    var sheet = workbook.sheets[batchAddState.sheetName];
+    var anchor = sheet ? sheet.rows[batchAddState.anchorRowIndex] : null;
+    var anchorLabel = anchor ? (anchor[sheet.headers[0]] || 'Row ' + (batchAddState.anchorRowIndex + 1)) : 'Unknown';
+
+    if (batchAddState.step === 1) {
+      var targetOptions = '';
+      if (sheet && sheet.headers) {
+        sheet.headers.forEach(function(h) {
+          if (!h.startsWith('_')) {
+            var sel = h === batchAddState.targetField ? ' selected' : '';
+            targetOptions += '<option value="' + escapeHtml(h) + '"' + sel + '>' + escapeHtml(h) + '</option>';
+          }
+        });
+      }
+      body.innerHTML =
+        '<div style="margin-bottom: 12px;">' +
+          '<div style="font-size: 0.85em; color: #666; margin-bottom: 4px;">Group Anchor</div>' +
+          '<div style="background: #e3f2fd; padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 0.9em;">' + escapeHtml(anchorLabel) + '</div>' +
+        '</div>' +
+        '<div style="margin-bottom: 12px;">' +
+          '<label style="font-size: 0.85em; color: #666; display: block; margin-bottom: 4px;">Target Field (where pasted values go)</label>' +
+          '<select id="batch-add-target-field" class="batch-add-select" onchange="window._batchAddSetTarget(this.value)">' + targetOptions + '</select>' +
+        '</div>' +
+        '<div>' +
+          '<label style="font-size: 0.85em; color: #666; display: block; margin-bottom: 4px;">Paste items (one per line)</label>' +
+          '<textarea id="batch-add-textarea" class="batch-add-textarea" rows="10" placeholder="Item 1\nItem 2\nItem 3\n...">' + escapeHtml(batchAddState.rawText) + '</textarea>' +
+        '</div>';
+      footer.innerHTML =
+        '<button class="batch-add-btn-cancel" onclick="closeBatchAddModal()">Cancel</button>' +
+        '<button class="batch-add-btn-next" onclick="window._batchAddNext()">Next: Preview</button>';
+    } else if (batchAddState.step === 2) {
+      var previewHtml = '<div class="batch-add-preview">';
+      previewHtml += '<div style="font-size: 0.85em; color: #666; margin-bottom: 8px;">' + batchAddState.items.length + ' rows will be added to <strong>' + escapeHtml(batchAddState.sheetName) + '</strong> under anchor <strong>' + escapeHtml(anchorLabel) + '</strong></div>';
+      previewHtml += '<div style="font-size: 0.8em; color: #888; margin-bottom: 8px;">Target field: <code>' + escapeHtml(batchAddState.targetField) + '</code></div>';
+      previewHtml += '<div class="batch-add-preview-list">';
+      batchAddState.items.forEach(function(item, idx) {
+        var stripe = idx % 2 === 0 ? '#fafafa' : '#fff';
+        previewHtml += '<div class="batch-add-preview-row" style="background:' + stripe + ';">' +
+          '<span class="batch-add-preview-num">' + (idx + 1) + '</span>' +
+          '<span class="batch-add-preview-text">' + escapeHtml(item) + '</span>' +
+        '</div>';
+      });
+      previewHtml += '</div></div>';
+      body.innerHTML = previewHtml;
+      footer.innerHTML =
+        '<button class="batch-add-btn-cancel" onclick="closeBatchAddModal()">Cancel</button>' +
+        '<button class="batch-add-btn-back" onclick="window._batchAddBack()">Back</button>' +
+        '<button class="batch-add-btn-next" onclick="window._batchAddNext()">Next: Confirm</button>';
+    } else if (batchAddState.step === 3) {
+      body.innerHTML =
+        '<div style="text-align: center; padding: 20px 0;">' +
+          '<div style="font-size: 2em; margin-bottom: 12px;">&#9888;</div>' +
+          '<div style="font-size: 1em; font-weight: 600; margin-bottom: 8px;">Add ' + batchAddState.items.length + ' rows?</div>' +
+          '<div style="font-size: 0.85em; color: #666; margin-bottom: 16px;">This will create ' + batchAddState.items.length + ' new record(s) in <strong>' + escapeHtml(batchAddState.sheetName) + '</strong>, grouped under the selected anchor. Each row will be flagged for Manual Review.</div>' +
+          '<div style="background: #fff3e0; padding: 10px 14px; border-radius: 6px; font-size: 0.8em; color: #e65100; text-align: left;">All added rows will appear in the Manual Review triage queue and will be included in exports.</div>' +
+        '</div>';
+      footer.innerHTML =
+        '<button class="batch-add-btn-cancel" onclick="closeBatchAddModal()">Cancel</button>' +
+        '<button class="batch-add-btn-back" onclick="window._batchAddBack()">Back</button>' +
+        '<button class="batch-add-btn-confirm" onclick="window._batchAddConfirm()">Confirm &amp; Add Rows</button>';
+    }
+  }
+
+  window._batchAddSetTarget = function(val) {
+    batchAddState.targetField = val;
+  };
+
+  window._batchAddNext = function() {
+    if (batchAddState.step === 1) {
+      var textarea = document.getElementById('batch-add-textarea');
+      var raw = textarea ? textarea.value : '';
+      batchAddState.rawText = raw;
+      var lines = raw.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+      if (lines.length === 0) {
+        showToast('Please enter at least one item.', 'warning');
+        return;
+      }
+      if (lines.length > 500) {
+        showToast('Maximum 500 items per batch. You entered ' + lines.length + '.', 'warning');
+        return;
+      }
+      batchAddState.items = lines;
+    }
+    batchAddState.step++;
+    renderBatchAddStep();
+  };
+
+  window._batchAddBack = function() {
+    if (batchAddState.step > 1) {
+      batchAddState.step--;
+      renderBatchAddStep();
+    }
+  };
+
+  window._batchAddConfirm = function() {
+    var newRows = batchAddRows(
+      batchAddState.sheetName,
+      batchAddState.anchorRowIndex,
+      batchAddState.items,
+      batchAddState.targetField
+    );
+    closeBatchAddModal();
+    if (newRows.length > 0) {
+      showToast('Added ' + newRows.length + ' rows under group anchor.', 'success');
+      renderGrid();
+      if (srrState.currentRecord) {
+        var rec = srrState.currentRecord;
+        if (rec._group && rec._group.is_anchor) {
+          updateSrrGroupBadge();
+        }
+      }
+    } else {
+      showToast('No rows were added. Check the console for details.', 'warning');
+    }
+  };
+
+  window.updateSrrGroupBadge = function() {
+    var badge = document.getElementById('srr-group-badge');
+    if (!badge) return;
+    var rec = srrState.currentRecord;
+    if (rec && rec._group) {
+      var childCount = getGroupChildren(srrState.currentSheetName, rec._group.group_id).length;
+      if (rec._group.is_anchor) {
+        badge.innerHTML = '<span class="group-anchor-badge">&#9875; Anchor &middot; ' + childCount + ' child row' + (childCount !== 1 ? 's' : '') + '</span>';
+        badge.style.display = 'inline-block';
+      } else {
+        badge.innerHTML = '<span class="group-anchor-badge" style="background:#e0e0e0;color:#555;">&#9656; Child of group</span>';
+        badge.style.display = 'inline-block';
+      }
+    } else {
+      badge.style.display = 'none';
+    }
+  };
+})();
+</script>
 </body>
 </html>
