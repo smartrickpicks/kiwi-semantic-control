@@ -695,6 +695,14 @@
     .srr-patch-before { color: #c62828; text-decoration: line-through; }
     .srr-patch-after { color: #2e7d32; }
     .srr-actions { display: flex; gap: 8px; margin-top: 16px; }
+
+    .review-checklist-panel { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+    .review-checklist-panel h4 { margin: 0 0 10px; font-size: 0.9em; color: #333; display: flex; align-items: center; gap: 6px; }
+    .review-checklist-item { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; font-size: 0.85em; color: #444; }
+    .review-checklist-item input[type="checkbox"] { margin-top: 2px; accent-color: #1976d2; }
+    .review-checklist-item label { cursor: pointer; line-height: 1.4; }
+    .review-checklist-confirm { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #e0e0e0; font-weight: 600; font-size: 0.85em; }
+    .review-checklist-confirm input[type="checkbox"] { accent-color: #2e7d32; width: 16px; height: 16px; }
     .srr-btn { flex: 1; padding: 10px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 500; }
     .srr-btn-secondary { background: #455a64; color: white; }
     .srr-btn-secondary:hover { background: #546e7a; }
@@ -2604,6 +2612,23 @@
             </div>
           </div>
 
+          <!-- Review Checklist -->
+          <div class="vr-full-width">
+            <div class="review-checklist-panel" id="vr-review-checklist">
+              <h4>Review Checklist</h4>
+              <div class="review-checklist-item"><input type="checkbox" id="vr-chk-intent" onchange="vrChecklistChanged()"><label for="vr-chk-intent">Intent Clarity — Observation, Expected, and Justification are clear</label></div>
+              <div class="review-checklist-item"><input type="checkbox" id="vr-chk-schema" onchange="vrChecklistChanged()"><label for="vr-chk-schema">Schema Correctness — Valid fields, operators, and base version match</label></div>
+              <div class="review-checklist-item"><input type="checkbox" id="vr-chk-preview" onchange="vrChecklistChanged()"><label for="vr-chk-preview">Preview Validity — Deterministic results with repository examples only</label></div>
+              <div class="review-checklist-item"><input type="checkbox" id="vr-chk-conflict" onchange="vrChecklistChanged()"><label for="vr-chk-conflict">Conflict Assessment — No contradictory actions, severities consistent</label></div>
+              <div class="review-checklist-item"><input type="checkbox" id="vr-chk-evidence" onchange="vrChecklistChanged()"><label for="vr-chk-evidence">Evidence Pack — All 4 blocks populated (Observation, Expected, Justification, Repro)</label></div>
+              <div class="review-checklist-item"><input type="checkbox" id="vr-chk-smoke" onchange="vrChecklistChanged()"><label for="vr-chk-smoke">Smoke Verification — Strict smoke test passed with evidence attached</label></div>
+              <div class="review-checklist-confirm">
+                <input type="checkbox" id="vr-chk-confirm" onchange="vrChecklistChanged()" disabled>
+                <label for="vr-chk-confirm">I confirm all checklist items have been reviewed</label>
+              </div>
+            </div>
+          </div>
+
           <!-- Full-Width: Actions Panel -->
           <div class="vr-full-width">
             <div class="vr-actions-panel">
@@ -2796,6 +2821,18 @@
             <div class="aa-section">
               <div class="aa-section-header"><span class="icon">📝</span> Admin Notes</div>
               <textarea class="aa-notes-area" id="aa-notes" placeholder="Add admin notes (visible in audit log)..."></textarea>
+            </div>
+
+            <div class="review-checklist-panel" id="aa-review-checklist" style="margin-bottom: 16px;">
+              <h4>Admin Review Checklist</h4>
+              <div class="review-checklist-item"><input type="checkbox" id="aa-chk-verifier" onchange="aaChecklistChanged()"><label for="aa-chk-verifier">Verifier approval is valid and complete</label></div>
+              <div class="review-checklist-item"><input type="checkbox" id="aa-chk-downstream" onchange="aaChecklistChanged()"><label for="aa-chk-downstream">Downstream Risk — Operator workflow impact reviewed</label></div>
+              <div class="review-checklist-item"><input type="checkbox" id="aa-chk-version" onchange="aaChecklistChanged()"><label for="aa-chk-version">Versioning — Version increment and changelog are correct</label></div>
+              <div class="review-checklist-item"><input type="checkbox" id="aa-chk-smoke" onchange="aaChecklistChanged()"><label for="aa-chk-smoke">Smoke (Strict) — Test passed with exit code 0</label></div>
+              <div class="review-checklist-confirm">
+                <input type="checkbox" id="aa-chk-confirm" onchange="aaChecklistChanged()" disabled>
+                <label for="aa-chk-confirm">I confirm all checklist items have been reviewed</label>
+              </div>
             </div>
 
             <div class="aa-actions-panel">
@@ -4246,6 +4283,22 @@
       smokeEdge: { raw: '', parsed: null, status: 'pending' },
       sha256: ''
     };
+
+    function saveChecklistConfirmation(role, patchId) {
+      try {
+        var store = JSON.parse(localStorage.getItem('orchestrate_checklist_confirmations') || '{}');
+        store[role + ':' + patchId] = { confirmed: true, at: new Date().toISOString() };
+        localStorage.setItem('orchestrate_checklist_confirmations', JSON.stringify(store));
+      } catch(e) { console.warn('[Checklist] Save error', e); }
+    }
+
+    function getChecklistConfirmation(role, patchId) {
+      try {
+        var store = JSON.parse(localStorage.getItem('orchestrate_checklist_confirmations') || '{}');
+        var entry = store[role + ':' + patchId];
+        return entry && entry.confirmed;
+      } catch(e) { return false; }
+    }
 
     let currentMode = 'analyst';
     let currentQueue = 'todo';
@@ -7052,6 +7105,13 @@
     function approveAsVerifier(requestId) {
       var author = currentMode || 'Verifier';
       var reviewNotes = document.getElementById('pr-review-notes')?.value || '';
+
+      if (!getChecklistConfirmation('verifier', requestId)) {
+        if (!confirm('Review Checklist not yet completed for this patch.\n\nBy clicking OK, you confirm you have reviewed:\n- Intent Clarity\n- Schema Correctness\n- Preview Validity\n- Conflict Assessment\n- Evidence Pack\n- Smoke Verification\n\nProceed with approval?')) {
+          return;
+        }
+        saveChecklistConfirmation('verifier', requestId);
+      }
       
       var request = getPatchRequest(requestId);
       if (reviewNotes && request) {
@@ -7115,6 +7175,14 @@
     
     function adminApprovePatch(requestId) {
       var author = currentMode || 'Admin';
+
+      if (!getChecklistConfirmation('admin', requestId)) {
+        if (!confirm('Admin Review Checklist not yet completed for this patch.\n\nBy clicking OK, you confirm you have reviewed:\n- Verifier approval validity\n- Downstream risk\n- Versioning and changelog\n- Smoke (Strict) verification\n\nProceed with admin approval?')) {
+          return;
+        }
+        saveChecklistConfirmation('admin', requestId);
+      }
+
       var result = adminApprove(requestId, author, author);
       if (result) {
         closePatchDetailDrawer();
@@ -18043,11 +18111,33 @@
       showToast('Clarification requested — author notified', 'info');
     }
     
+    function vrChecklistChanged() {
+      var items = ['vr-chk-intent', 'vr-chk-schema', 'vr-chk-preview', 'vr-chk-conflict', 'vr-chk-evidence', 'vr-chk-smoke'];
+      var allChecked = items.every(function(id) { return document.getElementById(id)?.checked; });
+      var confirmBox = document.getElementById('vr-chk-confirm');
+      if (confirmBox) {
+        confirmBox.disabled = !allChecked;
+        if (!allChecked) confirmBox.checked = false;
+      }
+      var approveBtn = document.getElementById('vr-btn-approve');
+      if (approveBtn && vrState.reviewState === 'Under_Review') {
+        approveBtn.disabled = !(confirmBox && confirmBox.checked);
+      }
+    }
+
     function vrApprove() {
       if (vrState.reviewState !== 'Under_Review') return;
+
+      var confirmBox = document.getElementById('vr-chk-confirm');
+      if (!confirmBox || !confirmBox.checked) {
+        showToast('Complete the Review Checklist before approving', 'warning');
+        return;
+      }
       
       vrState.notes = document.getElementById('vr-notes').value;
       vrState.reviewState = 'Verifier_Approved';
+      vrState.checklistConfirmed = true;
+      saveChecklistConfirmation('verifier', vrState.patchRequestId || vrState.currentPatchId || 'current');
       vrLogAuditEvent('VERIFIER_APPROVED', { checklist_confirmed: true, notes: vrState.notes });
       
       vrUpdateStateBadge();
@@ -18307,6 +18397,20 @@
       });
     }
     
+    function aaChecklistChanged() {
+      var items = ['aa-chk-verifier', 'aa-chk-downstream', 'aa-chk-version', 'aa-chk-smoke'];
+      var allChecked = items.every(function(id) { return document.getElementById(id)?.checked; });
+      var confirmBox = document.getElementById('aa-chk-confirm');
+      if (confirmBox) {
+        confirmBox.disabled = !allChecked;
+        if (!allChecked) confirmBox.checked = false;
+      }
+      var approveBtn = document.getElementById('aa-btn-approve');
+      if (approveBtn) {
+        approveBtn.disabled = !(confirmBox && confirmBox.checked);
+      }
+    }
+
     function aaAdminApprove() {
       if (aaState.reviewState !== 'Verifier_Approved') return;
       
@@ -18314,10 +18418,18 @@
         showToast('Smoke (Strict) must pass before Admin Approve', 'warning');
         return;
       }
+
+      var confirmBox = document.getElementById('aa-chk-confirm');
+      if (!confirmBox || !confirmBox.checked) {
+        showToast('Complete the Admin Review Checklist before approving', 'warning');
+        return;
+      }
       
       aaState.notes = document.getElementById('aa-notes').value;
       aaState.reviewState = 'Admin_Approved';
-      aaLogAuditEvent('ADMIN_APPROVED', { smoke_evidence_ref: 'smoke_strict_' + Date.now(), notes: aaState.notes });
+      aaState.checklistConfirmed = true;
+      saveChecklistConfirmation('admin', aaState.patchRequestId || aaState.currentPatchId || 'current');
+      aaLogAuditEvent('ADMIN_APPROVED', { smoke_evidence_ref: 'smoke_strict_' + Date.now(), checklist_confirmed: true, notes: aaState.notes });
       
       aaUpdateStateBadge();
       aaUpdateActionButtons();
