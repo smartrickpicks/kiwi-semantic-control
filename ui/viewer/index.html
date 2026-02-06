@@ -1398,7 +1398,7 @@
     .record-state-card.waiting .count { color: #1565c0; }
     .record-state-card.blocked .count { color: #c62828; }
 
-    /* ========== BATCH ADD MODAL (v1.6.47) ========== */
+    /* ========== BATCH ADD MODAL (v1.6.48) ========== */
     .batch-add-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; }
     .batch-add-content { background: white; border-radius: 12px; max-width: 560px; width: 95%; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.3); animation: modalFadeIn 0.2s ease-out; }
     .batch-add-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #e0e0e0; }
@@ -1445,6 +1445,13 @@
     .batch-add-toggle input:checked + .slider:before { transform: translateX(18px); }
     .batch-add-btn { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.8em; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s; }
     .batch-add-btn:hover { background: #2e7d32; color: white; border-color: #2e7d32; }
+    .batch-add-cat-header { padding: 10px 14px; font-size: 0.85em; font-weight: 600; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
+    .batch-add-cat-header.exact { background: #e8f5e9; color: #2e7d32; }
+    .batch-add-cat-header.near { background: #fff8e1; color: #f57f17; }
+    .batch-add-cat-header.new-cat { background: #e3f2fd; color: #1565c0; }
+    .catalog-toggle-btn { padding: 5px 12px; border-radius: 5px; font-size: 0.8em; font-weight: 600; cursor: pointer; border: 1px solid #1565c0; background: white; color: #1565c0; transition: all 0.15s; }
+    .catalog-toggle-btn:hover { background: #e3f2fd; }
+    .catalog-toggle-btn.active { background: #1565c0; color: white; border-color: #1565c0; }
   </style>
 </head>
 <body>
@@ -1635,7 +1642,7 @@
       <!-- Loader Page (DEPRECATED - v1.2.9 uses drawer instead) -->
       <div class="page-content" id="page-loader" style="display: none !important;">
         <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-          <div style="font-size: 0.75em; color: #999; text-align: right; margin-bottom: 10px;">PAGE: LOADER | BUILD v1.6.47</div>
+          <div style="font-size: 0.75em; color: #999; text-align: right; margin-bottom: 10px;">PAGE: LOADER | BUILD v1.6.48</div>
           
           <!-- PRIMARY ACTION PANEL: Continue to Triage (shown when dataset active) -->
           <div id="loader-continue-panel" style="display: none; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; color: white; text-align: center;">
@@ -1724,7 +1731,7 @@
           <div class="page-header" style="position: relative;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <h2 id="triage-page-title">Triage</h2>
-              <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.6.47</span>
+              <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.6.48</span>
             </div>
             <p class="page-desc">All items requiring analyst review and action.</p>
             <!-- Sticky Search Bar (top right) - frosted glass style with scroll-aware behavior -->
@@ -1917,7 +1924,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>All-Data Grid</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ALL-DATA-GRID | BUILD v1.6.47</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ALL-DATA-GRID | BUILD v1.6.48</span>
           </div>
           <p class="page-desc">Dense spreadsheet view of all records with filtering and search.</p>
         </div>
@@ -2020,7 +2027,7 @@
         <div class="grid-footer" style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; color: #666; font-size: 0.85em;">
           <span id="grid-row-count">0 records</span>
           <span id="grid-filter-info"></span>
-          <span style="font-size: 0.75em; color: #aaa;">PAGE: ALL-DATA-GRID | BUILD v1.6.47</span>
+          <span style="font-size: 0.75em; color: #aaa;">PAGE: ALL-DATA-GRID | BUILD v1.6.48</span>
         </div>
       </div><!-- end page-grid -->
 
@@ -2029,7 +2036,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2 id="srr-page-title">Record Inspection</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: SINGLE-ROW-REVIEW | BUILD v1.6.47</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: SINGLE-ROW-REVIEW | BUILD v1.6.48</span>
           </div>
           <p class="page-desc">Per-record inspection with Evidence Pack authoring and Patch Request creation.</p>
         </div>
@@ -2047,6 +2054,7 @@
           </div>
           <button class="srr-back-btn" onclick="showAuditLogForRecord()" title="View audit log for this record">Audit Log</button>
           <span id="srr-group-badge" style="display:none;"></span>
+          <button id="srr-catalog-toggle-btn" class="catalog-toggle-btn" onclick="toggleCatalogItemsGroup()" style="display:none;" title="Mark this record as a Catalog Items group anchor">Set as Catalog Items Group</button>
           <button id="srr-batch-add-btn" class="batch-add-btn" onclick="openBatchAddModal()" style="display:none;" title="Add missing items as child rows under this record">+ Add Missing Items</button>
         </div>
 
@@ -2325,7 +2333,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Patch Studio</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH-STUDIO | BUILD v1.6.47</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH-STUDIO | BUILD v1.6.48</span>
           </div>
           <p class="page-desc">Select records, build rule patches, validate with preflight gate, and export.</p>
         </div>
@@ -2395,7 +2403,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Review</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: CONFIG-INSPECTOR | BUILD v1.6.47</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: CONFIG-INSPECTOR | BUILD v1.6.48</span>
           </div>
           <p class="page-desc">Inspect config deltas, compare artifact versions, and generate evidence summaries.</p>
         </div>
@@ -2470,7 +2478,7 @@
               <h2 style="margin: 0;">Verifier Review</h2>
               <span class="vr-state-badge" id="vr-state-badge">Submitted</span>
             </div>
-            <span style="font-size: 0.7em; color: #999;">PAGE: VERIFIER-REVIEW | BUILD v1.6.47</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: VERIFIER-REVIEW | BUILD v1.6.48</span>
           </div>
           <p class="page-desc">Review submitted Patch Requests, request clarification, approve or reject.</p>
         </div>
@@ -2712,7 +2720,7 @@
               <h2 style="margin: 0;">Admin Approval</h2>
               <span class="aa-state-badge" id="aa-state-badge">Verifier Approved</span>
             </div>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-APPROVAL | BUILD v1.6.47</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-APPROVAL | BUILD v1.6.48</span>
           </div>
           <p class="page-desc">Final approval surface before Promote Patch to Baseline.</p>
         </div>
@@ -2912,7 +2920,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Admin Panel</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-PANEL | BUILD v1.6.47</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-PANEL | BUILD v1.6.48</span>
           </div>
           <p class="page-desc">Centralized admin tools for governance, config, standardization, and patch management.</p>
         </div>
@@ -2993,10 +3001,10 @@
             <button class="toolbar-btn" onclick="switchAdminTab('inspector')">Open Inspector</button>
           </div>
         </div>
-          <!-- v1.6.47: Batch Add Settings -->
+          <!-- v1.6.48: Batch Add Settings -->
           <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Batch Add Settings <span class="info-icon" title="Enable or disable the 'Add Missing Items' feature per sheet. When enabled, Analysts can batch-add rows from Record Inspection.">&#9432;</span></h3>
-            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Control which sheets allow batch row addition. Feature is OFF by default for all sheets.</p>
+            <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Catalog Items Grouping <span class="info-icon" title="Catalog Items Grouping allows Analysts to mark records as group anchors and batch-add catalog items. The feature is per-record (off by default).">&#9432;</span></h3>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Catalog Items Grouping is enabled per-record. Analysts use 'Set as Catalog Items Group' in Record Inspection. Per-sheet overrides below are optional.</p>
             <div id="admin-batch-add-toggles" style="display: flex; flex-direction: column; gap: 8px;">
               <div style="color: #999; font-size: 0.85em; font-style: italic;">Load a dataset to see available sheets.</div>
             </div>
@@ -4614,7 +4622,7 @@
       return row;
     }
     
-    // ========== BATCH ADD: GROUP ANCHOR MODEL (v1.6.47) ==========
+    // ========== BATCH ADD: GROUP ANCHOR MODEL (v1.6.48) ==========
 
     var BATCH_ADD_STORAGE_KEY = 'orchestrate_batch_add_sheets';
     var GROUP_COLLAPSED_KEY = 'orchestrate_group_collapsed';
@@ -4715,19 +4723,148 @@
       return sheet.headers[0] || null;
     }
 
-    function batchAddRows(sheetName, anchorRowIndex, items, targetField) {
+    function toggleCatalogItemsGroup() {
+      var sheetName = srrState.currentSheetName;
+      var rowIndex = srrState.currentRowIndex;
+      var record = srrState.currentRecord;
+      if (!sheetName || rowIndex < 0 || !record) return;
+
+      if (record._group && record._group.is_anchor) {
+        var children = getGroupChildren(sheetName, record._group.group_id);
+        if (children.length > 0) {
+          showToast('Cannot unset: ' + children.length + ' child row(s) are attached. Remove children first.', 'warning');
+          return;
+        }
+        delete record._group;
+        showToast('Record removed as Catalog Items group.', 'info');
+      } else {
+        markAsGroupAnchor(sheetName, rowIndex);
+        showToast('Record set as Catalog Items group anchor.', 'success');
+      }
+
+      var catalogBtn = document.getElementById('srr-catalog-toggle-btn');
+      var batchBtn = document.getElementById('srr-batch-add-btn');
+      var isAnchor = record._group && record._group.is_anchor;
+      if (catalogBtn) {
+        catalogBtn.classList.toggle('active', !!isAnchor);
+        catalogBtn.textContent = isAnchor ? '✓ Catalog Items Group' : 'Set as Catalog Items Group';
+      }
+      if (batchBtn) {
+        batchBtn.style.display = isAnchor ? 'inline-block' : 'none';
+      }
+      if (typeof updateSrrGroupBadge === 'function') updateSrrGroupBadge();
+      if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
+    }
+
+    function normalizeForDedupe(str) {
+      if (!str || typeof str !== 'string') return '';
+      return str.trim().toLowerCase().replace(/[\s\-_.,;:!?'"()\[\]{}\/\\]+/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function computeSimilarity(a, b) {
+      if (!a || !b) return 0;
+      if (a === b) return 1;
+      if (a.length < 2 || b.length < 2) return 0;
+      var longer = a.length >= b.length ? a : b;
+      var shorter = a.length < b.length ? a : b;
+      if (longer.indexOf(shorter) >= 0) return shorter.length / longer.length;
+      var bigrams = {};
+      for (var i = 0; i < longer.length - 1; i++) {
+        var bg = longer.substring(i, i + 2);
+        bigrams[bg] = (bigrams[bg] || 0) + 1;
+      }
+      var intersect = 0;
+      for (var i = 0; i < shorter.length - 1; i++) {
+        var bg = shorter.substring(i, i + 2);
+        if (bigrams[bg] && bigrams[bg] > 0) {
+          intersect++;
+          bigrams[bg]--;
+        }
+      }
+      return (2.0 * intersect) / ((longer.length - 1) + (shorter.length - 1));
+    }
+
+    function categorizeBatchItems(sheetName, items, targetField) {
       var sheet = workbook.sheets[sheetName];
-      if (!sheet || !sheet.rows) return [];
+      if (!sheet || !sheet.rows) return items.map(function(item) { return { text: item, category: 'new', matchedRow: null, matchedValue: '' }; });
+
+      var existingNormMap = {};
+      var existingValues = [];
+      sheet.rows.forEach(function(row, idx) {
+        var val = row[targetField];
+        if (val !== undefined && val !== null && String(val).trim() !== '') {
+          var strVal = String(val);
+          var norm = normalizeForDedupe(strVal);
+          if (!existingNormMap[norm]) {
+            existingNormMap[norm] = { rowIndex: idx, value: strVal };
+          }
+          existingValues.push({ norm: norm, value: strVal, rowIndex: idx });
+        }
+      });
+
+      return items.map(function(item) {
+        var normItem = normalizeForDedupe(item);
+        if (!normItem) return { text: item, category: 'new', matchedRow: null, matchedValue: '' };
+
+        if (existingNormMap[normItem]) {
+          return { text: item, category: 'exact', matchedRow: existingNormMap[normItem].rowIndex, matchedValue: existingNormMap[normItem].value };
+        }
+
+        var bestSim = 0;
+        var bestMatch = null;
+        for (var i = 0; i < existingValues.length; i++) {
+          var sim = computeSimilarity(normItem, existingValues[i].norm);
+          if (sim > bestSim) {
+            bestSim = sim;
+            bestMatch = existingValues[i];
+          }
+        }
+        if (bestSim >= 0.7 && bestMatch) {
+          return { text: item, category: 'near', matchedRow: bestMatch.rowIndex, matchedValue: bestMatch.value, similarity: Math.round(bestSim * 100) };
+        }
+
+        return { text: item, category: 'new', matchedRow: null, matchedValue: '' };
+      });
+    }
+
+    function batchAddRows(sheetName, anchorRowIndex, categorizedItems, targetField) {
+      var sheet = workbook.sheets[sheetName];
+      if (!sheet || !sheet.rows) return { created: [], attached: [], nearDupes: [] };
 
       var anchor = sheet.rows[anchorRowIndex];
-      if (!anchor) return [];
+      if (!anchor) return { created: [], attached: [], nearDupes: [] };
 
       var groupId = markAsGroupAnchor(sheetName, anchorRowIndex);
-      if (!groupId) return [];
+      if (!groupId) return { created: [], attached: [], nearDupes: [] };
 
       var datasetId = (anchor._identity && anchor._identity.dataset_id) || IDENTITY_CONTEXT.dataset_id || 'ds_unknown';
       var sourceFileName = (anchor._identity && anchor._identity.source_pointers && anchor._identity.source_pointers.source_file_name) || '';
-      var newRows = [];
+      var actor = currentUser ? (currentUser.name || currentUser.email || 'Unknown') : 'Unknown';
+      var timestamp = new Date().toISOString();
+
+      var attached = [];
+      var nearDupes = [];
+      var newItems = [];
+
+      categorizedItems.forEach(function(ci) {
+        if (ci.category === 'exact' && ci.matchedRow !== null) {
+          var existingRow = sheet.rows[ci.matchedRow];
+          if (existingRow && !(existingRow._group && existingRow._group.group_id === groupId)) {
+            existingRow._group = {
+              group_id: groupId,
+              group_label: anchor._group.group_label,
+              is_anchor: false
+            };
+            attached.push(existingRow);
+          }
+        } else if (ci.category === 'near') {
+          newItems.push(ci);
+          nearDupes.push(ci);
+        } else {
+          newItems.push(ci);
+        }
+      });
+
       var insertIdx = anchorRowIndex + 1;
       for (var i = anchorRowIndex + 1; i < sheet.rows.length; i++) {
         if (sheet.rows[i]._group && sheet.rows[i]._group.group_id === groupId) {
@@ -4737,14 +4874,15 @@
         }
       }
 
-      items.forEach(function(itemText, idx) {
+      var created = [];
+      newItems.forEach(function(ci, idx) {
         var newRow = {};
         sheet.headers.forEach(function(h) {
           if (anchor[h] !== undefined && anchor[h] !== null) {
             newRow[h] = anchor[h];
           }
         });
-        newRow[targetField] = itemText;
+        newRow[targetField] = ci.text;
 
         var globalIdx = sheet.rows.length + idx;
         enhanceRowWithIdentity(newRow, sheetName, globalIdx, sourceFileName, datasetId);
@@ -4756,55 +4894,58 @@
         };
 
         newRow._batch_added = {
-          timestamp: new Date().toISOString(),
-          actor: currentUser ? (currentUser.name || currentUser.email || 'Unknown') : 'Unknown',
+          timestamp: timestamp,
+          actor: actor,
           anchor_record_id: anchor.record_id || '',
           source: 'batch_add'
         };
 
-        newRows.push(newRow);
+        created.push(newRow);
       });
 
-      var args = [insertIdx, 0].concat(newRows);
-      Array.prototype.splice.apply(sheet.rows, args);
+      if (created.length > 0) {
+        var args = [insertIdx, 0].concat(created);
+        Array.prototype.splice.apply(sheet.rows, args);
+      }
 
-      newRows.forEach(function(row) {
-        var auditEvent = {
-          event_type: 'MANUAL_ROW_ADD',
-          record_id: row.record_id,
-          sheet: sheetName,
-          group_id: groupId,
-          actor: row._batch_added.actor,
-          timestamp: row._batch_added.timestamp,
-          target_field: targetField,
-          target_value: row[targetField]
-        };
-        console.log('[BatchAdd] MANUAL_ROW_ADD:', JSON.stringify(auditEvent));
-      });
+      var auditEvent = {
+        event_type: 'MANUAL_ROW_ADD',
+        sheet: sheetName,
+        group_id: groupId,
+        actor: actor,
+        timestamp: timestamp,
+        target_field: targetField,
+        attached_existing_count: attached.length,
+        created_new_count: created.length - nearDupes.length,
+        possible_duplicate_count: nearDupes.length,
+        total_items: categorizedItems.length
+      };
+      console.log('[BatchAdd] MANUAL_ROW_ADD:', JSON.stringify(auditEvent));
 
-      var existingItems = META_TRIAGE_STORE.getManualReview() || [];
-      newRows.forEach(function(row) {
-        existingItems.push({
+      var existingTriageItems = META_TRIAGE_STORE.getManualReview() || [];
+      created.forEach(function(row) {
+        var isNearDupe = nearDupes.some(function(nd) { return nd.text === row[targetField]; });
+        existingTriageItems.push({
           record_id: row.record_id,
           sheet: sheetName,
           request_id: 'manual_review_batch_' + row.record_id,
           type: 'manual_review',
           note_type: 'Manual Review',
-          subject: 'Batch-added row: ' + (row[targetField] || ''),
-          analyst_note: 'Row added via Batch Add Missing Items',
+          subject: (isNearDupe ? '[Possible Duplicate] ' : 'Batch-added: ') + (row[targetField] || ''),
+          analyst_note: isNearDupe ? 'Possible duplicate detected during batch add. Please verify.' : 'Row added via Batch Add Missing Items',
           status: 'open',
-          created_at: row._batch_added.timestamp,
-          created_by: row._batch_added.actor
+          created_at: timestamp,
+          created_by: actor
         });
       });
-      META_TRIAGE_STORE.setManualReview(existingItems, IDENTITY_CONTEXT.dataset_id || '');
+      META_TRIAGE_STORE.setManualReview(existingTriageItems, IDENTITY_CONTEXT.dataset_id || '');
 
       if (typeof saveWorkbookToCache === 'function') {
         saveWorkbookToCache();
       }
 
-      console.log('[BatchAdd] Added', newRows.length, 'rows to', sheetName, 'under group', groupId);
-      return newRows;
+      console.log('[BatchAdd] Results: attached=' + attached.length + ', created=' + (created.length - nearDupes.length) + ', near_dupes=' + nearDupes.length);
+      return { created: created, attached: attached, nearDupes: nearDupes };
     }
 
     // ========== CANONICAL RECORD STORE (v1.5.3) ==========
@@ -10187,7 +10328,7 @@
         renderAdminQueue();
       }
       
-      // v1.6.47: Render batch add toggles when governance tab is shown
+      // v1.6.48: Render batch add toggles when governance tab is shown
       if (tabName === 'governance') {
         if (typeof renderBatchAddAdminToggles === 'function') renderBatchAddAdminToggles();
       }
@@ -13413,11 +13554,19 @@
       srrState.currentRowIndex = rowIndex;
       srrState.currentRecordKey = recordKey;
 
-      // v1.6.47: Show/hide batch add button based on feature gate
+      // v1.6.48: Per-record Catalog Items toggle + batch add button
+      var catalogBtn = document.getElementById('srr-catalog-toggle-btn');
       var batchBtn = document.getElementById('srr-batch-add-btn');
+      var isAnalystOrAdmin = (currentMode === 'analyst' || currentMode === 'admin');
+      if (catalogBtn) {
+        catalogBtn.style.display = isAnalystOrAdmin ? 'inline-block' : 'none';
+        var isAnchor = record && record._group && record._group.is_anchor;
+        catalogBtn.classList.toggle('active', !!isAnchor);
+        catalogBtn.textContent = isAnchor ? '✓ Catalog Items Group' : 'Set as Catalog Items Group';
+      }
       if (batchBtn) {
-        var batchEnabled = isBatchAddEnabled(sheetName) && (currentMode === 'analyst' || currentMode === 'admin');
-        batchBtn.style.display = batchEnabled ? 'inline-block' : 'none';
+        var isAnchor = record && record._group && record._group.is_anchor;
+        batchBtn.style.display = (isAnalystOrAdmin && isAnchor) ? 'inline-block' : 'none';
       }
       if (typeof updateSrrGroupBadge === 'function') updateSrrGroupBadge();
       
@@ -18875,14 +19024,14 @@
           recordId = sheetName + ':' + sheetRowIdx;
         }
         
-        // v1.6.47: Skip collapsed group children
+        // v1.6.48: Skip collapsed group children
         if (r._group && !r._group.is_anchor && isGroupCollapsed(r._group.group_id)) {
           continue;
         }
 
         // v1.6.18: Build row classes - clickable + row-change classes
         var rowClasses = ['clickable'];
-        // v1.6.47: Add child row class for visual indent
+        // v1.6.48: Add child row class for visual indent
         if (r._group && !r._group.is_anchor) {
           rowClasses.push('grid-child-row');
         }
@@ -18913,7 +19062,7 @@
         // v1.6.2: Add row badges for signal counts
         var rowBadgesHtml = renderRowBadges(recordId);
         
-        // v1.6.47: Group nesting - caret and indent
+        // v1.6.48: Group nesting - caret and indent
         var groupCaret = '';
         var childIndent = '';
         if (r._group) {
@@ -24505,7 +24654,7 @@ Add any additional notes here.
     })();
     </script>
 
-<!-- Batch Add Missing Items Modal (v1.6.47) -->
+<!-- Batch Add Missing Items Modal (v1.6.48) -->
 <div id="batch-add-modal" class="batch-add-modal" style="display:none;">
   <div class="batch-add-content">
     <div class="batch-add-header">
@@ -24531,18 +24680,20 @@ Add any additional notes here.
     anchorRowIndex: -1,
     targetField: '',
     items: [],
+    categorizedItems: [],
     rawText: ''
   };
 
   window.openBatchAddModal = function() {
     var sheetName = srrState.currentSheetName;
     var rowIndex = srrState.currentRowIndex;
+    var record = srrState.currentRecord;
     if (!sheetName || rowIndex < 0) {
-      showToast('Select a record first to use as the Group Anchor.', 'warning');
+      showToast('Select a record first.', 'warning');
       return;
     }
-    if (!isBatchAddEnabled(sheetName)) {
-      showToast('Batch Add is not enabled for this sheet. Ask an Admin to enable it.', 'warning');
+    if (!record || !record._group || !record._group.is_anchor) {
+      showToast('Set this record as a Catalog Items Group first.', 'warning');
       return;
     }
 
@@ -24551,6 +24702,7 @@ Add any additional notes here.
     batchAddState.anchorRowIndex = rowIndex;
     batchAddState.targetField = guessTargetField(sheetName);
     batchAddState.items = [];
+    batchAddState.categorizedItems = [];
     batchAddState.rawText = '';
 
     document.getElementById('batch-add-modal').style.display = 'flex';
@@ -24602,30 +24754,63 @@ Add any additional notes here.
         '<button class="batch-add-btn-cancel" onclick="closeBatchAddModal()">Cancel</button>' +
         '<button class="batch-add-btn-next" onclick="window._batchAddNext()">Next: Preview</button>';
     } else if (batchAddState.step === 2) {
+      var exact = batchAddState.categorizedItems.filter(function(c) { return c.category === 'exact'; });
+      var near = batchAddState.categorizedItems.filter(function(c) { return c.category === 'near'; });
+      var newItems = batchAddState.categorizedItems.filter(function(c) { return c.category === 'new'; });
+
       var previewHtml = '<div class="batch-add-preview">';
-      previewHtml += '<div style="font-size: 0.85em; color: #666; margin-bottom: 8px;">' + batchAddState.items.length + ' rows will be added to <strong>' + escapeHtml(batchAddState.sheetName) + '</strong> under anchor <strong>' + escapeHtml(anchorLabel) + '</strong></div>';
-      previewHtml += '<div style="font-size: 0.8em; color: #888; margin-bottom: 8px;">Target field: <code>' + escapeHtml(batchAddState.targetField) + '</code></div>';
-      previewHtml += '<div class="batch-add-preview-list">';
-      batchAddState.items.forEach(function(item, idx) {
-        var stripe = idx % 2 === 0 ? '#fafafa' : '#fff';
-        previewHtml += '<div class="batch-add-preview-row" style="background:' + stripe + ';">' +
-          '<span class="batch-add-preview-num">' + (idx + 1) + '</span>' +
-          '<span class="batch-add-preview-text">' + escapeHtml(item) + '</span>' +
-        '</div>';
-      });
-      previewHtml += '</div></div>';
+      previewHtml += '<div style="font-size: 0.85em; color: #666; margin-bottom: 12px;">' + batchAddState.items.length + ' item(s) analyzed for <strong>' + escapeHtml(batchAddState.sheetName) + '</strong></div>';
+      previewHtml += '<div style="font-size: 0.8em; color: #888; margin-bottom: 12px;">Target field: <code>' + escapeHtml(batchAddState.targetField) + '</code></div>';
+
+      if (exact.length > 0) {
+        previewHtml += '<div class="batch-add-cat-header exact"><span>Existing — will attach to group (' + exact.length + ')</span><span>&#10003;</span></div>';
+        previewHtml += '<div class="batch-add-preview-list" style="margin-bottom: 12px;">';
+        exact.forEach(function(c, idx) {
+          previewHtml += '<div class="batch-add-preview-row" style="background:#f1f8e9;"><span class="batch-add-preview-num">' + (idx+1) + '</span><span class="batch-add-preview-text">' + escapeHtml(c.text) + ' <span style="color:#999;font-size:0.8em;">→ matches "' + escapeHtml(c.matchedValue) + '"</span></span></div>';
+        });
+        previewHtml += '</div>';
+      }
+
+      if (near.length > 0) {
+        previewHtml += '<div class="batch-add-cat-header near"><span>Possible Duplicates — will create &amp; flag (' + near.length + ')</span><span>&#9888;</span></div>';
+        previewHtml += '<div class="batch-add-preview-list" style="margin-bottom: 12px;">';
+        near.forEach(function(c, idx) {
+          previewHtml += '<div class="batch-add-preview-row" style="background:#fffde7;"><span class="batch-add-preview-num">' + (idx+1) + '</span><span class="batch-add-preview-text">' + escapeHtml(c.text) + ' <span style="color:#f57f17;font-size:0.8em;">~' + (c.similarity || '?') + '% match to "' + escapeHtml(c.matchedValue) + '"</span></span></div>';
+        });
+        previewHtml += '</div>';
+      }
+
+      if (newItems.length > 0) {
+        previewHtml += '<div class="batch-add-cat-header new-cat"><span>New — will create (' + newItems.length + ')</span><span>+</span></div>';
+        previewHtml += '<div class="batch-add-preview-list" style="margin-bottom: 12px;">';
+        newItems.forEach(function(c, idx) {
+          previewHtml += '<div class="batch-add-preview-row" style="background:#e3f2fd;"><span class="batch-add-preview-num">' + (idx+1) + '</span><span class="batch-add-preview-text">' + escapeHtml(c.text) + '</span></div>';
+        });
+        previewHtml += '</div>';
+      }
+
+      previewHtml += '</div>';
       body.innerHTML = previewHtml;
       footer.innerHTML =
         '<button class="batch-add-btn-cancel" onclick="closeBatchAddModal()">Cancel</button>' +
         '<button class="batch-add-btn-back" onclick="window._batchAddBack()">Back</button>' +
         '<button class="batch-add-btn-next" onclick="window._batchAddNext()">Next: Confirm</button>';
     } else if (batchAddState.step === 3) {
+      var exact = batchAddState.categorizedItems.filter(function(c) { return c.category === 'exact'; });
+      var near = batchAddState.categorizedItems.filter(function(c) { return c.category === 'near'; });
+      var newItems = batchAddState.categorizedItems.filter(function(c) { return c.category === 'new'; });
+      var createCount = near.length + newItems.length;
       body.innerHTML =
         '<div style="text-align: center; padding: 20px 0;">' +
           '<div style="font-size: 2em; margin-bottom: 12px;">&#9888;</div>' +
-          '<div style="font-size: 1em; font-weight: 600; margin-bottom: 8px;">Add ' + batchAddState.items.length + ' rows?</div>' +
-          '<div style="font-size: 0.85em; color: #666; margin-bottom: 16px;">This will create ' + batchAddState.items.length + ' new record(s) in <strong>' + escapeHtml(batchAddState.sheetName) + '</strong>, grouped under the selected anchor. Each row will be flagged for Manual Review.</div>' +
-          '<div style="background: #fff3e0; padding: 10px 14px; border-radius: 6px; font-size: 0.8em; color: #e65100; text-align: left;">All added rows will appear in the Manual Review triage queue and will be included in exports.</div>' +
+          '<div style="font-size: 1em; font-weight: 600; margin-bottom: 12px;">Confirm Catalog Items Update</div>' +
+          '<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 16px;">' +
+            '<div style="text-align: center; padding: 12px 16px; border-radius: 8px; background: #e8f5e9;"><div style="font-size: 1.5em; font-weight: 700; color: #2e7d32;">' + exact.length + '</div><div style="font-size: 0.75em; color: #666;">Attach Existing</div></div>' +
+            (near.length > 0 ? '<div style="text-align: center; padding: 12px 16px; border-radius: 8px; background: #fff8e1;"><div style="font-size: 1.5em; font-weight: 700; color: #f57f17;">' + near.length + '</div><div style="font-size: 0.75em; color: #666;">Possible Dupes</div></div>' : '') +
+            '<div style="text-align: center; padding: 12px 16px; border-radius: 8px; background: #e3f2fd;"><div style="font-size: 1.5em; font-weight: 700; color: #1565c0;">' + newItems.length + '</div><div style="font-size: 0.75em; color: #666;">Create New</div></div>' +
+          '</div>' +
+          '<div style="font-size: 0.85em; color: #666; margin-bottom: 16px;">No records will be deleted. Existing matches will be attached to the group. New and possible duplicate rows will be flagged for Manual Review.</div>' +
+          '<div style="background: #fff3e0; padding: 10px 14px; border-radius: 6px; font-size: 0.8em; color: #e65100; text-align: left;">All new rows will appear in the Manual Review triage queue and will be included in exports.</div>' +
         '</div>';
       footer.innerHTML =
         '<button class="batch-add-btn-cancel" onclick="closeBatchAddModal()">Cancel</button>' +
@@ -24653,6 +24838,7 @@ Add any additional notes here.
         return;
       }
       batchAddState.items = lines;
+      batchAddState.categorizedItems = categorizeBatchItems(batchAddState.sheetName, batchAddState.items, batchAddState.targetField);
     }
     batchAddState.step++;
     renderBatchAddStep();
@@ -24666,24 +24852,23 @@ Add any additional notes here.
   };
 
   window._batchAddConfirm = function() {
-    var newRows = batchAddRows(
+    var result = batchAddRows(
       batchAddState.sheetName,
       batchAddState.anchorRowIndex,
-      batchAddState.items,
+      batchAddState.categorizedItems,
       batchAddState.targetField
     );
     closeBatchAddModal();
-    if (newRows.length > 0) {
-      showToast('Added ' + newRows.length + ' rows under group anchor.', 'success');
+    var parts = [];
+    if (result.attached.length > 0) parts.push(result.attached.length + ' attached');
+    if (result.created.length > 0) parts.push(result.created.length + ' created');
+    if (result.nearDupes.length > 0) parts.push(result.nearDupes.length + ' flagged as possible dupes');
+    if (parts.length > 0) {
+      showToast('Catalog Items updated: ' + parts.join(', ') + '.', 'success');
       renderGrid();
-      if (srrState.currentRecord) {
-        var rec = srrState.currentRecord;
-        if (rec._group && rec._group.is_anchor) {
-          updateSrrGroupBadge();
-        }
-      }
+      if (typeof updateSrrGroupBadge === 'function') updateSrrGroupBadge();
     } else {
-      showToast('No rows were added. Check the console for details.', 'warning');
+      showToast('No changes made.', 'info');
     }
   };
 
