@@ -4858,7 +4858,11 @@
 
       var datasetId = (anchor._identity && anchor._identity.dataset_id) || IDENTITY_CONTEXT.dataset_id || 'ds_unknown';
       var sourceFileName = (anchor._identity && anchor._identity.source_pointers && anchor._identity.source_pointers.source_file_name) || '';
-      var actor = currentUser ? (currentUser.name || currentUser.email || 'Unknown') : 'Unknown';
+      var _user = (function() {
+        try { var du = JSON.parse(localStorage.getItem('demoUser') || '{}'); if (du && du.name) return du; } catch(e) {}
+        return { id: 'local-user', name: 'Local User', role: currentMode || 'analyst' };
+      })();
+      var actor = _user.name || _user.email || 'Unknown';
       var timestamp = new Date().toISOString();
 
       var attached = [];
