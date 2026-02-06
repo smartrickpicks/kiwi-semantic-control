@@ -261,6 +261,13 @@
   
   <script>
     (function() {
+      var existingUser = null;
+      try { existingUser = JSON.parse(localStorage.getItem('demoUser') || 'null'); } catch(e) {}
+      if (existingUser && existingUser.role && localStorage.getItem('currentRole')) {
+        window.location.href = '/ui/viewer/';
+        return;
+      }
+
       // v1.6.27: Role assignment from saved user list
       var DEMO_USERS_KEY = 'orchestrate_demo_users';
       var allowedDomain = 'createmusicgroup.com';

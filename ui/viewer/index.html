@@ -5486,10 +5486,22 @@
         clearWorkbookCache();
         localStorage.removeItem('orchestrate_session');
         localStorage.removeItem('orchestrate_canonical_records');
-        showToast('Session cleared. Reloading...', 'info');
-        setTimeout(function() { location.reload(); }, 500);
+        var isDemo = isDemoSession();
+        localStorage.removeItem('currentRole');
+        localStorage.removeItem('demoUser');
+        showToast('Session cleared. Redirecting...', 'info');
+        setTimeout(function() { window.location.href = isDemo ? '/ui/demo/' : '/ui/landing/'; }, 500);
       }
     }
+
+
+
+
+
+
+
+
+
     
     function setActiveSheet(sheetName) {
       if (workbook.sheets[sheetName]) {
@@ -5871,11 +5883,11 @@
           gridState.filter = navState.filter || 'all';
         }
         
-        // Navigate to grid
+        var restorePage = (navState && navState.hash) ? navState.hash.replace(/^#\/?/, '') : 'grid';
         populateGridSheetSelector();
         renderGrid();
         updateProgressBlock();
-        navigateTo('grid');
+        navigateTo(restorePage || 'grid');
         
         showToast('Session restored: ' + cachedWorkbook.filename, 'success');
         await checkAllArtifacts();
@@ -9560,6 +9572,7 @@
       // Update current page tracking
       currentPage = page;
       
+      saveNavStateToCache();
       // Clear all pages first - MUST reset both class AND inline style
       document.querySelectorAll('.page').forEach(function(p) { 
         p.classList.remove('active'); 

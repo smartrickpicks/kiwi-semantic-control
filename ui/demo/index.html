@@ -254,6 +254,13 @@
   
   <script>
     (function() {
+      var existingUser = null;
+      try { existingUser = JSON.parse(localStorage.getItem('demoUser') || 'null'); } catch(e) {}
+      if (existingUser && existingUser.role && localStorage.getItem('currentRole')) {
+        window.location.href = '/ui/viewer/';
+        return;
+      }
+
       var selectedRole = 'admin';
       
       document.querySelectorAll('.role-btn').forEach(function(btn) {
