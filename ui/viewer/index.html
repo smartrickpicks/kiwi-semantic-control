@@ -4023,7 +4023,7 @@
     <div class="drawer-actions" id="drawer-actions-default">
       <div class="drawer-actions-grid">
         <button class="drawer-btn" id="drawer-copy">Copy JSON</button>
-        <button class="drawer-btn drawer-btn-secondary" id="copy-pr-summary">Copy PR Summary</button>
+        <button class="drawer-btn drawer-btn-secondary" id="copy-pr-summary-drawer">Copy PR Summary</button>
         <button class="drawer-btn drawer-btn-secondary" id="copy-rule-draft">Copy Rule Draft</button>
         <button class="drawer-btn" id="switch-to-patch-studio-tab" style="background: #2e7d32;">Build Patch</button>
       </div>
@@ -21410,6 +21410,41 @@
       const text = generatePRSummaryWithEvidence();
       const success = await copyToClipboard(text);
       const btn = document.getElementById('copy-pr-summary');
+      const orig = btn.textContent;
+      btn.textContent = success ? 'Copied!' : 'Failed';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+
+    document.getElementById('copy-pr-summary-drawer')?.addEventListener('click', async () => {
+      const text = generatePRSummaryWithEvidence();
+      const success = await copyToClipboard(text);
+      const btn = document.getElementById('copy-pr-summary-drawer');
+      const orig = btn.textContent;
+      btn.textContent = success ? 'Copied!' : 'Failed';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+
+    document.getElementById('copy-patch-json')?.addEventListener('click', async () => {
+      if (!srrState || !srrState.patchDraft || (!srrState.patchDraft.patch_type && Object.keys(srrState.proposedChanges || {}).length === 0)) {
+        showToast('No patch draft to copy — open a record and make changes first', 'warning');
+        return;
+      }
+      var payload = {
+        patch_type: srrState.patchDraft.patch_type || srrState.patchType,
+        observation_type: srrState.patchDraft.observation_type || '',
+        expected_type: srrState.patchDraft.expected_type || '',
+        justification: srrState.patchDraft.justification || '',
+        repro_type: srrState.patchDraft.repro_type || '',
+        override_enabled: srrState.overrideEnabled || false,
+        proposed_changes: Object.values(srrState.proposedChanges || {}).map(function(c) {
+          return { field: c.field, from: c.from, to: c.to };
+        }),
+        record_key: srrState.currentRecordKey || '',
+        sheet: srrState.currentSheetName || ''
+      };
+      var json = JSON.stringify(payload, null, 2);
+      const success = await copyToClipboard(json);
+      const btn = document.getElementById('copy-patch-json');
       const orig = btn.textContent;
       btn.textContent = success ? 'Copied!' : 'Failed';
       setTimeout(() => btn.textContent = orig, 1500);
