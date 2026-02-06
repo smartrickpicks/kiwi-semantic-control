@@ -2049,7 +2049,7 @@
                 <button class="srr-doc-btn" id="srr-next-btn" onclick="srrNextPage()" title="Next page">Next →</button>
                 <span class="srr-doc-spacer"></span>
                 <button class="srr-doc-btn" id="srr-zoom-out" onclick="srrZoomOut()" title="Zoom out">−</button>
-                <span class="srr-zoom-indicator" id="srr-zoom-indicator">100%</span>
+                <span class="srr-zoom-indicator" id="srr-zoom-indicator">125%</span>
                 <button class="srr-doc-btn" id="srr-zoom-in" onclick="srrZoomIn()" title="Zoom in">+</button>
               </div>
               <div class="srr-doc-source" id="srr-doc-source" style="font-size: 0.75em; color: #666; padding: 4px 8px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; display: none;">
@@ -15130,7 +15130,7 @@
       
       var savedState = loadSrrPdfState(record);
       srrState.docPage = savedState.page || 1;
-      srrState.zoom = savedState.zoom || 100;
+      srrState.zoom = savedState.zoom || 125;
       srrState.docTotalPages = null;
       srrState.currentPdfUrl = pdfUrl;
       srrState.pdfSourceType = sourceType;
@@ -15165,7 +15165,7 @@
       
       srrState.docPage = 1;
       srrState.docTotalPages = null;
-      srrState.zoom = 100;
+      srrState.zoom = 125;
       srrState.currentPdfUrl = null;
       srrState.pdfSourceType = null;
       
@@ -15187,7 +15187,7 @@
       var sourceEl = document.getElementById('srr-doc-source');
       
       srrState.docPage = 1;
-      srrState.zoom = 100;
+      srrState.zoom = 125;
       srrState.currentPdfUrl = null;
       srrState.pdfSourceType = null;
       
