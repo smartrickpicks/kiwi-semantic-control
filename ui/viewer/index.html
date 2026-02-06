@@ -11467,7 +11467,7 @@
               var cellClass = isStatusCol ? statusClass : '';
               // v1.6.2: Apply signal-based cell coloring (v1.6.18: pass record)
               var cellStyle = getGridCellStyle(recordId, col, r);
-              return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+              var changeInfo = getCellChangeInfo(recordId, col, r); var titlePrefix = changeInfo && CHANGE_TYPE_STYLES[changeInfo.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo.type].label + '] ' : ''; return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + titlePrefix + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
             }).join('') +
             '</tr>';
         }).join('');
@@ -13126,26 +13126,34 @@
       // v1.6.8: Check change map first for modified dataset
       var changeSummary = getRecordChangeSummary(recordId);
       if (changeSummary && changeSummary.total > 0) {
-        // Use change map for badge rendering
         var badges = [];
         var byType = changeSummary.by_type;
+        var changes = getRecordChanges(recordId);
         
-        if (byType.correction > 0) {
-          var tooltip = buildChangeTooltip({ total: byType.correction, by_type: { correction: byType.correction } });
-          badges.push('<span class="row-badge badge-patch" title="' + escapeHtml(tooltip) + '">' + byType.correction + '</span>');
-        }
-        if (byType.rfi > 0) {
-          var tooltip = buildChangeTooltip({ total: byType.rfi, by_type: { rfi: byType.rfi } });
-          badges.push('<span class="row-badge badge-sflogic" title="' + escapeHtml(tooltip) + '">' + byType.rfi + '</span>');
-        }
-        if (byType.system_change > 0) {
-          var tooltip = buildChangeTooltip({ total: byType.system_change, by_type: { system_change: byType.system_change } });
-          badges.push('<span class="row-badge badge-system" title="' + escapeHtml(tooltip) + '">' + byType.system_change + '</span>');
-        }
-        if (byType.blacklist > 0) {
-          var tooltip = buildChangeTooltip({ total: byType.blacklist, by_type: { blacklist: byType.blacklist } });
-          badges.push('<span class="row-badge badge-blacklist" title="' + escapeHtml(tooltip) + '">' + byType.blacklist + '</span>');
-        }
+        var typeConfigs = [
+          { key: 'correction', cls: 'badge-patch' },
+          { key: 'rfi', cls: 'badge-sflogic' },
+          { key: 'system_change', cls: 'badge-system' },
+          { key: 'blacklist', cls: 'badge-blacklist' }
+        ];
+        
+        typeConfigs.forEach(function(cfg) {
+          if (!byType[cfg.key] || byType[cfg.key] <= 0) return;
+          var fieldList = [];
+          Object.keys(changes).forEach(function(fk) {
+            if ((changes[fk].type || 'correction') === cfg.key) fieldList.push(fk);
+          });
+          var ttHtml = '<div class="patch-tooltip">';
+          ttHtml += '<div class="patch-tooltip-title">' + byType[cfg.key] + ' ' + formatPatchKind(cfg.key) + (byType[cfg.key] !== 1 ? 's' : '') + '</div>';
+          var displayFields = fieldList.slice(0, 5);
+          displayFields.forEach(function(fk) {
+            var chipClass = getPatchChipClass(cfg.key);
+            ttHtml += '<div class="patch-tooltip-item"><span class="patch-tooltip-field">' + escapeHtml(fk) + '</span><span class="patch-chip ' + chipClass + '">' + formatPatchKind(cfg.key) + '</span></div>';
+          });
+          if (fieldList.length > 5) ttHtml += '<div class="patch-tooltip-item" style="color: #888; font-style: italic;">+' + (fieldList.length - 5) + ' more...</div>';
+          ttHtml += '</div>';
+          badges.push('<span class="row-badge ' + cfg.cls + '">' + byType[cfg.key] + ttHtml + '</span>');
+        });
         
         return badges.length > 0 ? '<div class="row-badges">' + badges.join('') + '</div>' : '';
       }
@@ -19110,7 +19118,7 @@
             var cellClass = isStatusCol ? statusClass : '';
             // v1.6.2: Apply signal-based cell coloring (v1.6.18: pass record for fallback)
             var cellStyle = getGridCellStyle(recordId, col, r);
-            return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+            var changeInfo2 = getCellChangeInfo(recordId, col, r); var titlePrefix2 = changeInfo2 && CHANGE_TYPE_STYLES[changeInfo2.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo2.type].label + '] ' : ''; return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + titlePrefix2 + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
           }).join('');
         
         fragment.appendChild(tr);
