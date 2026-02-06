@@ -2063,6 +2063,12 @@
             <span class="srr-state-badge" id="srr-state-badge">—</span>
           </div>
           <button class="srr-back-btn" onclick="showAuditLogForRecord()" title="View audit log for this record">Audit Log</button>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 0.75em; color: #aaa;">Doc Type:</span>
+            <select id="srr-doc-type" onchange="srrSetDocumentType(this.value)" style="padding: 4px 8px; border-radius: 5px; border: 1px solid #c5cae9; font-size: 0.82em; background: #e8eaf6; color: #1a237e; font-weight: 600; cursor: pointer;">
+              <option value="Unknown">Unknown</option>
+            </select>
+          </div>
           <span id="srr-group-badge" style="display:none;"></span>
           <button id="srr-catalog-toggle-btn" class="catalog-toggle-btn" onclick="toggleCatalogItemsGroup()" style="display:none;" title="Mark this record as a Catalog Items group anchor">Set as Catalog Items Group</button>
           <button id="srr-batch-add-btn" class="batch-add-btn" onclick="openBatchAddModal()" style="display:none;" title="Add missing items as child rows under this record">+ Add Missing Items</button>
@@ -4746,9 +4752,12 @@
           return;
         }
         delete record._group;
+        if (record._capabilities) delete record._capabilities.catalog_items;
         showToast('Record removed as Catalog Items group.', 'info');
       } else {
         markAsGroupAnchor(sheetName, rowIndex);
+        if (!record._capabilities) record._capabilities = {};
+        record._capabilities.catalog_items = true;
         showToast('Record set as Catalog Items group anchor.', 'success');
       }
 
@@ -8756,12 +8765,24 @@
           var sheetData = workbook.sheets[sheetName];
           if (!sheetData || !sheetData.rows) return;
           
-          // Build sheet array with headers
-          var sheetArray = [sheetData.headers.slice()];
+          // Build sheet array with headers + orchestrate columns
+          var exportHeaders = sheetData.headers.slice();
+          var extraCols = ['document_type', 'capabilities', 'group_id'];
+          extraCols.forEach(function(c) {
+            if (exportHeaders.indexOf(c) < 0) exportHeaders.push(c);
+          });
+          var sheetArray = [exportHeaders];
           
           // Add rows
           sheetData.rows.forEach(function(row) {
-            var rowArray = sheetData.headers.map(function(h) {
+            var rowArray = exportHeaders.map(function(h) {
+              if (h === 'document_type') return row._document_type || 'Unknown';
+              if (h === 'capabilities') {
+                var caps = row._capabilities;
+                if (!caps || Object.keys(caps).length === 0) return '';
+                return JSON.stringify(caps);
+              }
+              if (h === 'group_id') return (row._group && row._group.group_id) || '';
               var val = row[h];
               if (val === null || val === undefined) return '';
               if (typeof val === 'object') return JSON.stringify(val);
@@ -11624,11 +11645,12 @@
       console.log('[RulesBundle] Loading bundles...');
       
       try {
-        var [fieldMetaRes, hingeGroupsRes, sheetOrderRes, qaFlagsRes] = await Promise.all([
+        var [fieldMetaRes, hingeGroupsRes, sheetOrderRes, qaFlagsRes, docTypesRes] = await Promise.all([
           fetch('/rules/rules_bundle/field_meta.json'),
           fetch('/rules/rules_bundle/hinge_groups.json'),
           fetch('/rules/rules_bundle/sheet_order.json'),
-          fetch('/rules/rules_bundle/qa_flags.json')
+          fetch('/rules/rules_bundle/qa_flags.json'),
+          fetch('/config/document_types.json')
         ]);
         
         if (fieldMetaRes.ok) {
@@ -11646,6 +11668,12 @@
         if (qaFlagsRes.ok) {
           rulesBundleCache.qaFlags = await qaFlagsRes.json();
           console.log('[RulesBundle] qa_flags loaded:', rulesBundleCache.qaFlags.flags?.length || 0, 'flags');
+        }
+        if (docTypesRes.ok) {
+          rulesBundleCache.documentTypes = await docTypesRes.json();
+          console.log('[RulesBundle] document_types loaded:', rulesBundleCache.documentTypes.length, 'types');
+        } else {
+          rulesBundleCache.documentTypes = ['Unknown'];
         }
         
         rulesBundleCache.loaded = true;
@@ -13052,6 +13080,10 @@
             signalStore.signals_by_cell[recordId] = {};
           }
           
+          // Backfill document_type and capabilities
+          if (!row._document_type) row._document_type = 'Unknown';
+          if (!row._capabilities) row._capabilities = {};
+
           // Get all field keys (excluding internal fields)
           var fieldKeys = Object.keys(row).filter(function(k) {
             return !k.startsWith('_');
@@ -13676,6 +13708,7 @@
       srrState.editingField = null;
       srrState.activeFilter = 'todo';  // Default to To Do queue
       srrUpdateNavButtons();
+      srrPopulateDocTypeDropdown(record);
       srrState.activeGroup = 'all';
       srrState.searchQuery = '';  // v1.4.18: Reset search
       
@@ -14539,6 +14572,37 @@
     
     // Navigation guard
     // v1.4.20: Back to Grid with guard for unresolved fields
+    function srrSetDocumentType(val) {
+      var record = srrState.currentRecord;
+      if (!record) return;
+      record._document_type = val;
+      console.log('[SRR] Document type set:', val, 'for', srrState.currentRecordKey);
+      if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
+    }
+
+    function srrPopulateDocTypeDropdown(record) {
+      var sel = document.getElementById('srr-doc-type');
+      if (!sel) return;
+      var types = (rulesBundleCache.documentTypes && rulesBundleCache.documentTypes.length > 0)
+        ? rulesBundleCache.documentTypes : ['Unknown'];
+      var currentVal = (record && record._document_type) || 'Unknown';
+      sel.innerHTML = '';
+      types.forEach(function(t) {
+        var opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        if (t === currentVal) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      if (types.indexOf(currentVal) < 0) {
+        var opt = document.createElement('option');
+        opt.value = currentVal;
+        opt.textContent = currentVal;
+        opt.selected = true;
+        sel.appendChild(opt);
+      }
+    }
+
     function getSrrNavigationList() {
       var filtered = gridState.filteredData;
       if (!filtered || filtered.length === 0) return [];

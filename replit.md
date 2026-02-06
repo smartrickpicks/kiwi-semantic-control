@@ -32,6 +32,9 @@ The Catalog Items feature allows analysts to group records under a "Catalog Item
 
 **Wizard Flow:** A 3-step modal (Paste List → Preview → Confirm) collects one-per-line items, lets the user pick the target field, then shows a categorized preview with Existing (green), Possible Duplicate (amber), and New (blue) sections with counts. Maximum 500 items per batch. Each created row emits a `MANUAL_ROW_ADD` audit event with `attached_existing_count`, `created_new_count`, and `possible_duplicate_count`.
 
+### Document Type + Capabilities Model
+Each record carries a `_document_type` (default: "Unknown") and `_capabilities` object (default: {}). Document types are loaded from `config/document_types.json` at startup alongside rule bundles. The Record Inspection header shows an editable "Doc Type" dropdown populated from this config. When a record is set as a Catalog Items group, `capabilities.catalog_items = true` is set (treating Catalog Items as a capability, not a document type). Export includes `document_type`, `capabilities` (JSON), and `group_id` as flat columns. Existing records without `_document_type` are backfilled to "Unknown" during signal generation.
+
 **Grid Nesting:** Anchor rows display an expand/collapse caret (▼) in the row-index cell. Child rows are visually indented. Collapsed state persists in localStorage (`orchestrate_group_collapsed`). Export remains flat — all rows are included without grouping hierarchy.
 
 ### Export / Save Functionality
