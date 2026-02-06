@@ -448,14 +448,14 @@ The viewer now starts with a clear "Data Source" action and uses modal wizards f
 |------|------|---------|
 | Triage | #/triage | Summary cards, filters, issues/actions queues, workbench drilldown |
 | Patch Studio | #/patch | Preflight Gate, Patch Draft Builder, copy outputs |
-| Review | #/review | Config+Patch Inspector, Comparison Mode (Verifier mode only) |
+| Review | #/review | Config+Patch Inspector, Comparison Mode (Verifier/Admin only) |
 
 **Mode Toggle:**
 | Mode | Description |
 |------|-------------|
-| Operator | Default view for triaging and building patches |
+| Analyst | Focused view for data analysis and triage |
 | Verifier | Unlocks Review page for config inspection and comparison |
-| Analyst | Focused view for data analysis |
+| Admin | Full access including admin approval and configuration |
 
 ### Multi-Page Navigation + Mode Toggle (v1.0)
 
