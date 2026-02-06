@@ -148,7 +148,7 @@
     .mode-btn:hover { border-color: #888; color: white; }
     .mode-btn.active { background: #1565c0; border-color: #1565c0; color: white; }
     .mode-btn.mode-analyst { }
-    .mode-btn.mode-reviewer { }
+    .mode-btn.mode-verifier { }
     .mode-btn.mode-admin { }
 
     .main-content { flex-grow: 1; padding: 20px; overflow-y: auto; max-height: 100vh; }
@@ -317,16 +317,16 @@
 
     /* Nav item mode visibility */
     .nav-item.analyst-only { display: flex; }
-    .nav-item.reviewer-only { display: none; }
+    .nav-item.verifier-only { display: none; }
     .nav-item.admin-only { display: none; }
     .mode-analyst .nav-item.analyst-only { display: flex; }
-    .mode-analyst .nav-item.reviewer-only { display: none; }
+    .mode-analyst .nav-item.verifier-only { display: none; }
     .mode-analyst .nav-item.admin-only { display: none; }
-    .mode-reviewer .nav-item.analyst-only { display: none; }
-    .mode-reviewer .nav-item.reviewer-only { display: flex; }
-    .mode-reviewer .nav-item.admin-only { display: none; }
+    .mode-verifier .nav-item.analyst-only { display: none; }
+    .mode-verifier .nav-item.verifier-only { display: flex; }
+    .mode-verifier .nav-item.admin-only { display: none; }
     .mode-admin .nav-item.analyst-only { display: none; }
-    .mode-admin .nav-item.reviewer-only { display: flex; }
+    .mode-admin .nav-item.verifier-only { display: flex; }
     .mode-admin .nav-item.admin-only { display: flex; }
 
     /* Sidebar Action Buttons */
@@ -365,11 +365,11 @@
     
     /* Role-based visibility for any element */
     .admin-only-content { display: none !important; }
-    .reviewer-only-content { display: none !important; }
+    .verifier-only-content { display: none !important; }
     .mode-admin .admin-only-content { display: block !important; }
     .mode-admin .admin-only-content.flex { display: flex !important; }
-    .mode-reviewer .reviewer-only-content { display: block !important; }
-    .mode-admin .reviewer-only-content { display: block !important; }
+    .mode-verifier .verifier-only-content { display: block !important; }
+    .mode-admin .verifier-only-content { display: block !important; }
     
     /* Loader Modal */
     .loader-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; z-index: 1001; justify-content: center; align-items: center; }
@@ -1451,7 +1451,7 @@
           <button class="active-data-source-change" id="active-data-source-action" onclick="openDataSourcePanel()">Change</button>
         </div>
 
-        <!-- Locked Role Display (for Analyst/Reviewer - appears above nav) -->
+        <!-- Locked Role Display (for Analyst/Verifier - appears above nav) -->
         <div id="locked-role-display-top" style="display: none; margin: 12px 16px; padding: 8px 12px; font-size: 0.8em; background: rgba(21, 101, 192, 0.15); color: #64b5f6; border-radius: 6px; text-align: center; border: 1px solid rgba(21, 101, 192, 0.3);"></div>
 
         <div class="nav-divider"></div>
@@ -1480,7 +1480,7 @@
             <span class="nav-icon">🔎</span>
             <span class="nav-label">Record Inspection</span>
           </a>
-          <a class="nav-item reviewer-only" data-page="verifier-review" href="#/verifier-review">
+          <a class="nav-item verifier-only" data-page="verifier-review" href="#/verifier-review">
             <span class="nav-icon">✓</span>
             <span class="nav-label">Verifier Review</span>
           </a>
@@ -1495,7 +1495,7 @@
             <span class="nav-icon">✎</span>
             <span class="nav-label">Patch Studio</span>
           </a>
-          <a class="nav-item reviewer-only" data-page="review" href="#/review">
+          <a class="nav-item verifier-only" data-page="review" href="#/review">
             <span class="nav-icon">🔍</span>
             <span class="nav-label">Config Inspector</span>
           </a>
@@ -1548,7 +1548,7 @@
         <div class="nav-mode-label">Role</div>
         <div class="mode-toggle" id="mode-toggle-container">
           <button class="mode-btn mode-analyst active" data-mode="analyst">Analyst</button>
-          <button class="mode-btn mode-reviewer" data-mode="reviewer">Reviewer</button>
+          <button class="mode-btn mode-verifier" data-mode="verifier">Verifier</button>
           <button class="mode-btn mode-admin" data-mode="admin">Admin</button>
         </div>
         <div id="locked-role-display" style="display: none; padding: 6px 12px; font-size: 0.75em; background: rgba(21, 101, 192, 0.15); color: #64b5f6; border-radius: 4px; text-align: center;"></div>
@@ -1584,7 +1584,7 @@
       <!-- Loader Page (DEPRECATED - v1.2.9 uses drawer instead) -->
       <div class="page-content" id="page-loader" style="display: none !important;">
         <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-          <div style="font-size: 0.75em; color: #999; text-align: right; margin-bottom: 10px;">PAGE: LOADER | BUILD v1.6.44</div>
+          <div style="font-size: 0.75em; color: #999; text-align: right; margin-bottom: 10px;">PAGE: LOADER | BUILD v1.6.45</div>
           
           <!-- PRIMARY ACTION PANEL: Continue to Triage (shown when dataset active) -->
           <div id="loader-continue-panel" style="display: none; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); border-radius: 12px; padding: 30px; margin-bottom: 30px; color: white; text-align: center;">
@@ -1673,7 +1673,7 @@
           <div class="page-header" style="position: relative;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <h2 id="triage-page-title">Triage</h2>
-              <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.6.44</span>
+              <span style="font-size: 0.7em; color: #999;">PAGE: TRIAGE | BUILD v1.6.45</span>
             </div>
             <p class="page-desc">All items requiring analyst review and action.</p>
             <!-- Sticky Search Bar (top right) - frosted glass style with scroll-aware behavior -->
@@ -1799,22 +1799,22 @@
 
         <div id="verifier-triage-content" style="display: none;">
           <div class="page-header">
-            <h2 id="verifier-triage-title">Triage - Reviewer</h2>
+            <h2 id="verifier-triage-title">Triage - Verifier</h2>
             <p class="page-desc">Review submitted RFIs, Corrections, and Blacklist requests.</p>
           </div>
           
           <!-- v1.5.2: Division + Status filter bar -->
-          <div class="reviewer-filter-bar" style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: #f8f9fa; border-radius: 8px; flex-wrap: wrap;">
+          <div class="verifier-filter-bar" style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: #f8f9fa; border-radius: 8px; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <label style="font-size: 0.85em; color: #666; font-weight: 600;">Division:</label>
-              <select id="reviewer-filter-division" class="filter-select" style="min-width: 140px;" onchange="onReviewerFilterChange()">
+              <select id="verifier-filter-division" class="filter-select" style="min-width: 140px;" onchange="onVerifierFilterChange()">
                 <option value="">All Divisions</option>
                 <option value="__unassigned__">Unassigned</option>
               </select>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
               <label style="font-size: 0.85em; color: #666; font-weight: 600;">Status:</label>
-              <select id="reviewer-filter-status" class="filter-select" style="min-width: 140px;" onchange="onReviewerFilterChange()">
+              <select id="verifier-filter-status" class="filter-select" style="min-width: 140px;" onchange="onVerifierFilterChange()">
                 <option value="">All Statuses</option>
                 <option value="pending">Pending Review</option>
                 <option value="needs_clarification">Needs Clarification</option>
@@ -1822,15 +1822,15 @@
                 <option value="resolved">Resolved</option>
               </select>
             </div>
-            <span id="reviewer-filter-count" style="font-size: 0.85em; color: #666; margin-left: auto;"></span>
+            <span id="verifier-filter-count" style="font-size: 0.85em; color: #666; margin-left: auto;"></span>
           </div>
           
           <!-- v1.5.3: Patch Type tabs (Corrections, Blacklist, RFI) -->
           <div class="patch-type-tabs" style="display: flex; gap: 8px; margin-bottom: 16px;">
-            <div class="pt-tab active" data-ptype="" onclick="setReviewerPatchType('')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0;">All Types <span id="pt-count-all">(0)</span></div>
-            <div class="pt-tab" data-ptype="correction" onclick="setReviewerPatchType('correction')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #f5f5f5; color: #333; border: 1px solid #ddd;">Corrections <span id="pt-count-correction">(0)</span></div>
-            <div class="pt-tab" data-ptype="blacklist" onclick="setReviewerPatchType('blacklist')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #f5f5f5; color: #333; border: 1px solid #ddd;">Blacklist <span id="pt-count-blacklist">(0)</span></div>
-            <div class="pt-tab" data-ptype="rfi" onclick="setReviewerPatchType('rfi')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #f5f5f5; color: #333; border: 1px solid #ddd;">RFI <span id="pt-count-rfi">(0)</span></div>
+            <div class="pt-tab active" data-ptype="" onclick="setVerifierPatchType('')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #e3f2fd; color: #1565c0; border: 1px solid #1565c0;">All Types <span id="pt-count-all">(0)</span></div>
+            <div class="pt-tab" data-ptype="correction" onclick="setVerifierPatchType('correction')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #f5f5f5; color: #333; border: 1px solid #ddd;">Corrections <span id="pt-count-correction">(0)</span></div>
+            <div class="pt-tab" data-ptype="blacklist" onclick="setVerifierPatchType('blacklist')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #f5f5f5; color: #333; border: 1px solid #ddd;">Blacklist <span id="pt-count-blacklist">(0)</span></div>
+            <div class="pt-tab" data-ptype="rfi" onclick="setVerifierPatchType('rfi')" style="padding: 8px 16px; cursor: pointer; border-radius: 4px; font-size: 0.85em; font-weight: 600; background: #f5f5f5; color: #333; border: 1px solid #ddd;">RFI <span id="pt-count-rfi">(0)</span></div>
           </div>
           
           <div class="verifier-tabs" style="display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
@@ -1866,23 +1866,23 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>All-Data Grid</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ALL-DATA-GRID | BUILD v1.6.44</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ALL-DATA-GRID | BUILD v1.6.45</span>
           </div>
           <p class="page-desc">Dense spreadsheet view of all records with filtering and search.</p>
         </div>
         
-        <!-- v1.5.2: Reviewer-only filter bar (mirrors triage filters) -->
-        <div id="reviewer-grid-filter-bar" class="reviewer-filter-bar" style="display: none; gap: 16px; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 8px; flex-wrap: wrap;">
+        <!-- v1.5.2: Verifier-only filter bar (mirrors triage filters) -->
+        <div id="verifier-grid-filter-bar" class="verifier-filter-bar" style="display: none; gap: 16px; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: #fff3e0; border: 1px solid #ffcc80; border-radius: 8px; flex-wrap: wrap;">
           <span style="font-size: 0.85em; font-weight: 600; color: #e65100;">Read-Only Mode</span>
           <div style="display: flex; align-items: center; gap: 8px; margin-left: 16px;">
             <label style="font-size: 0.85em; color: #666; font-weight: 600;">Division:</label>
-            <select id="reviewer-grid-filter-division" class="filter-select" style="min-width: 140px;" onchange="onReviewerGridFilterChange()">
+            <select id="verifier-grid-filter-division" class="filter-select" style="min-width: 140px;" onchange="onVerifierGridFilterChange()">
               <option value="">All Divisions</option>
             </select>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <label style="font-size: 0.85em; color: #666; font-weight: 600;">Status:</label>
-            <select id="reviewer-grid-filter-status" class="filter-select" style="min-width: 140px;" onchange="onReviewerGridFilterChange()">
+            <select id="verifier-grid-filter-status" class="filter-select" style="min-width: 140px;" onchange="onVerifierGridFilterChange()">
               <option value="">All Statuses</option>
               <option value="pending">Pending Review</option>
               <option value="needs_clarification">Needs Clarification</option>
@@ -1890,7 +1890,7 @@
               <option value="resolved">Resolved</option>
             </select>
           </div>
-          <span id="reviewer-grid-filter-count" style="font-size: 0.85em; color: #666; margin-left: auto;"></span>
+          <span id="verifier-grid-filter-count" style="font-size: 0.85em; color: #666; margin-left: auto;"></span>
         </div>
 
         <!-- Grid Controls -->
@@ -1969,7 +1969,7 @@
         <div class="grid-footer" style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; color: #666; font-size: 0.85em;">
           <span id="grid-row-count">0 records</span>
           <span id="grid-filter-info"></span>
-          <span style="font-size: 0.75em; color: #aaa;">PAGE: ALL-DATA-GRID | BUILD v1.6.44</span>
+          <span style="font-size: 0.75em; color: #aaa;">PAGE: ALL-DATA-GRID | BUILD v1.6.45</span>
         </div>
       </div><!-- end page-grid -->
 
@@ -1978,7 +1978,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2 id="srr-page-title">Record Inspection</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: SINGLE-ROW-REVIEW | BUILD v1.6.44</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: SINGLE-ROW-REVIEW | BUILD v1.6.45</span>
           </div>
           <p class="page-desc">Per-record inspection with Evidence Pack authoring and Patch Request creation.</p>
         </div>
@@ -2098,7 +2098,7 @@
           <div class="srr-panel srr-panel-right">
             <div class="srr-panel-header" style="display: flex; align-items: center; gap: 8px;">
               <span id="srr-right-panel-title">Patch Editor</span>
-              <!-- v1.5.1: Reviewer-only Patch Tester tab -->
+              <!-- v1.5.1: Verifier-only Patch Tester tab -->
               <div id="srr-panel-tabs" class="srr-panel-tabs" style="display: none; margin-left: auto;">
                 <button class="srr-panel-tab active" data-tab="editor" onclick="srrSwitchRightTab('editor')">Editor</button>
                 <button class="srr-panel-tab" data-tab="tester" onclick="srrSwitchRightTab('tester')">Patch Tester</button>
@@ -2218,7 +2218,7 @@
               </div>
             </div><!-- end srr-tab-editor -->
             
-            <!-- v1.5.1: Patch Tester Content (reviewer only) -->
+            <!-- v1.5.1: Patch Tester Content (verifier only) -->
             <div class="srr-panel-body" id="srr-tab-tester" style="display: none;">
               <div style="margin-bottom: 16px;">
                 <div style="font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 8px;">Patch Summary</div>
@@ -2245,7 +2245,7 @@
               </div>
               
               <div style="margin-bottom: 16px;">
-                <div style="font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 8px;">Reviewer Notes to Analyst</div>
+                <div style="font-size: 0.75em; font-weight: 600; color: #666; text-transform: uppercase; margin-bottom: 8px;">Verifier Notes to Analyst</div>
                 <textarea id="srr-tester-notes" class="srr-evidence-textarea" placeholder="Explain why you're adjusting this patch or what the analyst should verify..." style="min-height: 100px;"></textarea>
               </div>
               
@@ -2272,7 +2272,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Patch Studio</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH-STUDIO | BUILD v1.6.44</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: PATCH-STUDIO | BUILD v1.6.45</span>
           </div>
           <p class="page-desc">Select records, build rule patches, validate with preflight gate, and export.</p>
         </div>
@@ -2342,7 +2342,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Review</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: CONFIG-INSPECTOR | BUILD v1.6.44</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: CONFIG-INSPECTOR | BUILD v1.6.45</span>
           </div>
           <p class="page-desc">Inspect config deltas, compare artifact versions, and generate evidence summaries.</p>
         </div>
@@ -2417,7 +2417,7 @@
               <h2 style="margin: 0;">Verifier Review</h2>
               <span class="vr-state-badge" id="vr-state-badge">Submitted</span>
             </div>
-            <span style="font-size: 0.7em; color: #999;">PAGE: VERIFIER-REVIEW | BUILD v1.6.44</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: VERIFIER-REVIEW | BUILD v1.6.45</span>
           </div>
           <p class="page-desc">Review submitted Patch Requests, request clarification, approve or reject.</p>
         </div>
@@ -2642,7 +2642,7 @@
               <h2 style="margin: 0;">Admin Approval</h2>
               <span class="aa-state-badge" id="aa-state-badge">Verifier Approved</span>
             </div>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-APPROVAL | BUILD v1.6.44</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-APPROVAL | BUILD v1.6.45</span>
           </div>
           <p class="page-desc">Final approval surface before Promote Patch to Baseline.</p>
         </div>
@@ -2830,7 +2830,7 @@
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Admin Panel</h2>
-            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-PANEL | BUILD v1.6.44</span>
+            <span style="font-size: 0.7em; color: #999;">PAGE: ADMIN-PANEL | BUILD v1.6.45</span>
           </div>
           <p class="page-desc">Centralized admin tools for governance, config, standardization, and patch management.</p>
         </div>
@@ -2988,7 +2988,7 @@
                   <label style="display: block; font-size: 0.85em; font-weight: 600; color: #333; margin-bottom: 6px;">Role</label>
                   <select id="add-user-role" style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.95em;">
                     <option value="analyst" selected>Analyst</option>
-                    <option value="reviewer">Reviewer</option>
+                    <option value="verifier">Verifier</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>
@@ -3402,7 +3402,7 @@
             Upload Excel
           </button>
           <input type="file" id="drawer-excel-file-input" accept=".xlsx,.xls" style="display: none;" onchange="handleExcelUpload(this); closeDataSourceDrawer();">
-          <!-- v1.6.44: Clear Cache button for fresh start -->
+          <!-- v1.6.45: Clear Cache button for fresh start -->
           <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #ddd;">
             <button id="clear-cache-btn" onclick="handleClearCacheAndReload()" 
                     style="padding: 6px 16px; background: transparent; color: #666; border: 1px solid #ccc; border-radius: 6px; font-size: 0.8em; cursor: pointer; transition: all 0.2s ease;"
@@ -3930,7 +3930,7 @@
         
         <div style="margin-bottom: 15px;">
           <label style="display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85em;">Comment (plain English) <span style="color: #c62828;">*</span></label>
-          <textarea id="ps-intent-because" placeholder="Explain why this rule exists in human terms. This is what reviewers/admins will read." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 60px;"></textarea>
+          <textarea id="ps-intent-because" placeholder="Explain why this rule exists in human terms. This is what verifiers/admins will read." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 60px;"></textarea>
           <span style="font-size: 0.75em; color: #888;">Required. Max 500 characters.</span>
         </div>
         
@@ -4356,7 +4356,7 @@
     // UUID regex for alias detection (RFC4122 v1-5)
     const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     
-    // PatchRequest Store (shared between analyst/reviewer/admin)
+    // PatchRequest Store (shared between analyst/verifier/admin)
     const PATCH_REQUEST_STORE = {
       _key: function(patch_request_id) {
         return 'pr:' + ARTIFACT_STORE.environment + ':' + patch_request_id;
@@ -4367,7 +4367,11 @@
         var data = localStorage.getItem(this._key(patch_request_id));
         if (data) {
           try {
-            return JSON.parse(data);
+            var parsed = JSON.parse(data);
+            // v1.6.45: Normalize legacy status values
+            if (parsed && parsed.status) parsed.status = normalizeLegacyStatus(parsed.status);
+            if (parsed && parsed.actor_role) parsed.actor_role = normalizeLegacyRole(parsed.actor_role);
+            return parsed;
           } catch (e) {
             console.error('[PatchRequestStore] Parse error:', patch_request_id, e);
             return null;
@@ -4824,7 +4828,7 @@
     // ========== ACTOR & ROLE HELPERS ==========
     var playgroundActors = {
       analyst: 'analyst@example.com',
-      reviewer: 'reviewer@example.com',
+      verifier: 'verifier@example.com',
       admin: 'admin@example.com'
     };
     
@@ -4969,7 +4973,7 @@
       workbook.activeSheet = null;
     }
     
-    // v1.6.44: Workbook session cache (persists across page reloads)
+    // v1.6.45: Workbook session cache (persists across page reloads)
     var WORKBOOK_CACHE_KEY = 'orchestrate_workbook_cache';
     var NAV_STATE_CACHE_KEY = 'orchestrate_nav_state';
     
@@ -5038,7 +5042,7 @@
       } catch (e) { return null; }
     }
     
-    // v1.6.44: Clear cache and reload page for fresh start
+    // v1.6.45: Clear cache and reload page for fresh start
     function handleClearCacheAndReload() {
       if (confirm('This will clear your saved session data and reload the page. Continue?')) {
         clearWorkbookCache();
@@ -5406,9 +5410,9 @@
     async function masterlineAutoload() {
       if (!artifactRegistry.devMasterlineEnabled) return;
       
-      // v1.6.44: Reset workbook to clean state before cache check
+      // v1.6.45: Reset workbook to clean state before cache check
       resetWorkbook();
-      // v1.6.44: First try to restore from workbook cache (persists Excel uploads)
+      // v1.6.45: First try to restore from workbook cache (persists Excel uploads)
       var cachedWorkbook = loadWorkbookFromCache();
       if (cachedWorkbook && cachedWorkbook.workbook) {
         console.log('[Masterline] Restoring from workbook cache...');
@@ -5629,9 +5633,29 @@
     // ========== COMMENT (RFI) SYSTEM ==========
     var COMMENTS_STORAGE_KEY = 'orchestrate.comments.v1';
     
-    var COMMENT_STATUSES = ['Open', 'ReviewerResponded', 'Resolved', 'ElevatedToPatchRequest', 'Closed'];
+    // v1.6.45: Backward compatibility - normalize legacy Verifier_* status values
+    var LEGACY_STATUS_MAP = {
+      'Reviewer_Responded': 'Verifier_Responded',
+      'Reviewer_Approved': 'Verifier_Approved',
+      'ReviewerResponded': 'VerifierResponded',
+      'reviewer_responded': 'verifier_responded',
+      'REVIEWER_APPROVED': 'VERIFIER_APPROVED'
+    };
+    
+    function normalizeLegacyStatus(status) {
+      if (!status) return status;
+      return LEGACY_STATUS_MAP[status] || status;
+    }
+    
+    function normalizeLegacyRole(role) {
+      if (!role) return role;
+      if (role === 'Reviewer' || role === 'reviewer') return 'Verifier';
+      return role;
+    }
+
+    var COMMENT_STATUSES = ['Open', 'VerifierResponded', 'Resolved', 'ElevatedToPatchRequest', 'Closed'];
     var COMMENT_SCOPES = ['field', 'sheet', 'contract'];
-    var COMMENT_ROLES = ['Analyst', 'Reviewer', 'Admin'];
+    var COMMENT_ROLES = ['Analyst', 'Verifier', 'Admin'];
     
     var commentsStore = {
       comments: [],
@@ -5761,8 +5785,8 @@
         notes: responseMessage
       });
       
-      if (actorRole === 'Reviewer' || actorRole === 'Admin') {
-        comment.status = 'ReviewerResponded';
+      if (actorRole === 'Verifier' || actorRole === 'Admin') {
+        comment.status = 'VerifierResponded';
       }
       
       saveComments();
@@ -5786,7 +5810,7 @@
       comment.history.push({
         at_utc: new Date().toISOString(),
         actor: actor || 'Unknown',
-        role: actorRole || 'Reviewer',
+        role: actorRole || 'Verifier',
         action: 'Elevated to Patch Request',
         notes: 'Linked to ' + patchRequestId
       });
@@ -5824,7 +5848,7 @@
     
     function getOpenComments() {
       return commentsStore.comments.filter(function(c) {
-        return c.status === 'Open' || c.status === 'ReviewerResponded';
+        return c.status === 'Open' || c.status === 'VerifierResponded';
       });
     }
     
@@ -5832,14 +5856,14 @@
       var counts = {
         total: commentsStore.comments.length,
         open: 0,
-        reviewer_responded: 0,
+        verifier_responded: 0,
         resolved: 0,
         elevated: 0,
         closed: 0
       };
       commentsStore.comments.forEach(function(c) {
         if (c.status === 'Open') counts.open++;
-        else if (c.status === 'ReviewerResponded') counts.reviewer_responded++;
+        else if (c.status === 'VerifierResponded') counts.verifier_responded++;
         else if (c.status === 'Resolved') counts.resolved++;
         else if (c.status === 'ElevatedToPatchRequest') counts.elevated++;
         else if (c.status === 'Closed') counts.closed++;
@@ -5869,8 +5893,8 @@
       'Draft',
       'Submitted',
       'Needs_Clarification',
-      'Reviewer_Responded',
-      'Reviewer_Approved',
+      'Verifier_Responded',
+      'Verifier_Approved',
       'Admin_Approved',
       'Sent_to_Kiwi',
       'Kiwi_Returned',
@@ -5882,8 +5906,8 @@
     
     var PATCH_REQUEST_QUEUE_TABS = [
       { id: 'new', label: 'New', statuses: ['Submitted'] },
-      { id: 'needs_review', label: 'Needs Review', statuses: ['Needs_Clarification', 'Reviewer_Responded'] },
-      { id: 'approved', label: 'Approved', statuses: ['Reviewer_Approved', 'Admin_Approved'] },
+      { id: 'needs_review', label: 'Needs Review', statuses: ['Needs_Clarification', 'Verifier_Responded'] },
+      { id: 'approved', label: 'Approved', statuses: ['Verifier_Approved', 'Admin_Approved'] },
       { id: 'sent_to_kiwi', label: 'Sent to Kiwi', statuses: ['Sent_to_Kiwi'] },
       { id: 'kiwi_returned', label: 'Kiwi Returned', statuses: ['Kiwi_Returned'] },
       { id: 'applied', label: 'Applied', statuses: ['Applied'] },
@@ -5895,10 +5919,10 @@
     var ROLE_PERMISSIONS = {
       'Analyst': {
         can: ['create_draft', 'edit_own_draft', 'submit_to_patch_queue', 'respond_to_clarification', 'cancel_own_draft_or_submitted'],
-        cannot: ['reviewer_approve', 'admin_approve', 'send_to_kiwi', 'paste_kiwi_return', 'mark_applied', 'admin_hold']
+        cannot: ['verifier_approve', 'admin_approve', 'send_to_kiwi', 'paste_kiwi_return', 'mark_applied', 'admin_hold']
       },
       'Verifier': {
-        can: ['comment_rfi', 'request_clarification', 'edit_review_fields', 'reviewer_approve', 'reject', 'send_back_to_submitted_after_edits'],
+        can: ['comment_rfi', 'request_clarification', 'edit_review_fields', 'verifier_approve', 'reject', 'send_back_to_submitted_after_edits'],
         cannot: ['send_to_kiwi', 'paste_kiwi_return', 'mark_applied', 'admin_approve', 'edit_patch_payload_directly'],
         edit_allowlist: ['intent.when', 'intent.then', 'intent.because', 'target_scope', 'risk', 'review_notes', 'evidence.checklist_status', 'clarification_questions']
       },
@@ -5910,18 +5934,18 @@
     var STATUS_TRANSITIONS = [
       { from: 'Draft', to: 'Submitted', roles: ['Analyst'], action: 'submit_to_patch_queue', audit: 'PATCH_REQUEST_SUBMITTED' },
       { from: 'Submitted', to: 'Needs_Clarification', roles: ['Verifier', 'Admin'], action: 'request_clarification', audit: 'CLARIFICATION_REQUESTED' },
-      { from: 'Needs_Clarification', to: 'Reviewer_Responded', roles: ['Analyst'], action: 'respond_to_clarification', audit: 'CLARIFICATION_RESPONDED' },
-      { from: 'Reviewer_Responded', to: 'Reviewer_Approved', roles: ['Verifier'], action: 'reviewer_approve', audit: 'REVIEWER_APPROVED' },
-      { from: 'Submitted', to: 'Reviewer_Approved', roles: ['Verifier'], action: 'reviewer_approve', audit: 'REVIEWER_APPROVED' },
-      { from: 'Reviewer_Approved', to: 'Admin_Approved', roles: ['Admin'], action: 'admin_approve', audit: 'ADMIN_APPROVED' },
+      { from: 'Needs_Clarification', to: 'Verifier_Responded', roles: ['Analyst'], action: 'respond_to_clarification', audit: 'CLARIFICATION_RESPONDED' },
+      { from: 'Verifier_Responded', to: 'Verifier_Approved', roles: ['Verifier'], action: 'verifier_approve', audit: 'VERIFIER_APPROVED' },
+      { from: 'Submitted', to: 'Verifier_Approved', roles: ['Verifier'], action: 'verifier_approve', audit: 'VERIFIER_APPROVED' },
+      { from: 'Verifier_Approved', to: 'Admin_Approved', roles: ['Admin'], action: 'admin_approve', audit: 'ADMIN_APPROVED' },
       { from: 'Admin_Approved', to: 'Sent_to_Kiwi', roles: ['Admin'], action: 'send_to_kiwi', audit: 'SENT_TO_KIWI' },
       { from: 'Sent_to_Kiwi', to: 'Kiwi_Returned', roles: ['Admin'], action: 'paste_kiwi_return', audit: 'KIWI_RETURN_INGESTED' },
       { from: 'Kiwi_Returned', to: 'Applied', roles: ['Admin'], action: 'mark_applied', audit: 'PATCH_APPLIED' },
       { from: 'Submitted', to: 'Rejected', roles: ['Verifier', 'Admin'], action: 'reject', audit: 'PATCH_REJECTED' },
-      { from: 'Reviewer_Responded', to: 'Rejected', roles: ['Verifier', 'Admin'], action: 'reject', audit: 'PATCH_REJECTED' },
+      { from: 'Verifier_Responded', to: 'Rejected', roles: ['Verifier', 'Admin'], action: 'reject', audit: 'PATCH_REJECTED' },
       { from: 'Draft', to: 'Cancelled', roles: ['Analyst', 'Admin'], action: 'cancel', audit: 'PATCH_CANCELLED' },
       { from: 'Submitted', to: 'Cancelled', roles: ['Analyst', 'Admin'], action: 'cancel', audit: 'PATCH_CANCELLED' },
-      { from: 'Reviewer_Approved', to: 'Admin_Hold', roles: ['Admin'], action: 'admin_hold', audit: 'ADMIN_HOLD_SET' },
+      { from: 'Verifier_Approved', to: 'Admin_Hold', roles: ['Admin'], action: 'admin_hold', audit: 'ADMIN_HOLD_SET' },
       { from: 'Admin_Hold', to: 'Admin_Approved', roles: ['Admin'], action: 'release_hold', audit: 'ADMIN_HOLD_RELEASED' }
     ];
     
@@ -5974,6 +5998,11 @@
         if (stored) {
           var parsed = JSON.parse(stored);
           patchRequestsStore.requests = Array.isArray(parsed.requests) ? parsed.requests : [];
+          // v1.6.45: Normalize legacy Verifier_* statuses from stored data
+          patchRequestsStore.requests.forEach(function(pr) {
+            if (pr.status) pr.status = normalizeLegacyStatus(pr.status);
+            if (pr.actor_role) pr.actor_role = normalizeLegacyRole(pr.actor_role);
+          });
         } else {
           patchRequestsStore.requests = [];
         }
@@ -6335,27 +6364,27 @@
         text: response
       });
       
-      return updatePatchRequestStatus(requestId, 'Reviewer_Responded', actor, actorRole, 'Clarification provided');
+      return updatePatchRequestStatus(requestId, 'Verifier_Responded', actor, actorRole, 'Clarification provided');
     }
     
-    function reviewerApprove(requestId, actor, actorRole) {
+    function verifierApprove(requestId, actor, actorRole) {
       var request = getPatchRequest(requestId);
       if (!request) return null;
-      if (!['Submitted', 'Reviewer_Responded'].includes(request.status)) return null;
-      return updatePatchRequestStatus(requestId, 'Reviewer_Approved', actor, actorRole, 'Approved by reviewer');
+      if (!['Submitted', 'Verifier_Responded'].includes(request.status)) return null;
+      return updatePatchRequestStatus(requestId, 'Verifier_Approved', actor, actorRole, 'Approved by verifier');
     }
     
     function adminApprove(requestId, actor, actorRole) {
       var request = getPatchRequest(requestId);
       if (!request) return null;
-      if (request.status !== 'Reviewer_Approved') return null;
+      if (request.status !== 'Verifier_Approved') return null;
       return updatePatchRequestStatus(requestId, 'Admin_Approved', actor, actorRole, 'Approved by admin');
     }
     
     function setAdminHold(requestId, reason, actor, actorRole) {
       var request = getPatchRequest(requestId);
       if (!request) return null;
-      if (request.status !== 'Reviewer_Approved') return null;
+      if (request.status !== 'Verifier_Approved') return null;
       return updatePatchRequestStatus(requestId, 'Admin_Hold', actor, actorRole, reason || 'Placed on admin hold');
     }
     
@@ -6603,7 +6632,7 @@
       var commentsEl = document.getElementById('comments-open-count');
       if (commentsEl) {
         var commentCounts = getCommentCounts();
-        commentsEl.textContent = commentCounts.open + commentCounts.reviewer_responded;
+        commentsEl.textContent = commentCounts.open + commentCounts.verifier_responded;
       }
     }
     
@@ -6643,8 +6672,8 @@
         'Draft': 'draft',
         'Submitted': 'submitted',
         'Needs_Clarification': 'submitted',
-        'Reviewer_Responded': 'submitted',
-        'Reviewer_Approved': 'approved',
+        'Verifier_Responded': 'submitted',
+        'Verifier_Approved': 'approved',
         'Admin_Hold': 'submitted',
         'Admin_Approved': 'approved',
         'Sent_to_Kiwi': 'sent',
@@ -6679,7 +6708,7 @@
       }
       
       var approvedOnly = selected.filter(function(r) {
-        return r.status === 'Reviewer_Approved' || r.status === 'Admin_Approved';
+        return r.status === 'Verifier_Approved' || r.status === 'Admin_Approved';
       });
       
       if (approvedOnly.length === 0) {
@@ -6898,7 +6927,7 @@
       
       // Review notes section (editable for Verifier/Admin)
       if ((currentMode === 'Verifier' || currentMode === 'Admin') && 
-          ['Submitted', 'Needs_Clarification', 'Reviewer_Responded'].includes(request.status)) {
+          ['Submitted', 'Needs_Clarification', 'Verifier_Responded'].includes(request.status)) {
         html += '<div style="margin-bottom: 20px; border-top: 1px solid #e0e0e0; padding-top: 15px;">' +
           '<h4 style="margin: 0 0 10px 0; font-size: 0.9em; text-transform: uppercase; color: #1565c0;">Review Notes (Verifier)</h4>' +
           '<textarea id="pr-review-notes" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; resize: vertical; min-height: 60px;" placeholder="Add review notes...">' + escapeHtml(request.review_notes || '') + '</textarea>' +
@@ -6943,17 +6972,17 @@
       if (role === 'Verifier' || role === 'Admin') {
         if (request.status === 'Submitted') {
           footerHtml += '<button class="toolbar-btn" onclick="openClarificationModal(\'' + requestId + '\')" style="background: #e65100;" title="Request more information from the analyst">Request Clarification</button>';
-          footerHtml += '<button class="toolbar-btn" onclick="approveAsReviewer(\'' + requestId + '\')" style="background: #388e3c;" title="Approve this patch request">Approve</button>';
+          footerHtml += '<button class="toolbar-btn" onclick="approveAsVerifier(\'' + requestId + '\')" style="background: #388e3c;" title="Approve this patch request">Approve</button>';
           footerHtml += '<button class="toolbar-btn" onclick="rejectPatchRequest(\'' + requestId + '\')" style="background: #c62828;" title="Reject this patch request">Reject</button>';
-        } else if (request.status === 'Reviewer_Responded') {
-          footerHtml += '<button class="toolbar-btn" onclick="approveAsReviewer(\'' + requestId + '\')" style="background: #388e3c;" title="Approve this patch request">Approve</button>';
+        } else if (request.status === 'Verifier_Responded') {
+          footerHtml += '<button class="toolbar-btn" onclick="approveAsVerifier(\'' + requestId + '\')" style="background: #388e3c;" title="Approve this patch request">Approve</button>';
           footerHtml += '<button class="toolbar-btn" onclick="rejectPatchRequest(\'' + requestId + '\')" style="background: #c62828;" title="Reject this patch request">Reject</button>';
         }
       }
       
       // Admin-only actions
       if (role === 'Admin') {
-        if (request.status === 'Reviewer_Approved') {
+        if (request.status === 'Verifier_Approved') {
           footerHtml += '<button class="toolbar-btn" onclick="adminApprovePatch(\'' + requestId + '\')" style="background: #1565c0;" title="Give admin approval">Admin Approve</button>';
           footerHtml += '<button class="toolbar-btn" onclick="setAdminHoldPatch(\'' + requestId + '\')" style="background: #f57c00;" title="Put on hold for review">Admin Hold</button>';
         } else if (request.status === 'Admin_Hold') {
@@ -7022,7 +7051,7 @@
       }
     }
     
-    function approveAsReviewer(requestId) {
+    function approveAsVerifier(requestId) {
       var author = currentMode || 'Verifier';
       var reviewNotes = document.getElementById('pr-review-notes')?.value || '';
       
@@ -7031,11 +7060,11 @@
         updatePatchRequest(requestId, { review_notes: reviewNotes }, author, author);
       }
       
-      var result = reviewerApprove(requestId, author, author);
+      var result = verifierApprove(requestId, author, author);
       if (result) {
         closePatchDetailDrawer();
         renderPatchConsoleTable();
-        showToast('Patch request approved by reviewer', 'success');
+        showToast('Patch request approved by verifier', 'success');
       } else {
         showToast('Failed to approve patch request', 'error');
       }
@@ -7997,7 +8026,7 @@
       return (bytes / 1024 / 1024).toFixed(1) + ' MB';
     }
 
-    // v1.6.44: Update progress block from actual data (signals + patch requests)
+    // v1.6.45: Update progress block from actual data (signals + patch requests)
     // Now filters by current sheet view
     function updateProgressBlock() {
       var todoEl = document.getElementById('progress-todo');
@@ -8007,8 +8036,8 @@
       
       if (!todoEl || !reviewEl || !doneEl) return;
       
-      // v1.6.44: Count from grid data to match All-Data-Grid view
-      // v1.6.44: Early return if no data actually loaded
+      // v1.6.45: Count from grid data to match All-Data-Grid view
+      // v1.6.45: Early return if no data actually loaded
       if (!workbook || !workbook.order || workbook.order.length === 0) {
         todoEl.textContent = 0;
         reviewEl.textContent = 0;
@@ -8190,7 +8219,7 @@
       if (gridSelector) gridSelector.value = gridState.sheet ? gridState.sheet : '';
     }
     
-    // v1.6.44: Grid sheet selector change handler - syncs both selectors
+    // v1.6.45: Grid sheet selector change handler - syncs both selectors
     function handleGridSheetSelectorChange(value) {
       console.log('[Grid] Sheet selector changed:', value);
       if (value === '' || value === 'all') {
@@ -8396,13 +8425,13 @@
         
         // Map status to escalation level
         if (pr.status === 'Submitted' || pr.status === 'Pending_Review') {
-          escalationStatus = 'Analyst -> Reviewer';
-          escalatedTo = 'Reviewer';
+          escalationStatus = 'Analyst -> Verifier';
+          escalatedTo = 'Verifier';
         } else if (pr.status === 'Needs_Clarification') {
-          escalationStatus = 'Reviewer -> Analyst (Returned)';
+          escalationStatus = 'Verifier -> Analyst (Returned)';
           escalatedTo = 'Analyst';
         } else if (pr.status === 'Verifier_Approved' || pr.status === 'Sent_to_Admin') {
-          escalationStatus = 'Reviewer -> Admin';
+          escalationStatus = 'Verifier -> Admin';
           escalatedTo = 'Admin';
         } else if (pr.status === 'Admin_Approved' || pr.status === 'Promoted') {
           escalationStatus = 'Approved & Promoted';
@@ -8982,9 +9011,9 @@
       if (page === 'loader') page = 'triage';
       var pages = ['triage', 'grid', 'patch', 'review', 'verifier-review', 'admin-review', 'admin-approval', 'admin', 'row', 'restricted'];
       
-      // v1.5.3: Reset reviewer SRR mode when navigating away from row page
-      if (!page.startsWith('row') && srrState.reviewerMode) {
-        resetReviewerSRRMode();
+      // v1.5.3: Reset verifier SRR mode when navigating away from row page
+      if (!page.startsWith('row') && srrState.verifierMode) {
+        resetVerifierSRRMode();
       }
       
       // Handle row/:id routes
@@ -9034,13 +9063,13 @@
         restrictedReason = 'The Admin Panel is only available to users with the Admin role.';
         adminTab = null;
       }
-      if (page === 'review' && currentMode !== 'reviewer' && currentMode !== 'admin') {
-        console.log('[Navigate] Review page requires reviewer/admin mode');
-        restrictedReason = 'Config Inspector is only available to Reviewers and Admins.';
+      if (page === 'review' && currentMode !== 'verifier' && currentMode !== 'admin') {
+        console.log('[Navigate] Review page requires verifier/admin mode');
+        restrictedReason = 'Config Inspector is only available to Verifiers and Admins.';
       }
-      if (page === 'verifier-review' && currentMode !== 'reviewer' && currentMode !== 'admin') {
-        console.log('[Navigate] Verifier Review page requires reviewer/admin mode');
-        restrictedReason = 'Verifier Review is only available to Reviewers and Admins.';
+      if (page === 'verifier-review' && currentMode !== 'verifier' && currentMode !== 'admin') {
+        console.log('[Navigate] Verifier Review page requires verifier/admin mode');
+        restrictedReason = 'Verifier Review is only available to Verifiers and Admins.';
       }
       if (page === 'admin-approval' && currentMode !== 'admin') {
         console.log('[Navigate] Admin Approval page requires admin mode');
@@ -9048,7 +9077,7 @@
       }
       if (page === 'patch' && currentMode !== 'analyst') {
         console.log('[Navigate] Patch Studio requires analyst mode');
-        restrictedReason = 'Patch Studio is only available to Analysts. Reviewers and Admins review patches submitted by Analysts.';
+        restrictedReason = 'Patch Studio is only available to Analysts. Verifiers and Admins review patches submitted by Analysts.';
       }
       
       // If restricted, show access restricted page
@@ -9139,10 +9168,10 @@
       if (page === 'grid') {
         setTimeout(function() { 
           initGrid(); 
-          // v1.5.2: Initialize reviewer grid mode
-          if (currentMode === 'reviewer') {
-            initReviewerGridFilters();
-            renderReviewerGrid();
+          // v1.5.2: Initialize verifier grid mode
+          if (currentMode === 'verifier') {
+            initVerifierGridFilters();
+            renderVerifierGrid();
           }
         }, 0);
       }
@@ -9235,7 +9264,7 @@
     }
     
     // v1.6.22: Apply role-based restrictions to mode switcher
-    // Analyst/Reviewer: locked to their role, cannot switch
+    // Analyst/Verifier: locked to their role, cannot switch
     // Admin: full "God mode" - can switch between all roles (when Playground enabled)
     var roleRestrictionsApplied = false;
     
@@ -9345,8 +9374,8 @@
         return;
       }
       
-      // Analyst and Reviewer are locked to their respective modes
-      if (loggedInRole === 'analyst' || loggedInRole === 'reviewer') {
+      // Analyst and Verifier are locked to their respective modes
+      if (loggedInRole === 'analyst' || loggedInRole === 'verifier') {
         // Hide the entire mode section at bottom (toggle buttons + bottom indicator)
         if (modeSectionBottom) modeSectionBottom.style.display = 'none';
         
@@ -9373,12 +9402,12 @@
     }
     
     function setMode(mode) {
-      const modes = ['analyst', 'reviewer', 'admin'];
+      const modes = ['analyst', 'verifier', 'admin'];
       if (!modes.includes(mode)) mode = 'analyst';
       currentMode = mode;
       
       // Update triage page titles with role
-      var roleLabel = mode === 'analyst' ? 'Analyst' : mode === 'reviewer' ? 'Reviewer' : 'Admin';
+      var roleLabel = mode === 'analyst' ? 'Analyst' : mode === 'verifier' ? 'Verifier' : 'Admin';
       var triageTitle = document.getElementById('triage-page-title');
       var verifierTitle = document.getElementById('verifier-triage-title');
       if (triageTitle) triageTitle.textContent = 'Triage - ' + roleLabel;
@@ -9391,7 +9420,7 @@
       // Toggle nav visibility based on mode using CSS classes
       const appLayout = document.querySelector('.app-layout');
       if (appLayout) {
-        appLayout.classList.remove('mode-analyst', 'mode-reviewer', 'mode-admin');
+        appLayout.classList.remove('mode-analyst', 'mode-verifier', 'mode-admin');
         appLayout.classList.add(`mode-${mode}`);
       }
 
@@ -9399,13 +9428,13 @@
       const analystContent = document.getElementById('analyst-triage-content');
       const verifierContent = document.getElementById('verifier-triage-content');
       if (analystContent && verifierContent) {
-        if (mode === 'reviewer' || mode === 'admin') {
+        if (mode === 'verifier' || mode === 'admin') {
           analystContent.style.display = 'none';
           verifierContent.style.display = 'block';
           
-          // v1.5.3 Fix: Always reload reviewer queue from canonical stores (not dependent on analyst SRR state)
-          reloadReviewerQueuesFromStore();
-          initReviewerFilters();
+          // v1.5.3 Fix: Always reload verifier queue from canonical stores (not dependent on analyst SRR state)
+          reloadVerifierQueuesFromStore();
+          initVerifierFilters();
           renderVerifierTriage();
         } else {
           analystContent.style.display = 'block';
@@ -9416,14 +9445,14 @@
         }
       }
       
-      // v1.5.2: Toggle Grid reviewer mode
-      var reviewerGridBar = document.getElementById('reviewer-grid-filter-bar');
+      // v1.5.2: Toggle Grid verifier mode
+      var verifierGridBar = document.getElementById('verifier-grid-filter-bar');
       var analystGridBar = document.getElementById('analyst-grid-controls');
-      if (reviewerGridBar) {
-        reviewerGridBar.style.display = mode === 'reviewer' ? 'flex' : 'none';
+      if (verifierGridBar) {
+        verifierGridBar.style.display = mode === 'verifier' ? 'flex' : 'none';
       }
       if (analystGridBar) {
-        // Keep analyst controls visible but disable inline editing for reviewers
+        // Keep analyst controls visible but disable inline editing for verifiers
       }
       
       // If downgrading from admin mode, teardown admin state
@@ -9435,19 +9464,19 @@
       if (mode === 'analyst') {
         // Analyst: ensure editing is enabled
         srrState.isReadOnly = false;
-        srrState.reviewerMode = false;
-        // Reset reviewer SRR mode to restore analyst UI (tabs, chips, etc.)
+        srrState.verifierMode = false;
+        // Reset verifier SRR mode to restore analyst UI (tabs, chips, etc.)
         if (srrState.currentRecord) {
-          resetReviewerSRRMode();
+          resetVerifierSRRMode();
           renderSrrFields(srrState.currentRecord);
         }
-      } else if (mode === 'reviewer' || mode === 'admin') {
-        // Reviewer/Admin: set read-only mode
+      } else if (mode === 'verifier' || mode === 'admin') {
+        // Verifier/Admin: set read-only mode
         srrState.isReadOnly = true;
-        // Initialize reviewer SRR mode if SRR is open (tabs, panel state)
+        // Initialize verifier SRR mode if SRR is open (tabs, panel state)
         if (srrState.currentRecord) {
-          srrState.reviewerMode = true;
-          initReviewerSRRMode();
+          srrState.verifierMode = true;
+          initVerifierSRRMode();
           renderSrrFields(srrState.currentRecord);
         }
       }
@@ -9480,18 +9509,18 @@
       if (currentMode === 'admin') {
         navigateTo('admin');
       } else {
-        // Analyst and Reviewer default to All Data Grid
+        // Analyst and Verifier default to All Data Grid
         navigateTo('grid');
       }
     }
     
     function applyModeVisibility(mode) {
-      const revElements = document.querySelectorAll('[data-mode-reviewer]');
+      const revElements = document.querySelectorAll('[data-mode-verifier]');
       const anlElements = document.querySelectorAll('[data-mode-analyst]');
       const admElements = document.querySelectorAll('[data-mode-admin]');
       
       revElements.forEach(el => {
-        el.classList.toggle('mode-hidden', mode !== 'reviewer' && mode !== 'admin');
+        el.classList.toggle('mode-hidden', mode !== 'verifier' && mode !== 'admin');
       });
       anlElements.forEach(el => {
         el.classList.toggle('mode-hidden', mode !== 'analyst');
@@ -9510,8 +9539,8 @@
     var DEFAULT_DEMO_USERS = [
       { id: 'user_001', name: '', email: '', role: 'analyst', status: 'active' },
       { id: 'user_002', name: '', email: '', role: 'analyst', status: 'active' },
-      { id: 'user_003', name: '', email: '', role: 'reviewer', status: 'active' },
-      { id: 'user_004', name: '', email: '', role: 'reviewer', status: 'active' },
+      { id: 'user_003', name: '', email: '', role: 'verifier', status: 'active' },
+      { id: 'user_004', name: '', email: '', role: 'verifier', status: 'active' },
       { id: 'user_005', name: '', email: '', role: 'admin', status: 'active' },
       { id: 'user_006', name: '', email: '', role: 'admin', status: 'active' }
     ];
@@ -9575,7 +9604,7 @@
         html += '<td style="padding: 12px 8px; border-bottom: 1px solid #e0e0e0;">';
         html += '<select id="user-role-' + idx + '" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em; cursor: pointer;">';
         html += '<option value="analyst"' + (user.role === 'analyst' ? ' selected' : '') + '>Analyst</option>';
-        html += '<option value="reviewer"' + (user.role === 'reviewer' ? ' selected' : '') + '>Reviewer</option>';
+        html += '<option value="verifier"' + (user.role === 'verifier' ? ' selected' : '') + '>Verifier</option>';
         html += '<option value="admin"' + (user.role === 'admin' ? ' selected' : '') + '>Admin</option>';
         html += '</select>';
         html += '</td>';
@@ -10455,12 +10484,12 @@
       search: '',
       visibleColumns: [],
       allColumns: [],
-      // v1.6.44: Column ordering and display preferences
+      // v1.6.45: Column ordering and display preferences
       columnOrder: null,  // User-defined column order (null = use default)
       hiddenColumns: ['file_url', 'File_URL_c', '_row_index', '_originalIdx', '_sheetRowIndex', 'sheet']  // Columns hidden by default
     };
     
-    // v1.6.44: Get Excel-style column letter (A, B, C, ... Z, AA, AB, etc.)
+    // v1.6.45: Get Excel-style column letter (A, B, C, ... Z, AA, AB, etc.)
     function getColumnLetter(index) {
       var letter = '';
       while (index >= 0) {
@@ -10470,7 +10499,7 @@
       return letter;
     }
     
-    // v1.6.44: Get preferred column order for display
+    // v1.6.45: Get preferred column order for display
     function getPreferredColumnOrder(columns) {
       // Priority columns to show first (account/identity fields)
       var priorityFields = [
@@ -10502,7 +10531,7 @@
       });
     }
     
-    // v1.6.44: Column drag and drop handlers
+    // v1.6.45: Column drag and drop handlers
     var draggedColumnIdx = null;
     
     function handleColumnDragStart(event) {
@@ -10751,13 +10780,13 @@
         });
       }
       
-      // v1.5.2: Reviewer mode - apply division/status filters from reviewerFilterState
-      if (currentMode === 'reviewer') {
+      // v1.5.2: Verifier mode - apply division/status filters from verifierFilterState
+      if (currentMode === 'verifier') {
         // Refresh prStatusMap for accurate filtering
-        renderReviewerGrid();
+        renderVerifierGrid();
         
         // Filter by division if set (uses matchesDivisionFilter for Unassigned support)
-        if (reviewerFilterState.division) {
+        if (verifierFilterState.division) {
           filtered = filtered.filter(function(r) {
             return matchesDivisionFilter(r);
           });
@@ -10765,16 +10794,16 @@
         
         // Filter by PR status if set - only show records with matching PatchRequest status
         // Guard: only apply if prStatusMap is populated (PR data loaded)
-        if (reviewerFilterState.status && window.reviewerPrStatusMap && Object.keys(window.reviewerPrStatusMap).length > 0) {
+        if (verifierFilterState.status && window.verifierPrStatusMap && Object.keys(window.verifierPrStatusMap).length > 0) {
           filtered = filtered.filter(function(r) {
             var recordId = r.record_id || r.contract_key || '';
-            var prInfo = window.reviewerPrStatusMap[recordId];
+            var prInfo = window.verifierPrStatusMap[recordId];
             if (!prInfo) return false; // No PatchRequest = not shown when status filter active
-            return prInfo.status === reviewerFilterState.status;
+            return prInfo.status === verifierFilterState.status;
           });
-        } else if (reviewerFilterState.status && (!window.reviewerPrStatusMap || Object.keys(window.reviewerPrStatusMap).length === 0)) {
+        } else if (verifierFilterState.status && (!window.verifierPrStatusMap || Object.keys(window.verifierPrStatusMap).length === 0)) {
           // PR data not yet loaded - skip status filter and show toast
-          console.log('[Reviewer] Status filter skipped - no PatchRequest data loaded yet');
+          console.log('[Verifier] Status filter skipped - no PatchRequest data loaded yet');
         }
       }
       
@@ -10831,7 +10860,7 @@
         });
       }
       
-      // v1.6.44: Apply preferred column order for display
+      // v1.6.45: Apply preferred column order for display
       gridState.allColumns = columns.slice();
       gridState.visibleColumns = getPreferredColumnOrder(columns);
       
@@ -10867,8 +10896,8 @@
         // Cleanup virtualization when not needed
         cleanupGridVirtualization();
         // v1.5.2: Pass sheet name and original row index to click handler
-        // Also apply reviewer highlighting if in reviewer mode
-        var isReviewerMode = currentMode === 'reviewer';
+        // Also apply verifier highlighting if in verifier mode
+        var isVerifierMode = currentMode === 'verifier';
         // v1.6.18: Status key normalization
         var STATUS_KEYS = ['status', 'Status', 'sf_contract_status', 'review_state', 'Review_State'];
         
@@ -10898,17 +10927,17 @@
             else rowClasses.push('row-changed'); // correction, rfi, system_change
           }
           
-          // v1.5.2: Reviewer mode - apply PR status highlighting
+          // v1.5.2: Verifier mode - apply PR status highlighting
           var rowStyle = '';
           var clickHandler = 'openRowReviewDrawer(\'' + sheetName + '\',' + sheetRowIdx + ')';
           
-          if (isReviewerMode) {
-            var highlight = getReviewerRowHighlight(recordId);
+          if (isVerifierMode) {
+            var highlight = getVerifierRowHighlight(recordId);
             if (highlight) {
               rowStyle = 'background: ' + highlight.bg + '; border-left: 3px solid ' + highlight.border + ';';
             }
-            // Route reviewer clicks through handleReviewerRowClick
-            clickHandler = 'handleReviewerRowClick(\'' + escapeHtml(recordId) + '\', \'' + sheetName + '\', ' + sheetRowIdx + ')';
+            // Route verifier clicks through handleVerifierRowClick
+            clickHandler = 'handleVerifierRowClick(\'' + escapeHtml(recordId) + '\', \'' + sheetName + '\', ' + sheetRowIdx + ')';
           }
           
           // v1.6.2: Add row badges for signal counts
@@ -10921,7 +10950,7 @@
               if (val === null || val === undefined) val = '';
               if (typeof val === 'object') val = JSON.stringify(val);
               
-              // v1.6.44: Make File_Name a clickable link using file_url
+              // v1.6.45: Make File_Name a clickable link using file_url
               var isFileNameCol = col.toLowerCase().includes('file_name');
               var cellContent = String(val);
               if (isFileNameCol && val) {
@@ -10956,7 +10985,7 @@
       updateGridSheetStats(records, filtered);
       perfLog('renderGrid', perfT);
       
-      // v1.6.44: Always hide upload loading after grid renders (catches non-virtualized path)
+      // v1.6.45: Always hide upload loading after grid renders (catches non-virtualized path)
       if (typeof hideUploadLoading === 'function') {
         hideUploadLoading();
       }
@@ -11713,8 +11742,8 @@
           request.thread.push({
             id: requestId + '_resp_0',
             timestamp: now,
-            author: 'Reviewer',
-            role: 'reviewer',
+            author: 'Verifier',
+            role: 'verifier',
             content: response,
             type: 'response'
           });
@@ -12929,15 +12958,15 @@
     function openRowReviewDrawer(arg1, arg2) {
       // v1.5.3 Fix: Determine read-only mode based on current role at render time
       // Analyst mode: always editable (isReadOnly = false)
-      // Reviewer/Admin mode WITH artifact context: read-only (isReadOnly = true)
-      // Reviewer/Admin mode WITHOUT artifact context (direct grid nav): still read-only for field inspector
+      // Verifier/Admin mode WITH artifact context: read-only (isReadOnly = true)
+      // Verifier/Admin mode WITHOUT artifact context (direct grid nav): still read-only for field inspector
       if (currentMode === 'analyst') {
         // Analyst can always edit - reset read-only state
         srrState.isReadOnly = false;
-        srrState.reviewerMode = false;
-      } else if (currentMode === 'reviewer' || currentMode === 'admin') {
-        // Reviewer/Admin: read-only mode for field inspector
-        // Only set reviewerMode if coming from artifact context (vrOpenSingleRowReview sets this)
+        srrState.verifierMode = false;
+      } else if (currentMode === 'verifier' || currentMode === 'admin') {
+        // Verifier/Admin: read-only mode for field inspector
+        // Only set verifierMode if coming from artifact context (vrOpenSingleRowReview sets this)
         srrState.isReadOnly = true;
       } else {
         // Default to editable
@@ -13148,9 +13177,9 @@
       // Load PDF for this record (v1.4.10)
       srrLoadPdfForRecord(record);
       
-      // v1.5.3: Initialize Reviewer SRR mode if applicable
-      if (srrState.reviewerMode) {
-        initReviewerSRRMode();
+      // v1.5.3: Initialize Verifier SRR mode if applicable
+      if (srrState.verifierMode) {
+        initVerifierSRRMode();
       }
     }
     
@@ -13330,11 +13359,11 @@
         var iconReset = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 110 8h-1"/></svg>';
         
         var actionsHtml = '<div class="srr-field-actions">';
-        // v1.5.3 Fix: Reviewer can action non-verified fields, verified fields are read-only
+        // v1.5.3 Fix: Verifier can action non-verified fields, verified fields are read-only
         // Analyst: all actions available based on field state
-        // Reviewer/Admin: actions available for non-verified/non-submitted states
+        // Verifier/Admin: actions available for non-verified/non-submitted states
         var isFieldActionable = !srrState.isReadOnly || 
-          (srrState.reviewerMode && fieldState !== 'verified' && fieldState !== 'submitted');
+          (srrState.verifierMode && fieldState !== 'verified' && fieldState !== 'submitted');
         
         if (isFieldActionable) {
           if (fieldState === 'todo') {
@@ -13344,7 +13373,7 @@
           } else if (fieldState === 'modified') {
             // Modified: no action icons (user moved on after editing)
           } else if (fieldState === 'verified') {
-            // Verified: read-only for reviewers, reset for analysts
+            // Verified: read-only for verifiers, reset for analysts
             if (!srrState.isReadOnly) {
               actionsHtml += '<button class="srr-field-action reset" onclick="event.stopPropagation(); srrResetFieldState(\'' + key + '\')" title="Reset to TODO">' + iconReset + '</button>';
             }
@@ -13991,7 +14020,7 @@
       navigateTo('grid');
     }
     
-    // ========== v1.5.1: PATCH TESTER TAB (Reviewer SSR) ==========
+    // ========== v1.5.1: PATCH TESTER TAB (Verifier SSR) ==========
     var srrPatchTesterState = {
       artifactId: null,
       field: null,
@@ -14020,13 +14049,13 @@
     }
     
     function srrShowPatchTesterTabs() {
-      // v1.5.1: Show tabs for verifier (reviewer) AND admin roles (not analyst)
+      // v1.5.1: Show tabs for verifier (verifier) AND admin roles (not analyst)
       // Only show for explicit Correction/Blacklist types (not RFI, not unknown)
-      // Note: In codebase, 'reviewer' = Verifier role (UI name differs from internal name)
+      // Note: In codebase, 'verifier' = Verifier role (UI name differs from internal name)
       var tabsEl = document.getElementById('srr-panel-tabs');
       if (!tabsEl) return;
       
-      var isVerifierOrAdmin = (currentMode === 'reviewer' || currentMode === 'admin');
+      var isVerifierOrAdmin = (currentMode === 'verifier' || currentMode === 'admin');
       
       // Check current artifact type from srrState
       var artifactId = srrState.currentArtifactId;
@@ -14117,19 +14146,19 @@
       var notesEl = document.getElementById('srr-tester-notes');
       
       var adjustedValue = newValueEl ? newValueEl.value.trim() : '';
-      var reviewerNotes = notesEl ? notesEl.value.trim() : '';
+      var verifierNotes = notesEl ? notesEl.value.trim() : '';
       
-      if (!reviewerNotes) {
-        showToast('Please add reviewer notes explaining the changes', 'warning');
+      if (!verifierNotes) {
+        showToast('Please add verifier notes explaining the changes', 'warning');
         return;
       }
       
-      // Update artifact with reviewer feedback
+      // Update artifact with verifier feedback
       var artifact = getArtifact(artifactId);
       if (artifact) {
         artifact.status = 'needs_clarification';
-        artifact.reviewer_adjusted_value = adjustedValue;
-        artifact.reviewer_notes = reviewerNotes;
+        artifact.verifier_adjusted_value = adjustedValue;
+        artifact.verifier_notes = verifierNotes;
         artifact.updated_at = Date.now();
         saveArtifact(artifact);
         
@@ -14141,7 +14170,7 @@
           if (adjustedValue !== srrPatchTesterState.proposedValue) {
             feedbackMsg += 'Adjusted Value: ' + adjustedValue + '\n';
           }
-          feedbackMsg += 'Notes: ' + reviewerNotes;
+          feedbackMsg += 'Notes: ' + verifierNotes;
           addThreadMessage(artifact.thread_id, feedbackMsg);
         }
         
@@ -14152,7 +14181,7 @@
           actor: getActorForRole(currentMode),
           payload: {
             adjusted_value: adjustedValue,
-            reviewer_notes: reviewerNotes,
+            verifier_notes: verifierNotes,
             original_value: srrPatchTesterState.proposedValue
           }
         });
@@ -14168,7 +14197,7 @@
       // Reset UI
       srrSwitchRightTab('editor');
       
-      // Navigate back to triage (reviewer remains in review workflow)
+      // Navigate back to triage (verifier remains in review workflow)
       navigateTo('triage');
     }
     
@@ -14192,10 +14221,10 @@
       var fieldState = srrState.fieldStates[fieldKey] || 'todo';
       var fieldChange = srrState.patchDraft.changes ? srrState.patchDraft.changes[fieldKey] : null;
       
-      // v1.5.3 Fix: For reviewer mode, derive patch type from submitted change in payload
+      // v1.5.3 Fix: For verifier mode, derive patch type from submitted change in payload
       var fieldPatchType = 'correction';
-      if (srrState.reviewerMode && srrState.reviewerPayload) {
-        var payload = srrState.reviewerPayload;
+      if (srrState.verifierMode && srrState.verifierPayload) {
+        var payload = srrState.verifierPayload;
         var submittedChange = null;
         
         // Find submitted change for this field
@@ -14249,9 +14278,9 @@
       // Update form sections visibility
       srrUpdatePatchFormSections();
       
-      // v1.5.3 Fix: Use different rendering for reviewer mode vs analyst mode
-      if (srrState.reviewerMode) {
-        // Reviewer mode: show read-only summary for the selected field
+      // v1.5.3 Fix: Use different rendering for verifier mode vs analyst mode
+      if (srrState.verifierMode) {
+        // Verifier mode: show read-only summary for the selected field
         srrRenderPatchEditorForField(fieldKey);
       } else {
         // Analyst mode: use interactive patch editor
@@ -14262,7 +14291,7 @@
     }
     
     function srrRenderPatchEditorForField(fieldKey) {
-      // v1.5.3: Render Patch Review for reviewer mode - shows submitted patch data with actions
+      // v1.5.3: Render Patch Review for verifier mode - shows submitted patch data with actions
       var container = document.getElementById('srr-patch-editor-fields');
       if (!container) return;
       
@@ -14270,8 +14299,8 @@
       var record = srrState.currentRecord;
       var currentVal = record ? record[fieldKey] : '';
       
-      // v1.5.3 Fix: Load submitted patch data from reviewer payload (not just local draft)
-      var payload = srrState.reviewerPayload;
+      // v1.5.3 Fix: Load submitted patch data from verifier payload (not just local draft)
+      var payload = srrState.verifierPayload;
       var submittedChange = null;
       
       // Check if payload has this field's change
@@ -14372,12 +14401,12 @@
       html += '<span style="color: ' + stateColor + '; font-weight: 500;">' + stateLabel + '</span>';
       html += '</div>';
       
-      // v1.5.3: Add reviewer action buttons for non-final states
+      // v1.5.3: Add verifier action buttons for non-final states
       if (fieldState !== 'verified' && fieldState !== 'submitted') {
         html += '<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0; display: flex; gap: 8px; flex-wrap: wrap;">';
-        html += '<button onclick="reviewerApproveField(\'' + fieldKey + '\')" style="padding: 6px 12px; background: #2e7d32; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Approve</button>';
-        html += '<button onclick="reviewerRequestClarification(\'' + fieldKey + '\')" style="padding: 6px 12px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Request Clarification</button>';
-        html += '<button onclick="reviewerRejectField(\'' + fieldKey + '\')" style="padding: 6px 12px; background: #c62828; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Reject</button>';
+        html += '<button onclick="verifierApproveField(\'' + fieldKey + '\')" style="padding: 6px 12px; background: #2e7d32; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Approve</button>';
+        html += '<button onclick="verifierRequestClarification(\'' + fieldKey + '\')" style="padding: 6px 12px; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Request Clarification</button>';
+        html += '<button onclick="verifierRejectField(\'' + fieldKey + '\')" style="padding: 6px 12px; background: #c62828; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Reject</button>';
         html += '</div>';
       }
       
@@ -14385,8 +14414,8 @@
       container.innerHTML = html;
     }
     
-    function reviewerApproveField(fieldKey) {
-      // v1.5.3: Reviewer approves a field change - integrates with canonical workflow
+    function verifierApproveField(fieldKey) {
+      // v1.5.3: Verifier approves a field change - integrates with canonical workflow
       var patchRequestId = srrState.currentPatchRequestId;
       var patchRequest = patchRequestId ? PATCH_REQUEST_STORE.get(patchRequestId) : null;
       
@@ -14430,11 +14459,11 @@
       showToast('Approved: ' + fieldKey, 'success');
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditorForField(fieldKey);
-      console.log('[Reviewer] Approved field:', fieldKey);
+      console.log('[Verifier] Approved field:', fieldKey);
     }
     
-    function reviewerRequestClarification(fieldKey) {
-      // v1.5.3: Reviewer requests clarification - integrates with canonical workflow
+    function verifierRequestClarification(fieldKey) {
+      // v1.5.3: Verifier requests clarification - integrates with canonical workflow
       var patchRequestId = srrState.currentPatchRequestId;
       var patchRequest = patchRequestId ? PATCH_REQUEST_STORE.get(patchRequestId) : null;
       
@@ -14474,11 +14503,11 @@
       showToast('Clarification requested: ' + fieldKey, 'info');
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditorForField(fieldKey);
-      console.log('[Reviewer] Request clarification for field:', fieldKey);
+      console.log('[Verifier] Request clarification for field:', fieldKey);
     }
     
-    function reviewerRejectField(fieldKey) {
-      // v1.5.3: Reviewer rejects a field change - integrates with canonical workflow
+    function verifierRejectField(fieldKey) {
+      // v1.5.3: Verifier rejects a field change - integrates with canonical workflow
       var patchRequestId = srrState.currentPatchRequestId;
       var patchRequest = patchRequestId ? PATCH_REQUEST_STORE.get(patchRequestId) : null;
       
@@ -14509,7 +14538,7 @@
       showToast('Rejected: ' + fieldKey, 'warning');
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditorForField(fieldKey);
-      console.log('[Reviewer] Rejected field:', fieldKey);
+      console.log('[Verifier] Rejected field:', fieldKey);
     }
     
     function checkAllFieldsApproved(patchRequest) {
@@ -15897,38 +15926,38 @@
       payloads: JSON.parse(localStorage.getItem('srr_verifier_queue_v1') || '[]')
     };
     
-    // v1.5.2: Reviewer filter state with persistence
-    var reviewerFilterState = {
-      division: localStorage.getItem('reviewer_filter_division') || '',
-      status: localStorage.getItem('reviewer_filter_status') || '',
-      patchType: localStorage.getItem('reviewer_filter_patchtype') || ''
+    // v1.5.2: Verifier filter state with persistence
+    var verifierFilterState = {
+      division: localStorage.getItem('verifier_filter_division') || '',
+      status: localStorage.getItem('verifier_filter_status') || '',
+      patchType: localStorage.getItem('verifier_filter_patchtype') || ''
     };
     
-    function onReviewerFilterChange() {
-      var divisionEl = document.getElementById('reviewer-filter-division');
-      var statusEl = document.getElementById('reviewer-filter-status');
+    function onVerifierFilterChange() {
+      var divisionEl = document.getElementById('verifier-filter-division');
+      var statusEl = document.getElementById('verifier-filter-status');
       
-      reviewerFilterState.division = divisionEl ? divisionEl.value : '';
-      reviewerFilterState.status = statusEl ? statusEl.value : '';
+      verifierFilterState.division = divisionEl ? divisionEl.value : '';
+      verifierFilterState.status = statusEl ? statusEl.value : '';
       
       // Persist to localStorage
-      localStorage.setItem('reviewer_filter_division', reviewerFilterState.division);
-      localStorage.setItem('reviewer_filter_status', reviewerFilterState.status);
+      localStorage.setItem('verifier_filter_division', verifierFilterState.division);
+      localStorage.setItem('verifier_filter_status', verifierFilterState.status);
       
       // Re-render triage with filters
       renderVerifierTriage();
       
-      // Also re-render grid if in reviewer mode
-      if (currentMode === 'reviewer') {
-        renderReviewerGrid();
+      // Also re-render grid if in verifier mode
+      if (currentMode === 'verifier') {
+        renderVerifierGrid();
       }
       
-      console.log('[Reviewer] Filter changed:', reviewerFilterState);
+      console.log('[Verifier] Filter changed:', verifierFilterState);
     }
     
-    function setReviewerPatchType(ptype) {
-      reviewerFilterState.patchType = ptype;
-      localStorage.setItem('reviewer_filter_patchtype', ptype);
+    function setVerifierPatchType(ptype) {
+      verifierFilterState.patchType = ptype;
+      localStorage.setItem('verifier_filter_patchtype', ptype);
       
       // Update tab styling
       document.querySelectorAll('.pt-tab').forEach(function(tab) {
@@ -15945,10 +15974,10 @@
       });
       
       renderVerifierTriage();
-      console.log('[Reviewer] Patch type changed:', ptype);
+      console.log('[Verifier] Patch type changed:', ptype);
     }
     
-    function initReviewerFilters() {
+    function initVerifierFilters() {
       // Populate division dropdown from PatchRequest store
       var divisions = new Set();
       var hasUnassigned = false;
@@ -15971,7 +16000,7 @@
         }
       });
       
-      var divisionEl = document.getElementById('reviewer-filter-division');
+      var divisionEl = document.getElementById('verifier-filter-division');
       if (divisionEl) {
         divisionEl.innerHTML = '<option value="">All Divisions</option>';
         // Add Unassigned option if there are items without division_id
@@ -15989,23 +16018,23 @@
         });
         
         // Restore saved filter
-        divisionEl.value = reviewerFilterState.division;
+        divisionEl.value = verifierFilterState.division;
       }
       
-      var statusEl = document.getElementById('reviewer-filter-status');
+      var statusEl = document.getElementById('verifier-filter-status');
       if (statusEl) {
-        statusEl.value = reviewerFilterState.status;
+        statusEl.value = verifierFilterState.status;
       }
       
       // Restore patch type tab styling
-      if (reviewerFilterState.patchType) {
-        setReviewerPatchType(reviewerFilterState.patchType);
+      if (verifierFilterState.patchType) {
+        setVerifierPatchType(verifierFilterState.patchType);
       } else {
         updatePatchTypeCounts();
       }
       
       // Also init grid filter dropdowns
-      initReviewerGridFilters();
+      initVerifierGridFilters();
     }
     
     function updatePatchTypeCounts() {
@@ -16028,7 +16057,7 @@
       if (rfiEl) rfiEl.textContent = '(' + counts.rfi + ')';
     }
     
-    function initReviewerGridFilters() {
+    function initVerifierGridFilters() {
       // Populate grid division dropdown (same data as triage)
       var divisions = new Set();
       var hasUnassigned = false;
@@ -16050,7 +16079,7 @@
         }
       });
       
-      var divisionEl = document.getElementById('reviewer-grid-filter-division');
+      var divisionEl = document.getElementById('verifier-grid-filter-division');
       if (divisionEl) {
         divisionEl.innerHTML = '<option value="">All Divisions</option>';
         // Add Unassigned option if there are items without division_id
@@ -16066,40 +16095,40 @@
           opt.textContent = div;
           divisionEl.appendChild(opt);
         });
-        divisionEl.value = reviewerFilterState.division;
+        divisionEl.value = verifierFilterState.division;
       }
       
-      var statusEl = document.getElementById('reviewer-grid-filter-status');
+      var statusEl = document.getElementById('verifier-grid-filter-status');
       if (statusEl) {
-        statusEl.value = reviewerFilterState.status;
+        statusEl.value = verifierFilterState.status;
       }
     }
     
-    function onReviewerGridFilterChange() {
-      var divisionEl = document.getElementById('reviewer-grid-filter-division');
-      var statusEl = document.getElementById('reviewer-grid-filter-status');
+    function onVerifierGridFilterChange() {
+      var divisionEl = document.getElementById('verifier-grid-filter-division');
+      var statusEl = document.getElementById('verifier-grid-filter-status');
       
-      reviewerFilterState.division = divisionEl ? divisionEl.value : '';
-      reviewerFilterState.status = statusEl ? statusEl.value : '';
+      verifierFilterState.division = divisionEl ? divisionEl.value : '';
+      verifierFilterState.status = statusEl ? statusEl.value : '';
       
       // Persist
-      localStorage.setItem('reviewer_filter_division', reviewerFilterState.division);
-      localStorage.setItem('reviewer_filter_status', reviewerFilterState.status);
+      localStorage.setItem('verifier_filter_division', verifierFilterState.division);
+      localStorage.setItem('verifier_filter_status', verifierFilterState.status);
       
       // Sync triage dropdowns
-      var triageDivisionEl = document.getElementById('reviewer-filter-division');
-      var triageStatusEl = document.getElementById('reviewer-filter-status');
-      if (triageDivisionEl) triageDivisionEl.value = reviewerFilterState.division;
-      if (triageStatusEl) triageStatusEl.value = reviewerFilterState.status;
+      var triageDivisionEl = document.getElementById('verifier-filter-division');
+      var triageStatusEl = document.getElementById('verifier-filter-status');
+      if (triageDivisionEl) triageDivisionEl.value = verifierFilterState.division;
+      if (triageStatusEl) triageStatusEl.value = verifierFilterState.status;
       
       // Re-render grid with new filters applied
       renderGrid();
       
-      console.log('[Reviewer] Grid filter changed:', reviewerFilterState);
+      console.log('[Verifier] Grid filter changed:', verifierFilterState);
     }
     
-    function renderReviewerGrid() {
-      // v1.5.2: Reviewer-specific grid with status highlighting and read-only behavior
+    function renderVerifierGrid() {
+      // v1.5.2: Verifier-specific grid with status highlighting and read-only behavior
       // This enhances the normal grid render with PR status highlighting
       
       // First, build a map of record_id -> PatchRequest status
@@ -16154,26 +16183,26 @@
       });
       
       // Store for use in row click handler and grid filtering
-      window.reviewerPrStatusMap = prStatusMap;
+      window.verifierPrStatusMap = prStatusMap;
       
       // Update count display
-      var countEl = document.getElementById('reviewer-grid-filter-count');
+      var countEl = document.getElementById('verifier-grid-filter-count');
       if (countEl) {
         var activeCount = Object.keys(prStatusMap).length;
         var filterText = activeCount + ' records with active PatchRequests';
-        if (reviewerFilterState.division || reviewerFilterState.status) {
+        if (verifierFilterState.division || verifierFilterState.status) {
           filterText += ' (filtered)';
         }
         countEl.textContent = filterText;
       }
       
-      console.log('[Reviewer] Grid status map built:', Object.keys(prStatusMap).length, 'records');
+      console.log('[Verifier] Grid status map built:', Object.keys(prStatusMap).length, 'records');
     }
     
-    function getReviewerRowHighlight(recordId) {
+    function getVerifierRowHighlight(recordId) {
       // v1.5.2: Return highlight color based on PatchRequest status
-      if (!window.reviewerPrStatusMap) return null;
-      var prInfo = window.reviewerPrStatusMap[recordId];
+      if (!window.verifierPrStatusMap) return null;
+      var prInfo = window.verifierPrStatusMap[recordId];
       if (!prInfo) return null;
       
       var status = prInfo.status;
@@ -16192,36 +16221,36 @@
       }
     }
     
-    function handleReviewerRowClick(recordId, sheetName, rowIndex) {
-      // v1.5.3 Fix: Reviewer row click - route to Verifier Review via patch_request_id
+    function handleVerifierRowClick(recordId, sheetName, rowIndex) {
+      // v1.5.3 Fix: Verifier row click - route to Verifier Review via patch_request_id
       // Try multiple lookup keys for robustness
       var prInfo = null;
       var keysChecked = [];
       
-      if (window.reviewerPrStatusMap) {
+      if (window.verifierPrStatusMap) {
         // Try record_id first
         if (recordId) {
           keysChecked.push(recordId);
-          prInfo = window.reviewerPrStatusMap[recordId];
+          prInfo = window.verifierPrStatusMap[recordId];
         }
         
         // Fallback: try sheetName:rowIndex pattern
         if (!prInfo) {
           var aliasKey = sheetName + ':' + rowIndex;
           keysChecked.push(aliasKey);
-          prInfo = window.reviewerPrStatusMap[aliasKey];
+          prInfo = window.verifierPrStatusMap[aliasKey];
         }
       }
       
       if (prInfo && prInfo.patch_request_id) {
         // Open Verifier Review with this patch_request_id
-        console.log('[Reviewer] Opening Verifier Review for:', prInfo.patch_request_id, 'record:', recordId);
+        console.log('[Verifier] Opening Verifier Review for:', prInfo.patch_request_id, 'record:', recordId);
         openVerifierReviewDetail(prInfo.patch_request_id);
       } else {
         // No PatchRequest found - provide detailed debug info
-        var knownRecordIds = window.reviewerPrStatusMap ? Object.keys(window.reviewerPrStatusMap) : [];
+        var knownRecordIds = window.verifierPrStatusMap ? Object.keys(window.verifierPrStatusMap) : [];
         
-        console.warn('[Reviewer] No PatchRequest for record. Keys checked:', keysChecked.join(', '),
+        console.warn('[Verifier] No PatchRequest for record. Keys checked:', keysChecked.join(', '),
           '| Known PRs (' + knownRecordIds.length + '):', knownRecordIds.slice(0, 8).join(', ') + (knownRecordIds.length > 8 ? '...' : ''));
         
         // Show more helpful message
@@ -16233,9 +16262,9 @@
       }
     }
 
-    // v1.5.3 Fix: Reload reviewer queues from canonical stores (independent of analyst SRR state)
-    function reloadReviewerQueuesFromStore() {
-      console.log('[Reviewer] Reloading queues from canonical stores...');
+    // v1.5.3 Fix: Reload verifier queues from canonical stores (independent of analyst SRR state)
+    function reloadVerifierQueuesFromStore() {
+      console.log('[Verifier] Reloading queues from canonical stores...');
       
       // Step 1: Load from localStorage-persisted verifier queue
       var savedQueue = localStorage.getItem('srr_verifier_queue_v1');
@@ -16244,10 +16273,10 @@
           var parsed = JSON.parse(savedQueue);
           if (Array.isArray(parsed)) {
             verifierQueueState.payloads = parsed;
-            console.log('[Reviewer] Loaded', parsed.length, 'items from saved queue');
+            console.log('[Verifier] Loaded', parsed.length, 'items from saved queue');
           }
         } catch (e) {
-          console.warn('[Reviewer] Failed to parse saved queue:', e);
+          console.warn('[Verifier] Failed to parse saved queue:', e);
         }
       }
       
@@ -16290,7 +16319,7 @@
         // v1.5.3 Fix: Update existingIds to prevent duplicates in Step 4
         existingIds.add(prId);
         if (artId) existingIds.add(artId);
-        console.log('[Reviewer] Added PR from store:', prId);
+        console.log('[Verifier] Added PR from store:', prId);
       });
       
       // Step 4: Sync with ArtifactStore - add missing artifacts (checks updated existingIds)
@@ -16323,7 +16352,7 @@
         // Update existingIds
         existingIds.add(art.artifact_id);
         if (linkedPrId) existingIds.add(linkedPrId);
-        console.log('[Reviewer] Added artifact from store:', art.artifact_id);
+        console.log('[Verifier] Added artifact from store:', art.artifact_id);
       });
       
       // Step 5: Final de-dupe pass by id (safety net)
@@ -16337,7 +16366,7 @@
       
       // Save merged queue
       saveVerifierQueue();
-      console.log('[Reviewer] Queue reload complete. Total items:', verifierQueueState.payloads.length);
+      console.log('[Verifier] Queue reload complete. Total items:', verifierQueueState.payloads.length);
     }
     
     function addVerifierPayload(payload) {
@@ -16362,11 +16391,11 @@
 
     function matchesDivisionFilter(item) {
       // Helper to check if item matches division filter, handling Unassigned
-      if (!reviewerFilterState.division) return true;
-      if (reviewerFilterState.division === '__unassigned__') {
+      if (!verifierFilterState.division) return true;
+      if (verifierFilterState.division === '__unassigned__') {
         return !item.division_id;
       }
-      return item.division_id === reviewerFilterState.division;
+      return item.division_id === verifierFilterState.division;
     }
     
     // =====================
@@ -16383,8 +16412,8 @@
     // Map PatchRequest status to pipeline section
     var ANALYST_STATUS_MAP = {
       'Submitted': { section: 'pending', label: 'Pending Review', color: '#e65100' },
-      'Reviewer_Responded': { section: 'verifier', label: 'At Verifier', color: '#1565c0' },
-      'Reviewer_Approved': { section: 'admin', label: 'At Admin', color: '#7b1fa2' },
+      'Verifier_Responded': { section: 'verifier', label: 'At Verifier', color: '#1565c0' },
+      'Verifier_Approved': { section: 'admin', label: 'At Admin', color: '#7b1fa2' },
       'Admin_Hold': { section: 'admin', label: 'Admin Hold', color: '#7b1fa2' },
       'Needs_Clarification': { section: 'clarification', label: 'Needs Response', color: '#f57f17' },
       'Admin_Approved': { section: 'approved', label: 'Approved', color: '#2e7d32' },
@@ -16589,7 +16618,7 @@
         var timestamp = item.updated_at ? new Date(item.updated_at).toLocaleString() : 'Unknown';
         var statusBadge = '<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + 
           item.status_color + '15; color: ' + item.status_color + ';">' + item.status_label + '</span>';
-        var notesIndicator = item.notes ? '<span title="Has reviewer notes" style="margin-left: 4px; color: #f57f17;">💬</span>' : '';
+        var notesIndicator = item.notes ? '<span title="Has verifier notes" style="margin-left: 4px; color: #f57f17;">💬</span>' : '';
         
         var recordDisplay = item.contract_key || item.record_id || 'Unknown';
         if (recordDisplay.length > 20) recordDisplay = recordDisplay.substring(0, 18) + '...';
@@ -16771,7 +16800,7 @@
             // If needs clarification, show the notes in thread
             if (pr.status === 'Needs_Clarification' && pr.clarification_notes) {
               setTimeout(function() {
-                showToast('Reviewer requested clarification: ' + pr.clarification_notes.substring(0, 100), 'warning');
+                showToast('Verifier requested clarification: ' + pr.clarification_notes.substring(0, 100), 'warning');
               }, 500);
             }
           } catch (e) {
@@ -16814,17 +16843,17 @@
         if (!matchesDivisionFilter(p)) return false;
         
         // Apply patch type filter
-        if (reviewerFilterState.patchType && p.type !== reviewerFilterState.patchType) return false;
+        if (verifierFilterState.patchType && p.type !== verifierFilterState.patchType) return false;
         
         return true;
       });
       
       // If status dropdown is set (overrides tab), apply that instead
-      if (reviewerFilterState.status) {
+      if (verifierFilterState.status) {
         filtered = verifierQueueState.payloads.filter(function(p) {
-          if (p.status !== reviewerFilterState.status) return false;
+          if (p.status !== verifierFilterState.status) return false;
           if (!matchesDivisionFilter(p)) return false;
-          if (reviewerFilterState.patchType && p.type !== reviewerFilterState.patchType) return false;
+          if (verifierFilterState.patchType && p.type !== verifierFilterState.patchType) return false;
           return true;
         });
       }
@@ -16839,10 +16868,10 @@
       document.getElementById('v-count-resolved').textContent = `(${counts.resolved})`;
       
       // Update filter count indicator (show queue-scoped count)
-      var filterCountEl = document.getElementById('reviewer-filter-count');
+      var filterCountEl = document.getElementById('verifier-filter-count');
       if (filterCountEl) {
         var queueCount = verifierQueueState.payloads.filter(function(p) { return p.status === queue; }).length;
-        if (reviewerFilterState.division || reviewerFilterState.status || reviewerFilterState.patchType) {
+        if (verifierFilterState.division || verifierFilterState.status || verifierFilterState.patchType) {
           filterCountEl.textContent = filtered.length + ' of ' + queueCount + ' items (filtered)';
         } else {
           filterCountEl.textContent = queueCount + ' items';
@@ -16850,8 +16879,8 @@
       }
 
       if (filtered.length === 0) {
-        var msg = 'No reviewer items match the selected filters.';
-        if (!reviewerFilterState.division && !reviewerFilterState.status && !reviewerFilterState.patchType) {
+        var msg = 'No verifier items match the selected filters.';
+        if (!verifierFilterState.division && !verifierFilterState.status && !verifierFilterState.patchType) {
           msg = 'No payloads in this queue';
         }
         container.innerHTML = '<tr><td colspan="7" style="padding: 40px; text-align: center; color: #999;">' + msg + '</td></tr>';
@@ -16946,7 +16975,7 @@
     }
     
     function openRecordFromPayload(payloadId) {
-      // v1.5.3: Open record in Reviewer SRR mode with PatchRequest-first loading
+      // v1.5.3: Open record in Verifier SRR mode with PatchRequest-first loading
       
       // Step 1: Get artifact and payload first to find patch_request_id
       var artifact = getArtifact(payloadId);
@@ -16981,21 +17010,21 @@
                  pr.id === payloadId;
         });
         if (patchRequest) {
-          console.log('[Reviewer SRR] Found PatchRequest via scan:', patchRequest.request_id);
+          console.log('[Verifier SRR] Found PatchRequest via scan:', patchRequest.request_id);
         }
       }
       
       // Debug: Log available PR IDs if not found
       if (!patchRequest) {
         var knownPRIds = PATCH_REQUEST_STORE.list().map(function(pr) { return pr.request_id; });
-        console.warn('[Reviewer SRR] PatchRequest not found. Looking for:', patchRequestId, 
+        console.warn('[Verifier SRR] PatchRequest not found. Looking for:', patchRequestId, 
           'Available IDs:', knownPRIds.slice(0, 10).join(', ') + (knownPRIds.length > 10 ? '...' : ''));
       }
       
       // Step 4: Check if PatchRequest was expected but not found (strict mode)
       var patchRequestExpected = patchRequestId !== payloadId || (payload && payload.patch_request_id) || (artifact && artifact.patch_request_id);
       if (patchRequestExpected && !patchRequest) {
-        console.warn('[Reviewer SRR] PatchRequest expected but not found:', patchRequestId);
+        console.warn('[Verifier SRR] PatchRequest expected but not found:', patchRequestId);
         // Continue with artifact/payload fallback but log warning
       }
       
@@ -17012,7 +17041,7 @@
         tenantId = patchRequest.tenant_id;
         fieldKey = patchRequest.field_key;
         patchType = patchRequest.patch_kind || patchRequest.patch_type || 'correction';
-        console.log('[Reviewer SRR] Loaded PatchRequest:', patchRequestId, 'record_id:', recordId);
+        console.log('[Verifier SRR] Loaded PatchRequest:', patchRequestId, 'record_id:', recordId);
       }
       
       // Fallback to artifact if no PatchRequest record_id
@@ -17042,7 +17071,7 @@
         showBlockingError('Missing record_id', 
           'Cannot open record: PatchRequest ' + payloadId + ' has no record_id.\n\n' +
           'Key: patch_request_id=' + payloadId);
-        console.error('[Reviewer SRR] Missing record_id in PatchRequest:', payloadId);
+        console.error('[Verifier SRR] Missing record_id in PatchRequest:', payloadId);
         return;
       }
       
@@ -17054,7 +17083,7 @@
         showBlockingError('Missing tenant_id', 
           'Cannot open record: No tenant context available.\n\n' +
           'record_id=' + recordId + ', patch_request_id=' + payloadId);
-        console.error('[Reviewer SRR] Missing tenant_id for record lookup:', recordId);
+        console.error('[Verifier SRR] Missing tenant_id for record lookup:', recordId);
         return;
       }
       
@@ -17062,7 +17091,7 @@
         showBlockingError('Missing dataset_id', 
           'Cannot open record: No dataset context available.\n\n' +
           'record_id=' + recordId + ', tenant_id=' + effectiveTenantId + ', patch_request_id=' + payloadId);
-        console.error('[Reviewer SRR] Missing dataset_id for record lookup:', recordId);
+        console.error('[Verifier SRR] Missing dataset_id for record lookup:', recordId);
         return;
       }
       
@@ -17093,24 +17122,24 @@
         
         showBlockingError('Record not found', 
           'Cannot open record: No matching record in dataset or store.\n\n' + debugInfo);
-        console.error('[Reviewer SRR] Record not found:', recordId, 
+        console.error('[Verifier SRR] Record not found:', recordId, 
           'dataset:', effectiveDatasetId, 
           'storeKey:', storeKey,
           'workbookSheets:', workbookSheets);
         return;
       }
       
-      // Step 9: Set up Reviewer SRR state
+      // Step 9: Set up Verifier SRR state
       srrState.currentSheetName = recordInfo.sheetName;
       srrState.focusFieldKey = fieldKey || null;
-      srrState.reviewerMode = true;
-      srrState.reviewerPayload = patchRequest || payload || artifact;
-      srrState.reviewerPatchType = patchType;
-      srrState.reviewerPayloadId = payloadId;
+      srrState.verifierMode = true;
+      srrState.verifierPayload = patchRequest || payload || artifact;
+      srrState.verifierPatchType = patchType;
+      srrState.verifierPayloadId = payloadId;
       
       // Navigate to SRR
       navigateTo('row/' + recordInfo.rowIndex);
-      console.log('[Reviewer SRR] Opened record:', recordId, 'patchType:', patchType, 'field:', fieldKey, 'fromStore:', !!recordInfo.fromStore);
+      console.log('[Verifier SRR] Opened record:', recordId, 'patchType:', patchType, 'field:', fieldKey, 'fromStore:', !!recordInfo.fromStore);
     }
     
     function showBlockingError(title, message) {
@@ -17130,15 +17159,15 @@
       document.body.appendChild(modal);
     }
     
-    function initReviewerSRRMode() {
-      // v1.5.3: Initialize Reviewer SRR mode with read-only field inspector and Patch Review/Tester tabs
-      if (!srrState.reviewerMode) return;
+    function initVerifierSRRMode() {
+      // v1.5.3: Initialize Verifier SRR mode with read-only field inspector and Patch Review/Tester tabs
+      if (!srrState.verifierMode) return;
       
       // Set read-only flag to prevent field editing (but allow actions on non-verified fields)
       srrState.isReadOnly = true;
       
-      var patchType = srrState.reviewerPatchType || 'correction';
-      var payload = srrState.reviewerPayload;
+      var patchType = srrState.verifierPatchType || 'correction';
+      var payload = srrState.verifierPayload;
       
       // v1.5.3 Fix: Populate field states from PatchRequest for multi-issue records
       if (payload) {
@@ -17188,7 +17217,7 @@
           });
         }
         
-        console.log('[Reviewer SRR] Populated field states:', Object.keys(srrState.fieldStates).length, 'fields');
+        console.log('[Verifier SRR] Populated field states:', Object.keys(srrState.fieldStates).length, 'fields');
       }
       
       // Update right panel title and tabs
@@ -17198,9 +17227,9 @@
       if (panelTitle) panelTitle.textContent = 'Patch Review';
       
       if (panelTabs) {
-        // v1.5.3: Show tabs for all patch types in reviewer mode
+        // v1.5.3: Show tabs for all patch types in verifier mode
         panelTabs.style.display = 'flex';
-        // Update tab labels for reviewer mode
+        // Update tab labels for verifier mode
         var tabBtns = panelTabs.querySelectorAll('.srr-panel-tab');
         tabBtns.forEach(function(btn) {
           if (btn.getAttribute('data-tab') === 'editor') {
@@ -17209,7 +17238,7 @@
         });
       }
       
-      // v1.5.3 Fix: Keep patch type chips visible for navigation in reviewer mode
+      // v1.5.3 Fix: Keep patch type chips visible for navigation in verifier mode
       var patchTypeSelector = document.querySelector('.srr-patch-type-selector');
       if (patchTypeSelector) patchTypeSelector.style.display = '';  // Keep visible
       
@@ -17220,11 +17249,11 @@
       });
       
       // Populate Patch Review tab with submitted patch data
-      populateReviewerPatchReview(payload, patchType);
+      populateVerifierPatchReview(payload, patchType);
       
       // Populate Patch Tester if applicable
       if (patchType !== 'rfi' && payload) {
-        populateReviewerPatchTester(payload);
+        populateVerifierPatchTester(payload);
       }
       
       // For RFI, show comment thread instead of patch editor
@@ -17259,10 +17288,10 @@
         }
       }
       
-      console.log('[Reviewer SRR] Mode initialized for patch type:', patchType);
+      console.log('[Verifier SRR] Mode initialized for patch type:', patchType);
     }
     
-    function populateReviewerPatchReview(payload, patchType) {
+    function populateVerifierPatchReview(payload, patchType) {
       // v1.5.3: Populate the Patch Review (read-only) view with analyst's submitted patch
       var container = document.getElementById('srr-patch-editor-fields');
       if (!container || !payload) return;
@@ -17315,14 +17344,14 @@
       
       container.innerHTML = html;
       
-      // Hide change count and action box title for reviewer mode
+      // Hide change count and action box title for verifier mode
       var changeCount = document.getElementById('srr-change-count');
       var actionBoxTitle = document.getElementById('srr-action-box-title');
       if (changeCount) changeCount.style.display = 'none';
       if (actionBoxTitle) actionBoxTitle.textContent = 'Submitted Patch';
     }
     
-    function populateReviewerPatchTester(payload) {
+    function populateVerifierPatchTester(payload) {
       // v1.5.3: Pre-populate Patch Tester with payload data
       var fieldEl = document.getElementById('srr-tester-field');
       var oldEl = document.getElementById('srr-tester-old-value');
@@ -17435,12 +17464,12 @@
       replyInput.value = '';
     }
     
-    function resetReviewerSRRMode() {
-      // v1.5.3: Reset SRR to analyst mode when leaving reviewer context
-      srrState.reviewerMode = false;
-      srrState.reviewerPayload = null;
-      srrState.reviewerPatchType = null;
-      srrState.reviewerPayloadId = null;
+    function resetVerifierSRRMode() {
+      // v1.5.3: Reset SRR to analyst mode when leaving verifier context
+      srrState.verifierMode = false;
+      srrState.verifierPayload = null;
+      srrState.verifierPatchType = null;
+      srrState.verifierPayloadId = null;
       srrState.isReadOnly = false;  // Restore editing capability
       
       // Restore panel title and tabs
@@ -17479,7 +17508,7 @@
     var vrState = {
       currentPatchId: null,
       reviewState: 'Submitted', // Submitted, Under_Review, Needs_Clarification, Verifier_Approved, Rejected
-      reviewerActor: 'verifier@example.com',
+      verifierActor: 'verifier@example.com',
       auditLog: [],
       notes: '',
       fromVerifierTriage: false,  // v1.5.0: Track if navigated from Verifier Triage
@@ -17505,7 +17534,7 @@
         navigateTo('admin/patch-queue');
       } else if (vrState.fromVerifierTriage) {
         vrState.fromVerifierTriage = false;
-        navigateTo('triage');  // Returns to triage which shows Verifier Triage in reviewer mode
+        navigateTo('triage');  // Returns to triage which shows Verifier Triage in verifier mode
       } else {
         navigateTo('triage');
       }
@@ -17756,7 +17785,7 @@
         srrState.currentRecordId = recordId;
         srrState.currentPatchRequestId = patchRequestId;
         srrState.currentArtifactId = payload?.artifact?.artifact_id || vrState.selectedPayloadId || null;
-        srrState.isReadOnly = (currentMode === 'reviewer' || currentMode === 'admin');
+        srrState.isReadOnly = (currentMode === 'verifier' || currentMode === 'admin');
         srrState.currentPatchRequest = patchRequest;  // Store for Patch Tester
         
         console.log('[VR_SRR] Opening SRR with context:', {
@@ -17824,7 +17853,7 @@
           srrState.currentPatchRequestId = patchRequestId;
           var artifactId = (payload && payload.artifact && payload.artifact.artifact_id) || vrState.selectedPayloadId || null;
           srrState.currentArtifactId = artifactId;
-          srrState.isReadOnly = (currentMode === 'reviewer' || currentMode === 'admin');
+          srrState.isReadOnly = (currentMode === 'verifier' || currentMode === 'admin');
           srrState.currentPatchRequest = patchRequest;
           
           updateDebugPanel({
@@ -17959,7 +17988,7 @@
         timestamp: new Date().toISOString(),
         event_type: eventType,
         patch_id: vrState.currentPatchId,
-        actor: vrState.reviewerActor,
+        actor: vrState.verifierActor,
         details: details || {}
       };
       vrState.auditLog.push(event);
@@ -18053,7 +18082,7 @@
       
       container.innerHTML = '<div class="vr-decision-summary' + (isRejected ? ' rejected' : '') + '">' +
         '<strong>Decision:</strong> ' + stateLabel + '<br>' +
-        '<span style="font-size: 0.85em; color: #666;">by ' + vrState.reviewerActor + ' at ' + (lastEvent ? lastEvent.timestamp : '—') + '</span>' +
+        '<span style="font-size: 0.85em; color: #666;">by ' + vrState.verifierActor + ' at ' + (lastEvent ? lastEvent.timestamp : '—') + '</span>' +
         (vrState.notes ? '<div style="margin-top: 8px; font-size: 0.85em;"><strong>Notes:</strong> ' + vrState.notes + '</div>' : '') +
       '</div>';
     }
@@ -18463,7 +18492,7 @@
             if (val === null || val === undefined) val = '';
             if (typeof val === 'object') val = JSON.stringify(val);
             
-            // v1.6.44: Make File_Name a clickable link using file_url
+            // v1.6.45: Make File_Name a clickable link using file_url
             var isFileNameCol = col.toLowerCase().includes('file_name');
             var cellContent = String(val);
             if (isFileNameCol && val) {
@@ -18870,7 +18899,7 @@
           // v1.6.33: Seed patch requests from RFI meta sheet (if present in uploaded file)
           seedPatchRequestsFromMetaSheet();
           
-          // v1.6.33: Also seed verifier RFI queue for reviewer view
+          // v1.6.33: Also seed verifier RFI queue for verifier view
           if (typeof seedVerifierRFIQueueFromMetaSheet === 'function') {
             seedVerifierRFIQueueFromMetaSheet();
           }
@@ -18881,7 +18910,7 @@
           }
           
           console.log('[Loader] Workbook imported:', file.name, 'sheets:', result.order.length, 'total rows:', allRows.length);
-          // v1.6.44: Cache workbook for session persistence
+          // v1.6.45: Cache workbook for session persistence
           saveWorkbookToCache();
           showToast(ext.toUpperCase() + ' imported: ' + result.order.length + ' sheet(s), ' + allRows.length + ' rows', 'success');
           
@@ -19162,7 +19191,7 @@
         recordComments.forEach(c => {
           const statusColors = {
             'Open': { bg: '#e3f2fd', border: '#1976d2' },
-            'ReviewerResponded': { bg: '#fff3e0', border: '#e65100' },
+            'VerifierResponded': { bg: '#fff3e0', border: '#e65100' },
             'Resolved': { bg: '#e8f5e9', border: '#388e3c' },
             'ElevatedToPatchRequest': { bg: '#ede7f6', border: '#5e35b1' },
             'Closed': { bg: '#f5f5f5', border: '#757575' }
@@ -19997,9 +20026,9 @@
       // Setup loader modal events
       setupLoaderModalEvents();
       
-      // v1.4.24: Clear stale reviewer data BEFORE setMode loads queues
+      // v1.4.24: Clear stale verifier data BEFORE setMode loads queues
       if (!dataLoaded) {
-        clearStaleReviewerData();
+        clearStaleVerifierData();
       }
       
       // v1.4.20: Check for role from landing page first, then viewer mode
@@ -23200,7 +23229,7 @@ Add any additional notes here.
         // v1.6.33: Seed patch requests from RFI meta sheet (modified dataset has RFIs)
         seedPatchRequestsFromMetaSheet();
         
-        // v1.6.33: Also seed verifier RFI queue for reviewer view
+        // v1.6.33: Also seed verifier RFI queue for verifier view
         if (typeof seedVerifierRFIQueueFromMetaSheet === 'function') {
           seedVerifierRFIQueueFromMetaSheet();
         }
@@ -23452,9 +23481,9 @@ Add any additional notes here.
         }
       } catch (e) { console.warn('[FirstRun] Error cleaning demo data:', e); }
       
-      // v1.4.24: Clear stale reviewer queue data if no actual data is loaded
+      // v1.4.24: Clear stale verifier queue data if no actual data is loaded
       if (!dataLoaded) {
-        clearStaleReviewerData();
+        clearStaleVerifierData();
       }
       
       // v1.4.24: Auto-map folder from demoUser email/folder (no manual selection)
@@ -23475,10 +23504,10 @@ Add any additional notes here.
       }
     }
     
-    // v1.4.24: Clear stale reviewer queue and patch request data
+    // v1.4.24: Clear stale verifier queue and patch request data
     // v1.6.26: Also clears artifact store to prevent stale queue counts
-    function clearStaleReviewerData() {
-      console.log('[FirstRun] Clearing stale reviewer queue data');
+    function clearStaleVerifierData() {
+      console.log('[FirstRun] Clearing stale verifier queue data');
       
       // Clear verifier queue
       localStorage.removeItem('srr_verifier_queue_v1');
@@ -23506,9 +23535,9 @@ Add any additional notes here.
         verifierQueueState.payloads = [];
       }
       
-      // Reset in-memory reviewer queue state
-      if (typeof reviewerQueueState !== 'undefined') {
-        reviewerQueueState.items = [];
+      // Reset in-memory verifier queue state
+      if (typeof verifierQueueState !== 'undefined') {
+        verifierQueueState.items = [];
       }
     }
     

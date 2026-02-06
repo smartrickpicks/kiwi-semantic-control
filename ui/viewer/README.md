@@ -448,13 +448,13 @@ The viewer now starts with a clear "Data Source" action and uses modal wizards f
 |------|------|---------|
 | Triage | #/triage | Summary cards, filters, issues/actions queues, workbench drilldown |
 | Patch Studio | #/patch | Preflight Gate, Patch Draft Builder, copy outputs |
-| Review | #/review | Config+Patch Inspector, Comparison Mode (Reviewer mode only) |
+| Review | #/review | Config+Patch Inspector, Comparison Mode (Verifier mode only) |
 
 **Mode Toggle:**
 | Mode | Description |
 |------|-------------|
 | Operator | Default view for triaging and building patches |
-| Reviewer | Unlocks Review page for config inspection and comparison |
+| Verifier | Unlocks Review page for config inspection and comparison |
 | Analyst | Focused view for data analysis |
 
 ### Multi-Page Navigation + Mode Toggle (v1.0)
@@ -513,7 +513,7 @@ Click to copy a PR-ready explanation of the stream model.
 |---------|----------|
 | 1.1.1 | Loader Simulation (Paste JSON, Drag-drop file, Path hint; Session status chip; localStorage persistence; Reset Session) |
 | 1.1 | Upload-First Flow + Modal Wizards (Load Data CTA, Data Source/Ruleset/Compare/Run modals, triage-first landing, contextual patching) |
-| 1.0 | Multi-Page Navigation + Mode Toggle (Run/Triage/Patch Studio/Review pages, Operator/Reviewer/Analyst modes) |
+| 1.0 | Multi-Page Navigation + Mode Toggle (Run/Triage/Patch Studio/Review pages, Operator/Verifier/Analyst modes) |
 | 0.9 | Session + Stream Model (Session Timeline, Record States, Never-Stop Flow, Reconsolidation Rules, Copy Stream Semantics) |
 | 0.8 | Config + Patch Inspector (Ruleset Loader, Patch Summary, Version Match, Changes Table, Ruleset Delta Counts, Copy Ruleset Delta Markdown, Preflight Integration) |
 | 0.7 | Comparison Mode (Session Loader, Delta Summary Cards, row-level change indicators, Copy Delta Summary) |
