@@ -1,0 +1,81 @@
+Replit Task: V1 Baseline Verification + Storage/Session Stabilization (IndexedDB) + Restore Loader Hardening
+
+Alignment of task:
+- Validate and fix the core V1 demo blockers first: reproducibility, session reliability, restore behavior.
+- Do not implement V2/V3 features.
+- Keep role model and gate doctrine intact.
+
+Repo targets:
+- /Users/zacharyholwerda/Documents/New project/kiwi-semantic-control/ui/viewer/index.html
+- /Users/zacharyholwerda/Documents/New project/kiwi-semantic-control/docs/ui/ui_principles.md
+- /Users/zacharyholwerda/Documents/New project/kiwi-semantic-control/docs/ui/views/ui_evidence_pack.md
+- /Users/zacharyholwerda/Documents/New project/kiwi-semantic-control/docs/ui/views/patch_authoring_view.md
+
+Scope for this prompt:
+1) V1-00 Confirmed issue matrix (repro-first)
+2) V1-01 Storage/session migration to IndexedDB
+3) V1-02 Loader/restore stability and no refresh on anchor jumps
+
+Hard constraints:
+- Local-first only.
+- No backend services.
+- No role/permission redesign.
+- Minimal diffs, deterministic behavior.
+- Keep existing artifact and triage flows intact unless required for session isolation.
+
+Step 1: Repro matrix before coding
+Create and log a matrix for:
+- localStorage quota failure during Save Session
+- cross-file/session data bleed
+- broken/partial restore after reload
+- refresh/state reset on PDF anchor jump
+For each issue include:
+- exact repro steps
+- expected vs actual
+- status: Confirmed / Not Repro / Intermittent
+
+Step 2: Session/storage architecture fix
+Implement:
+- IndexedDB for large session payloads (records, sheet UI state, draft patch/editor state, anchor/search state).
+- localStorage for lightweight pointers only (active session ref, last opened file ref, tiny metadata).
+- Strong namespace keys to prevent bleed:
+  tenant_id + division_id + role + dataset_id + file_id
+- Session save/load API with explicit methods:
+  saveSession(ref, payload), loadSession(ref), listSessions(), deleteSession(ref)
+- Migration path:
+  If legacy session data exists in localStorage, move to IndexedDB once, then replace with pointer.
+
+Step 3: Auto-save + auto-resume
+Implement:
+- Debounced autosave on meaningful state changes.
+- Auto-resume current file on reload using active session pointer.
+- Session restore must be exact for current file (selected row, filters, editor state, role-safe views).
+
+Step 4: Loader and anchor stability
+Implement:
+- Restore pipeline loader stages shown during session restore:
+  Loading -> Standardizing -> Validating -> Building Change Map -> Rendering
+- Prevent hard refresh or route reset on anchor jump/search navigation.
+- Anchor jump should mutate viewer state only, not app root navigation.
+
+Step 5: Telemetry/diagnostic logs (dev only)
+Add concise logs:
+- [SESSION] save/load duration and payload size
+- [SESSION] source (IndexedDB/localStorage pointer)
+- [RESTORE] active ref + stage transitions
+- [ANCHOR] navigation without route reload
+
+Acceptance criteria:
+- No localStorage quota errors in normal demo flow.
+- Reload restores exact state for current file.
+- No cross-file contamination when switching datasets/files.
+- Loader appears during restore and clears correctly.
+- Anchor jump does not refresh/reboot page state.
+
+Required output format from Replit:
+1) "Alignment of task" line
+2) Confirmed issue matrix (with outcomes)
+3) Files changed list
+4) What was implemented
+5) Smoke test results
+6) Remaining risks (if any)

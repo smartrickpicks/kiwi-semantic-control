@@ -4497,7 +4497,269 @@
       fileName: null
     };
     
-    // ========== ARTIFACT STORE (v1.5.1 localStorage Mock Filesystem) ==========
+    // ========== SESSION DB (v1.6.56 IndexedDB for large payloads) ==========
+    var SessionDB = {
+      DB_NAME: 'orchestrate_sessions',
+      DB_VERSION: 1,
+      WORKBOOK_STORE: 'workbook_cache',
+      SESSIONS_STORE: 'saved_sessions',
+      _db: null,
+      _ready: null,
+
+      init: function() {
+        if (this._ready) return this._ready;
+        var self = this;
+        this._ready = new Promise(function(resolve) {
+          if (!window.indexedDB) {
+            console.warn('[SESSION] IndexedDB not available, falling back to localStorage');
+            resolve(null);
+            return;
+          }
+          var t0 = performance.now();
+          var request = indexedDB.open(self.DB_NAME, self.DB_VERSION);
+          request.onerror = function(e) {
+            console.error('[SESSION] IndexedDB open failed:', e);
+            resolve(null);
+          };
+          request.onsuccess = function(e) {
+            self._db = e.target.result;
+            console.log('[SESSION] IndexedDB ready in', (performance.now() - t0).toFixed(1) + 'ms');
+            resolve(self._db);
+          };
+          request.onupgradeneeded = function(e) {
+            var db = e.target.result;
+            if (!db.objectStoreNames.contains(self.WORKBOOK_STORE)) {
+              db.createObjectStore(self.WORKBOOK_STORE, { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains(self.SESSIONS_STORE)) {
+              db.createObjectStore(self.SESSIONS_STORE, { keyPath: 'id' });
+            }
+          };
+        });
+        return this._ready;
+      },
+
+      _put: function(storeName, data) {
+        var self = this;
+        return this.init().then(function(db) {
+          if (!db) return false;
+          return new Promise(function(resolve) {
+            try {
+              var tx = db.transaction([storeName], 'readwrite');
+              var store = tx.objectStore(storeName);
+              store.put(data);
+              tx.oncomplete = function() { resolve(true); };
+              tx.onerror = function(e) {
+                console.error('[SESSION] put error:', e);
+                resolve(false);
+              };
+            } catch(e) {
+              console.error('[SESSION] put exception:', e);
+              resolve(false);
+            }
+          });
+        });
+      },
+
+      _get: function(storeName, key) {
+        return this.init().then(function(db) {
+          if (!db) return null;
+          return new Promise(function(resolve) {
+            try {
+              var tx = db.transaction([storeName], 'readonly');
+              var store = tx.objectStore(storeName);
+              var req = store.get(key);
+              req.onsuccess = function() { resolve(req.result || null); };
+              req.onerror = function() { resolve(null); };
+            } catch(e) { resolve(null); }
+          });
+        });
+      },
+
+      _delete: function(storeName, key) {
+        return this.init().then(function(db) {
+          if (!db) return false;
+          return new Promise(function(resolve) {
+            try {
+              var tx = db.transaction([storeName], 'readwrite');
+              var store = tx.objectStore(storeName);
+              store.delete(key);
+              tx.oncomplete = function() { resolve(true); };
+              tx.onerror = function() { resolve(false); };
+            } catch(e) { resolve(false); }
+          });
+        });
+      },
+
+      _getAll: function(storeName) {
+        return this.init().then(function(db) {
+          if (!db) return [];
+          return new Promise(function(resolve) {
+            try {
+              var tx = db.transaction([storeName], 'readonly');
+              var store = tx.objectStore(storeName);
+              var req = store.getAll();
+              req.onsuccess = function() { resolve(req.result || []); };
+              req.onerror = function() { resolve([]); };
+            } catch(e) { resolve([]); }
+          });
+        });
+      },
+
+      _clear: function(storeName) {
+        return this.init().then(function(db) {
+          if (!db) return false;
+          return new Promise(function(resolve) {
+            try {
+              var tx = db.transaction([storeName], 'readwrite');
+              tx.objectStore(storeName).clear();
+              tx.oncomplete = function() { resolve(true); };
+              tx.onerror = function() { resolve(false); };
+            } catch(e) { resolve(false); }
+          });
+        });
+      },
+
+      saveWorkbookCache: function(cacheData) {
+        var t0 = performance.now();
+        var payload = Object.assign({}, cacheData, { id: 'active_workbook' });
+        var payloadSize = JSON.stringify(payload).length;
+        return this._put(this.WORKBOOK_STORE, payload).then(function(ok) {
+          console.log('[SESSION] Workbook saved to IndexedDB:', (payloadSize / 1024).toFixed(1) + 'KB in', (performance.now() - t0).toFixed(1) + 'ms');
+          if (ok) {
+            try {
+              localStorage.setItem('orchestrate_idb_workbook_ptr', JSON.stringify({
+                exists: true,
+                savedAt: cacheData.savedAt || new Date().toISOString(),
+                filename: cacheData.filename || '',
+                sheetCount: cacheData.workbook ? cacheData.workbook.order.length : 0
+              }));
+            } catch(e) {}
+          }
+          return ok;
+        });
+      },
+
+      loadWorkbookCache: function() {
+        var t0 = performance.now();
+        return this._get(this.WORKBOOK_STORE, 'active_workbook').then(function(data) {
+          if (data) {
+            console.log('[SESSION] Workbook loaded from IndexedDB in', (performance.now() - t0).toFixed(1) + 'ms');
+          }
+          return data;
+        });
+      },
+
+      clearWorkbookCache: function() {
+        localStorage.removeItem('orchestrate_idb_workbook_ptr');
+        return this._delete(this.WORKBOOK_STORE, 'active_workbook');
+      },
+
+      saveSession: function(session) {
+        var t0 = performance.now();
+        var payloadSize = JSON.stringify(session).length;
+        return this._put(this.SESSIONS_STORE, session).then(function(ok) {
+          console.log('[SESSION] Session saved:', session.id, (payloadSize / 1024).toFixed(1) + 'KB in', (performance.now() - t0).toFixed(1) + 'ms');
+          if (ok) SessionDB._updateSessionIndex();
+          return ok;
+        });
+      },
+
+      loadSession: function(sessionId) {
+        var t0 = performance.now();
+        return this._get(this.SESSIONS_STORE, sessionId).then(function(data) {
+          if (data) {
+            console.log('[SESSION] Session loaded:', sessionId, 'in', (performance.now() - t0).toFixed(1) + 'ms');
+          }
+          return data;
+        });
+      },
+
+      deleteSession: function(sessionId) {
+        return this._delete(this.SESSIONS_STORE, sessionId).then(function(ok) {
+          if (ok) SessionDB._updateSessionIndex();
+          return ok;
+        });
+      },
+
+      listSessions: function() {
+        return this._getAll(this.SESSIONS_STORE).then(function(sessions) {
+          sessions.sort(function(a, b) {
+            return new Date(b.savedAt || 0) - new Date(a.savedAt || 0);
+          });
+          return sessions;
+        });
+      },
+
+      _updateSessionIndex: function() {
+        this.listSessions().then(function(sessions) {
+          var index = sessions.map(function(s) {
+            return {
+              id: s.id, name: s.name, savedAt: s.savedAt, role: s.role,
+              sheetCount: s.sheetCount, rowCount: s.rowCount,
+              filename: s.filename, datasetId: s.datasetId
+            };
+          });
+          try {
+            localStorage.setItem('orchestrate_idb_sessions_idx', JSON.stringify(index));
+          } catch(e) {}
+        });
+      },
+
+      getSessionIndex: function() {
+        try {
+          var raw = localStorage.getItem('orchestrate_idb_sessions_idx');
+          return raw ? JSON.parse(raw) : [];
+        } catch(e) { return []; }
+      },
+
+      migrateFromLocalStorage: function() {
+        var self = this;
+        return this.init().then(function(db) {
+          if (!db) return Promise.resolve();
+          var tasks = [];
+          try {
+            var oldCache = localStorage.getItem('orchestrate_workbook_cache');
+            if (oldCache) {
+              var parsed = JSON.parse(oldCache);
+              if (parsed && parsed.workbook) {
+                tasks.push(self.saveWorkbookCache(parsed).then(function(ok) {
+                  if (ok) {
+                    localStorage.removeItem('orchestrate_workbook_cache');
+                    console.log('[SESSION] Migrated workbook cache localStorage -> IndexedDB');
+                  }
+                }));
+              }
+            }
+          } catch(e) { console.warn('[SESSION] Workbook migration failed:', e); }
+          try {
+            var oldSessions = localStorage.getItem('orchestrate_saved_sessions');
+            if (oldSessions) {
+              var sessions = JSON.parse(oldSessions);
+              if (Array.isArray(sessions) && sessions.length > 0) {
+                tasks.push(
+                  Promise.all(sessions.map(function(s) { return self.saveSession(s); }))
+                  .then(function(results) {
+                    if (results.every(function(r) { return r; })) {
+                      localStorage.removeItem('orchestrate_saved_sessions');
+                      console.log('[SESSION] Migrated', sessions.length, 'saved sessions localStorage -> IndexedDB');
+                    }
+                  })
+                );
+              }
+            }
+          } catch(e) { console.warn('[SESSION] Sessions migration failed:', e); }
+          if (tasks.length > 0) {
+            return Promise.all(tasks).then(function() {
+              console.log('[SESSION] Migration complete');
+            });
+          }
+          return Promise.resolve();
+        });
+      }
+    };
+
+        // ========== ARTIFACT STORE (v1.5.1 localStorage Mock Filesystem) ==========
     // Environment + workspace scoped storage adapter
     const ARTIFACT_STORE = {
       prefix: 'fs:',
@@ -5568,40 +5830,44 @@
     var NAV_STATE_CACHE_KEY = 'orchestrate_nav_state';
     
     function saveWorkbookToCache() {
-      try {
-        var cacheData = {
-          workbook: {
-            sheets: workbook.sheets,
-            order: workbook.order,
-            activeSheet: workbook.activeSheet
-          },
-          datasetId: IDENTITY_CONTEXT.dataset_id,
-          filename: document.getElementById('active-data-source-name')?.textContent || 'Cached Dataset',
-          savedAt: new Date().toISOString()
-        };
-        localStorage.setItem(WORKBOOK_CACHE_KEY, JSON.stringify(cacheData));
-        console.log('[WorkbookCache] Saved workbook to cache:', workbook.order.length, 'sheets');
-        return true;
-      } catch (e) {
-        console.error('[WorkbookCache] Failed to save:', e);
-        return false;
-      }
+      var cacheData = {
+        workbook: {
+          sheets: workbook.sheets,
+          order: workbook.order,
+          activeSheet: workbook.activeSheet
+        },
+        datasetId: IDENTITY_CONTEXT.dataset_id,
+        filename: document.getElementById('active-data-source-name')?.textContent || 'Cached Dataset',
+        savedAt: new Date().toISOString()
+      };
+      SessionDB.saveWorkbookCache(cacheData).catch(function(e) {
+        console.error('[WorkbookCache] IndexedDB save failed, trying localStorage fallback:', e);
+        try {
+          localStorage.setItem(WORKBOOK_CACHE_KEY, JSON.stringify(cacheData));
+        } catch(le) { console.error('[WorkbookCache] localStorage fallback also failed:', le); }
+      });
+      return true;
     }
     
-    function loadWorkbookFromCache() {
+    async function loadWorkbookFromCache() {
+      try {
+        var data = await SessionDB.loadWorkbookCache();
+        if (data && data.workbook && data.workbook.order && data.workbook.order.length > 0) {
+          console.log('[WorkbookCache] Loaded from IndexedDB:', data.workbook.order.length, 'sheets');
+          return data;
+        }
+      } catch(e) { console.warn('[WorkbookCache] IndexedDB load failed:', e); }
       try {
         var cached = localStorage.getItem(WORKBOOK_CACHE_KEY);
         if (!cached) return null;
         var cacheData = JSON.parse(cached);
         if (!cacheData.workbook || !cacheData.workbook.order || cacheData.workbook.order.length === 0) {
-          console.log('[WorkbookCache] Invalid cache data, clearing');
           clearWorkbookCache();
           return null;
         }
-        console.log('[WorkbookCache] Loaded from cache:', cacheData.workbook.order.length, 'sheets, saved:', cacheData.savedAt);
+        console.log('[WorkbookCache] Loaded from localStorage fallback:', cacheData.workbook.order.length, 'sheets');
         return cacheData;
       } catch (e) {
-        console.error('[WorkbookCache] Failed to load:', e);
         clearWorkbookCache();
         return null;
       }
@@ -5610,6 +5876,7 @@
     function clearWorkbookCache() {
       localStorage.removeItem(WORKBOOK_CACHE_KEY);
       localStorage.removeItem(NAV_STATE_CACHE_KEY);
+      SessionDB.clearWorkbookCache().catch(function() {});
       console.log('[WorkbookCache] Cache cleared');
     }
 
@@ -5623,10 +5890,7 @@
     }
 
     function getSavedSessions() {
-      try {
-        var raw = localStorage.getItem(SESSIONS_STORE_KEY);
-        return raw ? JSON.parse(raw) : [];
-      } catch (e) { return []; }
+      return SessionDB.getSessionIndex();
     }
 
     function saveCurrentSession(name) {
@@ -5634,8 +5898,8 @@
         showToast('No data loaded to save', 'warning');
         return false;
       }
-      var sessions = getSavedSessions();
-      if (sessions.length >= MAX_SESSIONS) {
+      var index = getSavedSessions();
+      if (index.length >= MAX_SESSIONS) {
         showToast('Maximum ' + MAX_SESSIONS + ' sessions. Delete one first.', 'warning');
         return false;
       }
@@ -5659,51 +5923,54 @@
           activeSheet: workbook.activeSheet
         }
       };
-      sessions.unshift(session);
-      try {
-        localStorage.setItem(SESSIONS_STORE_KEY, JSON.stringify(sessions));
-        showToast('Session saved: ' + session.name, 'success');
-        renderSavedSessionsList();
-        return true;
-      } catch (e) {
-        if (e.name === 'QuotaExceededError' || e.code === 22) {
-          showToast('Storage full. Delete old sessions first.', 'error');
+      SessionDB.saveSession(session).then(function(ok) {
+        if (ok) {
+          showToast('Session saved: ' + session.name, 'success');
+          renderSavedSessionsList();
         } else {
           showToast('Failed to save session', 'error');
         }
-        return false;
-      }
-    }
-
-    function loadSavedSession(sessionId) {
-      var sessions = getSavedSessions();
-      var session = null;
-      for (var i = 0; i < sessions.length; i++) {
-        if (sessions[i].id === sessionId) { session = sessions[i]; break; }
-      }
-      if (!session || !session.workbook) {
-        showToast('Session not found or corrupted', 'error');
-        return false;
-      }
-      workbook.sheets = session.workbook.sheets;
-      workbook.order = session.workbook.order;
-      workbook.activeSheet = session.workbook.activeSheet || session.workbook.order[0];
-      IDENTITY_CONTEXT.dataset_id = session.datasetId || 'ds_restored';
-      updateActiveDataSourceBar(session.filename || session.name);
-      generateAllSignals();
-      saveWorkbookToCache();
-      closeDataSourceDrawer();
-      navigateTo('grid');
-      showToast('Loaded session: ' + session.name, 'success');
+      });
       return true;
     }
 
+    function loadSavedSession(sessionId) {
+      stagedLoader.start();
+      stagedLoader.setStage('loading');
+      SessionDB.loadSession(sessionId).then(function(session) {
+        if (!session || !session.workbook) {
+          stagedLoader.finish();
+          showToast('Session not found or corrupted', 'error');
+          return;
+        }
+        stagedLoader.setStage('standardizing');
+        workbook.sheets = session.workbook.sheets;
+        workbook.order = session.workbook.order;
+        workbook.activeSheet = session.workbook.activeSheet || session.workbook.order[0];
+        IDENTITY_CONTEXT.dataset_id = session.datasetId || 'ds_restored';
+        updateActiveDataSourceBar(session.filename || session.name);
+        stagedLoader.setStage('validating');
+        try { if (typeof generateAllSignals === 'function') generateAllSignals(); } catch(e) { console.warn('[RESTORE] generateAllSignals error:', e.message); }
+        stagedLoader.setStage('changemap');
+        saveWorkbookToCache();
+        stagedLoader.setStage('rendering');
+        populateGridSheetSelector();
+        updateSidebarSheetSelector();
+        renderGrid();
+        updateProgressBlock();
+        closeDataSourceDrawer();
+        navigateTo('grid');
+        stagedLoader.finish();
+        showToast('Loaded session: ' + session.name, 'success');
+        console.log('[RESTORE] Session restored:', sessionId, 'sheets:', session.workbook.order.length);
+      });
+    }
+
     function deleteSavedSession(sessionId) {
-      var sessions = getSavedSessions();
-      sessions = sessions.filter(function(s) { return s.id !== sessionId; });
-      localStorage.setItem(SESSIONS_STORE_KEY, JSON.stringify(sessions));
-      renderSavedSessionsList();
-      showToast('Session deleted', 'info');
+      SessionDB.deleteSession(sessionId).then(function() {
+        renderSavedSessionsList();
+        showToast('Session deleted', 'info');
+      });
     }
 
     function promptSaveSession() {
@@ -5786,6 +6053,8 @@
     function handleClearCacheAndReload() {
       if (confirm('This will clear your saved session data and reload the page. Continue?')) {
         clearWorkbookCache();
+        SessionDB._clear(SessionDB.SESSIONS_STORE).catch(function() {});
+        localStorage.removeItem('orchestrate_idb_sessions_idx');
         localStorage.removeItem('orchestrate_session');
         localStorage.removeItem('orchestrate_canonical_records');
         var isDemo = isDemoSession();
@@ -6159,43 +6428,63 @@
     }
     
     // Masterline autoload on boot
+    var _autosaveTimer = null;
+    function scheduleAutosave() {
+      if (_autosaveTimer) clearTimeout(_autosaveTimer);
+      _autosaveTimer = setTimeout(function() {
+        if (workbook && workbook.order && workbook.order.length > 0) {
+          saveWorkbookToCache();
+          saveNavStateToCache(); scheduleAutosave();
+          console.log('[SESSION] Auto-saved workbook + nav state');
+        }
+      }, 3000);
+    }
+
     async function masterlineAutoload() {
       if (!artifactRegistry.devMasterlineEnabled) return;
       
-      // v1.6.46: Reset workbook to clean state before cache check
       resetWorkbook();
-      // v1.6.46: First try to restore from workbook cache (persists Excel uploads)
-      var cachedWorkbook = loadWorkbookFromCache();
+      stagedLoader.start();
+      stagedLoader.setStage('loading');
+      console.log('[RESTORE] Starting session restore...');
+      var t0 = performance.now();
+      var cachedWorkbook = await loadWorkbookFromCache();
       if (cachedWorkbook && cachedWorkbook.workbook) {
-        console.log('[Masterline] Restoring from workbook cache...');
+        console.log('[RESTORE] Workbook found, restoring...');
+        stagedLoader.setStage('standardizing');
         workbook.sheets = cachedWorkbook.workbook.sheets;
         workbook.order = cachedWorkbook.workbook.order;
         workbook.activeSheet = cachedWorkbook.workbook.activeSheet;
         IDENTITY_CONTEXT.dataset_id = cachedWorkbook.datasetId || 'ds_cached';
         
-        // Update UI
         updateActiveDataSourceBar(cachedWorkbook.filename);
-        try { if (typeof generateAllSignals === 'function') generateAllSignals(); } catch (e) { console.warn('[Masterline] generateAllSignals skipped:', e.message); }
+        stagedLoader.setStage('validating');
+        try { if (typeof generateAllSignals === 'function') generateAllSignals(); } catch (e) { console.warn('[RESTORE] generateAllSignals skipped:', e.message); }
         
-        // Restore nav state
         var navState = loadNavStateFromCache();
         if (navState) {
           gridState.sheet = navState.sheet;
           gridState.filter = navState.filter || 'all';
         }
         
+        stagedLoader.setStage('changemap');
         var restorePage = (navState && navState.hash) ? navState.hash.replace(/^#\/?/, '') : 'grid';
+        
+        stagedLoader.setStage('rendering');
         populateGridSheetSelector();
         updateSidebarSheetSelector();
         renderGrid();
         updateProgressBlock();
         navigateTo(restorePage || 'grid');
+        stagedLoader.finish();
         
+        console.log('[RESTORE] Complete in', (performance.now() - t0).toFixed(1) + 'ms, ref: active_workbook, sheets:', workbook.order.length);
         showToast('Session restored: ' + cachedWorkbook.filename, 'success');
         await checkAllArtifacts();
         renderSavedSessionsList();
         return;
       }
+      stagedLoader.finish();
       
 
       // First try to restore from localStorage session
@@ -8990,7 +9279,7 @@
       }
       renderGrid();
       updateProgressBlock();
-      saveNavStateToCache();
+      saveNavStateToCache(); scheduleAutosave();
       // Sync grid selector
       var gridSelector = document.getElementById('grid-sheet-selector');
       if (gridSelector) gridSelector.value = gridState.sheet ? gridState.sheet : '';
@@ -9010,7 +9299,7 @@
       
       renderGrid();
       updateProgressBlock();
-      saveNavStateToCache();
+      saveNavStateToCache(); scheduleAutosave();
     }
 
     function openRecordInspectionFromNav() {
@@ -9896,7 +10185,7 @@
       // Update current page tracking
       currentPage = page;
       
-      saveNavStateToCache();
+      saveNavStateToCache(); scheduleAutosave();
       // Clear all pages first - MUST reset both class AND inline style
       document.querySelectorAll('.page').forEach(function(p) { 
         p.classList.remove('active'); 
@@ -14703,6 +14992,7 @@
         
         console.log('[SRR] Field committed (locked):', fieldKey, 'from:', originalVal, 'to:', newValue);
         showToast('Field changed and locked: ' + fieldKey, 'success');
+        scheduleAutosave();
       } else {
         srrState.editingField = null;
       }
@@ -25247,12 +25537,16 @@ Add any additional notes here.
     setupStandardizerDropZone();
     initPatchConsole();
     
-    // If Dev Masterline is enabled, auto-load artifacts instead of default loadData
-    if (artifactRegistry.devMasterlineEnabled) {
-      masterlineAutoload();
-    } else {
-      loadData();
-    }
+    // v1.6.56: Initialize SessionDB + migrate legacy localStorage data, then autoload
+    (async function() {
+      await SessionDB.init();
+      await SessionDB.migrateFromLocalStorage();
+      if (artifactRegistry.devMasterlineEnabled) {
+        await masterlineAutoload();
+      } else {
+        loadData();
+      }
+    })();
     
     restorePreflightEvidence();
     restorePatchDraft();
