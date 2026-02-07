@@ -17812,7 +17812,7 @@
           else if (ev.metadata.decision) details = ev.metadata.decision;
           else if (ev.metadata.patch_type) details = ev.metadata.patch_type;
         }
-        var recordLink = ev.record_id ? '<a href="#" onclick="auditLogNavigateToRecord('' + escapeHtml(ev.record_id) + ''); return false;" style="color: #1565c0;">' + escapeHtml(ev.record_id) + '</a>' : '-';
+        var recordLink = ev.record_id ? '<a href="#" onclick="auditLogNavigateToRecord(\x27' + escapeHtml(ev.record_id) + '\x27); return false;" style="color: #1565c0;">' + escapeHtml(ev.record_id) + '</a>' : '-';
 
         html += '<tr style="border-bottom: 1px solid #eee;">';
         html += '<td style="padding: 6px 8px; white-space: nowrap; color: #666;">' + escapeHtml(ts) + '</td>';
