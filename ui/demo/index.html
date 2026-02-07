@@ -240,6 +240,13 @@
       </div>
     </div>
     
+    <div id="demo-error" style="display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;"></div>
+
+    <div id="admin-password-section" style="display: none; margin-bottom: 16px; text-align: left;">
+      <label style="display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px;">Admin Password</label>
+      <input type="password" id="admin-password-input" placeholder="Enter admin password" style="width: 100%; padding: 12px 14px; background: #161b27; border: 1px solid #2d3748; border-radius: 8px; color: #e2e8f0; font-size: 14px; outline: none;">
+    </div>
+
     <div class="auth-section">
       <button class="demo-signin-btn" id="demo-signin">
         Enter Demo
@@ -264,6 +271,12 @@
 
       var selectedRole = 'admin';
       
+      function updateAdminPasswordVisibility() {
+        var section = document.getElementById('admin-password-section');
+        section.style.display = (selectedRole === 'admin') ? 'block' : 'none';
+        document.getElementById('demo-error').style.display = 'none';
+      }
+
       document.querySelectorAll('.role-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
           document.querySelectorAll('.role-btn').forEach(function(b) {
@@ -271,9 +284,12 @@
           });
           btn.classList.add('selected');
           selectedRole = btn.getAttribute('data-role');
+          updateAdminPasswordVisibility();
         });
       });
-      
+
+      updateAdminPasswordVisibility();
+
       var demoProfiles = {
         analyst: { email: 'sarah.chen@orchestrate.demo', name: 'Sarah Chen', folder: 'Sarah Chen - West Region' },
         reviewer: { email: 'marcus.johnson@orchestrate.demo', name: 'Marcus Johnson', folder: 'Marcus Johnson - Central' },
@@ -281,6 +297,18 @@
       };
       
       document.getElementById('demo-signin').addEventListener('click', function() {
+        var errorEl = document.getElementById('demo-error');
+        errorEl.style.display = 'none';
+
+        if (selectedRole === 'admin') {
+          var pw = document.getElementById('admin-password-input').value;
+          if (pw !== 'admin') {
+            errorEl.textContent = 'Incorrect admin password.';
+            errorEl.style.display = 'block';
+            return;
+          }
+        }
+
         var profile = demoProfiles[selectedRole];
         localStorage.setItem('currentRole', selectedRole);
         localStorage.setItem('demoUser', JSON.stringify({

@@ -107,6 +107,38 @@
       display: none;
     }
 
+    .email-form-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+
+    .email-form-group label {
+      display: block;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+
+    .email-input {
+      width: 100%;
+      padding: 12px 14px;
+      background: #161b27;
+      border: 1px solid #2d3748;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .email-input:focus {
+      border-color: #3b82f6;
+    }
+
+    .email-input::placeholder {
+      color: #475569;
+    }
+
     .tab-bar {
       display: flex;
       background: #161b27;
@@ -146,66 +178,6 @@
       display: block;
     }
 
-    .local-form-group {
-      margin-bottom: 16px;
-      text-align: left;
-    }
-
-    .local-form-group label {
-      display: block;
-      font-size: 13px;
-      color: #94a3b8;
-      margin-bottom: 6px;
-    }
-
-    .local-name-input {
-      width: 100%;
-      padding: 12px 14px;
-      background: #161b27;
-      border: 1px solid #2d3748;
-      border-radius: 8px;
-      color: #e2e8f0;
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    .local-name-input:focus {
-      border-color: #3b82f6;
-    }
-
-    .local-name-input::placeholder {
-      color: #475569;
-    }
-
-    .role-selector {
-      display: flex;
-      gap: 8px;
-    }
-
-    .local-role-btn {
-      flex: 1;
-      padding: 10px 8px;
-      border: 1px solid #2d3748;
-      border-radius: 8px;
-      background: #161b27;
-      color: #64748b;
-      font-size: 13px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .local-role-btn.selected {
-      border-color: #3b82f6;
-      background: rgba(59, 130, 246, 0.1);
-      color: #60a5fa;
-    }
-
-    .local-role-btn:hover:not(.selected) {
-      border-color: #475569;
-      color: #94a3b8;
-    }
-
     .local-start-btn {
       width: 100%;
       padding: 12px 24px;
@@ -216,12 +188,17 @@
       font-size: 15px;
       font-weight: 600;
       cursor: pointer;
-      margin-top: 20px;
       transition: background 0.2s;
     }
 
     .local-start-btn:hover {
       background: #2563eb;
+    }
+
+    .local-start-btn:disabled {
+      background: #334155;
+      color: #64748b;
+      cursor: not-allowed;
     }
 
     .local-hint {
@@ -264,6 +241,83 @@
       margin-top: 28px;
       text-align: center;
     }
+
+    .welcome-back-card {
+      background: #161b27;
+      border: 1px solid #2d3748;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .welcome-back-card .wb-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 20px;
+      margin: 0 auto 14px;
+    }
+
+    .welcome-back-card .wb-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 4px;
+    }
+
+    .welcome-back-card .wb-meta {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 16px;
+    }
+
+    .welcome-back-card .wb-role-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .wb-continue-btn {
+      width: 100%;
+      padding: 12px 24px;
+      background: #3b82f6;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: background 0.2s;
+    }
+
+    .wb-continue-btn:hover {
+      background: #2563eb;
+    }
+
+    .wb-switch-link {
+      display: inline-block;
+      margin-top: 12px;
+      font-size: 13px;
+      color: #64748b;
+      cursor: pointer;
+      text-decoration: underline;
+      background: none;
+      border: none;
+    }
+
+    .wb-switch-link:hover {
+      color: #94a3b8;
+    }
   </style>
 </head>
 <body>
@@ -274,59 +328,74 @@
 
     <div id="error-message" class="error-message"></div>
 
-    <div class="tab-bar">
-      <button class="tab-btn active" data-tab="local" onclick="switchTab('local')">Local</button>
-      <button class="tab-btn" data-tab="google" onclick="switchTab('google')">Google</button>
+    <div id="welcome-back-section" style="display: none;">
+      <div class="welcome-back-card">
+        <div class="wb-avatar" id="wb-avatar"></div>
+        <div class="wb-name" id="wb-name"></div>
+        <div class="wb-meta"><span class="wb-role-badge" id="wb-role-badge"></span></div>
+        <div class="wb-meta" id="wb-email" style="margin-top: -8px;"></div>
+        <button class="wb-continue-btn" onclick="handleContinueSession()">Continue</button>
+        <button class="wb-switch-link" onclick="showNewLogin()">Sign in as someone else</button>
+      </div>
+      <div class="demo-footer">
+        <a href="/ui/demo/" style="color: #555; font-size: 0.75em;">Demo Mode (testing only)</a>
+      </div>
     </div>
 
-    <div id="panel-local" class="tab-panel active">
-      <div class="local-form-group">
-        <label for="local-name-input">Enter your name</label>
-        <input type="text" id="local-name-input" class="local-name-input" placeholder="Your name" autocomplete="off">
+    <div id="new-login-section">
+      <div class="email-form-group">
+        <label for="email-input">Email address</label>
+        <input type="email" id="email-input" class="email-input" placeholder="you@company.com" autocomplete="email">
       </div>
-      <div class="local-form-group">
-        <label>Role</label>
-        <div class="role-selector">
-          <button class="local-role-btn selected" data-role="analyst" onclick="selectRole(this)">Analyst</button>
-          <button class="local-role-btn" data-role="verifier" onclick="selectRole(this)">Verifier</button>
-          <button class="local-role-btn" data-role="admin" onclick="selectRole(this)">Admin</button>
+
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="local" onclick="switchTab('local')">Local</button>
+        <button class="tab-btn" data-tab="google" onclick="switchTab('google')">Google</button>
+      </div>
+
+      <div id="panel-local" class="tab-panel active">
+        <button class="local-start-btn" onclick="handleLocalStart()">Sign In</button>
+        <p class="local-hint">Your email must be registered in the user list by an admin</p>
+      </div>
+
+      <div id="panel-google" class="tab-panel">
+        <div id="setup-notice" class="setup-notice" style="display: none;">
+          <strong>Google OAuth Setup Required</strong>
+          To enable production login, configure your Google OAuth credentials in the Secrets panel.
         </div>
+        <div id="google-signin-container" class="google-signin-container">
+        </div>
+        <p class="auth-hint">Use your createmusicgroup.com account.</p>
       </div>
-      <button class="local-start-btn" onclick="handleLocalStart()">Start</button>
-      <p class="local-hint">Your session will be saved locally in this browser</p>
-    </div>
 
-    <div id="panel-google" class="tab-panel">
-      <div id="setup-notice" class="setup-notice" style="display: none;">
-        <strong>Google OAuth Setup Required</strong>
-        To enable production login, configure your Google OAuth credentials in the Secrets panel.
+      <div class="demo-footer">
+        <a href="/ui/demo/" style="color: #555; font-size: 0.75em;">Demo Mode (testing only)</a>
       </div>
-      <div id="google-signin-container" class="google-signin-container">
-      </div>
-      <p class="auth-hint">Use your createmusicgroup.com account.</p>
-    </div>
-
-    <div class="demo-footer">
-      <a href="/ui/demo/" style="color: #555; font-size: 0.75em;">Demo Mode (testing only)</a>
     </div>
   </div>
 
   <script>
     (function() {
-      var existingUser = null;
-      try { existingUser = JSON.parse(localStorage.getItem('demoUser') || 'null'); } catch(e) {}
-      var validRoles = ['analyst', 'reviewer', 'verifier', 'admin'];
-      if (existingUser && existingUser.role && validRoles.indexOf(existingUser.role.toLowerCase()) !== -1 && localStorage.getItem('currentRole')) {
-        if (existingUser.isLocal) {
-          window.location.href = '/ui/viewer/';
-          return;
-        }
-        window.location.href = '/ui/viewer/';
-        return;
-      }
-
       var DEMO_USERS_KEY = 'orchestrate_demo_users';
       var allowedDomain = 'createmusicgroup.com';
+      var ROLE_COLORS = {
+        analyst: '#1565c0',
+        verifier: '#2e7d32',
+        admin: '#6a1b9a'
+      };
+
+      function getInitials(name) {
+        if (!name) return '?';
+        var parts = name.trim().split(/\s+/);
+        if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        return parts[0].substring(0, 2).toUpperCase();
+      }
+
+      function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str || '';
+        return div.innerHTML;
+      }
 
       function getSavedUsers() {
         try {
@@ -336,30 +405,75 @@
         return [];
       }
 
-      function getRoleFromEmail(email) {
-        var lowerEmail = (email || '').toLowerCase();
+      function findUserByEmail(email) {
+        var lowerEmail = (email || '').toLowerCase().trim();
+        if (!lowerEmail) return null;
         var users = getSavedUsers();
         for (var i = 0; i < users.length; i++) {
-          if (users[i].email && users[i].email.toLowerCase() === lowerEmail) {
-            if (users[i].status === 'disabled') {
-              return null;
-            }
-            return users[i].role || 'analyst';
+          if (users[i].email && users[i].email.toLowerCase().trim() === lowerEmail) {
+            return users[i];
           }
         }
         return null;
       }
 
-      function isUserConfigured(email) {
-        var users = getSavedUsers();
-        var lowerEmail = (email || '').toLowerCase();
-        for (var i = 0; i < users.length; i++) {
-          if (users[i].email && users[i].email.toLowerCase() === lowerEmail) {
-            return true;
+      var existingUser = null;
+      try { existingUser = JSON.parse(localStorage.getItem('demoUser') || 'null'); } catch(e) {}
+      var existingRole = localStorage.getItem('currentRole');
+      var validRoles = ['analyst', 'reviewer', 'verifier', 'admin'];
+
+      var hasValidSession = existingUser && existingUser.role &&
+        validRoles.indexOf(existingUser.role.toLowerCase()) !== -1 && existingRole;
+
+      if (hasValidSession && !existingUser.isDemo) {
+        var revalidatedUser = existingUser.email ? findUserByEmail(existingUser.email) : null;
+        if (revalidatedUser && revalidatedUser.status !== 'disabled') {
+          var freshRole = revalidatedUser.role || 'analyst';
+          if (freshRole !== existingRole) {
+            localStorage.setItem('currentRole', freshRole);
+            existingUser.role = freshRole;
+            localStorage.setItem('demoUser', JSON.stringify(existingUser));
+            existingRole = freshRole;
           }
+        } else if (existingUser.isLocal || existingUser.email) {
+          localStorage.removeItem('currentRole');
+          localStorage.removeItem('demoUser');
+          hasValidSession = false;
         }
-        return false;
       }
+
+      if (hasValidSession) {
+        var wbSection = document.getElementById('welcome-back-section');
+        var newLoginSection = document.getElementById('new-login-section');
+        var role = existingUser.role.toLowerCase();
+        var roleColor = ROLE_COLORS[role] || '#666';
+        var displayName = existingUser.name || existingUser.email || 'User';
+
+        document.getElementById('wb-avatar').textContent = getInitials(displayName);
+        document.getElementById('wb-avatar').style.background = roleColor;
+        document.getElementById('wb-name').textContent = escapeHtml(displayName);
+        document.getElementById('wb-role-badge').textContent = role.charAt(0).toUpperCase() + role.slice(1);
+        document.getElementById('wb-role-badge').style.background = roleColor + '22';
+        document.getElementById('wb-role-badge').style.color = roleColor;
+        if (existingUser.email) {
+          document.getElementById('wb-email').textContent = existingUser.email;
+        }
+
+        wbSection.style.display = 'block';
+        newLoginSection.style.display = 'none';
+      }
+
+      window.handleContinueSession = function() {
+        window.location.href = '/ui/viewer/';
+      };
+
+      window.showNewLogin = function() {
+        localStorage.removeItem('currentRole');
+        localStorage.removeItem('demoUser');
+        document.getElementById('welcome-back-section').style.display = 'none';
+        document.getElementById('new-login-section').style.display = 'block';
+        document.getElementById('email-input').focus();
+      };
 
       window.showError = function(message) {
         var errorEl = document.getElementById('error-message');
@@ -381,23 +495,30 @@
         document.getElementById('panel-google').classList.toggle('active', tab === 'google');
       };
 
-      window.selectRole = function(btn) {
-        var btns = document.querySelectorAll('.local-role-btn');
-        for (var i = 0; i < btns.length; i++) {
-          btns[i].classList.remove('selected');
-        }
-        btn.classList.add('selected');
-      };
-
       window.handleLocalStart = function() {
-        var name = document.getElementById('local-name-input').value.trim();
-        if (!name) { showError('Please enter your name'); return; }
-        var role = document.querySelector('.local-role-btn.selected').getAttribute('data-role') || 'analyst';
+        hideError();
+        var email = document.getElementById('email-input').value.trim();
+        if (!email) { showError('Please enter your email address.'); return; }
+        if (email.indexOf('@') === -1) { showError('Please enter a valid email address.'); return; }
+
+        var user = findUserByEmail(email);
+        if (!user) {
+          showError('Email not found. Contact your administrator to be added to the user list.');
+          return;
+        }
+
+        if (user.status === 'disabled') {
+          showError('Your account has been disabled. Contact your administrator.');
+          return;
+        }
+
+        var role = user.role || 'analyst';
+        var name = user.name || email.split('@')[0];
 
         localStorage.setItem('currentRole', role);
         localStorage.setItem('demoUser', JSON.stringify({
           name: name,
-          email: name.toLowerCase().replace(/\s+/g, '.') + '@local',
+          email: email,
           folder: name + ' - Local',
           role: role,
           signedInAt: new Date().toISOString(),
@@ -407,6 +528,15 @@
         }));
         window.location.href = '/ui/viewer/';
       };
+
+      document.getElementById('email-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          var activeLocal = document.getElementById('panel-local').classList.contains('active');
+          if (activeLocal) {
+            handleLocalStart();
+          }
+        }
+      });
 
       function handleGoogleSignIn(response) {
         var payload = JSON.parse(atob(response.credential.split('.')[1]));
@@ -425,17 +555,18 @@
           return;
         }
 
-        if (!isUserConfigured(email)) {
+        var user = findUserByEmail(email);
+        if (!user) {
           showError('User not configured. Contact your administrator to add your email to the user list.');
           return;
         }
 
-        var role = getRoleFromEmail(email);
-
-        if (role === null) {
+        if (user.status === 'disabled') {
           showError('Your account is disabled. Contact your administrator.');
           return;
         }
+
+        var role = user.role || 'analyst';
 
         localStorage.setItem('currentRole', role);
         localStorage.setItem('demoUser', JSON.stringify({
@@ -533,7 +664,7 @@
     <button class="feedback-panel-close" onclick="document.querySelector('.feedback-overlay').classList.remove('open');document.querySelector('.feedback-panel').classList.remove('open');">&times;</button>
   </div>
   <div class="feedback-panel-body">
-    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfQEf5fbM_Ly2URDEY3UoSqeRoC4--0QjS--fCLKyqP7qCdYA/viewform?embedded=true" marginheight="0" marginwidth="0">Loading\u2026</iframe>
+    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSfQEf5fbM_Ly2URDEY3UoSqeRoC4--0QjS--fCLKyqP7qCdYA/viewform?embedded=true" marginheight="0" marginwidth="0">Loading…</iframe>
   </div>
 </div>
 <!-- /Feedback FAB -->
