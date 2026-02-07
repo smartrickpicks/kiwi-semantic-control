@@ -2,6 +2,13 @@
 
 > Review surface for evaluating submitted Patch Requests, requesting clarification, and approving/rejecting.
 
+
+## Recent Changes (v1.6.59)
+
+- **Real Audit Timeline**: All verifier field actions (approve, reject, request clarification) emit real AuditTimeline events
+- **Event Types**: FIELD_VERIFIED (approve), FIELD_CORRECTED (reject), REQUEST_CLARIFICATION (clarification request) persisted to IndexedDB
+- **Verifier Approve**: Emits VERIFIER_APPROVED via updatePatchRequestStatus transition, persisted to AuditTimeline
+
 ## Recent Changes (v1.5.2)
 
 - **SRR Hydration Refactor**: Loads PatchRequest by `patch_request_id` first, then record by `record_id`

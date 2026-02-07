@@ -2,6 +2,12 @@
 
 > Final approval surface for Admin decisions before Promote Patch to Baseline.
 
+## Recent Changes (v1.6.59)
+
+- **Real Audit Timeline**: Admin approval and replay evaluation now emit real AuditTimeline events (PATCH_ADMIN_PROMOTED, SYSTEM_CHANGE_APPLIED)
+- **View in Audit Log**: Replay audit log link now opens the real Audit Log modal with timeline events filtered to the current patch
+- **Export**: Audit_Log sheet included in XLSX export with all persisted events for the active dataset
+
 ## Implementation Status (v1.4.17)
 
 | Feature | Status |

@@ -35,5 +35,8 @@ The Export/Save button generates an XLSX file using SheetJS, including all data 
 ### Session Isolation + Role Audit (v1.6.58)
 Fixed session bleed between users: signing in as a different user (or role) now clears stale localStorage keys (ingestion_folder_name, nav state, viewer mode, SRR state, group state, workbook sessions, artifact playground). Sign-out also clears these keys. Demo page normalized: "Reviewer" role renamed to "Verifier" across demoProfiles, data-role attributes, and button labels to match viewer's internal setMode. Playground mode restricted: in demo mode, only Admin gets the role switcher; Analyst and Verifier are locked to their assigned roles (matching production behavior). Legacy normalizeLegacyRole() and normalizeLegacyStatus() preserved for backward compatibility.
 
+### Audit Log (v1.6.59)
+The Audit Timeline system uses an IndexedDB-backed store (`orchestrate_audit`) with a memory cache. All governance actions (patch submit, field verify/blacklist/correct, verifier approve/reject, admin promote, batch add, catalog group set, session restore) emit persisted timeline events with actor, role, timestamp, and record context. The Audit Log UI reads from this store with filters for event type, actor role, and patch request ID. The `Audit_Log` sheet is included in XLSX exports. No synthetic/demo events are generated at render time.
+
 ## External Dependencies
 None by design. This repository uses only the Python standard library. A FastAPI server acts as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF. SheetJS (XLSX) is loaded via CDN for Excel import/export functionality.

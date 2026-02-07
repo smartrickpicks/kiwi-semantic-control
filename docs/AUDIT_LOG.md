@@ -19,6 +19,61 @@ Contract: This document defines the governance contract for the read-only audit 
 - Determinism: canonical field order, value normalization, and sort rules are defined and must be followed.
 - Evidence first: every consequential decision should link to concrete anchors (e.g., PDF highlights) and be replayable in the UI.
 
+
+## Implementation (v1.6.59)
+
+### Storage
+All audit events are persisted in an IndexedDB database (`orchestrate_audit`) with an `events` object store. Events are also held in a memory cache for synchronous access during export. IndexedDB indexes enable efficient queries by `dataset_id`, `file_id`, `record_id`, `event_type`, `actor_role`, and compound `[dataset_id, file_id]`.
+
+### Event Schema (v1.6.59)
+| Field | Type | Description |
+|-------|------|-------------|
+| event_id | string | Unique identifier (format: `evt_{timestamp_base36}_{random}`) |
+| event_type | string | One of the event types below |
+| actor_id | string | Email or name of the acting user |
+| actor_role | string | One of: analyst, verifier, admin |
+| timestamp_iso | string | ISO-8601 UTC timestamp |
+| dataset_id | string | Active dataset identifier |
+| file_id | string | File name or sheet name |
+| record_id | string | Record key (sheet:index or stable hash) |
+| field_key | string (nullable) | Specific field affected |
+| patch_request_id | string (nullable) | Related patch request ID |
+| before_value | string (nullable) | Value before change |
+| after_value | string (nullable) | Value after change |
+| metadata | object | Event-specific details (status transitions, decisions, etc.) |
+
+### Event Coverage (v1.6.59)
+| Event Type | Emitted By | Description |
+|------------|-----------|-------------|
+| PATCH_SUBMITTED | srrSubmitPatchRequest | Analyst submits a patch request from SRR |
+| PATCH_REQUEST_SUBMITTED | updatePatchRequestStatus | Patch enters Submitted status |
+| VERIFIER_APPROVED | updatePatchRequestStatus | Verifier approves patch |
+| ADMIN_APPROVED | updatePatchRequestStatus | Admin approves patch |
+| PATCH_ADMIN_PROMOTED | aaAdminApprove | Admin promotes patch (final approval) |
+| PATCH_REJECTED | updatePatchRequestStatus | Verifier or Admin rejects patch |
+| PATCH_CANCELLED | updatePatchRequestStatus | Patch cancelled |
+| CLARIFICATION_REQUESTED | updatePatchRequestStatus | Verifier requests clarification |
+| CLARIFICATION_RESPONDED | updatePatchRequestStatus | Analyst responds to clarification |
+| REQUEST_CLARIFICATION | verifierRequestClarification | Field-level clarification request |
+| FIELD_VERIFIED | srrVerifyField, verifierApproveField | Field marked as verified |
+| FIELD_BLACKLISTED | srrBlacklistField | Field flagged for blacklist |
+| FIELD_CORRECTED | verifierRejectField | Verifier rejects a field |
+| MANUAL_ROW_ADD | batchAddRows | Rows added via batch add |
+| CATALOG_GROUP_SET | markAsGroupAnchor | Record set as group anchor |
+| SESSION_RESTORED | session restore | Session restored from IndexedDB cache |
+| SYSTEM_CHANGE_APPLIED | aaShowReplayAuditLog | Replay evaluation result |
+| ADMIN_HOLD_SET | updatePatchRequestStatus | Admin places hold |
+| ADMIN_HOLD_RELEASED | updatePatchRequestStatus | Admin releases hold |
+| SENT_TO_KIWI | updatePatchRequestStatus | Patch sent to external system |
+| KIWI_RETURN_INGESTED | updatePatchRequestStatus | External system response ingested |
+| PATCH_APPLIED | updatePatchRequestStatus | Patch applied to dataset |
+
+### No Synthetic Events
+All timeline entries are built exclusively from persisted events. No placeholder or demo rows are generated at render time.
+
+### Export (v1.6.59)
+The `Audit_Log` sheet is included in exported XLSX workbooks. It contains all events for the active dataset with columns in the stable order defined above. Events are sorted by `timestamp_iso` ascending.
+
 ## PDF Cache Index Contract (v1.4.13)
 
 The PDF cache is a local UI concern and does not emit governance events. However, the cache index schema is documented for tooling interoperability:

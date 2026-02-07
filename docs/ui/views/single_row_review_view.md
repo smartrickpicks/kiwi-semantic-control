@@ -8,6 +8,13 @@ Contract: This document defines the record-level inspection surface. It supports
 >
 > The user-facing label "Record Inspection" appears in the UI header and navigation. All internal tokens, routes, specs, and audit logs retain the canonical name `single_row_review`.
 
+
+## Recent Changes (v1.6.59)
+
+- **Real Audit Timeline**: Audit Log button reads from AuditTimeline IndexedDB store instead of meta sheet scraping
+- **Event Emission**: srrVerifyField, srrBlacklistField, and srrSubmitPatchRequest now emit real timeline events (FIELD_VERIFIED, FIELD_BLACKLISTED, PATCH_SUBMITTED)
+- **No Synthetic Entries**: No placeholder rows; all timeline data is event-backed and persisted
+
 ## Recent Changes (v1.5.2)
 
 - **Record Identity Model**: Stable `record_id` via hash-based generation; no row-index lookups

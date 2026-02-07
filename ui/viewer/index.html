@@ -4801,6 +4801,216 @@
       }
     };
 
+    // ========== AUDIT TIMELINE STORE (v1.6.59 IndexedDB-backed) ==========
+    var AuditTimeline = {
+      DB_NAME: 'orchestrate_audit',
+      DB_VERSION: 1,
+      STORE_NAME: 'events',
+      _db: null,
+      _ready: null,
+      _memCache: [],
+
+      init: function() {
+        if (this._ready) return this._ready;
+        var self = this;
+        this._ready = new Promise(function(resolve) {
+          if (!window.indexedDB) {
+            console.warn('[AuditTimeline] IndexedDB not available, using memory-only');
+            resolve(null);
+            return;
+          }
+          var request = indexedDB.open(self.DB_NAME, self.DB_VERSION);
+          request.onerror = function(e) {
+            console.error('[AuditTimeline] IndexedDB open failed:', e);
+            resolve(null);
+          };
+          request.onsuccess = function(e) {
+            self._db = e.target.result;
+            console.log('[AuditTimeline] IndexedDB ready');
+            try {
+              var tx = self._db.transaction([self.STORE_NAME], 'readonly');
+              var all = tx.objectStore(self.STORE_NAME).getAll();
+              all.onsuccess = function(ev) {
+                var records = ev.target.result || [];
+                self._memCache = records;
+                console.log('[AuditTimeline] Hydrated memCache:', records.length, 'events');
+                resolve(self._db);
+              };
+              all.onerror = function() { resolve(self._db); };
+            } catch(err) {
+              console.warn('[AuditTimeline] Hydration failed:', err);
+              resolve(self._db);
+            }
+          };
+          request.onupgradeneeded = function(e) {
+            var db = e.target.result;
+            if (!db.objectStoreNames.contains(self.STORE_NAME)) {
+              var store = db.createObjectStore(self.STORE_NAME, { keyPath: 'event_id' });
+              store.createIndex('dataset_id', 'dataset_id', { unique: false });
+              store.createIndex('file_id', 'file_id', { unique: false });
+              store.createIndex('record_id', 'record_id', { unique: false });
+              store.createIndex('event_type', 'event_type', { unique: false });
+              store.createIndex('timestamp_iso', 'timestamp_iso', { unique: false });
+              store.createIndex('actor_role', 'actor_role', { unique: false });
+              store.createIndex('dataset_file', ['dataset_id', 'file_id'], { unique: false });
+            }
+          };
+        });
+        return this._ready;
+      },
+
+      _generateId: function() {
+        return 'evt_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 8);
+      },
+
+      _resolveActor: function() {
+        try {
+          var du = JSON.parse(localStorage.getItem('demoUser') || '{}');
+          if (du && (du.name || du.email)) {
+            return { id: du.email || du.name || 'unknown', role: (du.role || currentMode || 'analyst').toLowerCase() };
+          }
+        } catch(e) {}
+        return { id: playgroundActors[currentMode] || 'unknown@example.com', role: currentMode || 'analyst' };
+      },
+
+      emit: function(eventType, data) {
+        var actor = this._resolveActor();
+        var d = data || {};
+        var event = {
+          event_id: this._generateId(),
+          event_type: eventType,
+          actor_id: d.actor_id || actor.id,
+          actor_role: d.actor_role || actor.role,
+          timestamp_iso: d.timestamp_iso || new Date().toISOString(),
+          dataset_id: d.dataset_id || IDENTITY_CONTEXT.dataset_id || '',
+          file_id: d.file_id || '',
+          record_id: d.record_id || '',
+          field_key: d.field_key || null,
+          patch_request_id: d.patch_request_id || null,
+          before_value: d.before_value !== undefined ? d.before_value : null,
+          after_value: d.after_value !== undefined ? d.after_value : null,
+          metadata: d.metadata || {}
+        };
+
+        this._memCache.push(event);
+
+        var self = this;
+        this.init().then(function(db) {
+          if (!db) return;
+          try {
+            var tx = db.transaction([self.STORE_NAME], 'readwrite');
+            tx.objectStore(self.STORE_NAME).put(event);
+            tx.onerror = function(e) { console.error('[AuditTimeline] write error:', e); };
+          } catch(e) { console.error('[AuditTimeline] write exception:', e); }
+        });
+
+        console.log('[AuditTimeline]', eventType, event.record_id || '', event.patch_request_id || '');
+        return event;
+      },
+
+      query: function(filters) {
+        var self = this;
+        return this.init().then(function(db) {
+          if (!db) return self._queryMemCache(filters);
+          return new Promise(function(resolve) {
+            try {
+              var tx = db.transaction([self.STORE_NAME], 'readonly');
+              var store = tx.objectStore(self.STORE_NAME);
+              var results = [];
+              var f = filters || {};
+
+              var indexName = null;
+              var indexKey = null;
+              if (f.dataset_id && f.file_id) {
+                indexName = 'dataset_file';
+                indexKey = [f.dataset_id, f.file_id];
+              } else if (f.dataset_id) {
+                indexName = 'dataset_id';
+                indexKey = f.dataset_id;
+              } else if (f.record_id) {
+                indexName = 'record_id';
+                indexKey = f.record_id;
+              }
+
+              var source = indexName ? store.index(indexName).openCursor(IDBKeyRange.only(indexKey)) : store.openCursor();
+              source.onsuccess = function(e) {
+                var cursor = e.target.result;
+                if (cursor) {
+                  var ev = cursor.value;
+                  if (self._matchesFilters(ev, f)) results.push(ev);
+                  cursor.continue();
+                } else {
+                  resolve(results);
+                }
+              };
+              source.onerror = function() { resolve(self._queryMemCache(f)); };
+            } catch(e) { resolve(self._queryMemCache(f)); }
+          });
+        });
+      },
+
+      _matchesFilters: function(ev, f) {
+        if (f.dataset_id && ev.dataset_id !== f.dataset_id) return false;
+        if (f.file_id && ev.file_id !== f.file_id) return false;
+        if (f.record_id && ev.record_id !== f.record_id) return false;
+        if (f.event_type && ev.event_type !== f.event_type) return false;
+        if (f.actor_role && ev.actor_role !== f.actor_role) return false;
+        if (f.patch_request_id && ev.patch_request_id !== f.patch_request_id) return false;
+        return true;
+      },
+
+      _queryMemCache: function(filters) {
+        var f = filters || {};
+        return this._memCache.filter(function(ev) { return AuditTimeline._matchesFilters(ev, f); });
+      },
+
+      getForDataset: function(datasetId) {
+        return this.query({ dataset_id: datasetId || IDENTITY_CONTEXT.dataset_id || '' });
+      },
+
+      getForRecord: function(recordId) {
+        return this.query({ record_id: recordId });
+      },
+
+      getAll: function() {
+        return this.query({});
+      },
+
+      clear: function(datasetId) {
+        var self = this;
+        if (datasetId) {
+          self._memCache = self._memCache.filter(function(ev) { return ev.dataset_id !== datasetId; });
+        } else {
+          self._memCache = [];
+        }
+        return this.init().then(function(db) {
+          if (!db) return;
+          return new Promise(function(resolve) {
+            try {
+              if (!datasetId) {
+                var tx = db.transaction([self.STORE_NAME], 'readwrite');
+                tx.objectStore(self.STORE_NAME).clear();
+                tx.oncomplete = function() { resolve(); };
+                tx.onerror = function() { resolve(); };
+              } else {
+                var tx2 = db.transaction([self.STORE_NAME], 'readwrite');
+                var store2 = tx2.objectStore(self.STORE_NAME);
+                var idx = store2.index('dataset_id');
+                var req = idx.openCursor(IDBKeyRange.only(datasetId));
+                req.onsuccess = function(e) {
+                  var cursor = e.target.result;
+                  if (cursor) { cursor.delete(); cursor.continue(); }
+                };
+                tx2.oncomplete = function() { resolve(); };
+                tx2.onerror = function() { resolve(); };
+              }
+            } catch(e) { resolve(); }
+          });
+        });
+      }
+    };
+
+
         // ========== ARTIFACT STORE (v1.5.1 localStorage Mock Filesystem) ==========
     // Environment + workspace scoped storage adapter
     const ARTIFACT_STORE = {
@@ -5096,6 +5306,11 @@
           group_label: row[sheet.headers[0]] || 'Group ' + (rowIndex + 1),
           is_anchor: true
         };
+        AuditTimeline.emit('CATALOG_GROUP_SET', {
+          record_id: row.record_id || (sheetName + ':' + rowIndex),
+          file_id: sheetName || '',
+          metadata: { group_id: groupId, group_label: row._group.group_label }
+        });
       }
       return row._group.group_id;
     }
@@ -5377,6 +5592,14 @@
         total_items: categorizedItems.length
       };
       console.log('[BatchAdd] MANUAL_ROW_ADD:', JSON.stringify(auditEvent));
+      created.forEach(function(row) {
+        AuditTimeline.emit('MANUAL_ROW_ADD', {
+          record_id: row.record_id || '',
+          dataset_id: datasetId || '',
+          file_id: sheetName || '',
+          metadata: { group_id: groupId, target_field: targetField, actor: actor, source: 'batch_add' }
+        });
+      });
 
       var existingTriageItems = META_TRIAGE_STORE.getManualReview() || [];
       created.forEach(function(row) {
@@ -6522,6 +6745,11 @@
         
         console.log('[RESTORE] Complete in', (performance.now() - t0).toFixed(1) + 'ms, ref: active_workbook, sheets:', workbook.order.length);
         showToast('Session restored: ' + cachedWorkbook.filename, 'success');
+        AuditTimeline.emit('SESSION_RESTORED', {
+          dataset_id: cachedWorkbook.datasetId || '',
+          file_id: cachedWorkbook.filename || '',
+          metadata: { sheets: workbook.order.length, restore_time_ms: (performance.now() - t0).toFixed(1) }
+        });
         await checkAllArtifacts();
         renderSavedSessionsList();
         return;
@@ -7317,6 +7545,17 @@
         role: role,
         event: auditEvent,
         details: notes || null
+      });
+
+      AuditTimeline.emit(auditEvent, {
+        actor_id: actor || 'Unknown',
+        actor_role: role,
+        timestamp_iso: now,
+        dataset_id: request.dataset_id || IDENTITY_CONTEXT.dataset_id || '',
+        file_id: request.file_name || request.file_url || '',
+        record_id: request.record_id || '',
+        patch_request_id: requestId,
+        metadata: { from_status: oldStatus, to_status: newStatus, notes: notes || null }
       });
       
       savePatchRequests();
@@ -9458,6 +9697,12 @@
         var metaWs = buildMetadataSheet();
         XLSX.utils.book_append_sheet(wb, metaWs, '_orchestrate_meta');
         
+        // v1.6.59: Add Audit_Log sheet
+        var auditWs = buildAuditLogSheet();
+        if (auditWs) {
+          XLSX.utils.book_append_sheet(wb, auditWs, 'Audit_Log');
+        }
+
         // Generate filename with timestamp
         var datasetName = IDENTITY_CONTEXT.dataset_id || 'dataset';
         var timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
@@ -9677,6 +9922,35 @@
       return ws;
     }
     
+    // v1.6.59: Build Audit_Log sheet from AuditTimeline store
+    function buildAuditLogSheet() {
+      var events = AuditTimeline._memCache.filter(function(ev) {
+        return !IDENTITY_CONTEXT.dataset_id || ev.dataset_id === IDENTITY_CONTEXT.dataset_id || ev.dataset_id === '';
+      });
+      if (events.length === 0) return null;
+
+      events.sort(function(a, b) { return a.timestamp_iso < b.timestamp_iso ? -1 : 1; });
+
+      var headers = ['event_id', 'event_type', 'actor_id', 'actor_role', 'timestamp_iso',
+        'dataset_id', 'file_id', 'record_id', 'field_key', 'patch_request_id',
+        'before_value', 'after_value', 'metadata'];
+      var rows = [headers];
+      events.forEach(function(ev) {
+        rows.push(headers.map(function(h) {
+          var v = ev[h];
+          if (v === null || v === undefined) return '';
+          if (typeof v === 'object') return JSON.stringify(v);
+          return String(v);
+        }));
+      });
+
+      var ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = headers.map(function(h) {
+        return { wch: Math.min(35, Math.max(12, h.length + 4)) };
+      });
+      return ws;
+    }
+
     // v1.6.33: Get total record count across all sheets
     function getTotalRecordCount() {
       var count = 0;
@@ -14747,6 +15021,12 @@
     function srrVerifyField(fieldKey) {
       srrState.fieldStates[fieldKey] = 'verified';
       console.log('[SRR] Field VERIFIED:', fieldKey);
+      AuditTimeline.emit('FIELD_VERIFIED', {
+        record_id: srrState.currentRecordKey || '',
+        field_key: fieldKey,
+        file_id: srrState.currentSheetName || '',
+        metadata: { sheet: srrState.currentSheetName }
+      });
       
       // Animate out the field card then remove from DOM
       var card = document.querySelector('.srr-field-card[data-field="' + fieldKey + '"]');
@@ -14809,6 +15089,13 @@
       srrState.patchDraft.blacklist_subject = label + ': ' + (currentVal || '(empty)');
       
       console.log('[SRR] Field BLACKLIST:', fieldKey, 'subject:', srrState.patchDraft.blacklist_subject);
+      AuditTimeline.emit('FIELD_BLACKLISTED', {
+        record_id: srrState.currentRecordKey || '',
+        field_key: fieldKey,
+        file_id: srrState.currentSheetName || '',
+        before_value: currentVal || '',
+        metadata: { subject: srrState.patchDraft.blacklist_subject }
+      });
       if (srrCheckAllFieldsCompleted()) {
         setTimeout(function() { srrAutoAdvance('All fields addressed'); }, 300);
       }
@@ -15836,6 +16123,13 @@
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditorForField(fieldKey);
       console.log('[Verifier] Approved field:', fieldKey);
+      AuditTimeline.emit('FIELD_VERIFIED', {
+        record_id: srrState.currentRecordKey || '',
+        field_key: fieldKey,
+        file_id: srrState.currentSheetName || '',
+        patch_request_id: patchRequestId || '',
+        metadata: { decision: 'approved', by_verifier: true }
+      });
     }
     
     function verifierRequestClarification(fieldKey) {
@@ -15880,6 +16174,13 @@
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditorForField(fieldKey);
       console.log('[Verifier] Request clarification for field:', fieldKey);
+      AuditTimeline.emit('REQUEST_CLARIFICATION', {
+        record_id: srrState.currentRecordKey || '',
+        field_key: fieldKey,
+        file_id: srrState.currentSheetName || '',
+        patch_request_id: patchRequestId || '',
+        metadata: { decision: 'needs_clarification' }
+      });
     }
     
     function verifierRejectField(fieldKey) {
@@ -15915,6 +16216,13 @@
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditorForField(fieldKey);
       console.log('[Verifier] Rejected field:', fieldKey);
+      AuditTimeline.emit('FIELD_CORRECTED', {
+        record_id: srrState.currentRecordKey || '',
+        field_key: fieldKey,
+        file_id: srrState.currentSheetName || '',
+        patch_request_id: patchRequestId || '',
+        metadata: { decision: 'rejected' }
+      });
     }
     
     function checkAllFieldsApproved(patchRequest) {
@@ -17305,6 +17613,14 @@
       
       // Emit audit events
       console.log('[SRR] PATCH_SUBMITTED (' + patchType + '):', request);
+      AuditTimeline.emit('PATCH_SUBMITTED', {
+        actor_id: author,
+        record_id: recordId || '',
+        dataset_id: datasetId || '',
+        file_id: srrResolveFieldValue(record, 'file_name') || '',
+        patch_request_id: request.request_id,
+        metadata: { patch_type: patchType, change_count: changeCount, sheet: srrState.currentSheetName }
+      });
       console.log('[SRR] REVIEW_REQUESTED: patch_id=' + request.request_id);
       
       // Show appropriate toast based on patch type
@@ -17387,121 +17703,174 @@
     }
     
     // v1.6.4: Show audit log for current record using meta sheet data
+    // v1.6.59: Audit Log — reads from AuditTimeline IndexedDB store
     function showAuditLogForRecord() {
-      var rowId = srrState.currentRowId;
-      console.log('[SRR] Opening audit log for record:', rowId);
-      
-      // Build record object with current SRR context
-      var record = {
-        sheet: srrState.currentSheet,
-        rowIndex: srrState.currentRowIndex,
-        recordKey: srrState.currentSheet + ':' + srrState.currentRowIndex
+      var recordKey = srrState.currentRecordKey || (srrState.currentSheet + ':' + srrState.currentRowIndex);
+      console.log('[SRR] Opening audit log for record:', recordKey);
+
+      AuditTimeline.query({ record_id: recordKey }).then(function(events) {
+        if (!events || events.length === 0) {
+          showToast('No audit log entries for this record', 'info');
+          return;
+        }
+        events.sort(function(a, b) { return a.timestamp_iso < b.timestamp_iso ? -1 : 1; });
+        showAuditLogModal(events, { scope: 'record', scopeLabel: recordKey });
+      });
+    }
+
+    function showAuditLogForDataset(filters) {
+      var dsId = (filters && filters.dataset_id) || IDENTITY_CONTEXT.dataset_id || '';
+      var q = { dataset_id: dsId };
+      if (filters && filters.file_id) q.file_id = filters.file_id;
+      if (filters && filters.event_type) q.event_type = filters.event_type;
+      if (filters && filters.actor_role) q.actor_role = filters.actor_role;
+      if (filters && filters.patch_request_id) q.patch_request_id = filters.patch_request_id;
+
+      AuditTimeline.query(q).then(function(events) {
+        if (!events || events.length === 0) {
+          showToast('No audit log entries found', 'info');
+          return;
+        }
+        events.sort(function(a, b) { return a.timestamp_iso < b.timestamp_iso ? -1 : 1; });
+        showAuditLogModal(events, { scope: 'dataset', scopeLabel: dsId, filters: q });
+      });
+    }
+
+    var _auditLogSortAsc = true;
+    var _auditLogFilters = {};
+
+    function showAuditLogModal(events, options) {
+      var opts = options || {};
+      _auditLogFilters = opts.filters || {};
+
+      var eventTypes = [];
+      var roles = [];
+      events.forEach(function(ev) {
+        if (eventTypes.indexOf(ev.event_type) < 0) eventTypes.push(ev.event_type);
+        if (roles.indexOf(ev.actor_role) < 0) roles.push(ev.actor_role);
+      });
+      eventTypes.sort();
+      roles.sort();
+
+      var html = '<div style="margin-bottom: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">';
+      html += '<select id="audit-filter-type" onchange="auditLogApplyFilters()" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85em;">';
+      html += '<option value="">All Events</option>';
+      eventTypes.forEach(function(t) { html += '<option value="' + t + '">' + t + '</option>'; });
+      html += '</select>';
+      html += '<select id="audit-filter-role" onchange="auditLogApplyFilters()" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85em;">';
+      html += '<option value="">All Roles</option>';
+      roles.forEach(function(r) { html += '<option value="' + r + '">' + r.charAt(0).toUpperCase() + r.slice(1) + '</option>'; });
+      html += '</select>';
+      html += '<input id="audit-filter-prid" placeholder="Patch Request ID" onkeyup="auditLogApplyFilters()" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85em; width: 140px;">';
+      html += '<button onclick="auditLogToggleSort()" style="padding: 4px 10px; border: 1px solid #ccc; border-radius: 4px; background: #f5f5f5; cursor: pointer; font-size: 0.85em;" title="Toggle sort order" id="audit-sort-btn">Oldest First</button>';
+      html += '</div>';
+
+      html += '<div id="audit-log-body" style="max-height: 55vh; overflow-y: auto;">';
+      html += renderAuditLogTable(events);
+      html += '</div>';
+
+      window._auditLogEvents = events;
+      showInfoModal('Audit Log (' + events.length + ' events)', html);
+    }
+
+    function renderAuditLogTable(events) {
+      var typeColors = {
+        'PATCH_REQUEST_SUBMITTED': '#e3f2fd',
+        'VERIFIER_APPROVED': '#e8f5e9',
+        'ADMIN_APPROVED': '#f3e5f5',
+        'PATCH_REJECTED': '#fce4ec',
+        'PATCH_CANCELLED': '#efebe9',
+        'FIELD_VERIFIED': '#e8f5e9',
+        'FIELD_BLACKLISTED': '#fce4ec',
+        'FIELD_CORRECTED': '#fff3e0',
+        'REQUEST_CLARIFICATION': '#fff8e1',
+        'MANUAL_ROW_ADD': '#e0f2f1',
+        'PATCH_SUBMITTED': '#e3f2fd',
+        'PATCH_ADMIN_PROMOTED': '#f3e5f5',
+        'CATALOG_GROUP_SET': '#e0f2f1',
+        'SESSION_RESTORED': '#eceff1'
       };
-      
-      // Get audit entries from meta sheets
-      var auditEntries = getAuditEntriesForRecord(record);
-      
-      if (auditEntries.length === 0) {
-        showToast('No audit log entries for this record', 'info');
-        return;
-      }
-      
-      // Show audit log in a modal or drawer
-      showAuditLogModal(auditEntries);
-    }
-    
-    // v1.6.4: Get audit entries from meta sheets for a specific record
-    function getAuditEntriesForRecord(record) {
-      var entries = [];
-      if (!workbook || !workbook.sheets) return entries;
-      
-      // Get current record info for filtering - use record param if available, else srrState
-      var currentSheet = '';
-      var currentRowIndex = -1;
-      var recordKey = '';
-      
-      if (record && record.sheet && typeof record.rowIndex !== 'undefined') {
-        currentSheet = record.sheet;
-        currentRowIndex = record.rowIndex;
-        recordKey = record.recordKey || (record.sheet + ':' + record.rowIndex);
-      } else {
-        currentSheet = srrState.currentSheet || '';
-        currentRowIndex = typeof srrState.currentRowIndex === 'number' ? srrState.currentRowIndex : -1;
-        recordKey = currentSheet + ':' + currentRowIndex;
-      }
-      
-      if (!currentSheet || currentRowIndex < 0) return entries;
-      
-      var metaSheets = getMetaSheets();
-      metaSheets.forEach(function(sheetName) {
-        var sheet = workbook.sheets[sheetName];
-        if (!sheet || !sheet.rows) return;
-        
-        sheet.rows.forEach(function(row, idx) {
-          // v1.6.4: Filter entries to match current record
-          var rowSheet = row.Sheet || row.sheet || row.Source_Sheet || '';
-          var rowNumRaw = row['Row #'] || row.Row || row.row_index || row.RowIndex || '';
-          var rowRecordKey = row.RecordKey || row.record_key || row.Record_ID || '';
-          
-          // Normalize row number: meta sheets typically use 1-based, SRR uses 0-based
-          var rowNum = rowNumRaw !== '' ? parseInt(rowNumRaw, 10) : -1;
-          var matchesRow0Based = rowNum === currentRowIndex;
-          var matchesRow1Based = rowNum === (currentRowIndex + 1);
-          
-          // Exact sheet match only
-          var matchesSheet = rowSheet === currentSheet;
-          
-          // Match by sheet+row (either 0-based or 1-based) OR by record key
-          var matchesByRecordKey = rowRecordKey && rowRecordKey === recordKey;
-          var matchesBySheetRow = matchesSheet && (matchesRow0Based || matchesRow1Based);
-          
-          if (matchesBySheetRow || matchesByRecordKey) {
-            entries.push({
-              sheet: sheetName,
-              row_index: idx,
-              timestamp: row.Timestamp || row.timestamp || row.Created_Date || new Date().toISOString(),
-              action: row.Action || row.action || row.Change_Type || row.Note_Type || 'Update',
-              field: row.Field || row.field || row.Changed_Field || row['Field Name'] || '',
-              old_value: row.Old_Value || row.old_value || row.Previous || '',
-              new_value: row.New_Value || row.new_value || row.Current || '',
-              summary: row.Summary || row.summary || row.Notes || row.Comment || row.Note_Text || '',
-              done_by: 'Done by user' // v1.6.4: All entries show "Done by user"
-            });
-          }
-        });
-      });
-      
-      // Sort by timestamp descending
-      entries.sort(function(a, b) {
-        return new Date(b.timestamp) - new Date(a.timestamp);
-      });
-      
-      return entries;
-    }
-    
-    // v1.6.4: Show audit log modal
-    function showAuditLogModal(entries) {
-      var html = '<div style="max-height: 60vh; overflow-y: auto;">';
-      html += '<table style="width: 100%; border-collapse: collapse; font-size: 0.85em;">';
-      html += '<thead><tr style="background: #f5f5f5;"><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Action</th><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Field</th><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Summary</th><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Done By</th></tr></thead>';
-      html += '<tbody>';
-      
-      entries.slice(0, 50).forEach(function(entry) {
+
+      var html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">';
+      html += '<thead><tr style="background: #f5f5f5;">';
+      html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd; white-space: nowrap;">Time</th>';
+      html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd;">Event</th>';
+      html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd;">Actor</th>';
+      html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd;">Role</th>';
+      html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd;">Record</th>';
+      html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd;">Field</th>';
+      html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 2px solid #ddd;">Details</th>';
+      html += '</tr></thead><tbody>';
+
+      events.slice(0, 200).forEach(function(ev) {
+        var bg = typeColors[ev.event_type] || '#f9f9f9';
+        var ts = ev.timestamp_iso ? new Date(ev.timestamp_iso).toLocaleString() : '-';
+        var details = '';
+        if (ev.metadata) {
+          if (ev.metadata.from_status && ev.metadata.to_status) details = ev.metadata.from_status + ' → ' + ev.metadata.to_status;
+          else if (ev.metadata.notes) details = ev.metadata.notes;
+          else if (ev.metadata.decision) details = ev.metadata.decision;
+          else if (ev.metadata.patch_type) details = ev.metadata.patch_type;
+        }
+        var recordLink = ev.record_id ? '<a href="#" onclick="auditLogNavigateToRecord('' + escapeHtml(ev.record_id) + ''); return false;" style="color: #1565c0;">' + escapeHtml(ev.record_id) + '</a>' : '-';
+
         html += '<tr style="border-bottom: 1px solid #eee;">';
-        html += '<td style="padding: 8px;"><span style="background: #e3f2fd; color: #1565c0; padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">' + escapeHtml(entry.action) + '</span></td>';
-        html += '<td style="padding: 8px; font-family: monospace; font-size: 0.85em;">' + escapeHtml(entry.field || '-') + '</td>';
-        html += '<td style="padding: 8px;">' + escapeHtml(entry.summary || '-') + '</td>';
-        html += '<td style="padding: 8px; color: #666;">' + escapeHtml(entry.done_by) + '</td>';
+        html += '<td style="padding: 6px 8px; white-space: nowrap; color: #666;">' + escapeHtml(ts) + '</td>';
+        html += '<td style="padding: 6px 8px;"><span style="background: ' + bg + '; color: #333; padding: 2px 6px; border-radius: 4px; font-size: 0.85em;">' + escapeHtml(ev.event_type) + '</span></td>';
+        html += '<td style="padding: 6px 8px; font-size: 0.9em;">' + escapeHtml(ev.actor_id || '-') + '</td>';
+        html += '<td style="padding: 6px 8px;"><span style="text-transform: capitalize;">' + escapeHtml(ev.actor_role || '-') + '</span></td>';
+        html += '<td style="padding: 6px 8px; font-family: monospace; font-size: 0.85em;">' + recordLink + '</td>';
+        html += '<td style="padding: 6px 8px; font-family: monospace; font-size: 0.85em;">' + escapeHtml(ev.field_key || '-') + '</td>';
+        html += '<td style="padding: 6px 8px; font-size: 0.9em;">' + escapeHtml(details || '-') + '</td>';
         html += '</tr>';
       });
-      
+
       html += '</tbody></table>';
-      if (entries.length > 50) {
-        html += '<div style="padding: 10px; text-align: center; color: #666;">Showing 50 of ' + entries.length + ' entries</div>';
+      if (events.length > 200) {
+        html += '<div style="padding: 8px; text-align: center; color: #666; font-size: 0.85em;">Showing 200 of ' + events.length + ' events</div>';
       }
-      html += '</div>';
-      
-      showInfoModal('Audit Log (' + entries.length + ' entries)', html);
+      return html;
+    }
+
+    function auditLogApplyFilters() {
+      var typeFilter = document.getElementById('audit-filter-type')?.value || '';
+      var roleFilter = document.getElementById('audit-filter-role')?.value || '';
+      var prFilter = document.getElementById('audit-filter-prid')?.value.trim() || '';
+      var events = (window._auditLogEvents || []).filter(function(ev) {
+        if (typeFilter && ev.event_type !== typeFilter) return false;
+        if (roleFilter && ev.actor_role !== roleFilter) return false;
+        if (prFilter && (!ev.patch_request_id || ev.patch_request_id.indexOf(prFilter) < 0)) return false;
+        return true;
+      });
+      events.sort(function(a, b) {
+        return _auditLogSortAsc
+          ? (a.timestamp_iso < b.timestamp_iso ? -1 : 1)
+          : (a.timestamp_iso > b.timestamp_iso ? -1 : 1);
+      });
+      var body = document.getElementById('audit-log-body');
+      if (body) body.innerHTML = renderAuditLogTable(events);
+    }
+
+    function auditLogToggleSort() {
+      _auditLogSortAsc = !_auditLogSortAsc;
+      var btn = document.getElementById('audit-sort-btn');
+      if (btn) btn.textContent = _auditLogSortAsc ? 'Oldest First' : 'Newest First';
+      auditLogApplyFilters();
+    }
+
+    function auditLogNavigateToRecord(recordId) {
+      var overlay = document.getElementById('info-modal-overlay');
+      if (overlay) overlay.remove();
+      if (!recordId || recordId === '-') return;
+      var parts = recordId.split(':');
+      if (parts.length >= 2) {
+        var sheet = parts[0];
+        var idx = parseInt(parts[1], 10);
+        if (!isNaN(idx) && workbook && workbook.sheets && workbook.sheets[sheet]) {
+          navigateTo('srr');
+          setTimeout(function() { srrNavigateToRecord(sheet, idx); }, 200);
+        }
+      }
     }
     
     // v1.6.4: Simple info modal helper
@@ -19962,14 +20331,16 @@
     }
     
     function aaShowReplayAuditLog() {
-      // Stub: show toast pointing to audit log
-      showToast('Replay failure logged to Audit Log (entry ID: REPLAY_' + Date.now() + ')', 'info');
-      console.log('[AA] Replay audit entry:', {
-        event_type: 'REPLAY_FAILED',
-        timestamp: replayState.lastRunAt,
-        failure_reason: replayState.failureReason,
-        checks: replayState.checks
+      AuditTimeline.emit('SYSTEM_CHANGE_APPLIED', {
+        patch_request_id: aaState.currentPatchId || '',
+        metadata: {
+          event_type: 'REPLAY_EVALUATED',
+          result: replayState.status,
+          failure_reason: replayState.failureReason,
+          checks: (replayState.checks || []).map(function(c) { return { id: c.id, pass: c.pass }; })
+        }
       });
+      showAuditLogForDataset({ patch_request_id: aaState.currentPatchId || '' });
     }
     
     function aaChecklistChanged() {
@@ -20012,6 +20383,10 @@
       aaState.checklistConfirmed = true;
       saveChecklistConfirmation('admin', aaState.patchRequestId || aaState.currentPatchId || 'current');
       aaLogAuditEvent('ADMIN_APPROVED', { smoke_evidence_ref: 'smoke_strict_' + Date.now(), checklist_confirmed: true, notes: aaState.notes });
+      AuditTimeline.emit('PATCH_ADMIN_PROMOTED', {
+        patch_request_id: aaState.currentPatchId || aaState.patchRequestId || '',
+        metadata: { checklist_confirmed: true, notes: aaState.notes }
+      });
       
       aaUpdateStateBadge();
       aaUpdateActionButtons();
@@ -25729,6 +26104,7 @@ Add any additional notes here.
     // v1.6.56: Initialize SessionDB + migrate legacy localStorage data, then autoload
     (async function() {
       await SessionDB.init();
+      await AuditTimeline.init();
       await SessionDB.migrateFromLocalStorage();
       if (artifactRegistry.devMasterlineEnabled) {
         await masterlineAutoload();
