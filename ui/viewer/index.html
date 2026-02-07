@@ -422,6 +422,23 @@
     .loader-panel { display: none; }
     .loader-panel.active { display: block; }
 
+    .saved-sessions-section { margin-top: 20px; }
+    .saved-sessions-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .saved-sessions-title { font-size: 0.85em; font-weight: 600; color: #333; text-transform: uppercase; letter-spacing: 0.5px; }
+    .saved-sessions-count { font-size: 0.75em; color: #999; }
+    .saved-session-card { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #fff; border: 1px solid #e8e8e8; border-radius: 8px; margin-bottom: 8px; transition: all 0.15s; cursor: pointer; }
+    .saved-session-card:hover { border-color: #1565c0; background: #f8fbff; box-shadow: 0 2px 8px rgba(21,101,192,0.08); }
+    .saved-session-info { flex: 1; min-width: 0; }
+    .saved-session-name { font-size: 0.88em; font-weight: 600; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; }
+    .saved-session-meta { display: flex; align-items: center; gap: 4px; font-size: 0.75em; color: #888; flex-wrap: wrap; }
+    .saved-session-dot { color: #ccc; }
+    .saved-session-role { background: #e3f2fd; color: #1565c0; padding: 1px 6px; border-radius: 4px; font-weight: 500; font-size: 0.9em; }
+    .saved-session-delete { width: 24px; height: 24px; border-radius: 50%; border: none; background: transparent; color: #bbb; font-size: 1.1em; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
+    .saved-session-delete:hover { background: #fce4ec; color: #c62828; }
+    .save-session-btn { padding: 7px 14px; background: #fff; color: #1565c0; border: 1.5px solid #1565c0; border-radius: 7px; font-size: 0.82em; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-weight: 500; transition: all 0.15s; }
+    .save-session-btn:hover { background: #e3f2fd; }
+    .save-session-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
     /* Loader Section */
     .loader-section { background: #f9f9f9; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
     .loader-section h4 { margin: 0 0 10px; font-size: 0.95em; color: #1a1a2e; display: flex; align-items: center; gap: 8px; }
@@ -3575,6 +3592,18 @@
           </div>
         </div>
         
+        <!-- Saved Sessions Section -->
+        <div class="saved-sessions-section">
+          <div class="saved-sessions-header">
+            <span class="saved-sessions-title">Saved Sessions</span>
+            <button class="save-session-btn" id="save-session-btn" onclick="promptSaveSession()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Save Session
+            </button>
+          </div>
+          <div id="saved-sessions-list"></div>
+        </div>
+
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
           <div style="flex: 1; height: 1px; background: #e0e0e0;"></div>
           <span style="font-size: 0.75em; color: #999; text-transform: uppercase;">Or load demo data</span>
@@ -5570,6 +5599,157 @@
       localStorage.removeItem(NAV_STATE_CACHE_KEY);
       console.log('[WorkbookCache] Cache cleared');
     }
+
+    var SESSIONS_STORE_KEY = 'orchestrate_saved_sessions';
+    var MAX_SESSIONS = 10;
+
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function getSavedSessions() {
+      try {
+        var raw = localStorage.getItem(SESSIONS_STORE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) { return []; }
+    }
+
+    function saveCurrentSession(name) {
+      if (!workbook || !workbook.order || workbook.order.length === 0) {
+        showToast('No data loaded to save', 'warning');
+        return false;
+      }
+      var sessions = getSavedSessions();
+      if (sessions.length >= MAX_SESSIONS) {
+        showToast('Maximum ' + MAX_SESSIONS + ' sessions. Delete one first.', 'warning');
+        return false;
+      }
+      var sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      var totalRows = 0;
+      workbook.order.forEach(function(s) {
+        if (workbook.sheets[s]) totalRows += workbook.sheets[s].length;
+      });
+      var session = {
+        id: sessionId,
+        name: name || ('Session ' + new Date().toLocaleDateString()),
+        savedAt: new Date().toISOString(),
+        role: currentMode || 'analyst',
+        datasetId: IDENTITY_CONTEXT.dataset_id || 'unknown',
+        filename: document.getElementById('active-data-source-name')?.textContent || 'Dataset',
+        sheetCount: workbook.order.length,
+        rowCount: totalRows,
+        workbook: {
+          sheets: workbook.sheets,
+          order: workbook.order,
+          activeSheet: workbook.activeSheet
+        }
+      };
+      sessions.unshift(session);
+      try {
+        localStorage.setItem(SESSIONS_STORE_KEY, JSON.stringify(sessions));
+        showToast('Session saved: ' + session.name, 'success');
+        renderSavedSessionsList();
+        return true;
+      } catch (e) {
+        if (e.name === 'QuotaExceededError' || e.code === 22) {
+          showToast('Storage full. Delete old sessions first.', 'error');
+        } else {
+          showToast('Failed to save session', 'error');
+        }
+        return false;
+      }
+    }
+
+    function loadSavedSession(sessionId) {
+      var sessions = getSavedSessions();
+      var session = null;
+      for (var i = 0; i < sessions.length; i++) {
+        if (sessions[i].id === sessionId) { session = sessions[i]; break; }
+      }
+      if (!session || !session.workbook) {
+        showToast('Session not found or corrupted', 'error');
+        return false;
+      }
+      workbook.sheets = session.workbook.sheets;
+      workbook.order = session.workbook.order;
+      workbook.activeSheet = session.workbook.activeSheet || session.workbook.order[0];
+      IDENTITY_CONTEXT.dataset_id = session.datasetId || 'ds_restored';
+      updateActiveDataSourceBar(session.filename || session.name);
+      updateLoaderUI();
+      generateAllSignals();
+      saveWorkbookToCache();
+      closeDataSourceDrawer();
+      navigateTo('grid');
+      showToast('Loaded session: ' + session.name, 'success');
+      return true;
+    }
+
+    function deleteSavedSession(sessionId) {
+      var sessions = getSavedSessions();
+      sessions = sessions.filter(function(s) { return s.id !== sessionId; });
+      localStorage.setItem(SESSIONS_STORE_KEY, JSON.stringify(sessions));
+      renderSavedSessionsList();
+      showToast('Session deleted', 'info');
+    }
+
+    function promptSaveSession() {
+      if (!workbook || !workbook.order || workbook.order.length === 0) {
+        showToast('No data loaded to save', 'warning');
+        return;
+      }
+      var defaultName = (document.getElementById('active-data-source-name')?.textContent || 'Session') + ' - ' + new Date().toLocaleDateString();
+      var name = prompt('Name this session:', defaultName);
+      if (name === null) return;
+      name = name.trim() || defaultName;
+      saveCurrentSession(name);
+    }
+
+    function renderSavedSessionsList() {
+      var container = document.getElementById('saved-sessions-list');
+      if (!container) return;
+      var sessions = getSavedSessions();
+      if (sessions.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 16px; color: #999; font-size: 0.85em;">No saved sessions yet. Upload data and click "Save Session" to save your progress.</div>';
+        return;
+      }
+      var html = '';
+      sessions.forEach(function(s) {
+        var date = new Date(s.savedAt);
+        var timeStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+        var roleLabel = (s.role || 'analyst').charAt(0).toUpperCase() + (s.role || 'analyst').slice(1);
+        html += '<div class="saved-session-card" data-session-id="' + escapeHtml(s.id) + '">' +
+          '<div class="saved-session-info" data-load-id="' + escapeHtml(s.id) + '">' +
+            '<div class="saved-session-name">' + escapeHtml(s.name || 'Untitled') + '</div>' +
+            '<div class="saved-session-meta">' +
+              '<span>' + timeStr + '</span>' +
+              '<span class="saved-session-dot">\u00b7</span>' +
+              '<span>' + (s.sheetCount || 0) + ' sheets</span>' +
+              '<span class="saved-session-dot">\u00b7</span>' +
+              '<span>' + (s.rowCount || 0) + ' rows</span>' +
+              '<span class="saved-session-dot">\u00b7</span>' +
+              '<span class="saved-session-role">' + escapeHtml(roleLabel) + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<button class="saved-session-delete" data-delete-id="' + escapeHtml(s.id) + '" title="Delete session">&times;</button>' +
+        '</div>';
+      });
+      container.innerHTML = html;
+      container.querySelectorAll('[data-load-id]').forEach(function(el) {
+        el.addEventListener('click', function() { loadSavedSession(this.getAttribute('data-load-id')); });
+      });
+      container.querySelectorAll('[data-delete-id]').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var sid = this.getAttribute('data-delete-id');
+          var sessions = getSavedSessions();
+          var sName = 'this session';
+          for (var i = 0; i < sessions.length; i++) { if (sessions[i].id === sid) { sName = sessions[i].name || 'Untitled'; break; } }
+          if (confirm('Delete session: ' + sName + '?')) deleteSavedSession(sid);
+        });
+      });
+    }
     
     function saveNavStateToCache() {
       try {
@@ -6001,6 +6181,7 @@
         
         showToast('Session restored: ' + cachedWorkbook.filename, 'success');
         await checkAllArtifacts();
+        renderSavedSessionsList();
         return;
       }
       
@@ -10691,6 +10872,7 @@
     // Data Sources Drawer functions (now Upload Library)
     function openDataSourceDrawer() {
       document.getElementById('data-source-drawer').classList.add('active');
+      renderSavedSessionsList();
       renderUploadLibrary();
       updateDataSourceDrawerState();
     }
