@@ -411,21 +411,27 @@
           var stored = localStorage.getItem(DEMO_USERS_KEY);
           if (stored) {
             var users = JSON.parse(stored);
-            var hasAnyEmail = users.some(function(u) { return u.email && u.email.trim(); });
-            if (!hasAnyEmail) {
-              for (var i = 0; i < DEFAULT_DEMO_USERS.length; i++) {
-                var def = DEFAULT_DEMO_USERS[i];
-                if (def.email && def.email.trim()) {
-                  var match = users.find(function(u) { return u.id === def.id; });
-                  if (match && !match.email) {
-                    match.name = def.name;
-                    match.email = def.email;
-                    match.role = def.role;
+            var changed = false;
+            for (var i = 0; i < DEFAULT_DEMO_USERS.length; i++) {
+              var def = DEFAULT_DEMO_USERS[i];
+              if (def.email && def.email.trim()) {
+                var alreadyExists = users.some(function(u) {
+                  return u.email && u.email.toLowerCase().trim() === def.email.toLowerCase().trim();
+                });
+                if (!alreadyExists) {
+                  var slot = users.find(function(u) { return u.id === def.id && (!u.email || !u.email.trim()); });
+                  if (slot) {
+                    slot.name = def.name;
+                    slot.email = def.email;
+                    slot.role = def.role;
+                  } else {
+                    users.push(JSON.parse(JSON.stringify(def)));
                   }
+                  changed = true;
                 }
               }
-              localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(users));
             }
+            if (changed) localStorage.setItem(DEMO_USERS_KEY, JSON.stringify(users));
             return users;
           }
         } catch (e) {}
