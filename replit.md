@@ -32,5 +32,8 @@ Each record carries a `_document_type` and `_capabilities` object. Document type
 ### Export / Save Functionality
 The Export/Save button generates an XLSX file using SheetJS, including all data sheets, `_change_log`, `RFIs & Analyst Notes`, `_signals_summary`, and `_orchestrate_meta` (dataset metadata). Exported files are named `orchestrate_{dataset_id}_{timestamp}.xlsx`.
 
+### Session Isolation + Role Audit (v1.6.58)
+Fixed session bleed between users: signing in as a different user (or role) now clears stale localStorage keys (ingestion_folder_name, nav state, viewer mode, SRR state, group state, workbook sessions, artifact playground). Sign-out also clears these keys. Demo page normalized: "Reviewer" role renamed to "Verifier" across demoProfiles, data-role attributes, and button labels to match viewer's internal setMode. Playground mode restricted: in demo mode, only Admin gets the role switcher; Analyst and Verifier are locked to their assigned roles (matching production behavior). Legacy normalizeLegacyRole() and normalizeLegacyStatus() preserved for backward compatibility.
+
 ## External Dependencies
 None by design. This repository uses only the Python standard library. A FastAPI server acts as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF. SheetJS (XLSX) is loaded via CDN for Excel import/export functionality.

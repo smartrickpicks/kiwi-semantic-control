@@ -235,7 +235,7 @@
       </div>
       <div class="role-options">
         <button class="role-btn" data-role="analyst">Analyst</button>
-        <button class="role-btn" data-role="reviewer">Reviewer</button>
+        <button class="role-btn" data-role="verifier">Verifier</button>
         <button class="role-btn selected" data-role="admin">Admin</button>
       </div>
     </div>
@@ -292,7 +292,7 @@
 
       var demoProfiles = {
         analyst: { email: 'sarah.chen@orchestrate.demo', name: 'Sarah Chen', folder: 'Sarah Chen - West Region' },
-        reviewer: { email: 'marcus.johnson@orchestrate.demo', name: 'Marcus Johnson', folder: 'Marcus Johnson - Central' },
+        verifier: { email: 'marcus.johnson@orchestrate.demo', name: 'Marcus Johnson', folder: 'Marcus Johnson - Central' },
         admin: { email: 'emily.rodriguez@orchestrate.demo', name: 'Emily Rodriguez', folder: 'Emily Rodriguez - HQ' }
       };
       
@@ -310,6 +310,32 @@
         }
 
         var profile = demoProfiles[selectedRole];
+        var previousUser = localStorage.getItem('demoUser');
+        var previousRole = localStorage.getItem('currentRole');
+        var needsCleanup = true;
+        if (previousUser) {
+          try {
+            var prev = JSON.parse(previousUser);
+            if (prev.email === profile.email && previousRole === selectedRole) {
+              needsCleanup = false;
+            }
+          } catch(e) {}
+        }
+        if (needsCleanup) {
+          localStorage.removeItem('ingestion_folder_name');
+          localStorage.removeItem('orchestrate_nav_state');
+          localStorage.removeItem('viewer_mode_v10');
+          localStorage.removeItem('orchestrate_srr_state');
+          localStorage.removeItem('orchestrate_group_collapsed');
+          var keysToRemove = [];
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k && (k.indexOf('workbook_session_') === 0 || k.indexOf('orchestrate_artifact_') === 0)) {
+              keysToRemove.push(k);
+            }
+          }
+          keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
+        }
         localStorage.setItem('currentRole', selectedRole);
         localStorage.setItem('demoUser', JSON.stringify({
           email: profile.email,
@@ -318,13 +344,13 @@
           role: selectedRole,
           signedInAt: new Date().toISOString(),
           isDemo: true,
-          playgroundEnabled: true
+          playgroundEnabled: (selectedRole === 'admin')
         }));
         window.location.href = '/ui/viewer/';
       });
       
       var existingRole = localStorage.getItem('currentRole');
-      if (existingRole && ['analyst', 'reviewer', 'admin'].includes(existingRole)) {
+      if (existingRole && ['analyst', 'verifier', 'admin'].includes(existingRole)) {
         document.querySelectorAll('.role-btn').forEach(function(btn) {
           btn.classList.remove('selected');
           if (btn.getAttribute('data-role') === existingRole) {
