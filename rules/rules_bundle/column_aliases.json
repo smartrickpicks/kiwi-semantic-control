@@ -1,0 +1,3546 @@
+{
+  "version": "v1",
+  "meta": {
+    "generated_at_utc": "2026-02-08T00:00:00Z",
+    "description": "Column-level alias map. Maps alternate column names to canonical field_key values.",
+    "normalization": "case-insensitive, underscore/punctuation-insensitive"
+  },
+  "aliases": [
+    {
+      "canonical_key": "account_number_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Account Number"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "account_source_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Account Source"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "annual_revenue_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Annual Revenue"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "billing_address_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Billing Address"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "billing_city_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Billing City"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "billing_country_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Billing Country"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "billing_geocode_accuracy_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Billing Geocode Accuracy"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "billing_latitude_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Billing Latitude"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "billing_longitude_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Billing Longitude"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "billing_postal_code_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Billing Zip/Postal Code"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "billing_state_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Billing State/Province"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "billing_street_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Billing Street"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "created_by_id_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Created By ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "created_date_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Created Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "currency_iso_code_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Account Currency"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "description_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Account Description"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "fax_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Account Fax"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "id_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Account ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "industry_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Industry"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "is_customer_portal_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Customer Portal Account"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "jigsaw_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Data.com Key"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "jigsaw_company_id_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Jigsaw Company ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "last_activity_date_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Last Activity"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "last_modified_by_id_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Last Modified By ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "last_modified_date_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Last Modified Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "master_record_id_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Master Record ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Account_Name_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Account Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "number_of_employees_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Employees"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "operating_hours_id_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Operating Hour ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "owner_id_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Owner ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "ownership_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Ownership"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "parent_id_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Parent Account ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "phone_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Account Phone"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "photo_url_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Photo URL"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "rating_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Tiers"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "record_type_id_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Record Type ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "shipping_address_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Shipping Address"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "shipping_city_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Shipping City"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "shipping_country_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Shipping Country"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "shipping_geocode_accuracy_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Shipping Geocode Accuracy"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "shipping_latitude_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Shipping Latitude"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "shipping_longitude_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Shipping Longitude"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "shipping_postal_code_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Shipping Zip/Postal Code"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "shipping_state_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Shipping State/Province"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "shipping_street_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Shipping Street"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "sic_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "SIC Code"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "sic_desc_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "SIC Description"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "site_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Account Site"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "ticker_symbol_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Ticker Symbol"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "tier_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Einstein Account Tier"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Account_Type_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Account Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "website_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Website"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "a_r_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Current A&R"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "accepted_tos_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Accepted TOS"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "account_prefill_link_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "CMG Account Prefill link"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "apple_music_link_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Apple Music Link"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "artist_birthday_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Artist Birthday"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "artist_name_pka_or_dba_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Artist Name (pka or dba)"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "billing_address_true_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Billing Address True"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "bofc_acc_name_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "BOFC ACC Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "cash_advance_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Cash Advance"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "certify_ownership_of_content_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Certify Ownership of Content"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "cma_restricted_content_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "CMA Restricted Content"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "cmbg_account_prefill_link_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "CBMG Account Prefill link"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "cmg_2022_profit_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "CMG 2022 Profit"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "company_name_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Company Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "company_name_caps_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Company Name (CAPS)"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "company_not_representing_artists_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Company not representing artists?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "company_representing_artists_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Company representing artists?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "current_advance_total_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Current Advance Total"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "current_earnings_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Current Earnings"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "dba_name_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Legal Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "deal_term_prefill_link_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Deal Term Prefill Link"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "division_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Legacy Division"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "facebook_link_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Facebook Link"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "first_signed_date_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "First Signed Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "gclid_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "GCLID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "genre2_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Genre"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "individual_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Individual"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "instagram_link_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Instagram Link"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "last_year_account_ids_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Last Year Account IDs"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "le_id_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "LE ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "legal_name_caps_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Legal Name (CAPS)"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "lod_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "LOD"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "lod_prefill_link_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "LOD Prefill link"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "minor_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Minor"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "notes_for_client_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Notes for Client"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "onboarded_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Onboarded"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "opp_count_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Opp Count"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "owner_historical_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Owner Historical"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "payment_frequency_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Payment Frequency"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "payment_interval_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Payment Interval"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "payment_threshold_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Payment Threshold"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "primary_contact_email_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Primary Contact Email"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "primary_contact_first_name_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Primary Contact First Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "primary_contact_last_name_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Primary Contact Last Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "primary_contact_phone_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Primary Contact Phone"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "primary_contact_relationship_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Primary Contact Relationship"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "record_type_id_from_lead_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Record Type Id from Lead"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "snapchat_link_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Snapchat Link"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "soundcloud_link_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "SoundCloud Link"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "spotify_link_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Spotify Link"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "state_of_formation_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "State of Formation"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "status_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Status"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "tiktok_link_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "TikTok Link"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "time_trigger_05_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Time Trigger 05"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "total_of_deals_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Total # of Deals"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "total_of_term_deals_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Total # of Term Deals"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "total_of_won_deals_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Total # of Won Deals"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "twitter_link_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Twitter Link"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "type_of_company_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Type of Company"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "typeform_form_mapping_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Typeform Form Mapping"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "typeform_response_id_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "Typeform Response ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "x18_digit_id_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "18 Digit ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "youtube_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "YouTube"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "youtube_2_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "YouTube 2"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "youtube_3_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "YouTube 3"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "youtube_name_c",
+      "sheet": "Accounts",
+      "aliases": [
+        "YouTube Channel Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "AccountId",
+      "sheet": "Contacts",
+      "aliases": [
+        "Account ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "AssistantName",
+      "sheet": "Contacts",
+      "aliases": [
+        "Assistant's Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "AssistantPhone",
+      "sheet": "Contacts",
+      "aliases": [
+        "Asst. Phone"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Birthdate",
+      "sheet": "Contacts",
+      "aliases": [
+        "Birthdate"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CreatedById",
+      "sheet": "Contacts",
+      "aliases": [
+        "Created By ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CreatedDate",
+      "sheet": "Contacts",
+      "aliases": [
+        "Created Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CurrencyIsoCode",
+      "sheet": "Contacts",
+      "aliases": [
+        "Contact Currency"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Department",
+      "sheet": "Contacts",
+      "aliases": [
+        "Department"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Description",
+      "sheet": "Contacts",
+      "aliases": [
+        "Contact Description"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "DoNotCall",
+      "sheet": "Contacts",
+      "aliases": [
+        "Do Not Call"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Email",
+      "sheet": "Contacts",
+      "aliases": [
+        "Email"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "EmailBouncedDate",
+      "sheet": "Contacts",
+      "aliases": [
+        "Email Bounced Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "EmailBouncedReason",
+      "sheet": "Contacts",
+      "aliases": [
+        "Email Bounced Reason"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Fax",
+      "sheet": "Contacts",
+      "aliases": [
+        "Business Fax"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "FirstName",
+      "sheet": "Contacts",
+      "aliases": [
+        "Legal First Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "HasOptedOutOfEmail",
+      "sheet": "Contacts",
+      "aliases": [
+        "Email Opt Out"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "HasOptedOutOfFax",
+      "sheet": "Contacts",
+      "aliases": [
+        "Fax Opt Out"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "HomePhone",
+      "sheet": "Contacts",
+      "aliases": [
+        "Home Phone"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Id",
+      "sheet": "Contacts",
+      "aliases": [
+        "Contact ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "IndividualId",
+      "sheet": "Contacts",
+      "aliases": [
+        "Individual ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "InformalName",
+      "sheet": "Contacts",
+      "aliases": [
+        "Informal Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "IsEmailBounced",
+      "sheet": "Contacts",
+      "aliases": [
+        "Is Email Bounced"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Jigsaw",
+      "sheet": "Contacts",
+      "aliases": [
+        "Data.com Key"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "JigsawContactId",
+      "sheet": "Contacts",
+      "aliases": [
+        "Jigsaw Contact ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "LastActivityDate",
+      "sheet": "Contacts",
+      "aliases": [
+        "Last Activity"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "LastCURequestDate",
+      "sheet": "Contacts",
+      "aliases": [
+        "Last Stay-in-Touch Request Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "LastCUUpdateDate",
+      "sheet": "Contacts",
+      "aliases": [
+        "Last Stay-in-Touch Save Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "LastModifiedById",
+      "sheet": "Contacts",
+      "aliases": [
+        "Last Modified By ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "LastModifiedDate",
+      "sheet": "Contacts",
+      "aliases": [
+        "Last Modified Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "LastName",
+      "sheet": "Contacts",
+      "aliases": [
+        "Legal Last Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "LeadSource",
+      "sheet": "Contacts",
+      "aliases": [
+        "Lead Source"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "MailingAddress",
+      "sheet": "Contacts",
+      "aliases": [
+        "Mailing Address"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "MailingCity",
+      "sheet": "Contacts",
+      "aliases": [
+        "Mailing City"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "MailingCountry",
+      "sheet": "Contacts",
+      "aliases": [
+        "Mailing Country"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "MailingGeocodeAccuracy",
+      "sheet": "Contacts",
+      "aliases": [
+        "Mailing Geocode Accuracy"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "MailingLatitude",
+      "sheet": "Contacts",
+      "aliases": [
+        "Mailing Latitude"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "MailingLongitude",
+      "sheet": "Contacts",
+      "aliases": [
+        "Mailing Longitude"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "MailingPostalCode",
+      "sheet": "Contacts",
+      "aliases": [
+        "Mailing Zip/Postal Code"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "MailingState",
+      "sheet": "Contacts",
+      "aliases": [
+        "Mailing State/Province"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "MailingStreet",
+      "sheet": "Contacts",
+      "aliases": [
+        "Mailing Street"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "MasterRecordId",
+      "sheet": "Contacts",
+      "aliases": [
+        "Master Record ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "MiddleName",
+      "sheet": "Contacts",
+      "aliases": [
+        "Legal Middle Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "MobilePhone",
+      "sheet": "Contacts",
+      "aliases": [
+        "Mobile Phone"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Name",
+      "sheet": "Contacts",
+      "aliases": [
+        "Legal Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "OtherAddress",
+      "sheet": "Contacts",
+      "aliases": [
+        "Other Address"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "OtherCity",
+      "sheet": "Contacts",
+      "aliases": [
+        "Other City"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "OtherCountry",
+      "sheet": "Contacts",
+      "aliases": [
+        "Other Country"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "OtherGeocodeAccuracy",
+      "sheet": "Contacts",
+      "aliases": [
+        "Other Geocode Accuracy"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "OtherLatitude",
+      "sheet": "Contacts",
+      "aliases": [
+        "Other Latitude"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "OtherLongitude",
+      "sheet": "Contacts",
+      "aliases": [
+        "Other Longitude"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "OtherPhone",
+      "sheet": "Contacts",
+      "aliases": [
+        "Other Phone"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "OtherPostalCode",
+      "sheet": "Contacts",
+      "aliases": [
+        "Other Zip/Postal Code"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "OtherState",
+      "sheet": "Contacts",
+      "aliases": [
+        "Other State/Province"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "OtherStreet",
+      "sheet": "Contacts",
+      "aliases": [
+        "Other Street"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "OwnerId",
+      "sheet": "Contacts",
+      "aliases": [
+        "Owner ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Phone",
+      "sheet": "Contacts",
+      "aliases": [
+        "Business Phone"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "PhotoUrl",
+      "sheet": "Contacts",
+      "aliases": [
+        "Photo URL"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "RecordTypeId",
+      "sheet": "Contacts",
+      "aliases": [
+        "Record Type ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "ReportsToId",
+      "sheet": "Contacts",
+      "aliases": [
+        "Reports To ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Salutation",
+      "sheet": "Contacts",
+      "aliases": [
+        "Salutation"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Suffix",
+      "sheet": "Contacts",
+      "aliases": [
+        "Suffix"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Title",
+      "sheet": "Contacts",
+      "aliases": [
+        "Title"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contact_Address__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Contact Address"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contact_City__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Contact City"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contact_Country__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Contact Country"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contact_Email__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Contact Email"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contact_First_Name__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Contact First Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contact_Id__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "ContactId"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contact_Last_Name__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Contact Last Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contact_Middle_Name__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Contact Middle Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contact_Phone__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Contact Phone"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contact_State__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Contact State"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contact_Street__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Contact Street"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contact_Street_2__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Contact Street 2"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contact_ZIP__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Contact ZIP"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "ContactIdNumber__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "ContactIdNumber"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Division__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Division Old"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Division2__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Division"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "LE_ID__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "LE ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Purpose__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Purpose"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Record_Type_Id_from_Lead__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Record Type Id from Lead"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Role__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Role"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Secondary_Email__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Secondary Email"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Secondary_Phone_Number__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Secondary Phone Number"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "TODAY__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "TODAY"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "typeform__Typeform_Form_Mapping__c",
+      "sheet": "Contacts",
+      "aliases": [
+        "Typeform Form Mapping"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Number_of_holdback_days__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "# of holdback days"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Acquired__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "% Acquired"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Controlled_of_Composition__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "% Controlled of Composition"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Percent_Uncrossed__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "% Uncrossed"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Admin_Fee__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Admin Fee"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "ADVANCE_DETAILS__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Advance Payment Details"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Advance_Words__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Advance Words"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Affiliation_Agreement_Date__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Affiliation Agreement Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Anything_uncrossed__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Anything uncrossed?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "COMPANY_RIGHTS_LIMITATIONS__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Approval Works Limitations"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Artist_Inducement__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Artist Inducement"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Audio_File_Link__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Audio File Link"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Back_Catalog__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Back Catalog"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Back_Catalog_Distribution_Fee__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Back Catalog Distribution Fee"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Back_Catalog_Split__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Back Catalog Split"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Back_Catalog_Type__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Back Catalog Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CMA_INITIAL_TERM__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "CMA Initial Term"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CMA_Renewal_Term__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "CMA Renewal Term"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CMA_Restricted_Content__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "CMA Restricted Content"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CMA_SPLIT__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "CMA Split"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CMA_Term_Period__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "CMA Termination Notice Period"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CMA_Types__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "CMA Types"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Collection_Period__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Collection Period"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contact_Email_for_Contract__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Contact Email for Contract"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contact_Full_Name__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Contact Full Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contract_Advance_Cash_Approved__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Contract Advance Cash Approved"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contract_Drafting_Days__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Contract Drafting Days"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contract_End_Date__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Contract End Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contract_Option_Album_Language_Part_1__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Contract Option Album Language Part 1"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contract_Option_Cash_Approved__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Contract Option Cash Approved"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contract_Option_Marketing_Approved__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Contract Option Marketing Approved"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contract_Option_Period__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Contract Option Period"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contract_Subtype__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Contract Subtype"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contract_Type__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Contract Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Cover_Records_Split__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Cover Records Split"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CPA_Initial_Term__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "CPA Initial Term"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CPA_Renewal_Term__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "CPA Renewal Term"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CPA_SPLIT__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "CPA Split"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CPA_Term_Period__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "CPA Termination Notice Period"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CPA_Types__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "CPA Types"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Current_Distributor_s__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Current Distributor(s)"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Date_Signed__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Date Signed"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Deal_Summary__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Deal Summary"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "JV_Distribution_Fee__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Distribution Fee"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Division2__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Division"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Profit_Share__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Division Profit Share"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Effective_Date__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Effective Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Email_for_Contract__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Email for Contract"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Excluded_Territories__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Excluded Territories"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Exclusivity__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Exclusivity"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Existing_Master_Recordings__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Existing Master Recordings"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Exploitation_Period__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Exploitation Period"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Front_Catalog_Split__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Front Catalog Split"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Holdback_Amount__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Holdback Amount"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "In_Approval_Process__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "In Approval Process"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Include_CMA__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Include CMA?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Include_Collection__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Include Collection"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Include_CPA__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Include CPA?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Includes_Publishing_Royalty_Share__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Includes Publishing Royalty Share?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Initial_Term_Length__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Initial Term Length"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "JV_Recoup_Against__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "JV - Recoup Against?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "JV_Operating_Budget__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "JV Operating Budget"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Licensing_Rights__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Licensing Rights"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "MasterNumber_Calculate__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "MasterNumber Calculate"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Matching__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Matching Rights/Right of First Refusal"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Mechanical_Split__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Mechanical Split"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Merch_Rights__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Merch Rights"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "MERCH_SPLIT__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Merchandise Split"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Neighboring_Rights_included__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Neighboring Rights included?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "No_of_Social_Posts__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "No. of Social Posts"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Notary_State__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Notary State"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "MasterNumber__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Number of New Masters"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Number_of_Options__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Number of Options"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Number_of_Singles__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Number of Singles"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "OP_Publisher_IPI__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "OP Publisher IPI"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "OP_Publisher_Name__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "OP Publisher Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "OP_Publisher_PRO__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "OP Publisher PRO"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Option_Master_Number__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Option Master Number"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Option_Period__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Option Period"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Option_Release_Details__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Option Release Details"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Option_Type__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Option Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Other_Income_Split__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Other Income Split"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Paying_Third_Party_Collaborators__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Paying Third Party/Collaborators?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Frequency__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Payment Frequency"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Payment_Interval__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Payment Interval"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Payment_Schedule__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Payment Schedule"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Payment_Threshold__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Payment Threshold"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Performance_Split__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Performance Split"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Procurement_Split__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Pitching Procurement Split"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Procurement_Status__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Pitching Procurement Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Affiliation__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "PRO"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Pronoun__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Pronoun"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Publisher_Residence_Address__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Publisher Residence Address"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Publishing_Rights__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Publishing Rights"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Recording_Exclusivity__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Recording Exclusivity"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Release_Commitment_Window__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Release Commitment Window"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Remix_Split__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Remix Split"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Renewal_Term_Length__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Renewal Term Length"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Restrictions__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Restrictions"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Retention_Period__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Retention Period"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Sample_Licensing_Restrictions__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Sample Licensing Restrictions"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Schedule__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Schedule"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Schedule_Type__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Schedule Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "SubType__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "SubType"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Sync_Approval_Required__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Sync Approval Required"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Sync_Licensing_Restrictions__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Sync Licensing Restrictions"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Sync_Rights__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Sync Rights"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Sync_Split__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Sync Split"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Term__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Term"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Recoup_Term__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Term Options"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Termination_Date__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Termination Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Termination_Notice_Date__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Termination Notice Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Termination_Period__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Termination Notice Period"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Termination_Type__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Termination Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Territories__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Territories"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Type_of_Share__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Type of Share"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Use_Holdback_Language__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Use Holdback Language?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "What_are_we_amending__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "What are we amending?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "What_are_we_terminating__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "What are we terminating?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Writer_has_recording_career__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Writer has recording career"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Writer_IPI_Number__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Writer IPI Number"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Writer_Print_Split__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Writer Print Split"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "YouTube_Channel_Link__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "YouTube Channel Link"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Physical_Distribution__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Physical Distribution?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Physical_Split__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Physical Split"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Physical_Split_Ex_USA__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Physical Split (Ex-USA)"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Sell_Off_Period__c",
+      "sheet": "Opportunity",
+      "aliases": [
+        "Sell Off Period"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Album_Name__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "Album Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Album_Type__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "Album Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Artist_Name__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "Artist Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Name",
+      "sheet": "Catalog",
+      "aliases": [
+        "Catalog Item Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "ISRC__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "ISRC"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "ISWC__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "ISWC"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Release_Date__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "Release Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Remixer__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "Remixer"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Type__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "UPC__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "UPC"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Writer_Name__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "Writer Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Apple_Music_Link__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "Apple Music Link"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "AR_Assigned__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "AR Assigned?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Asset_Type__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "Asset Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "AssetID__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "AssetID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Catalog_External_ID__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "Catalog External ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CreatedById",
+      "sheet": "Catalog",
+      "aliases": [
+        "Created By"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CurrencyIsoCode",
+      "sheet": "Catalog",
+      "aliases": [
+        "Currency"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Division2__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "Division"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Label__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "Label"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "LastModifiedById",
+      "sheet": "Catalog",
+      "aliases": [
+        "Last Modified By"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "LOD__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "LOD"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Opportunity__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "Opportunity"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "OwnerId",
+      "sheet": "Catalog",
+      "aliases": [
+        "Owner"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "SF_18_ID__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "SF 18 ID"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Spotify_URL__c",
+      "sheet": "Catalog",
+      "aliases": [
+        "Spotify URL"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Amount__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Amount"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Contract_Advance_Cash__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Cash Advance"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CreatedById",
+      "sheet": "Financials",
+      "aliases": [
+        "Created By"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CurrencyIsoCode",
+      "sheet": "Financials",
+      "aliases": [
+        "Currency"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Days_to_Payment__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Days to Payment"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Due_Date__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Due Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Event_Completed__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Event Completed?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Event_Completion_Date__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Event Completion Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Event_Type__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Event Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Name",
+      "sheet": "Financials",
+      "aliases": [
+        "Financial Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "LastModifiedById",
+      "sheet": "Financials",
+      "aliases": [
+        "Last Modified By"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Min_Max__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Min/Max"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Notes__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Notes"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Opportunity__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Opportunity"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Payable__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Payable"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Payee__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Payee"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Payment_Date__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Payment Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "RecordTypeId",
+      "sheet": "Financials",
+      "aliases": [
+        "Record Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Recoup_Threshold__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Recoup Threshold"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Status__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Status"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Streaming_Threshold__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Streaming Threshold"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "SubType__c",
+      "sheet": "Financials",
+      "aliases": [
+        "SubType"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Threshold_of_days__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Threshold # of days"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Type__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Marketing_Advance_Mutually_Approved__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Marketing Advance Mutually Approved?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Recoupable__c",
+      "sheet": "Financials",
+      "aliases": [
+        "Recoupable?"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Album_Name__c",
+      "sheet": "Schedule",
+      "aliases": [
+        "Album Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CreatedById",
+      "sheet": "Schedule",
+      "aliases": [
+        "Created By"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CurrencyIsoCode",
+      "sheet": "Schedule",
+      "aliases": [
+        "Currency"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Division__c",
+      "sheet": "Schedule",
+      "aliases": [
+        "Division"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "LastModifiedById",
+      "sheet": "Schedule",
+      "aliases": [
+        "Last Modified By"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Opportunity__c",
+      "sheet": "Schedule",
+      "aliases": [
+        "Opportunity"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "RecordTypeId",
+      "sheet": "Schedule",
+      "aliases": [
+        "Record Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Release_Date__c",
+      "sheet": "Schedule",
+      "aliases": [
+        "Release Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Schedule_Catalog_Count__c",
+      "sheet": "Schedule",
+      "aliases": [
+        "Schedule Catalog Count"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Name",
+      "sheet": "Schedule",
+      "aliases": [
+        "Schedule Number"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Seller_s_Interest_Acquired_by_Purchaser__c",
+      "sheet": "Schedule",
+      "aliases": [
+        "Seller\u2019s Interest Acquired by Purchaser"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Acquired__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "% Acquired"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Actual_Termination_Date__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Actual Termination Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Album_Name__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Album Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Album_Type__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Album Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Artist_Name__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Artist Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Asset_Owner__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Asset Owner"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Asset_Owner_Name__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Asset Owner Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Asset_Type__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Asset Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Catalog__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Catalog"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Catalog_Name__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Catalog Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Composition_Ownership__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Composition Ownership %"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CreatedById",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Created By"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CurrencyIsoCode",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Currency"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "ISRC__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "ISRC"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "ISWC__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "ISWC"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "LastModifiedById",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Last Modified By"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "LOD__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "LOD"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Master_Ownership__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Master Ownership %"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Offboard_Date__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Offboard Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Opportunity__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Opportunity"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Schedule__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Schedule"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Name",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Schedule Catalog Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Schedule_Record_Type__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Schedule Record Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Termination_Notice_Date__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Termination Notice Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Type__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "UPC__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "UPC"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Writer_Name__c",
+      "sheet": "Schedule Catalog",
+      "aliases": [
+        "Writer Name"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Number_of_Albums__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "# of Albums"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Number_of_Masters__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "# of Masters"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Name",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Add On Number"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CreatedById",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Created By"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "CurrencyIsoCode",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Currency"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Exclusivity__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Exclusivity"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Exercise_Date__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Exercise Date"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Exercise_Notice__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Exercise Notice"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Fee_Type__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Fee Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Fee__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Fee"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "LastModifiedById",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Last Modified By"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Min_Play_Time_in_minutes__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Min Play Time (in minutes)"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Opportunity__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Opportunity"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Related_Financials__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Related Financials"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Split__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Split"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "SubType__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "SubType"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Term__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Term"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Type__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Type"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Exclusive_Negotiation_Period_Days__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Exclusive Negotiation Period (Days)"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Matching_Period_Days__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Matching Period (Days)"
+      ],
+      "source": "field_meta"
+    },
+    {
+      "canonical_key": "Third_Party_Agreement_Completion_Period__c",
+      "sheet": "Add Ons",
+      "aliases": [
+        "Third\u2011Party Agreement Completion Period (Days)"
+      ],
+      "source": "field_meta"
+    }
+  ]
+}

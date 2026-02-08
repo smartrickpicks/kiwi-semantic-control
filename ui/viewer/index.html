@@ -3063,7 +3063,7 @@
           <button class="admin-tab" data-admin-tab="patch-queue" onclick="switchAdminTab('patch-queue')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Patch Queue <span id="patch-queue-count" style="display:none; background:#e91e63; color:white; padding:1px 6px; border-radius:10px; font-size:0.8em; margin-left:4px;">0</span></button>
           <button class="admin-tab" data-admin-tab="config" onclick="switchAdminTab('config')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Config</button>
           <button class="admin-tab" data-admin-tab="inspector" onclick="switchAdminTab('inspector')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Inspector</button>
-          <button class="admin-tab" data-admin-tab="standardizer" onclick="switchAdminTab('standardizer')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Standardizer</button>
+          <button class="admin-tab" data-admin-tab="standardizer" onclick="switchAdminTab('standardizer')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Schema</button>
           <button class="admin-tab" data-admin-tab="patch-console" onclick="switchAdminTab('patch-console')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Patch Console</button>
           <button class="admin-tab" data-admin-tab="evidence" onclick="switchAdminTab('evidence')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Evidence</button>
           <button class="admin-tab" data-admin-tab="unknown-cols" onclick="switchAdminTab('unknown-cols')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Unknown Cols</button>
@@ -3480,43 +3480,20 @@
         <!-- STANDARDIZER TAB -->
         <div id="admin-tab-standardizer" class="admin-tab-panel" data-admin-section="true" style="display: none;">
         <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Standardizer <span class="info-icon" title="Convert CSV data into the canonical merged_dataset.json format. Headers are normalized and issues are tracked.">&#9432;</span></h3>
-          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Upload or paste CSV data to normalize into the standard merged dataset format.</p>
-          
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
-            <div>
-              <label style="font-size: 0.8em; color: #666; display: block; margin-bottom: 6px;">Paste CSV</label>
-              <textarea id="standardizer-csv-input" placeholder="Paste CSV data here..." style="width: 100%; height: 120px; font-family: monospace; font-size: 0.85em; padding: 10px; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"></textarea>
-            </div>
-            <div>
-              <label style="font-size: 0.8em; color: #666; display: block; margin-bottom: 6px;">Upload CSV File</label>
-              <div id="standardizer-drop-zone" class="drop-zone" style="height: 120px; display: flex; align-items: center; justify-content: center; border: 2px dashed #ccc; border-radius: 6px; cursor: pointer; background: #fafafa;">
-                <span id="standardizer-drop-text" style="color: #888; font-size: 0.85em;">Drop CSV here or click to browse</span>
-              </div>
-              <input type="file" id="standardizer-file-input" accept=".csv,.txt" style="display: none;">
-            </div>
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Schema Tree Editor <span class="info-icon" title="Browse and edit the canonical schema tree: sheets, fields, aliases, QA flags, and document types. Changes are buffered locally and can be exported as a patch.">&#9432;</span></h3>
+          <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+            <button class="toolbar-btn" onclick="schemaTreeExpandAll()">Expand All</button>
+            <button class="toolbar-btn" onclick="schemaTreeCollapseAll()">Collapse All</button>
+            <button class="toolbar-btn" onclick="SchemaTreeEditor.saveDraft()" style="background:#e8f5e9; color:#2e7d32;">Save Draft</button>
+            <button class="toolbar-btn" onclick="schemaTreePreviewDiff()">Preview Diff</button>
+            <button class="toolbar-btn" onclick="SchemaTreeEditor.exportPatch()">Export Patch</button>
+            <button class="toolbar-btn" onclick="SchemaTreeEditor.undo()">Undo Last</button>
           </div>
-          
-          <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <button class="toolbar-btn" onclick="runStandardizer()">Run Standardizer</button>
-            <button class="toolbar-btn" onclick="generateSampleCSV()">Generate Sample CSV</button>
-            <button class="toolbar-btn" onclick="clearStandardizer()">Clear</button>
-          </div>
-          
-          <div id="standardizer-status" style="display: none; padding: 10px; border-radius: 6px; margin-bottom: 15px;"></div>
-          
-          <div id="standardizer-output" style="display: none;">
-            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-              <button class="tab-btn active" data-std-tab="summary" onclick="showStandardizerTab('summary')">Summary</button>
-              <button class="tab-btn" data-std-tab="dataset" onclick="showStandardizerTab('dataset')">Merged Dataset</button>
-              <button class="tab-btn" data-std-tab="issues" onclick="showStandardizerTab('issues')">Issues</button>
-              <button class="tab-btn" data-std-tab="changelog" onclick="showStandardizerTab('changelog')">Change Log</button>
-            </div>
-            <div id="standardizer-tab-content" style="background: #263238; color: #eceff1; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.8em; max-height: 300px; overflow-y: auto;"></div>
-            <div style="margin-top: 10px; display: flex; gap: 10px;">
-              <button class="toolbar-btn" onclick="copyStandardizerOutput('dataset')">Copy Merged Dataset</button>
-              <button class="toolbar-btn" onclick="copyStandardizerOutput('issues')">Copy Issues</button>
-            </div>
+          <div id="schema-tree-container" style="border: 1px solid #e0e0e0; border-radius: 6px; max-height: 500px; overflow-y: auto; padding: 8px; background: #fafafa;"></div>
+          <div id="schema-diff-panel" style="display:none; margin-top: 15px; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; background: #fff;"></div>
+          <div id="schema-status-bar" style="margin-top: 10px; padding: 8px 12px; background: #f5f5f5; border-radius: 4px; font-size: 0.82em; color: #666; display: flex; justify-content: space-between;">
+            <span id="schema-loaded-count">Sources: 0 loaded</span>
+            <span id="schema-pending-count">Pending changes: 0</span>
           </div>
         </div>
         </div><!-- end admin-tab-standardizer -->
@@ -5108,6 +5085,44 @@
       division_id: 'div_default',
       dataset_id: null
     };
+
+    var COLUMN_ALIAS_MAP = {};
+
+    function loadColumnAliases() {
+      return fetch('/rules/rules_bundle/column_aliases.json')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          var map = {};
+          if (data && Array.isArray(data.aliases)) {
+            data.aliases.forEach(function(entry) {
+              var canonical = entry.canonical_key;
+              var sheet = entry.sheet || '';
+              (entry.aliases || []).forEach(function(alias) {
+                var norm = String(alias).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+                if (!norm) return;
+                if (!map[norm]) {
+                  map[norm] = [];
+                }
+                var existing = map[norm].find(function(m) { return m.canonical_key === canonical && m.sheet === sheet; });
+                if (!existing) {
+                  map[norm].push({ canonical_key: canonical, sheet: sheet });
+                }
+                if (map[norm].length > 1) {
+                  var keys = map[norm].map(function(m) { return m.canonical_key + '(' + m.sheet + ')'; });
+                  console.warn('[AliasMap] Conflict for "' + norm + '": ' + keys.join(', '));
+                }
+              });
+            });
+          }
+          COLUMN_ALIAS_MAP = map;
+          console.log('[AliasMap] Loaded ' + Object.keys(map).length + ' alias entries');
+          return map;
+        })
+        .catch(function(err) {
+          console.warn('[AliasMap] Failed to load column_aliases.json:', err);
+          return {};
+        });
+    }
     
     // UUID regex for alias detection (RFC4122 v1-5)
     const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -9179,7 +9194,677 @@
       showToast('Created Patch Request from comment', 'success');
     }
     
-    // ========== STANDARDIZER (D3) ==========
+    // ========== SCHEMA TREE EDITOR ==========
+    var SchemaTreeEditor = {
+      _sources: {},
+      _tree: null,
+      _changeBuffer: [],
+      _draftKey: 'schema_editor_draft',
+      _loaded: false,
+      _renderedNodes: {},
+      _expandedNodes: {},
+
+      init: function() {
+        var self = this;
+        var files = [
+          { key: 'field_meta', url: '/rules/rules_bundle/field_meta.json' },
+          { key: 'sheet_order', url: '/rules/rules_bundle/sheet_order.json' },
+          { key: 'hinge_groups', url: '/rules/rules_bundle/hinge_groups.json' },
+          { key: 'qa_flags', url: '/rules/rules_bundle/qa_flags.json' },
+          { key: 'column_aliases', url: '/rules/rules_bundle/column_aliases.json' },
+          { key: 'sheet_aliases', url: '/rules/rules_bundle/sheet_aliases.json' }
+        ];
+        var promises = files.map(function(f) { return self._loadSource(f.key, f.url); });
+        return Promise.all(promises).then(function() {
+          self._loaded = true;
+          self._buildTree();
+          self._renderTree();
+          self.loadDraft();
+          self._updateStatusBar();
+          console.log('[SchemaTreeEditor] Initialized with ' + Object.keys(self._sources).length + ' sources');
+        }).catch(function(err) {
+          console.error('[SchemaTreeEditor] Init failed:', err);
+        });
+      },
+
+      _loadSource: function(key, url) {
+        var self = this;
+        return fetch(url).then(function(res) { return res.json(); }).then(function(data) {
+          self._sources[key] = data;
+        }).catch(function(err) {
+          console.warn('[SchemaTreeEditor] Failed to load ' + key + ':', err);
+          self._sources[key] = null;
+        });
+      },
+
+      _buildTree: function() {
+        var self = this;
+        var tree = { id: 'root', label: 'Schema', children: [], type: 'root' };
+        var sheetOrder = [];
+        if (self._sources.sheet_order && self._sources.sheet_order.order) {
+          sheetOrder = self._sources.sheet_order.order.sort(function(a, b) { return a.order - b.order; });
+        }
+        sheetOrder.forEach(function(so) {
+          var sheetNode = {
+            id: 'sheet_' + so.sheet,
+            label: so.sheet,
+            type: 'sheet',
+            sheet: so.sheet,
+            order: so.order,
+            children: [],
+            _childrenBuilt: false
+          };
+          tree.children.push(sheetNode);
+        });
+        var docTypes = [];
+        try { docTypes = JSON.parse(JSON.stringify(self._sources.sheet_aliases || {})); } catch(e) {}
+        tree.children.push({
+          id: 'meta_doctypes',
+          label: 'Document Types',
+          type: 'meta',
+          children: [],
+          _childrenBuilt: false
+        });
+        tree.children.push({
+          id: 'meta_aliases',
+          label: 'Column Aliases (Global)',
+          type: 'meta',
+          children: [],
+          _childrenBuilt: false
+        });
+        tree.children.push({
+          id: 'meta_qa_flags',
+          label: 'QA Flags (Global)',
+          type: 'meta',
+          children: [],
+          _childrenBuilt: false
+        });
+        var unknownCols = {};
+        try { unknownCols = JSON.parse(localStorage.getItem('unknown_columns') || '{}'); } catch(e) {}
+        var hasUnknown = Object.keys(unknownCols).some(function(k) { return unknownCols[k] && unknownCols[k].length > 0; });
+        if (hasUnknown) {
+          tree.children.push({
+            id: 'meta_unknown',
+            label: 'Unassigned / Pending Columns',
+            type: 'unknown_root',
+            children: [],
+            _childrenBuilt: false
+          });
+        }
+        self._tree = tree;
+      },
+
+      _buildSheetChildren: function(sheetNode) {
+        var self = this;
+        var sheet = sheetNode.sheet;
+        var children = [];
+        if (self._sources.field_meta && self._sources.field_meta.fields) {
+          var fields = self._sources.field_meta.fields.filter(function(f) { return f.sheet === sheet; });
+          fields.forEach(function(f) {
+            children.push({
+              id: 'field_' + sheet + '_' + f.field_key,
+              label: f.field_label || f.field_key,
+              type: 'field',
+              sheet: sheet,
+              field_key: f.field_key,
+              field_label: f.field_label,
+              return_format: f.return_format || '',
+              requiredness: f.requiredness || '',
+              children: [],
+              _childrenBuilt: true
+            });
+          });
+        }
+        if (self._sources.hinge_groups && self._sources.hinge_groups.hinges) {
+          var hinges = self._sources.hinge_groups.hinges.filter(function(h) { return h.sheet === sheet; });
+          if (hinges.length > 0) {
+            var hingeGroup = {
+              id: 'hinge_group_' + sheet,
+              label: 'Hinge Groups (' + hinges.length + ')',
+              type: 'hinge_group',
+              sheet: sheet,
+              children: [],
+              _childrenBuilt: true
+            };
+            hinges.forEach(function(h) {
+              hingeGroup.children.push({
+                id: 'hinge_' + sheet + '_' + h.field_key,
+                label: h.field_key + ' [' + h.hinge_level + ']',
+                type: 'hinge',
+                sheet: sheet,
+                data: h,
+                children: [],
+                _childrenBuilt: true
+              });
+            });
+            children.push(hingeGroup);
+          }
+        }
+        if (self._sources.column_aliases && self._sources.column_aliases.aliases) {
+          var aliases = self._sources.column_aliases.aliases.filter(function(a) { return a.sheet === sheet; });
+          if (aliases.length > 0) {
+            var aliasGroup = {
+              id: 'alias_group_' + sheet,
+              label: 'Column Aliases (' + aliases.length + ')',
+              type: 'alias_group',
+              sheet: sheet,
+              children: [],
+              _childrenBuilt: true
+            };
+            aliases.forEach(function(a) {
+              aliasGroup.children.push({
+                id: 'alias_' + sheet + '_' + a.canonical_key,
+                label: a.canonical_key,
+                type: 'alias',
+                sheet: sheet,
+                canonical_key: a.canonical_key,
+                aliases: a.aliases || [],
+                children: [],
+                _childrenBuilt: true
+              });
+            });
+            children.push(aliasGroup);
+          }
+        }
+        var unknownCols = {};
+        try { unknownCols = JSON.parse(localStorage.getItem('unknown_columns') || '{}'); } catch(e) {}
+        var pending = unknownCols[sheet] || [];
+        if (pending.length > 0) {
+          pending.forEach(function(col) {
+            children.push({
+              id: 'pending_' + sheet + '_' + (col.column || col),
+              label: typeof col === 'string' ? col : col.column,
+              type: 'pending',
+              sheet: sheet,
+              children: [],
+              _childrenBuilt: true
+            });
+          });
+        }
+        sheetNode.children = children;
+        sheetNode._childrenBuilt = true;
+      },
+
+      _buildMetaChildren: function(node) {
+        var self = this;
+        if (node.id === 'meta_doctypes') {
+          var types = [];
+          try { types = JSON.parse(JSON.stringify(require || [])); } catch(e) {}
+          try {
+            fetch('/config/document_types.json').then(function(r) { return r.json(); }).then(function(d) {
+              if (Array.isArray(d)) {
+                node.children = d.map(function(dt, i) {
+                  return { id: 'doctype_' + i, label: dt, type: 'document_type', children: [], _childrenBuilt: true };
+                });
+                node._childrenBuilt = true;
+                self._renderNodeChildren(node);
+              }
+            });
+          } catch(e) {}
+          node._childrenBuilt = true;
+        } else if (node.id === 'meta_aliases') {
+          if (self._sources.column_aliases && self._sources.column_aliases.aliases) {
+            node.children = self._sources.column_aliases.aliases.map(function(a) {
+              return {
+                id: 'galias_' + a.canonical_key + '_' + a.sheet,
+                label: a.canonical_key + ' (' + a.sheet + ')',
+                type: 'alias',
+                sheet: a.sheet,
+                canonical_key: a.canonical_key,
+                aliases: a.aliases || [],
+                children: [],
+                _childrenBuilt: true
+              };
+            });
+          }
+          node._childrenBuilt = true;
+        } else if (node.id === 'meta_qa_flags') {
+          if (self._sources.qa_flags && self._sources.qa_flags.flags) {
+            node.children = self._sources.qa_flags.flags.map(function(f) {
+              return {
+                id: 'qaflag_' + f.flag_id,
+                label: f.flag_id + ' [' + f.flag_level + ']',
+                type: 'qa_flag',
+                data: f,
+                children: [],
+                _childrenBuilt: true
+              };
+            });
+          }
+          node._childrenBuilt = true;
+        } else if (node.id === 'meta_unknown') {
+          var unknownCols = {};
+          try { unknownCols = JSON.parse(localStorage.getItem('unknown_columns') || '{}'); } catch(e) {}
+          var children = [];
+          Object.keys(unknownCols).forEach(function(sheetKey) {
+            (unknownCols[sheetKey] || []).forEach(function(col) {
+              var colName = typeof col === 'string' ? col : col.column;
+              children.push({
+                id: 'unk_' + sheetKey + '_' + colName,
+                label: colName + ' (from: ' + sheetKey + ')',
+                type: 'pending',
+                sheet: sheetKey,
+                children: [],
+                _childrenBuilt: true
+              });
+            });
+          });
+          node.children = children;
+          node._childrenBuilt = true;
+        }
+      },
+
+      _renderTree: function() {
+        var self = this;
+        var container = document.getElementById('schema-tree-container');
+        if (!container || !self._tree) return;
+        container.innerHTML = '';
+        self._renderedNodes = {};
+        self._tree.children.forEach(function(child) {
+          self._renderNode(child, 0, container);
+        });
+      },
+
+      _renderNode: function(node, depth, parentEl) {
+        var self = this;
+        var row = document.createElement('div');
+        row.id = 'stnode_' + node.id;
+        row.setAttribute('data-node-id', node.id);
+        row.setAttribute('data-depth', depth);
+        var isPending = node.type === 'pending';
+        var baseStyle = 'display:flex; align-items:center; padding:4px 0; cursor:pointer; border-bottom:1px solid #f0f0f0; padding-left:' + (depth * 20) + 'px;';
+        if (isPending) baseStyle += ' background:#fff8e1; border-left:3px solid #ffa000;';
+        row.style.cssText = baseStyle;
+        var hasChildren = node.children && node.children.length > 0 || !node._childrenBuilt;
+        var arrowSpan = document.createElement('span');
+        arrowSpan.style.cssText = 'width:20px; text-align:center; color:#999; font-size:0.9em; flex-shrink:0;';
+        arrowSpan.className = 'schema-tree-arrow';
+        if (hasChildren) {
+          arrowSpan.textContent = self._expandedNodes[node.id] ? '\u25BC' : '\u25B6';
+          arrowSpan.onclick = function(e) {
+            e.stopPropagation();
+            if (self._expandedNodes[node.id]) {
+              self._collapseNode(node.id);
+            } else {
+              self._expandNode(node.id, node, depth, parentEl);
+            }
+          };
+        } else {
+          arrowSpan.textContent = ' ';
+        }
+        row.appendChild(arrowSpan);
+        var iconSpan = document.createElement('span');
+        iconSpan.style.cssText = 'margin-right:6px; font-size:0.9em;';
+        var icons = { sheet: '\uD83D\uDCC4', field: '\uD83D\uDD11', alias: '\uD83C\uDFF7\uFE0F', alias_group: '\uD83C\uDFF7\uFE0F', qa_flag: '\u26A0\uFE0F', document_type: '\uD83D\uDCCB', hinge: '\uD83D\uDD17', hinge_group: '\uD83D\uDD17', pending: '\u2753', meta: '\uD83D\uDCC2', unknown_root: '\uD83D\uDCC2', root: '' };
+        iconSpan.textContent = icons[node.type] || '';
+        row.appendChild(iconSpan);
+        var labelSpan = document.createElement('span');
+        labelSpan.style.cssText = 'flex:1; font-size:0.88em; color:#333;';
+        labelSpan.textContent = node.label;
+        row.appendChild(labelSpan);
+        if (node.type === 'field') {
+          var chipArea = document.createElement('span');
+          chipArea.style.cssText = 'display:flex; gap:2px; align-items:center; flex-shrink:0;';
+          if (node.field_key) {
+            var ck = document.createElement('span');
+            ck.style.cssText = 'display:inline-block; padding:1px 6px; border-radius:10px; font-size:0.75em; margin-left:4px; background:#e3f2fd; color:#1565c0;';
+            ck.textContent = node.field_key;
+            chipArea.appendChild(ck);
+          }
+          if (node.return_format) {
+            var rf = document.createElement('span');
+            rf.style.cssText = 'display:inline-block; padding:1px 6px; border-radius:10px; font-size:0.75em; margin-left:4px; background:#f3e5f5; color:#7b1fa2;';
+            rf.textContent = node.return_format;
+            chipArea.appendChild(rf);
+          }
+          if (node.requiredness) {
+            var rq = document.createElement('span');
+            var reqColors = { required: 'background:#ffebee; color:#c62828;', optional: 'background:#fff8e1; color:#f57f17;', not_needed: 'background:#eceff1; color:#546e7a;' };
+            rq.style.cssText = 'display:inline-block; padding:1px 6px; border-radius:10px; font-size:0.75em; margin-left:4px;' + (reqColors[node.requiredness] || 'background:#eceff1; color:#546e7a;');
+            rq.textContent = node.requiredness;
+            chipArea.appendChild(rq);
+          }
+          row.appendChild(chipArea);
+        }
+        if (node.type === 'alias') {
+          var aliasList = document.createElement('span');
+          aliasList.style.cssText = 'font-size:0.75em; color:#888; margin-left:8px;';
+          aliasList.textContent = '\u2192 ' + (node.aliases || []).join(', ');
+          row.appendChild(aliasList);
+        }
+        if (node.type === 'pending') {
+          var actions = document.createElement('span');
+          actions.style.cssText = 'display:flex; gap:4px; margin-left:8px; flex-shrink:0;';
+          actions.innerHTML = '<button onclick="schemaTreeMapAlias(\'' + self._escAttr(node.id) + '\')" style="font-size:0.7em; padding:2px 6px; border:1px solid #1976d2; background:white; color:#1976d2; border-radius:4px; cursor:pointer;">Map to Existing</button>' +
+            '<button onclick="schemaTreeAddField(\'' + self._escAttr(node.id) + '\')" style="font-size:0.7em; padding:2px 6px; border:1px solid #388e3c; background:white; color:#388e3c; border-radius:4px; cursor:pointer;">Add as New Field</button>' +
+            '<button onclick="schemaTreeAddTenantRule(\'' + self._escAttr(node.id) + '\')" style="font-size:0.7em; padding:2px 6px; border:1px solid #f57c00; background:white; color:#f57c00; border-radius:4px; cursor:pointer;">Create Tenant Rule</button>' +
+            '<button onclick="schemaTreeIgnore(\'' + self._escAttr(node.id) + '\')" style="font-size:0.7em; padding:2px 6px; border:1px solid #999; background:white; color:#999; border-radius:4px; cursor:pointer;">Ignore</button>';
+          row.appendChild(actions);
+        }
+        if (node.type === 'field' || node.type === 'alias') {
+          var editBtn = document.createElement('span');
+          editBtn.style.cssText = 'cursor:pointer; font-size:0.8em; margin-left:6px; color:#999;';
+          editBtn.textContent = '\u270E';
+          editBtn.title = 'Edit';
+          editBtn.onclick = function(e) { e.stopPropagation(); schemaTreeEditNode(node.id); };
+          row.appendChild(editBtn);
+        }
+        parentEl.appendChild(row);
+        self._renderedNodes[node.id] = { node: node, element: row, depth: depth, parentEl: parentEl };
+        if (self._expandedNodes[node.id]) {
+          self._expandNode(node.id, node, depth, parentEl);
+        }
+      },
+
+      _escAttr: function(s) { return String(s).replace(/'/g, "\\'").replace(/"/g, '&quot;'); },
+
+      _expandNode: function(nodeId, node, depth, parentEl) {
+        var self = this;
+        if (!node) {
+          var info = self._renderedNodes[nodeId];
+          if (!info) return;
+          node = info.node;
+          depth = info.depth;
+          parentEl = info.parentEl;
+        }
+        if (!node._childrenBuilt) {
+          if (node.type === 'sheet') {
+            self._buildSheetChildren(node);
+          } else {
+            self._buildMetaChildren(node);
+          }
+        }
+        self._expandedNodes[nodeId] = true;
+        var arrow = document.querySelector('#stnode_' + CSS.escape(nodeId) + ' .schema-tree-arrow');
+        if (arrow) arrow.textContent = '\u25BC';
+        var childContainerId = 'stchildren_' + nodeId;
+        var existing = document.getElementById(childContainerId);
+        if (existing) {
+          existing.style.display = '';
+          return;
+        }
+        var childContainer = document.createElement('div');
+        childContainer.id = childContainerId;
+        var nodeRow = document.getElementById('stnode_' + CSS.escape(nodeId));
+        if (nodeRow && nodeRow.nextSibling) {
+          parentEl.insertBefore(childContainer, nodeRow.nextSibling);
+        } else {
+          parentEl.appendChild(childContainer);
+        }
+        (node.children || []).forEach(function(child) {
+          self._renderNode(child, depth + 1, childContainer);
+        });
+      },
+
+      _collapseNode: function(nodeId) {
+        var self = this;
+        self._expandedNodes[nodeId] = false;
+        var arrow = document.querySelector('#stnode_' + CSS.escape(nodeId) + ' .schema-tree-arrow');
+        if (arrow) arrow.textContent = '\u25B6';
+        var childContainer = document.getElementById('stchildren_' + nodeId);
+        if (childContainer) childContainer.style.display = 'none';
+      },
+
+      _renderNodeChildren: function(node) {
+        var self = this;
+        if (!self._expandedNodes[node.id]) return;
+        var childContainer = document.getElementById('stchildren_' + node.id);
+        if (!childContainer) return;
+        var info = self._renderedNodes[node.id];
+        if (!info) return;
+        childContainer.innerHTML = '';
+        (node.children || []).forEach(function(child) {
+          self._renderNode(child, info.depth + 1, childContainer);
+        });
+      },
+
+      _findNode: function(nodeId, parent) {
+        var self = this;
+        parent = parent || self._tree;
+        if (parent.id === nodeId) return parent;
+        if (parent.children) {
+          for (var i = 0; i < parent.children.length; i++) {
+            var found = self._findNode(nodeId, parent.children[i]);
+            if (found) return found;
+          }
+        }
+        return null;
+      },
+
+      _emitChange: function(subtype, path, action, oldVal, newVal) {
+        var self = this;
+        var change = {
+          id: 'chg_' + Date.now(),
+          path: path,
+          action: action,
+          oldVal: oldVal,
+          newVal: newVal,
+          timestamp: new Date().toISOString()
+        };
+        self._changeBuffer.push(change);
+        self._updateStatusBar();
+        try {
+          var actor = typeof getCurrentUserName === 'function' ? getCurrentUserName() : 'unknown';
+          AuditTimeline.emit('SCHEMA_CHANGE', {
+            dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+            metadata: {
+              subtype: subtype,
+              path: path,
+              action: action,
+              actor: actor
+            }
+          });
+        } catch(e) { console.warn('[SchemaTreeEditor] AuditTimeline emit failed:', e); }
+        return change;
+      },
+
+      addAlias: function(canonicalKey, sheet, newAlias) {
+        var path = 'column_aliases/' + sheet + '/' + canonicalKey;
+        this._emitChange('alias_patch', path, 'add_alias', null, newAlias);
+        if (typeof showToast === 'function') showToast('Alias "' + newAlias + '" added to ' + canonicalKey, 'success');
+      },
+
+      addCanonicalField: function(sheet, fieldKey, fieldLabel) {
+        var path = 'field_meta/' + sheet + '/' + fieldKey;
+        this._emitChange('schema_patch', path, 'add_field', null, { field_key: fieldKey, field_label: fieldLabel, sheet: sheet });
+        if (typeof showToast === 'function') showToast('Field "' + fieldKey + '" added to ' + sheet, 'success');
+      },
+
+      addTenantRule: function(sheet, fieldKey, rule) {
+        var path = 'tenant_rules/' + sheet + '/' + fieldKey;
+        this._emitChange('tenant_rule_patch', path, 'add_tenant_rule', null, rule);
+        if (typeof showToast === 'function') showToast('Tenant rule added for ' + fieldKey, 'success');
+      },
+
+      suppressColumn: function(sheet, columnName) {
+        var path = 'suppressions/' + sheet + '/' + columnName;
+        this._emitChange('suppression_patch', path, 'suppress', null, columnName);
+        if (typeof showToast === 'function') showToast('Column "' + columnName + '" suppressed', 'info');
+      },
+
+      undo: function() {
+        if (this._changeBuffer.length === 0) {
+          if (typeof showToast === 'function') showToast('Nothing to undo', 'info');
+          return;
+        }
+        var removed = this._changeBuffer.pop();
+        this._updateStatusBar();
+        if (typeof showToast === 'function') showToast('Undid: ' + removed.action + ' on ' + removed.path, 'info');
+      },
+
+      getChanges: function() { return this._changeBuffer.slice(); },
+
+      getDiffPreview: function() {
+        if (this._changeBuffer.length === 0) return '<p style="color:#888; font-size:0.9em;">No pending changes.</p>';
+        var html = '<table style="width:100%; border-collapse:collapse; font-size:0.82em;">';
+        html += '<thead><tr style="background:#f5f5f5;"><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Action</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Path</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Old</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">New</th><th style="padding:4px 8px; text-align:left; border-bottom:1px solid #ddd;">Time</th></tr></thead><tbody>';
+        this._changeBuffer.forEach(function(c) {
+          var color = '#e8f5e9';
+          if (c.action.indexOf('suppress') >= 0 || c.action.indexOf('remove') >= 0) color = '#ffebee';
+          else if (c.action.indexOf('modify') >= 0) color = '#fff8e1';
+          html += '<tr style="background:' + color + ';">';
+          html += '<td style="padding:4px 8px; border-bottom:1px solid #eee;">' + c.action + '</td>';
+          html += '<td style="padding:4px 8px; border-bottom:1px solid #eee; font-family:monospace; font-size:0.9em;">' + c.path + '</td>';
+          html += '<td style="padding:4px 8px; border-bottom:1px solid #eee;">' + (c.oldVal ? JSON.stringify(c.oldVal) : '-') + '</td>';
+          html += '<td style="padding:4px 8px; border-bottom:1px solid #eee;">' + (c.newVal ? JSON.stringify(c.newVal) : '-') + '</td>';
+          html += '<td style="padding:4px 8px; border-bottom:1px solid #eee; font-size:0.85em;">' + (c.timestamp || '') + '</td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+        return html;
+      },
+
+      saveDraft: function() {
+        var self = this;
+        try {
+          SessionDB._put(SessionDB.WORKBOOK_STORE, {
+            id: 'schema_editor_draft',
+            changes: self._changeBuffer,
+            saved_at: new Date().toISOString()
+          }).then(function() {
+            if (typeof showToast === 'function') showToast('Schema draft saved (' + self._changeBuffer.length + ' changes)', 'success');
+          }).catch(function(err) {
+            console.error('[SchemaTreeEditor] saveDraft failed:', err);
+            if (typeof showToast === 'function') showToast('Failed to save draft', 'error');
+          });
+        } catch(e) {
+          console.error('[SchemaTreeEditor] saveDraft error:', e);
+        }
+      },
+
+      loadDraft: function() {
+        var self = this;
+        try {
+          SessionDB._get(SessionDB.WORKBOOK_STORE, 'schema_editor_draft').then(function(draft) {
+            if (draft && draft.changes && Array.isArray(draft.changes)) {
+              self._changeBuffer = draft.changes;
+              self._updateStatusBar();
+              console.log('[SchemaTreeEditor] Loaded draft with ' + draft.changes.length + ' changes from ' + (draft.saved_at || 'unknown'));
+            }
+          }).catch(function(err) {
+            console.warn('[SchemaTreeEditor] loadDraft failed:', err);
+          });
+        } catch(e) { console.warn('[SchemaTreeEditor] loadDraft error:', e); }
+      },
+
+      exportPatch: function() {
+        var self = this;
+        var patch = {
+          type: 'schema_patch',
+          version: 'v1',
+          exported_at: new Date().toISOString(),
+          changes: self._changeBuffer
+        };
+        var json = JSON.stringify(patch, null, 2);
+        try {
+          navigator.clipboard.writeText(json).then(function() {
+            if (typeof showToast === 'function') showToast('Patch JSON copied to clipboard (' + self._changeBuffer.length + ' changes)', 'success');
+          });
+        } catch(e) {
+          console.log('[SchemaTreeEditor] Patch export:', json);
+          if (typeof showToast === 'function') showToast('Patch exported to console (clipboard unavailable)', 'info');
+        }
+      },
+
+      applyLocally: function() {
+        var self = this;
+        self._changeBuffer.forEach(function(c) {
+          if (c.action === 'add_alias' && c.newVal) {
+            var norm = String(c.newVal).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+            var parts = c.path.split('/');
+            var sheet = parts[1] || '';
+            var canonical = parts[2] || '';
+            if (norm && canonical) {
+              if (!COLUMN_ALIAS_MAP[norm]) COLUMN_ALIAS_MAP[norm] = [];
+              COLUMN_ALIAS_MAP[norm].push({ canonical_key: canonical, sheet: sheet });
+            }
+          }
+        });
+        if (typeof showToast === 'function') showToast('Changes applied to runtime', 'success');
+      },
+
+      _updateStatusBar: function() {
+        var loadedEl = document.getElementById('schema-loaded-count');
+        var pendingEl = document.getElementById('schema-pending-count');
+        if (loadedEl) loadedEl.textContent = 'Sources: ' + Object.keys(this._sources).length + ' loaded';
+        if (pendingEl) pendingEl.textContent = 'Pending changes: ' + this._changeBuffer.length;
+      }
+    };
+
+    function schemaTreeExpandAll() {
+      if (!SchemaTreeEditor._tree) return;
+      SchemaTreeEditor._tree.children.forEach(function(child) {
+        SchemaTreeEditor._expandNode(child.id, child, 0, document.getElementById('schema-tree-container'));
+        if (child.children) {
+          child.children.forEach(function(gc) {
+            SchemaTreeEditor._expandNode(gc.id);
+          });
+        }
+      });
+    }
+    function schemaTreeCollapseAll() {
+      if (!SchemaTreeEditor._tree) return;
+      Object.keys(SchemaTreeEditor._expandedNodes).forEach(function(id) {
+        SchemaTreeEditor._collapseNode(id);
+      });
+    }
+    function schemaTreePreviewDiff() {
+      var panel = document.getElementById('schema-diff-panel');
+      if (!panel) return;
+      if (panel.style.display === 'none') {
+        panel.style.display = '';
+        panel.innerHTML = '<h4 style="margin:0 0 10px; font-size:0.95em;">Diff Preview</h4>' + SchemaTreeEditor.getDiffPreview();
+      } else {
+        panel.style.display = 'none';
+      }
+    }
+    function schemaTreeMapAlias(nodeId) {
+      var node = SchemaTreeEditor._findNode(nodeId);
+      if (!node) return;
+      var canonical = prompt('Enter the canonical field_key to map "' + node.label + '" to:');
+      if (canonical) {
+        SchemaTreeEditor.addAlias(canonical, node.sheet || '_default', node.label);
+      }
+    }
+    function schemaTreeAddField(nodeId) {
+      var node = SchemaTreeEditor._findNode(nodeId);
+      if (!node) return;
+      var fieldKey = prompt('Enter field_key for new field (e.g., my_field_c):');
+      if (fieldKey) {
+        SchemaTreeEditor.addCanonicalField(node.sheet || '_default', fieldKey, node.label);
+      }
+    }
+    function schemaTreeAddTenantRule(nodeId) {
+      var node = SchemaTreeEditor._findNode(nodeId);
+      if (!node) return;
+      var rule = prompt('Enter tenant rule description:');
+      if (rule) {
+        SchemaTreeEditor.addTenantRule(node.sheet || '_default', node.label, rule);
+      }
+    }
+    function schemaTreeIgnore(nodeId) {
+      var node = SchemaTreeEditor._findNode(nodeId);
+      if (!node) return;
+      SchemaTreeEditor.suppressColumn(node.sheet || '_default', node.label);
+    }
+    function schemaTreeEditNode(nodeId) {
+      var node = SchemaTreeEditor._findNode(nodeId);
+      if (!node) return;
+      if (node.type === 'alias') {
+        var newAlias = prompt('Add a new alias for "' + node.canonical_key + '":\nCurrent: ' + (node.aliases || []).join(', '));
+        if (newAlias) {
+          SchemaTreeEditor.addAlias(node.canonical_key, node.sheet || '', newAlias);
+        }
+      } else if (node.type === 'field') {
+        var newLabel = prompt('Edit label for "' + node.field_key + '":', node.field_label || '');
+        if (newLabel && newLabel !== node.field_label) {
+          SchemaTreeEditor._emitChange('schema_patch', 'field_meta/' + node.sheet + '/' + node.field_key, 'modify_label', node.field_label, newLabel);
+          if (typeof showToast === 'function') showToast('Label updated for ' + node.field_key, 'success');
+        }
+      }
+    }
+
+    // ========== STANDARDIZER (Legacy) ==========
     let standardizerResult = {
       mergedDataset: null,
       issues: [],
@@ -18376,6 +19061,7 @@
         'PATCH_ADMIN_PROMOTED': '#f3e5f5',
         'CATALOG_GROUP_SET': '#e0f2f1',
         'CONTRACT_INDEX_BUILT': '#e3f2fd',
+        'SCHEMA_CHANGE': '#f3e5f5',
         'BATCH_CREATED': '#e8eaf6',
         'UNKNOWN_COLUMN_DETECTED': '#fff3e0',
         'CONTRACT_ROLLUP_UPDATED': '#e0f7fa',
@@ -21285,8 +21971,17 @@
       return unknownCols;
     }
     
-    function normalizeColumnName(name) {
-      return String(name).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    function normalizeColumnName(name, sheetHint) {
+      var normalized = String(name).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+      var entries = COLUMN_ALIAS_MAP[normalized];
+      if (entries && entries.length > 0) {
+        if (sheetHint) {
+          var sheetMatch = entries.find(function(e) { return e.sheet === sheetHint; });
+          if (sheetMatch) return sheetMatch.canonical_key;
+        }
+        return entries[0].canonical_key;
+      }
+      return normalized;
     }
     
     function refreshUnknownColumnsTable() {
@@ -26689,6 +27384,8 @@ Add any additional notes here.
     renderArtifactRegistryTable();
     renderWorkflowMap();
     setupStandardizerDropZone();
+    loadColumnAliases();
+    SchemaTreeEditor.init();
     initPatchConsole();
     
     // v1.6.56: Initialize SessionDB + migrate legacy localStorage data, then autoload
