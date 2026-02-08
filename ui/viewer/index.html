@@ -5418,6 +5418,7 @@
         try { stored = JSON.parse(localStorage.getItem('unknown_columns') || '{}'); } catch(e) {}
 
         var threshold = 3;
+        var seen = {};
         Object.keys(stored).forEach(function(sheetName) {
           var cols = stored[sheetName] || [];
           cols.forEach(function(col) {
@@ -5433,32 +5434,40 @@
 
             var attachTo = contractId || index.batch_id;
             var attachLevel = contractId ? 'contract' : 'batch';
+            var dedupKey = index.batch_id + '|' + attachLevel + '|' + attachTo + '|' + sheetName + '|' + col.normalized_name;
+            if (seen[dedupKey]) return;
+            seen[dedupKey] = true;
+
             if (!index.unknown_columns[attachTo]) index.unknown_columns[attachTo] = [];
             index.unknown_columns[attachTo].push({
               sheet: sheetName,
               column: col.original_name,
               normalized: col.normalized_name,
               non_empty: col.count_nonempty,
-              level: attachLevel
+              level: attachLevel,
+              batch_id: index.batch_id
             });
 
             AuditTimeline.emit('UNKNOWN_COLUMN_DETECTED', {
               dataset_id: IDENTITY_CONTEXT.dataset_id || '',
               metadata: {
                 column: col.original_name,
+                normalized: col.normalized_name,
                 sheet: sheetName,
                 non_empty: col.count_nonempty,
                 attached_to: attachTo,
-                level: attachLevel
+                level: attachLevel,
+                batch_id: index.batch_id
               }
             });
           });
         });
       },
 
-      _persistToSession: function() {
-        if (!this._index) return;
+      _buildRefPayload: function() {
+        if (!this._index) return null;
         var ref = {
+          id: 'contract_index',
           batch_id: this._index.batch_id,
           built_at: this._index.built_at,
           stats: this._index.stats,
@@ -5477,9 +5486,59 @@
             document_count: Object.keys(c.documents).length
           };
         });
-        try {
-          localStorage.setItem('orchestrate_contract_index_ref', JSON.stringify(ref));
-        } catch(e) { console.warn('[ContractIndex] Failed to persist ref:', e); }
+        return ref;
+      },
+
+      _persistToSession: function() {
+        var ref = this._buildRefPayload();
+        if (!ref) return;
+        SessionDB._put(SessionDB.WORKBOOK_STORE, ref).then(function(ok) {
+          if (ok) {
+            try {
+              localStorage.setItem('orchestrate_contract_index_ptr', JSON.stringify({
+                exists: true,
+                batch_id: ref.batch_id,
+                contracts: ref.stats.contracts,
+                built_at: ref.built_at
+              }));
+            } catch(e) {}
+            console.log('[ContractIndex] Persisted to SessionDB (' + ref.stats.contracts + ' contracts)');
+          }
+        }).catch(function(e) { console.warn('[ContractIndex] SessionDB persist failed:', e); });
+      },
+
+      _restoreFromSession: function() {
+        var self = this;
+        return SessionDB._get(SessionDB.WORKBOOK_STORE, 'contract_index').then(function(ref) {
+          if (!ref || !ref.contract_summaries) return false;
+          console.log('[ContractIndex] Restored ref from SessionDB:', ref.stats.contracts, 'contracts');
+          self._index = {
+            batch_id: ref.batch_id,
+            built_at: ref.built_at,
+            contracts: {},
+            orphan_rows: [],
+            stats: ref.stats,
+            unknown_columns: ref.unknown_columns || {}
+          };
+          Object.keys(ref.contract_summaries).forEach(function(cid) {
+            var s = ref.contract_summaries[cid];
+            self._index.contracts[cid] = {
+              contract_id: cid,
+              file_name: s.file_name,
+              file_url: s.file_url,
+              documents: {},
+              row_count: s.row_count,
+              sheets: {}
+            };
+            (s.sheets || []).forEach(function(sh) { self._index.contracts[cid].sheets[sh] = []; });
+          });
+          self._built = true;
+          self._failOpen = false;
+          return true;
+        }).catch(function(e) {
+          console.warn('[ContractIndex] SessionDB restore failed:', e);
+          return false;
+        });
       },
 
       _showFailOpenBanner: function(msg) {
@@ -5569,7 +5628,9 @@
         this._index = null;
         this._built = false;
         this._failOpen = false;
+        try { localStorage.removeItem('orchestrate_contract_index_ptr'); } catch(e) {}
         try { localStorage.removeItem('orchestrate_contract_index_ref'); } catch(e) {}
+        SessionDB._delete(SessionDB.WORKBOOK_STORE, 'contract_index').catch(function() {});
       }
     };
 
@@ -5642,7 +5703,16 @@
 
       AuditTimeline.emit('CONTRACT_ROLLUP_UPDATED', {
         dataset_id: IDENTITY_CONTEXT.dataset_id || '',
-        metadata: { contract_id: cid, file_name: rollup.file_name, row_count: rollup.row_count, sheets: rollup.sheets.length }
+        metadata: {
+          contract_id: cid,
+          file_name: rollup.file_name,
+          row_count: rollup.row_count,
+          sheet_count: rollup.sheets.length,
+          signal_count: rollup.signal_count,
+          status_summary: rollup.status_counts,
+          unknown_column_count: rollup.unknown_columns.length,
+          sample_contracts: ContractIndex.listContracts().slice(0, 5).map(function(c) { return c.contract_id; })
+        }
       });
 
       document.getElementById('contract-detail-name').textContent = rollup.file_name || cid;
@@ -6928,6 +6998,7 @@
       });
     }
     
+    // v2.2: Unified parser for CSV/TSV/XLSX/XLS — name reflects workbook output, not input format
     function parseWorkbook(data, filename) {
       var result = { sheets: {}, order: [], errors: [], mapping: null };
       var ext = (filename.split('.').pop() || '').toLowerCase();
@@ -7196,8 +7267,14 @@
           gridState.filter = navState.filter || 'all';
         }
         
-        // v2.2: Rebuild contract index on session restore
-        try { ContractIndex.build(); populateContractSelector(); } catch(e) { console.warn('[ContractIndex] Restore build failed:', e); }
+        // v2.2: Restore contract index from SessionDB; only rebuild if restore fails
+        try {
+          var ciRestored = await ContractIndex._restoreFromSession();
+          if (!ciRestored && workbook.order.length > 0) {
+            ContractIndex.build();
+          }
+          populateContractSelector();
+        } catch(e) { console.warn('[ContractIndex] Restore/build failed:', e); }
 
         stagedLoader.setStage('changemap');
         var restorePage = (navState && navState.hash) ? navState.hash.replace(/^#\/?/, '') : 'grid';
