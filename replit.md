@@ -21,5 +21,16 @@ The system incorporates a Schema Tree Editor for managing the canonical rules bu
 
 Document roles (`Root Agreement`, `Amendment`, etc.) are distinct from document types and are inferred with user confirmation. A `SystemPass` module provides a deterministic, rerunnable, proposal-only engine for system changes, routed to a "System Changes" triage bucket. Pre-Flight triage buckets handle blockers like unknown columns or unreadable OCR. A Contract Index Engine builds a hierarchy of batch→contract→document→sheet→row, persisting summary references to SessionDB.
 
+### Hinge-Governed Apply + Undo vs Rollback (v2.2 P1)
+`SystemPass.acceptProposal()` for hinge-field proposals auto-creates a `system_suggested` patch artifact in `PATCH_REQUEST_STORE` and routes through the standard patch lifecycle (Draft → Submitted → Verifier → Admin → Applied). Non-hinge proposals remain directly acceptable. Emits `system_change_routed_to_patch` audit event.
+
+`UndoManager` provides local, session-scoped undo for draft-only SRR inline edits. Window-based buffer (5 min / 50 entries max). Cannot undo approved/submitted artifacts. Emits `undo_local` audit event. Wired into `FIELD_CORRECTED` flow.
+
+`RollbackEngine` creates governed rollback artifacts at 4 scopes (field, patch, contract, batch). Two-phase flow: `createRollback()` → `rollback_created` event, then `applyRollback()` → `rollback_applied` event. Append-only — never deletes history; captures before/after state snapshots. References original event/artifact IDs.
+
+Rollback-triggered rerun: If `applyRollback()` detects hinge-field modifications, auto-calls `SystemPass.run('rollback_hinge_affected')` and renders new proposals.
+
+Audit alignment: `undo_local`, `rollback_created`, `rollback_applied`, `system_change_routed_to_patch` registered in `_canonicalAuditEventName` aliases, `AUDIT_TYPE_CATEGORIES.rollback`, `_inferAuditScope`, and audit filter dropdown ("Undo / Rollback"). Docs: `docs/UNDO_VS_ROLLBACK.md`.
+
 ## External Dependencies
 A FastAPI server acts as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF. SheetJS (XLSX) is loaded via CDN for Excel import/export functionality.

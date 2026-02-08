@@ -1799,7 +1799,7 @@
               <option value="patch">Patch</option>
               <option value="schema_change">Schema Change</option>
               <option value="system_change">System Change</option>
-              <option value="rollback">Rollback</option>
+              <option value="rollback">Undo / Rollback</option>
               <option value="session">Session</option>
             </select>
             <select id="audit-full-filter-role" onchange="refreshFullAuditPanel()" style="padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85em;">
@@ -6404,6 +6404,312 @@
       if (drawer) drawer.style.display = 'none';
     }
 
+    // ========== V2.2 P1: GOVERNED ROLLBACK ENGINE ==========
+    var RollbackEngine = {
+      _artifacts: [],
+
+      createRollback: function(scope, params) {
+        var p = params || {};
+        var artifact = {
+          rollback_id: 'rb_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6),
+          scope: scope,
+          original_event_id: p.original_event_id || null,
+          original_artifact_id: p.original_artifact_id || null,
+          record_id: p.record_id || '',
+          field_key: p.field_key || null,
+          contract_id: p.contract_id || null,
+          batch_id: p.batch_id || null,
+          before_state: p.before_state || null,
+          after_state: p.after_state || null,
+          reason: p.reason || '',
+          created_at: new Date().toISOString(),
+          applied: false,
+          applied_at: null
+        };
+        this._artifacts.push(artifact);
+
+        AuditTimeline.emit('rollback_created', {
+          record_id: artifact.record_id,
+          field_key: artifact.field_key,
+          dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+          metadata: {
+            rollback_id: artifact.rollback_id,
+            scope: scope,
+            original_event_id: artifact.original_event_id,
+            original_artifact_id: artifact.original_artifact_id,
+            reason: artifact.reason
+          }
+        });
+
+        console.log('[RollbackEngine] Created:', artifact.rollback_id, 'scope:', scope);
+        return artifact;
+      },
+
+      applyRollback: function(rollbackId) {
+        var rb = this._artifacts.find(function(a) { return a.rollback_id === rollbackId; });
+        if (!rb) { showToast('Rollback artifact not found', 'error'); return false; }
+        if (rb.applied) { showToast('Rollback already applied', 'warning'); return false; }
+
+        var hingeAffected = false;
+
+        if (rb.scope === 'field' && rb.record_id && rb.field_key && rb.before_state !== null) {
+          var parts = rb.record_id.split(':');
+          var sheet = parts[0];
+          var idx = parseInt(parts[1]);
+          if (workbook.sheets[sheet] && workbook.sheets[sheet].rows[idx]) {
+            var row = workbook.sheets[sheet].rows[idx];
+            var currentVal = row[rb.field_key];
+            row[rb.field_key] = rb.before_state;
+            rb.after_state = currentVal;
+            if (SystemPass._isHingeField(rb.field_key, sheet)) hingeAffected = true;
+          }
+        } else if (rb.scope === 'patch' && rb.original_artifact_id) {
+          var pr = PATCH_REQUEST_STORE.get(rb.original_artifact_id);
+          if (pr && pr.payload && pr.payload.changes) {
+            var changes = pr.payload.changes;
+            Object.keys(changes).forEach(function(fk) {
+              if (changes[fk].before !== undefined) {
+                var recParts = (pr.record_id || '').split(':');
+                var sh = recParts[0]; var ri = parseInt(recParts[1]);
+                if (workbook.sheets[sh] && workbook.sheets[sh].rows[ri]) {
+                  workbook.sheets[sh].rows[ri][fk] = changes[fk].before;
+                  if (SystemPass._isHingeField(fk, sh)) hingeAffected = true;
+                }
+              }
+            });
+          }
+        } else if (rb.scope === 'contract' && rb.contract_id) {
+          if (typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable()) {
+            var contract = ContractIndex.getContract(rb.contract_id);
+            if (contract) {
+              Object.keys(contract.sheets || {}).forEach(function(sheetName) {
+                (contract.sheets[sheetName] || []).forEach(function(ref) {
+                  if (workbook.sheets[sheetName] && workbook.sheets[sheetName].rows[ref.row_index]) {
+                    var row = workbook.sheets[sheetName].rows[ref.row_index];
+                    if (rb.before_state && rb.before_state[sheetName + ':' + ref.row_index]) {
+                      var snapshot = rb.before_state[sheetName + ':' + ref.row_index];
+                      Object.keys(snapshot).forEach(function(fk) {
+                        row[fk] = snapshot[fk];
+                        if (SystemPass._isHingeField(fk, sheetName)) hingeAffected = true;
+                      });
+                    }
+                  }
+                });
+              });
+            }
+          }
+        } else if (rb.scope === 'batch') {
+          console.log('[RollbackEngine] Batch-scope rollback — state snapshot restore');
+          if (rb.before_state && typeof rb.before_state === 'object') {
+            Object.keys(rb.before_state).forEach(function(key) {
+              var kParts = key.split(':');
+              var sh = kParts[0]; var ri = parseInt(kParts[1]);
+              if (workbook.sheets[sh] && workbook.sheets[sh].rows[ri] && rb.before_state[key]) {
+                var snapshot = rb.before_state[key];
+                Object.keys(snapshot).forEach(function(fk) {
+                  workbook.sheets[sh].rows[ri][fk] = snapshot[fk];
+                  if (SystemPass._isHingeField(fk, sh)) hingeAffected = true;
+                });
+              }
+            });
+          }
+        }
+
+        rb.applied = true;
+        rb.applied_at = new Date().toISOString();
+
+        AuditTimeline.emit('rollback_applied', {
+          record_id: rb.record_id,
+          field_key: rb.field_key,
+          dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+          before_value: rb.after_state,
+          after_value: rb.before_state,
+          metadata: {
+            rollback_id: rb.rollback_id,
+            scope: rb.scope,
+            original_event_id: rb.original_event_id,
+            original_artifact_id: rb.original_artifact_id,
+            hinge_affected: hingeAffected
+          }
+        });
+
+        if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
+
+        if (hingeAffected && typeof SystemPass !== 'undefined') {
+          console.log('[RollbackEngine] Hinge affected — auto-triggering System Pass rerun');
+          var proposals = SystemPass.run('rollback_hinge_affected');
+          showToast('Rollback applied. System Pass re-ran: ' + proposals.length + ' proposals', 'info');
+          if (typeof renderSystemPassResults === 'function') renderSystemPassResults(proposals);
+        } else {
+          showToast('Rollback applied successfully', 'success');
+        }
+
+        if (typeof renderGrid === 'function') renderGrid();
+        if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
+
+        return true;
+      },
+
+      getArtifacts: function(filter) {
+        if (!filter) return this._artifacts;
+        return this._artifacts.filter(function(a) {
+          if (filter.scope && a.scope !== filter.scope) return false;
+          if (filter.applied !== undefined && a.applied !== filter.applied) return false;
+          if (filter.record_id && a.record_id !== filter.record_id) return false;
+          return true;
+        });
+      },
+
+      reset: function() {
+        this._artifacts = [];
+      }
+    };
+
+    function createFieldRollback(recordId, fieldKey, beforeValue, reason, originalEventId) {
+      return RollbackEngine.createRollback('field', {
+        record_id: recordId,
+        field_key: fieldKey,
+        before_state: beforeValue,
+        reason: reason || 'field_rollback',
+        original_event_id: originalEventId || null
+      });
+    }
+
+    function createPatchRollback(patchRequestId, reason) {
+      var pr = PATCH_REQUEST_STORE.get(patchRequestId);
+      if (!pr) { showToast('Patch request not found', 'error'); return null; }
+      return RollbackEngine.createRollback('patch', {
+        record_id: pr.record_id || '',
+        original_artifact_id: patchRequestId,
+        before_state: pr.payload,
+        reason: reason || 'patch_rollback'
+      });
+    }
+
+    function createContractRollback(contractId, reason) {
+      if (!ContractIndex.isAvailable()) { showToast('Contract index not available', 'error'); return null; }
+      var contract = ContractIndex.getContract(contractId);
+      if (!contract) { showToast('Contract not found', 'error'); return null; }
+      var snapshot = {};
+      Object.keys(contract.sheets || {}).forEach(function(sheetName) {
+        (contract.sheets[sheetName] || []).forEach(function(ref) {
+          if (workbook.sheets[sheetName] && workbook.sheets[sheetName].rows[ref.row_index]) {
+            snapshot[sheetName + ':' + ref.row_index] = Object.assign({}, workbook.sheets[sheetName].rows[ref.row_index]);
+          }
+        });
+      });
+      return RollbackEngine.createRollback('contract', {
+        contract_id: contractId,
+        before_state: snapshot,
+        reason: reason || 'contract_rollback'
+      });
+    }
+
+    function createBatchRollback(reason) {
+      var snapshot = {};
+      var sheets = typeof getDataSheets === 'function' ? getDataSheets() : Object.keys(workbook.sheets || {});
+      sheets.forEach(function(sheetName) {
+        var sd = workbook.sheets[sheetName];
+        if (!sd || !sd.rows) return;
+        sd.rows.forEach(function(row, idx) {
+          snapshot[sheetName + ':' + idx] = Object.assign({}, row);
+        });
+      });
+      return RollbackEngine.createRollback('batch', {
+        batch_id: IDENTITY_CONTEXT.dataset_id || '',
+        before_state: snapshot,
+        reason: reason || 'batch_rollback'
+      });
+    }
+
+    function applyRollback(rollbackId) {
+      return RollbackEngine.applyRollback(rollbackId);
+    }
+
+    // ========== V2.2 P1: LOCAL UNDO MANAGER ==========
+    var UndoManager = {
+      _buffer: [],
+      _maxAge: 300000,
+      _maxSize: 50,
+
+      push: function(entry) {
+        if (!entry || !entry.field_key) return;
+        entry.timestamp = Date.now();
+        entry.undo_id = 'undo_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6);
+        this._buffer.push(entry);
+        if (this._buffer.length > this._maxSize) this._buffer.shift();
+        this._pruneExpired();
+      },
+
+      _pruneExpired: function() {
+        var cutoff = Date.now() - this._maxAge;
+        this._buffer = this._buffer.filter(function(e) { return e.timestamp >= cutoff; });
+      },
+
+      canUndo: function() {
+        this._pruneExpired();
+        return this._buffer.length > 0;
+      },
+
+      peek: function() {
+        this._pruneExpired();
+        return this._buffer.length > 0 ? this._buffer[this._buffer.length - 1] : null;
+      },
+
+      undo: function() {
+        this._pruneExpired();
+        if (this._buffer.length === 0) return null;
+        var entry = this._buffer.pop();
+        if (entry.artifact_status && (entry.artifact_status === 'Submitted' || entry.artifact_status === 'Verifier_Approved' || entry.artifact_status === 'Admin_Approved' || entry.artifact_status === 'Applied')) {
+          this._buffer.push(entry);
+          showToast('Cannot undo — artifact already submitted/approved', 'warning');
+          return null;
+        }
+        var record = null;
+        if (entry.sheet && entry.row_index !== undefined && workbook.sheets[entry.sheet]) {
+          record = workbook.sheets[entry.sheet].rows[entry.row_index];
+        }
+        if (record && entry.field_key) {
+          record[entry.field_key] = entry.before_value;
+        }
+        AuditTimeline.emit('undo_local', {
+          record_id: entry.record_id || '',
+          field_key: entry.field_key,
+          dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+          before_value: entry.after_value,
+          after_value: entry.before_value,
+          metadata: {
+            undo_id: entry.undo_id,
+            source: entry.source || 'srr',
+            elapsed_ms: Date.now() - entry.timestamp
+          }
+        });
+        if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
+        return entry;
+      },
+
+      clear: function() {
+        this._buffer = [];
+      },
+
+      getBuffer: function() {
+        this._pruneExpired();
+        return this._buffer.slice();
+      }
+    };
+
+    function srrUndoLastEdit() {
+      var entry = UndoManager.undo();
+      if (entry) {
+        showToast('Undone: ' + entry.field_key + ' reverted', 'success');
+        if (srrState.currentRecord) {
+          renderSrrFields(srrState.currentRecord);
+        }
+      } else if (!UndoManager.canUndo()) {
+        showToast('Nothing to undo', 'info');
+      }
+    }
+
     // ========== V2.2 P0: SYSTEM PASS ENGINE ==========
     var SystemPass = {
       _proposals: [],
@@ -6481,8 +6787,41 @@
         var p = this._proposals.find(function(pr) { return pr.proposal_id === proposalId; });
         if (!p || p.status !== 'pending') return false;
         if (p.is_hinge) {
-          showToast('Hinge field changes require a patch request — cannot direct-apply.', 'warning');
-          return false;
+          var patchId = 'PR_SYS_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6);
+          var patchArtifact = {
+            request_id: patchId,
+            type: 'system_suggested',
+            artifact_type: 'system_suggested',
+            status: 'Draft',
+            record_id: p.record_id,
+            field_name: p.field_key,
+            contract_key: '',
+            payload: {
+              changes: {},
+              proposal_id: p.proposal_id,
+              rule_id: p.rule_id,
+              why: p.why,
+              confidence: p.confidence,
+              is_hinge: true
+            },
+            intent: { category: 'system_suggested', field: p.field_key },
+            submitted_at_utc: new Date().toISOString(),
+            created_at_utc: new Date().toISOString(),
+            actor_id: (AuditTimeline._resolveActor() || {}).id || 'system',
+            actor_role: 'system',
+            dataset_id: IDENTITY_CONTEXT.dataset_id || ''
+          };
+          patchArtifact.payload.changes[p.field_key] = { before: p.before_value, after: p.after_value, type: 'system_suggested' };
+          PATCH_REQUEST_STORE.save(patchArtifact);
+          p.status = 'routed_to_patch';
+          AuditTimeline.emit('system_change_routed_to_patch', {
+            record_id: p.record_id,
+            field_key: p.field_key,
+            dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+            metadata: { proposal_id: p.proposal_id, patch_request_id: patchId, rule_id: p.rule_id, is_hinge: true }
+          });
+          showToast('Hinge field — routed to patch lifecycle: ' + patchId, 'info');
+          return true;
         }
         p.status = 'accepted';
         AuditTimeline.emit('system_change_accepted', {
@@ -6597,7 +6936,7 @@
         html += '<td style="padding:4px 8px; text-align:center;">';
         if (p.status === 'pending') {
           if (p.is_hinge) {
-            html += '<span style="font-size:0.75em; color:#888;">Patch required</span>';
+            html += '<button onclick="acceptSystemPassProposal(\'' + p.proposal_id + '\')" style="padding:1px 6px; font-size:0.8em; background:#fff3e0; border:1px solid #ffe082; border-radius:3px; cursor:pointer;">Route to Patch</button>';
           } else {
             html += '<button onclick="acceptSystemPassProposal(\'' + p.proposal_id + '\')" style="padding:1px 6px; font-size:0.8em; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:3px; cursor:pointer; margin-right:2px;">Accept</button>';
             html += '<button onclick="rejectSystemPassProposal(\'' + p.proposal_id + '\')" style="padding:1px 6px; font-size:0.8em; background:#ffebee; border:1px solid #ef9a9a; border-radius:3px; cursor:pointer;">Reject</button>';
@@ -18471,6 +18810,7 @@
       renderSrrFields(srrState.currentRecord);
       srrRenderPatchEditorForField(fieldKey);
       console.log('[Verifier] Rejected field:', fieldKey);
+      UndoManager.push({ field_key: fieldKey, before_value: beforeVal, after_value: newVal, record_id: srrState.currentRecordKey || '', sheet: srrState.currentSheetName, row_index: srrState.currentRowIndex, source: 'srr_inline', artifact_status: null });
       AuditTimeline.emit('FIELD_CORRECTED', {
         record_id: srrState.currentRecordKey || '',
         field_key: fieldKey,
@@ -20029,7 +20369,11 @@
         'REQUEST_CLARIFICATION': 'request_clarification',
         'PATCH_SUBMITTED': 'patch_submitted',
         'PATCH_ADMIN_PROMOTED': 'patch_admin_promoted',
-        'SYSTEM_CHANGE_APPLIED': 'system_change_applied'
+        'SYSTEM_CHANGE_APPLIED': 'system_change_applied',
+        'UNDO_LOCAL': 'undo_local',
+        'ROLLBACK_CREATED': 'rollback_created',
+        'ROLLBACK_APPLIED': 'rollback_applied',
+        'SYSTEM_CHANGE_ROUTED_TO_PATCH': 'system_change_routed_to_patch'
       };
       return ALIASES[evType] || evType;
     }
@@ -20041,6 +20385,11 @@
       if (evType.indexOf('document') >= 0 || evType.indexOf('doc_role') >= 0) return 'document';
       if (evType.indexOf('schema') >= 0) return 'batch';
       if (evType.indexOf('session') >= 0) return 'session';
+      if (evType.indexOf('undo') >= 0) return 'row';
+      if (evType.indexOf('rollback') >= 0) {
+        var meta = ev.metadata || {};
+        return meta.scope || 'row';
+      }
       if (ev.record_id && ev.record_id.indexOf('ctr_') === 0) return 'contract';
       if (ev.record_id) return 'row';
       return 'batch';
@@ -20050,7 +20399,7 @@
       patch: ['patch_submitted', 'PATCH_SUBMITTED', 'patch_admin_promoted', 'PATCH_ADMIN_PROMOTED', 'field_verified', 'FIELD_VERIFIED', 'field_blacklisted', 'FIELD_BLACKLISTED', 'field_corrected', 'FIELD_CORRECTED', 'request_clarification', 'REQUEST_CLARIFICATION'],
       schema_change: ['schema_change', 'SCHEMA_CHANGE'],
       system_change: ['system_pass_rerun', 'system_change_proposed', 'system_change_accepted', 'system_change_rejected', 'system_change_applied', 'SYSTEM_CHANGE_APPLIED'],
-      rollback: ['preflight_blocker_detected'],
+      rollback: ['preflight_blocker_detected', 'rollback_created', 'ROLLBACK_CREATED', 'rollback_applied', 'ROLLBACK_APPLIED', 'undo_local', 'UNDO_LOCAL', 'system_change_routed_to_patch', 'SYSTEM_CHANGE_ROUTED_TO_PATCH'],
       session: ['session_restored', 'SESSION_RESTORED', 'document_role_confirmed', 'document_role_set', 'catalog_group_set', 'CATALOG_GROUP_SET', 'manual_row_add', 'MANUAL_ROW_ADD', 'batch_merged', 'BATCH_MERGED', 'tenant_rule_promoted_to_batch', 'TENANT_RULE_PROMOTED_TO_BATCH', 'contract_index_built', 'CONTRACT_INDEX_BUILT', 'batch_created', 'BATCH_CREATED', 'contract_rollup_updated', 'CONTRACT_ROLLUP_UPDATED', 'unknown_column_detected', 'UNKNOWN_COLUMN_DETECTED']
     };
 
