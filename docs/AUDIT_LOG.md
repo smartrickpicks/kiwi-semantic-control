@@ -72,8 +72,8 @@ All audit events are persisted in an IndexedDB database (`orchestrate_audit`) wi
 | UNKNOWN_COLUMN_DETECTED | ContractIndex._routeUnknownColumns | Unknown column detected in sheet (v2.2 P0) |
 | BATCH_CREATED | ContractIndex.build | Batch created from workbook data (v2.2 P0) |
 | SCHEMA_CHANGE | SchemaTreeEditor | Schema change with subtype: alias_patch, schema_patch, tenant_rule_patch, suppression_patch (v2.2 P1) |
-| BATCH_MERGED | BatchMerge.executeMerge | Batches merged into governance container (v2.2 P2) |
-| TENANT_RULE_PROMOTED_TO_BATCH | BatchMerge.promoteTenantRule | Tenant rule manually promoted to merged batch (v2.2 P2) |
+| batch_merged | BatchMerge.executeMerge | Batches merged into governance container (v2.2 P2). Canonical name; legacy `BATCH_MERGED` alias-mapped at read time. Payload: merged_batch_id, source_batches, contracts, total_rows, documents, created_by |
+| tenant_rule_promoted_to_batch | BatchMerge.promoteTenantRule | Tenant rule manually promoted to merged batch (v2.2 P2). Canonical name; legacy `TENANT_RULE_PROMOTED_TO_BATCH` alias-mapped. Payload: merged_batch_id, sheet, field, rule, promoted_by, total_promoted |
 
 ### No Synthetic Events
 All timeline entries are built exclusively from persisted events. No placeholder or demo rows are generated at render time.

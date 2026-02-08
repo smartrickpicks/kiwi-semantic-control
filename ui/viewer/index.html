@@ -1820,6 +1820,11 @@
             </div>
           </div>
 
+          <div id="triage-merged-batch-indicator" style="display: none; margin-bottom: 16px; padding: 10px 14px; background: #e3f2fd; border-radius: 8px; border-left: 3px solid #1976d2; font-size: 0.85em;">
+            <strong>Viewing merged batch:</strong> <span id="triage-merged-batch-label"></span>
+            <span style="color: #888; margin-left: 8px;" id="triage-merged-batch-stats"></span>
+            <button onclick="handleMergedBatchFilterChange('')" style="margin-left: 12px; padding: 2px 8px; background: white; border: 1px solid #bbdefb; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Clear</button>
+          </div>
           <!-- QUEUE 1: Manual Review -->
           <div class="triage-queue-section" style="margin-bottom: 24px;">
             <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
@@ -2020,6 +2025,12 @@
             <label style="font-size: 0.85em; color: #666;">Sheet:</label>
             <select id="grid-sheet-selector" class="filter-select" style="min-width: 160px;" onchange="handleGridSheetSelectorChange(this.value)">
               <option value="">All Sheets</option>
+            </select>
+          </div>
+          <div id="merged-batch-filter-group" style="display: none; align-items: center; gap: 8px;">
+            <label style="font-size: 0.85em; color: #666;">Batch:</label>
+            <select id="grid-merged-batch-selector" class="filter-select" style="min-width: 180px; max-width: 280px;" onchange="handleMergedBatchFilterChange(this.value)">
+              <option value="">Current Batch</option>
             </select>
           </div>
           <div id="contract-filter-group" style="display: none; align-items: center; gap: 8px;">
@@ -5807,7 +5818,7 @@
           this._mergedBatches[mergedId] = mergedBatch;
           this._persistMergedBatch(mergedBatch);
           
-          AuditTimeline.emit('BATCH_MERGED', {
+          AuditTimeline.emit('batch_merged', {
             dataset_id: (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.dataset_id) || '',
             metadata: {
               merged_batch_id: mergedId,
@@ -5891,7 +5902,7 @@
         batch.promoted_rules.push(entry);
         this._persistMergedBatch(batch);
         
-        AuditTimeline.emit('TENANT_RULE_PROMOTED_TO_BATCH', {
+        AuditTimeline.emit('tenant_rule_promoted_to_batch', {
           dataset_id: (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.dataset_id) || '',
           metadata: {
             merged_batch_id: mergedBatchId,
@@ -6078,6 +6089,80 @@
 
     // ========== CONTRACT UI FUNCTIONS (v2.2 P0) ==========
 
+    // ========== MERGED BATCH FILTER (v2.2 P2) ==========
+    var _activeMergedBatchFilter = '';
+
+    function populateMergedBatchSelector() {
+      var selector = document.getElementById('grid-merged-batch-selector');
+      var filterGroup = document.getElementById('merged-batch-filter-group');
+      if (!selector || !filterGroup) return;
+
+      var merged = BatchMerge.listMergedBatches();
+      if (merged.length === 0) {
+        filterGroup.style.display = 'none';
+        return;
+      }
+
+      filterGroup.style.display = 'flex';
+      var html = '<option value="">Current Batch</option>';
+      merged.forEach(function(mb) {
+        var label = (mb.label || mb.id).substring(0, 40);
+        html += '<option value="' + escapeHtml(mb.id) + '">' + escapeHtml(label) + ' (' + mb.contracts + ' contracts, ' + mb.total_rows + ' rows)</option>';
+      });
+      selector.innerHTML = html;
+
+      if (_activeMergedBatchFilter) {
+        selector.value = _activeMergedBatchFilter;
+      }
+    }
+
+    function handleMergedBatchFilterChange(mergedBatchId) {
+      _activeMergedBatchFilter = mergedBatchId || '';
+      if (mergedBatchId) {
+        _activeContractFilter = '';
+        var contractSelector = document.getElementById('grid-contract-selector');
+        if (contractSelector) contractSelector.value = '';
+        var btn = document.getElementById('btn-view-contract');
+        if (btn) btn.style.display = 'none';
+        populateMergedBatchContractSelector(mergedBatchId);
+      } else {
+        populateContractSelector();
+      }
+      renderGrid();
+      var triageIndicator = document.getElementById('triage-merged-batch-indicator');
+      if (triageIndicator) {
+        if (mergedBatchId) {
+          var _mb = BatchMerge.getMergedBatch(mergedBatchId);
+          triageIndicator.style.display = 'block';
+          document.getElementById('triage-merged-batch-label').textContent = _mb ? _mb.label : mergedBatchId;
+          document.getElementById('triage-merged-batch-stats').textContent = _mb ? '(' + _mb.stats.contracts + ' contracts, ' + _mb.stats.total_rows + ' rows)' : '';
+        } else {
+          triageIndicator.style.display = 'none';
+        }
+      }
+    }
+
+    function populateMergedBatchContractSelector(mergedBatchId) {
+      var mb = BatchMerge.getMergedBatch(mergedBatchId);
+      if (!mb) return;
+      var selector = document.getElementById('grid-contract-selector');
+      var filterGroup = document.getElementById('contract-filter-group');
+      if (!selector || !filterGroup) return;
+
+      filterGroup.style.display = 'flex';
+      var refs = mb.contract_refs || {};
+      var keys = Object.keys(refs);
+      var html = '<option value="">All Contracts (' + keys.length + ')</option>';
+      keys.sort(function(a, b) { return (refs[a].file_name || '').localeCompare(refs[b].file_name || ''); });
+      keys.forEach(function(cid) {
+        var ref = refs[cid];
+        var label = (ref.file_name || cid).substring(0, 40);
+        if (label.length < (ref.file_name || cid).length) label += '...';
+        html += '<option value="' + cid + '">' + escapeHtml(label) + ' (' + (ref.row_count || 0) + ' rows) [' + escapeHtml(ref.source_batch) + ']</option>';
+      });
+      selector.innerHTML = html;
+    }
+
     var _activeContractFilter = '';
 
     function populateContractSelector() {
@@ -6121,6 +6206,8 @@
       if (_activeContractFilter) {
         selector.value = _activeContractFilter;
       }
+
+      if (typeof populateMergedBatchSelector === 'function') populateMergedBatchSelector();
     }
 
     function handleContractFilterChange(contractId) {
@@ -13911,6 +13998,18 @@
         });
       }
 
+      // v2.2 P2: Merged batch filter
+      if (_activeMergedBatchFilter) {
+        var _mbatch = BatchMerge.getMergedBatch(_activeMergedBatchFilter);
+        if (_mbatch && _mbatch.contract_refs) {
+          var _mbCids = _mbatch.contract_refs;
+          filtered = filtered.filter(function(r) {
+            var cid = ContractIndex.isAvailable() ? ContractIndex.deriveContractId(r) : null;
+            return cid && _mbCids[cid];
+          });
+        }
+      }
+
       // v2.2: Contract filter
       if (_activeContractFilter && ContractIndex.isAvailable()) {
         filtered = filtered.filter(function(r) {
@@ -19449,7 +19548,10 @@
       var eventTypes = [];
       var roles = [];
       events.forEach(function(ev) {
-        if (eventTypes.indexOf(ev.event_type) < 0) eventTypes.push(ev.event_type);
+        var _evType = ev.event_type;
+        var _ALIASES = {'BATCH_MERGED':'batch_merged','TENANT_RULE_PROMOTED_TO_BATCH':'tenant_rule_promoted_to_batch'};
+        var _canonical = _ALIASES[_evType] || _evType;
+        if (eventTypes.indexOf(_canonical) < 0) eventTypes.push(_canonical);
         if (roles.indexOf(ev.actor_role) < 0) roles.push(ev.actor_role);
       });
       eventTypes.sort();
@@ -19498,7 +19600,9 @@
         'CONTRACT_ROLLUP_UPDATED': '#e0f7fa',
         'SESSION_RESTORED': '#eceff1',
         'BATCH_MERGED': '#e8eaf6',
-        'TENANT_RULE_PROMOTED_TO_BATCH': '#f3e5f5'
+        'batch_merged': '#e8eaf6',
+        'TENANT_RULE_PROMOTED_TO_BATCH': '#f3e5f5',
+        'tenant_rule_promoted_to_batch': '#f3e5f5'
       };
 
       var html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">';
@@ -19513,7 +19617,10 @@
       html += '</tr></thead><tbody>';
 
       events.slice(0, 200).forEach(function(ev) {
-        var bg = typeColors[ev.event_type] || '#f9f9f9';
+        var evType = ev.event_type;
+        var AUDIT_EVENT_ALIASES = {'BATCH_MERGED':'batch_merged','TENANT_RULE_PROMOTED_TO_BATCH':'tenant_rule_promoted_to_batch'};
+        var canonicalType = AUDIT_EVENT_ALIASES[evType] || evType;
+        var bg = typeColors[canonicalType] || typeColors[evType] || '#f9f9f9';
         var ts = ev.timestamp_iso ? new Date(ev.timestamp_iso).toLocaleString() : '-';
         var details = '';
         if (ev.metadata) {
@@ -19526,7 +19633,7 @@
 
         html += '<tr style="border-bottom: 1px solid #eee;">';
         html += '<td style="padding: 6px 8px; white-space: nowrap; color: #666;">' + escapeHtml(ts) + '</td>';
-        html += '<td style="padding: 6px 8px;"><span style="background: ' + bg + '; color: #333; padding: 2px 6px; border-radius: 4px; font-size: 0.85em;">' + escapeHtml(ev.event_type) + '</span></td>';
+        html += '<td style="padding: 6px 8px;"><span style="background: ' + bg + '; color: #333; padding: 2px 6px; border-radius: 4px; font-size: 0.85em;">' + escapeHtml(canonicalType) + '</span></td>';
         html += '<td style="padding: 6px 8px; font-size: 0.9em;">' + escapeHtml(ev.actor_id || '-') + '</td>';
         html += '<td style="padding: 6px 8px;"><span style="text-transform: capitalize;">' + escapeHtml(ev.actor_role || '-') + '</span></td>';
         html += '<td style="padding: 6px 8px; font-family: monospace; font-size: 0.85em;">' + recordLink + '</td>';
@@ -19547,7 +19654,7 @@
       var roleFilter = document.getElementById('audit-filter-role')?.value || '';
       var prFilter = document.getElementById('audit-filter-prid')?.value.trim() || '';
       var events = (window._auditLogEvents || []).filter(function(ev) {
-        if (typeFilter && ev.event_type !== typeFilter) return false;
+        if (typeFilter) { var _a2 = {'BATCH_MERGED':'batch_merged','TENANT_RULE_PROMOTED_TO_BATCH':'tenant_rule_promoted_to_batch'}; var _c2 = _a2[ev.event_type] || ev.event_type; if (_c2 !== typeFilter) return false; }
         if (roleFilter && ev.actor_role !== roleFilter) return false;
         if (prFilter && (!ev.patch_request_id || ev.patch_request_id.indexOf(prFilter) < 0)) return false;
         return true;
