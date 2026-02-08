@@ -3,3 +3,4 @@ fastapi
 httpx
 uvicorn[standard]
 PyMuPDF
+openpyxl
