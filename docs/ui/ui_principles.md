@@ -10,8 +10,8 @@
   - Logo is informational, not navigational
   - No homepage metaphor
   - Clicking logo does not trigger state changes
-- **Logo format**: SVG (canonical, tight-cropped viewBox)
-- **Asset location**: `assets/brand/orchestrate-os-logo.svg`
+- **Logo format**: PNG
+- **Asset location**: `assets/brand/OOS.png`
 
 ### Branding: Sidebar Header
 
