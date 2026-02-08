@@ -1952,13 +1952,20 @@
               </div>
               <div id="ta-lifecycle-stages" style="display: flex; gap: 2px; align-items: stretch; overflow-x: auto;"></div>
             </div>
-            <!-- C) Contract Summary Table -->
-            <div style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
-              <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #eee;">
-                <h4 style="margin: 0; font-size: 0.9em; color: #333;">Contract Summary</h4>
-                <span id="ta-contract-count" style="font-size: 0.8em; color: #666;">0 contracts</span>
+            <!-- C) Contract Summary Table (collapsible) -->
+            <div id="ta-contract-section" style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
+              <div onclick="TriageAnalytics.toggleContractTable()" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #eee; cursor: pointer; user-select: none;" title="Click to expand/collapse">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span id="ta-contract-toggle" style="font-size: 0.7em; color: #999; transition: transform 0.2s;">&#9654;</span>
+                  <h4 style="margin: 0; font-size: 0.9em; color: #333;">Contract Summary</h4>
+                  <span id="ta-contract-filter-badge" style="display: none; font-size: 0.7em; padding: 1px 8px; border-radius: 10px; background: #e3f2fd; color: #1565c0; font-weight: 600;"></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span id="ta-contract-count" style="font-size: 0.8em; color: #666;">0 contracts</span>
+                  <button id="ta-contract-view-grid" onclick="event.stopPropagation(); TriageAnalytics.viewFilteredInGrid();" style="display: none; font-size: 0.7em; padding: 2px 10px; border-radius: 10px; border: 1px solid #1976d2; background: #e3f2fd; color: #1565c0; cursor: pointer; font-weight: 600;">View in Grid</button>
+                </div>
               </div>
-              <div style="max-height: 280px; overflow-y: auto;">
+              <div id="ta-contract-body" style="max-height: 280px; overflow-y: auto; display: none;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">
                   <thead style="background: #fafafa; position: sticky; top: 0;">
                     <tr>
@@ -21972,14 +21979,21 @@
         container.innerHTML = html;
       },
 
-      _renderContractTable: function(cache) {
+      _renderContractTable: function(cache, stageFilter) {
         var tbody = document.getElementById('ta-contract-tbody');
         if (!tbody) return;
         var el = function(id) { return document.getElementById(id); };
-        if (el('ta-contract-count')) el('ta-contract-count').textContent = cache.contracts.length + ' contract' + (cache.contracts.length !== 1 ? 's' : '');
 
-        if (cache.contracts.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">No contracts indexed</td></tr>';
+        var contracts = cache.contracts;
+        if (stageFilter) {
+          contracts = contracts.filter(function(c) { return c.current_stage === stageFilter; });
+        }
+
+        var countLabel = stageFilter ? contracts.length + ' of ' + cache.contracts.length + ' contracts' : cache.contracts.length + ' contract' + (cache.contracts.length !== 1 ? 's' : '');
+        if (el('ta-contract-count')) el('ta-contract-count').textContent = countLabel;
+
+        if (contracts.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">' + (stageFilter ? 'No contracts at this stage' : 'No contracts indexed') + '</td></tr>';
           return;
         }
 
@@ -21987,7 +22001,7 @@
         var SC = { loaded: '#9e9e9e', preflight_complete: '#4caf50', system_pass_complete: '#ff9800', system_changes_reviewed: '#2196f3', patch_submitted: '#1976d2', rfi_submitted: '#f57f17', verifier_complete: '#7b1fa2', admin_promoted: '#00897b', applied: '#2e7d32' };
 
         var html = '';
-        cache.contracts.forEach(function(c) {
+        contracts.forEach(function(c) {
           var sl = SL[c.current_stage] || c.current_stage;
           var sc = SC[c.current_stage] || '#666';
           var dn = (c.display_name || c.contract_id || '').replace(/"/g, '&quot;').replace(/'/g, "\\'");
@@ -22019,8 +22033,70 @@
         navigateToGridFiltered(filterMap[lane] || 'all');
       },
 
+      _activeStageFilter: null,
+
+      toggleContractTable: function() {
+        var body = document.getElementById('ta-contract-body');
+        var toggle = document.getElementById('ta-contract-toggle');
+        if (!body) return;
+        if (body.style.display === 'none') {
+          body.style.display = '';
+          if (toggle) toggle.style.transform = 'rotate(90deg)';
+          this._activeStageFilter = null;
+          this._renderContractTable(this._cache);
+          var badge = document.getElementById('ta-contract-filter-badge');
+          if (badge) badge.style.display = 'none';
+          var gridBtn4 = document.getElementById('ta-contract-view-grid');
+          if (gridBtn4) gridBtn4.style.display = 'none';
+        } else {
+          body.style.display = 'none';
+          if (toggle) toggle.style.transform = '';
+          this._activeStageFilter = null;
+          var badge = document.getElementById('ta-contract-filter-badge');
+          if (badge) badge.style.display = 'none';
+          var gridBtn3 = document.getElementById('ta-contract-view-grid');
+          if (gridBtn3) gridBtn3.style.display = 'none';
+        }
+      },
+
       handleStageClick: function(stage) {
-        navigateToGridFiltered('stage_' + stage);
+        var body = document.getElementById('ta-contract-body');
+        var toggle = document.getElementById('ta-contract-toggle');
+        var badge = document.getElementById('ta-contract-filter-badge');
+        if (!body) return;
+
+        if (this._activeStageFilter === stage) {
+          body.style.display = 'none';
+          if (toggle) toggle.style.transform = '';
+          this._activeStageFilter = null;
+          if (badge) badge.style.display = 'none';
+          var gridBtn2 = document.getElementById('ta-contract-view-grid');
+          if (gridBtn2) gridBtn2.style.display = 'none';
+          document.querySelectorAll('.ta-lifecycle-stage').forEach(function(el) { el.style.outline = ''; });
+          return;
+        }
+
+        this._activeStageFilter = stage;
+        body.style.display = '';
+        if (toggle) toggle.style.transform = 'rotate(90deg)';
+
+        var SL = { loaded: 'Loaded', preflight_complete: 'Pre-Flight', system_pass_complete: 'System Pass', system_changes_reviewed: 'Reviewed', patch_submitted: 'Patch Sub.', rfi_submitted: 'RFI', verifier_complete: 'Verifier', admin_promoted: 'Promoted', applied: 'Applied' };
+        if (badge) { badge.textContent = SL[stage] || stage; badge.style.display = 'inline'; }
+        var gridBtn = document.getElementById('ta-contract-view-grid');
+        if (gridBtn) gridBtn.style.display = 'inline';
+
+        document.querySelectorAll('.ta-lifecycle-stage').forEach(function(el) { el.style.outline = ''; });
+        var idx = ['loaded','preflight_complete','system_pass_complete','system_changes_reviewed','patch_submitted','rfi_submitted','verifier_complete','admin_promoted','applied'].indexOf(stage);
+        var stageEls = document.querySelectorAll('.ta-lifecycle-stage');
+        if (idx >= 0 && stageEls[idx]) stageEls[idx].style.outline = '2px solid #1976d2';
+
+        this._renderContractTable(this._cache, stage);
+      },
+
+      viewFilteredInGrid: function() {
+        if (this._activeStageFilter) {
+          navigateToGridFiltered('stage_' + this._activeStageFilter);
+        }
       },
 
       handleContractClick: function(contractId, stage) {
@@ -30225,6 +30301,8 @@ Add any additional notes here.
     @keyframes ta-fade-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
     .ta-lifecycle-stage { transition: all 0.2s ease; }
     .ta-lifecycle-stage:hover { transform: translateY(-2px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    #ta-contract-body { transition: max-height 0.3s ease; }
+    #ta-contract-section > div:first-child:hover { background: #fafafa; }
     .ta-contract-row:hover { background: #f8f9ff !important; }
     /* V2.3b: Section Guidance */
     .section-guidance-card { animation: ta-fade-in 0.2s ease; }
