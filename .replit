@@ -5,7 +5,7 @@ run = "python3 local_runner/validate_config.py --base config/config_pack.base.js
 
 [nix]
 channel = "stable-25_05"
-packages = ["freetype", "gitFull", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "mupdf", "nano", "openjpeg", "playwright-driver", "swig", "xcbuild"]
+packages = ["freetype", "gitFull", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "mupdf", "nano", "openjpeg", "playwright-driver", "swig", "xcbuild", "nspr", "nss", "at-spi2-atk", "cups", "libdrm", "mesa", "xorg.libX11", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXrandr", "xorg.libxcb", "xorg.libxshmfence", "glib", "pango", "cairo", "alsa-lib", "dbus", "expat", "chromium"]
 
 [agent]
 expertMode = true
