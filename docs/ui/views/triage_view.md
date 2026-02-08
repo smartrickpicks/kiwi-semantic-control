@@ -2,6 +2,17 @@
 
 > Alert summary view showing Review State counts and status cards for quick navigation.
 
+## Recent Changes (v2.3 P1)
+
+- **Live telemetry cache**: `TriageTelemetry` aggregator keyed by active dataset with `files_total`, `files_processed`, `processing_state` (idle|running|stale|complete), `lane_counts`, `lifecycle_stage_counts`, `last_updated_at`. Recomputed on upload load, demo/sandbox load, restore/session load, pre-flight rerun, system pass rerun, patch status transitions, and audit events.
+- **Lifecycle progression enhancements**: Per-stage `count`, `percentage`, and `delta` since prior refresh. Delta badges shown below each stage (green +N / red -N). Throughput metric (`items/min`) computed when `processing_state=running`.
+- **Lane drill-down hardening**: Clicking any lane card applies deterministic filter to contract summary table. Toggle behavior (click again to clear). Clear-filter badge shown in contract section header. Active lane filter persisted across renders.
+- **Contract state chips**: Derived chips per contract: `preflight_blocked`, `semantic_pending`, `patch_pending`, `ready_for_verifier`, `promoted`. Clickable — each filters contract summary table. Derivation from current status/signals/events only.
+- **Processing status banner**: Compact status line above batch summary: shows processing state icon, file counts, dominant lifecycle stage, last update time. Stale indicator when no update for 60s (configurable). "Up to date" when complete/idle. State transitions: idle → running → complete (or stale).
+- **Event→stage mapping table**: Explicit mapping in `TriageTelemetry.EVENT_STAGE_MAP` for how events affect lifecycle counters. 16 event types mapped. Dedupe key (`event_id` or stable composite) prevents double counting.
+- **Performance guardrails**: 300ms debounce on telemetry UI refresh via `debouncedRefresh()`. Partial rerender for counters (no full contract table rebuild when only counts change). Warm refresh responsive for demo-scale datasets.
+- **Logging**: 8 distinct `[TRIAGE-ANALYTICS][P1]` events: `telemetry_recompute`, `event_stage_mapped`, `event_dedupe_hit`, `lifecycle_refresh`, `lane_filter_applied`, `processing_state_changed`, `stale_state_entered`, `stale_state_cleared`.
+
 ## Recent Changes (v2.3 P0.2)
 
 - **Header IA reorder**: Sections now follow canonical hierarchy: Batch Summary → Contract Summary → Lane Cards → Lifecycle → Schema Snapshot.
@@ -61,20 +72,21 @@ Triage is accessible via:
 | Summary cards | Contracts, Ready, Needs Review, Blocked | Yes |
 | Data source label | Source name and load timestamp | Yes |
 | Filter controls | Search, severity, status, subtype | Yes |
-| Triage Analytics Header | Lane cards, lifecycle tracker, contract table, schema snapshot (V2.3) | Yes (after data load) |
+| Triage Analytics Header | Processing banner, batch summary, contract table, lane cards, lifecycle tracker, schema snapshot (V2.3 P0-P1) | Yes (after data load) |
 
-## Triage Analytics Header (V2.3 P0 + P0.1 + P0.2)
+## Triage Analytics Header (V2.3 P0 + P0.1 + P0.2 + P1)
 
 The analytics header renders above the existing triage grid after data load. It aggregates metrics from existing stores with no data duplication.
 
-### Header Section Order (P0.2)
+### Header Section Order (P0.2 + P1)
 
 | # | Section | Description |
 |---|---------|-------------|
+| 0 | Processing Banner (P1) | Compact status line: state icon, file counts, dominant stage, stale indicator |
 | 1 | Batch Summary | Compact row with totals, unassigned rows indicator, reconciliation badge |
-| 2 | Contract Summary | Collapsible table (collapsed by default) with per-contract detail |
-| 3 | Lane Cards | Pre-Flight, Semantic, Patch Review health cards |
-| 4 | Lifecycle Progression | 9-stage horizontal tracker |
+| 2 | Contract Summary | Collapsible table (collapsed by default) with per-contract detail + state chips (P1) |
+| 3 | Lane Cards | Pre-Flight, Semantic, Patch Review health cards (with drill-down filter P1) |
+| 4 | Lifecycle Progression | 9-stage horizontal tracker with deltas and percentages (P1) |
 | 5 | Schema Snapshot | Field matching, unknown columns, drift |
 
 ### Batch Summary (P0.2)
@@ -242,6 +254,103 @@ The analytics header refreshes on:
 - Proposal accept/reject
 - Patch submit/promote
 - Rollback apply
+- Pre-flight rerun (P1)
+- Patch status transitions (P1)
+- Relevant audit events (P1 — via `TriageTelemetry.processEvent()`)
+
+## Triage Telemetry (V2.3 P1)
+
+### Processing Status Banner
+
+Compact status bar above the Batch Summary strip. State transitions:
+
+| State | Icon | Background | Description |
+|-------|------|-----------|-------------|
+| idle | ● | grey | No data loaded |
+| running | ⚙ | blue | Processing files (shows X/Y count) |
+| stale | ⚠ | orange | No update for 60s (configurable via `_staleTimeoutMs`) |
+| complete | ✓ | green | All files processed, "Up to date" |
+
+DOM elements: `ta-processing-banner`, `ta-proc-icon`, `ta-proc-text`, `ta-proc-detail`, `ta-proc-stage`, `ta-proc-time`, `ta-proc-throughput`, `ta-proc-stale`.
+
+### Lifecycle Deltas and Percentages (P1)
+
+Each lifecycle stage element receives two additional sub-elements:
+- `.ta-stage-delta`: Shows +N (green) or -N (red) change since prior refresh
+- `.ta-stage-pct`: Shows percentage of total contracts at that stage
+
+Throughput (`items/min`) is shown in the processing banner when `processing_state=running`.
+
+### Lane Drill-Down (P1)
+
+Clicking a lane card triggers `TriageTelemetry.applyLaneFilter(lane)`:
+1. Filters contract summary table to contracts with alerts in that lane
+2. Expands the contract summary table
+3. Shows filter badge in contract section header with lane name + ✕
+4. Click badge or click same lane again to clear filter
+
+Toggle behavior: clicking the same lane twice clears the filter.
+
+### Contract State Chips (P1)
+
+Derived chips rendered in the contract summary header:
+
+| Chip | Derivation |
+|------|-----------|
+| PF Blocked | `preflight_alerts > 0` |
+| Sem. Pending | `semantic_alerts > 0` |
+| Patch Pending | `patch_alerts > 0` |
+| Ready for Verifier | `current_stage` is `verifier_complete` or `system_changes_reviewed` |
+| Promoted | `current_stage` is `admin_promoted` or `applied` |
+
+Each chip is clickable and filters the contract summary table.
+
+### Event → Stage Mapping (P1)
+
+`TriageTelemetry.EVENT_STAGE_MAP` defines how events map to lifecycle stages:
+
+| Event | Target Stage | Delta |
+|-------|-------------|-------|
+| dataset_loaded | loaded | +1 |
+| file_parsed | loaded | +1 |
+| preflight_complete | preflight_complete | +1 |
+| preflight_blocker_detected | loaded | 0 |
+| system_pass_complete | system_pass_complete | +1 |
+| proposal_accepted | system_changes_reviewed | +1 |
+| proposal_rejected | system_changes_reviewed | +1 |
+| system_change_routed_to_patch | patch_submitted | +1 |
+| patch_submitted | patch_submitted | +1 |
+| rfi_submitted | rfi_submitted | +1 |
+| VERIFIER_APPROVED | verifier_complete | +1 |
+| VERIFIER_REJECTED | verifier_complete | +1 |
+| ADMIN_APPROVED | admin_promoted | +1 |
+| patch_applied | applied | +1 |
+| rollback_applied | loaded | 0 |
+| schema_change | (none) | 0 |
+
+Deduplication: Events are keyed by `event_id` (if present) or composite `eventType::record_id::contract_id::field_key::artifact_id`. Duplicate events log `event_dedupe_hit`.
+
+### P1 Console Logging
+
+All P1 operations log with `[TRIAGE-ANALYTICS][P1]` prefix:
+
+| Event | Description |
+|-------|-------------|
+| telemetry_recompute | State, file counts, lane totals |
+| event_stage_mapped | Event type → stage mapping applied |
+| event_dedupe_hit | Duplicate event key detected |
+| lifecycle_refresh | Debounced lifecycle UI refresh |
+| lane_filter_applied | Lane drill-down filter activated |
+| processing_state_changed | Processing state transition (from → to) |
+| stale_state_entered | Stale timeout reached |
+| stale_state_cleared | Stale state cleared by new data |
+
+### Performance Guardrails (P1)
+
+- `debouncedRefresh()`: 300ms debounce on telemetry UI refresh
+- Partial rerender: `renderLifecycleDeltas()` and `renderContractChips()` update only their DOM targets without full table rebuild
+- `renderBanner()` only touches banner DOM elements
+- Stale timer managed via `_resetStaleTimer()` — auto-clears on recompute
 
 ## Allowed Actions by Role
 
@@ -275,7 +384,10 @@ The analytics header refreshes on:
 | Page view | No (read-only navigation) |
 | Filter change | No (ephemeral UI state) |
 | Navigate to record | No (navigation only) |
-| Analytics refresh | Console only (`[TRIAGE-ANALYTICS][P0.1]`) |
+| Analytics refresh | Console only (`[TRIAGE-ANALYTICS][P0.1]`, `[P0.2]`, `[P1]`) |
+| Telemetry recompute | Console only (`[TRIAGE-ANALYTICS][P1]`) |
+| Lane filter applied | Console only (`[TRIAGE-ANALYTICS][P1]`) |
+| Processing state change | Console only (`[TRIAGE-ANALYTICS][P1]`) |
 
 ## State Transitions
 
