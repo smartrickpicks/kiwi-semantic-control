@@ -14422,13 +14422,17 @@
     // Stub required fields (schema stub)
     var SRR_REQUIRED_FIELDS = ['contract_key', 'status'];
     
+    // v1.6.60: Internal marker fields — single source of truth (normalized keys)
+    var SRR_INTERNAL_FIELDS = [
+      'contract_key', 'file_name', 'file_url', 'record_id', 'sheet', 'status',
+      'dataset_id', 'group_id', 'document_type', 'capabilities'
+    ];
+
     // v1.6.5: Hidden fields - not shown in Field Inspector (analyst view)
-    // File_Name_c: shown in header only, File_URL_c: internal for PDF loading
-    // Metrics fields: internal change tracking, not for analyst review
     var SRR_HIDDEN_FIELDS = [
-      'File_Name_c', 'File_URL_c',  // File fields
-      'Change_Count', 'System_Change_Count', 'User_Change_Count',  // Exact keys
-      'Row_Complete', 'Row_Verified'  // Status flags
+      'File_Name_c', 'File_URL_c',
+      'Change_Count', 'System_Change_Count', 'User_Change_Count',
+      'Row_Complete', 'Row_Verified'
     ];
     
     // v1.6.5: Pattern-based hidden field matching (for variations)
@@ -14437,12 +14441,20 @@
       'row complete', 'row verified'
     ];
     
+    // v1.6.60: Check if a field is an internal marker (normalized comparison)
+    function isInternalField(fieldKey) {
+      if (!fieldKey) return false;
+      var norm = fieldKey.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return SRR_INTERNAL_FIELDS.some(function(f) {
+        return f.toLowerCase().replace(/[^a-z0-9]/g, '') === norm;
+      });
+    }
+
     // v1.6.5: Check if a field should be hidden from analyst view
     function isHiddenField(fieldKey) {
       if (!fieldKey) return false;
-      // Check exact match
+      if (isInternalField(fieldKey)) return true;
       if (SRR_HIDDEN_FIELDS.indexOf(fieldKey) >= 0) return true;
-      // Check pattern match (case-insensitive)
       var keyLower = fieldKey.toLowerCase().replace(/_/g, ' ');
       return SRR_HIDDEN_PATTERNS.some(function(pattern) {
         return keyLower.indexOf(pattern) >= 0;
@@ -14990,6 +15002,31 @@
         });
       });
       
+      // v1.6.60: System Metadata section for Verifier/Admin (collapsed by default)
+      if (currentMode !== 'analyst') {
+        var internalKeys = Object.keys(record).filter(function(k) {
+          return !k.startsWith('_') && isInternalField(k);
+        });
+        if (internalKeys.length > 0) {
+          internalKeys.sort();
+          html += '<details class="srr-system-metadata" style="margin-top: 12px; border-top: 1px solid #e0e0e0;">';
+          html += '<summary style="padding: 10px 12px; font-size: 0.75em; font-weight: 600; color: #9e9e9e; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; user-select: none;">System Metadata (' + internalKeys.length + ')</summary>';
+          html += '<div style="padding: 0 12px 8px;">';
+          internalKeys.forEach(function(k) {
+            var val = record[k];
+            if (val === null || val === undefined) val = '';
+            if (typeof val === 'object') val = JSON.stringify(val);
+            var displayVal = String(val);
+            if (displayVal.length > 80) displayVal = displayVal.substring(0, 77) + '...';
+            html += '<div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.8em; border-bottom: 1px solid #f5f5f5;">';
+            html += '<span style="color: #9e9e9e; font-weight: 500;">' + k + '</span>';
+            html += '<span style="color: #616161; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="' + String(val).replace(/"/g, '&quot;') + '">' + displayVal + '</span>';
+            html += '</div>';
+          });
+          html += '</div></details>';
+        }
+      }
+
       container.innerHTML = html || '<div class="srr-empty-state">No fields match current filter</div>';
     }
     
@@ -15058,7 +15095,7 @@
       // Check if all fields are now verified (record fully validated)
       var allVerified = true;
       var fieldKeys = Object.keys(srrState.originalValues || {}).filter(function(k) {
-        return !k.startsWith('_');
+        return !k.startsWith('_') && !isHiddenField(k);
       });
       for (var i = 0; i < fieldKeys.length; i++) {
         var k = fieldKeys[i];

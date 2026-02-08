@@ -402,6 +402,15 @@ If the user attempts to navigate away (Back to Grid) with **unresolved PATCHED o
 | SRR-PT-04 | Repro controls appear only when required | Hidden for Blacklist/RFI or when Override enabled |
 | SRR-PT-05 | Override badge appears and suppresses repro | Badge visible in header, repro block hidden |
 
+### Internal Marker Fields (v1.6.60)
+
+The following system/routing metadata fields are hidden from the Analyst Field Inspector:
+
+- `contract_key`, `file_name`, `file_url`, `record_id`, `sheet`, `status`
+- `dataset_id`, `group_id`, `document_type`, `capabilities`
+
+These fields remain in the runtime data model for routing, audit, export, and system logic. File name and file URL are accessible via the Record Inspection header/action bar. Verifier and Admin roles can view these fields in a collapsed "System Metadata" section at the bottom of the Field Inspector.
+
 ## References
 
 - [Field Inspector Patch Flow](single_row_review_field_inspector_patch_flow.md)
