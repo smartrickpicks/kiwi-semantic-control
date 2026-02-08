@@ -1,0 +1,102 @@
+{
+  "_version": "1.0",
+  "_description": "Section guidance for Record Inspection, keyed by document_role::document_type",
+  "guidance": {
+    "Root Agreement::Master Service Agreement": {
+      "section_label": "Master Service Agreement",
+      "what_to_look_for": [
+        "Verify effective date and term length",
+        "Confirm all party names match header",
+        "Check for amendment references",
+        "Validate territory/rights scope",
+        "Verify payment terms and rates",
+        "Look for auto-renewal clauses",
+        "Confirm termination conditions"
+      ],
+      "common_failure_modes": [
+        "Mismatched party names between signature block and header",
+        "Missing effective date or ambiguous term language",
+        "Unsigned or partially executed agreement",
+        "Territory scope conflicts with amendments",
+        "Rate schedules not attached or referenced incorrectly"
+      ]
+    },
+    "Amendment::Rate Change": {
+      "section_label": "Rate Change Amendment",
+      "what_to_look_for": [
+        "Verify amendment references correct original agreement",
+        "Check effective date of rate change",
+        "Validate old vs new rate values",
+        "Confirm all affected catalog items listed",
+        "Verify authorized signatures"
+      ],
+      "common_failure_modes": [
+        "Amendment references wrong original agreement number",
+        "Rate change effective date conflicts with original term",
+        "Missing catalog items that should be affected",
+        "Unauthorized signatory"
+      ]
+    },
+    "Amendment::Territory Extension": {
+      "section_label": "Territory Extension Amendment",
+      "what_to_look_for": [
+        "Verify new territories are clearly defined",
+        "Check if extension affects existing rate structure",
+        "Confirm effective date aligns with original term",
+        "Validate that extended territories don't conflict"
+      ],
+      "common_failure_modes": [
+        "Ambiguous territory definitions",
+        "Conflicts with existing territory grants",
+        "Missing rate terms for new territories"
+      ]
+    },
+    "Schedule::Catalog": {
+      "section_label": "Catalog Schedule",
+      "what_to_look_for": [
+        "Verify all catalog items have valid identifiers",
+        "Check for duplicate entries",
+        "Validate rate/royalty values are numeric",
+        "Confirm territory assignments per item",
+        "Look for items with missing metadata"
+      ],
+      "common_failure_modes": [
+        "Duplicate catalog item entries with different rates",
+        "Missing or invalid item identifiers",
+        "Non-numeric values in rate columns",
+        "Items assigned to territories not in the agreement"
+      ]
+    },
+    "Root Agreement": {
+      "section_label": "Agreement Document",
+      "what_to_look_for": [
+        "Verify document completeness and page count",
+        "Confirm all required sections are present",
+        "Check for proper execution and dating",
+        "Validate party information consistency",
+        "Review key commercial terms"
+      ],
+      "common_failure_modes": [
+        "Missing pages or sections",
+        "Inconsistent party names",
+        "Missing execution dates"
+      ]
+    },
+    "default": {
+      "section_label": "General Review",
+      "what_to_look_for": [
+        "Verify record completeness",
+        "Check for data consistency across fields",
+        "Validate required fields are populated",
+        "Look for formatting or encoding issues",
+        "Confirm field values match expected formats"
+      ],
+      "common_failure_modes": [
+        "Missing required field values",
+        "Inconsistent data formats",
+        "Encoding artifacts (mojibake)",
+        "Misaligned data from source extraction"
+      ]
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "_version": "1.0",
+  "_description": "Knowledge rail links for Record Inspection side panel",
+  "links": [
+    {
+      "id": "kl_data_governance_overview",
+      "title": "Data Governance Overview",
+      "url": "https://confluence.example.com/display/GOV/Data+Governance+Overview",
+      "category": "Governance",
+      "roles_allowed": ["analyst", "verifier", "admin"],
+      "order": 1,
+      "enabled": true
+    },
+    {
+      "id": "kl_semantic_rules_guide",
+      "title": "Semantic Rules Guide",
+      "url": "https://confluence.example.com/display/GOV/Semantic+Rules+Reference",
+      "category": "Rules",
+      "roles_allowed": ["analyst", "verifier", "admin"],
+      "order": 2,
+      "enabled": true
+    },
+    {
+      "id": "kl_patch_authoring",
+      "title": "Patch Authoring Best Practices",
+      "url": "https://confluence.example.com/display/GOV/Patch+Authoring+Guide",
+      "category": "Workflow",
+      "roles_allowed": ["analyst"],
+      "order": 3,
+      "enabled": true
+    },
+    {
+      "id": "kl_verification_checklist",
+      "title": "Verification Checklist",
+      "url": "https://confluence.example.com/display/GOV/Verifier+Checklist",
+      "category": "Workflow",
+      "roles_allowed": ["verifier", "admin"],
+      "order": 4,
+      "enabled": true
+    },
+    {
+      "id": "kl_admin_approval_flow",
+      "title": "Admin Approval Workflow",
+      "url": "https://confluence.example.com/display/GOV/Admin+Approval+Process",
+      "category": "Workflow",
+      "roles_allowed": ["admin"],
+      "order": 5,
+      "enabled": true
+    },
+    {
+      "id": "kl_field_dictionary",
+      "title": "Field Dictionary & Definitions",
+      "url": "https://confluence.example.com/display/GOV/Field+Dictionary",
+      "category": "Reference",
+      "roles_allowed": ["analyst", "verifier", "admin"],
+      "order": 6,
+      "enabled": true
+    },
+    {
+      "id": "kl_document_types",
+      "title": "Document Types Reference",
+      "url": "https://confluence.example.com/display/GOV/Document+Types",
+      "category": "Reference",
+      "roles_allowed": ["analyst", "verifier", "admin"],
+      "order": 7,
+      "enabled": true
+    },
+    {
+      "id": "kl_troubleshooting",
+      "title": "Common Issues & Troubleshooting",
+      "url": "https://confluence.example.com/display/GOV/Troubleshooting",
+      "category": "Support",
+      "roles_allowed": ["analyst", "verifier", "admin"],
+      "order": 8,
+      "enabled": true
+    }
+  ]
+}
