@@ -4,3 +4,4 @@ httpx
 uvicorn[standard]
 PyMuPDF
 openpyxl
+playwright
