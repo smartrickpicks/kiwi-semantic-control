@@ -2,9 +2,21 @@
 
 > Alert summary view showing Review State counts and status cards for quick navigation.
 
-## Recent Changes (v2.3)
+## Recent Changes (v2.3 P0.1)
 
-- **Triage Analytics Header (P0)**: New analytics block above existing triage grid with three lane cards (Pre-Flight, Semantic, Patch Review), lifecycle progression tracker, contract summary table, and schema snapshot.
+- **Lifecycle count fix**: Removed false "Unassigned (Batch Level)" pseudo-contract from lifecycle denominator. Orphan rows are tracked internally but excluded from contract-level progression counts.
+- **Pre-Flight View routing**: Deterministic 3-tier fallback: row-level → Record Inspection, contract-level → filtered grid, final → all-data grid. Logged via `openPreflightItem()`.
+- **Patch queue sanitization**: Meta sheets, reference/glossary sheets, and system columns (`__meta*`, `_glossary*`, `_system`, `_internal`) filtered from actionable patch items.
+- **System Pass Engine**: Standalone block removed; folded into compact inline control above the System Pass queue.
+- **Contract Summary chips**: Collapsed state now shows done/review/pending counts alongside total contracts.
+- **Schema snapshot click-through**: Unknown Columns → preflight filter, Missing Required → blocked filter, Schema Drift → needs-review filter.
+- **Toast repositioning**: Toasts moved from bottom-right to top-center to avoid Feedback FAB overlap.
+- **Search bar vs audit**: Search bar given opaque background; audit dropdown z-index layered below search bar.
+- **Logging**: All operations prefixed `[TRIAGE-ANALYTICS][P0.1]`.
+
+## Recent Changes (v2.3 P0)
+
+- **Triage Analytics Header**: Analytics block above existing triage grid with three lane cards (Pre-Flight, Semantic, Patch Review), lifecycle progression tracker, contract summary table, and schema snapshot.
 - **Lifecycle Tracker**: 9-stage horizontal strip (Loaded → Applied) with contract-level counts and percentages.
 - **Contract Summary Table**: Collapsible table with per-contract stage, alert counts, and "View in Grid" action.
 - **Schema Snapshot**: Field match %, unknown columns, missing required, schema drift.
@@ -40,7 +52,7 @@ Triage is accessible via:
 | Filter controls | Search, severity, status, subtype | Yes |
 | Triage Analytics Header | Lane cards, lifecycle tracker, contract table, schema snapshot (V2.3) | Yes (after data load) |
 
-## Triage Analytics Header (V2.3 P0)
+## Triage Analytics Header (V2.3 P0 + P0.1)
 
 The analytics header renders above the existing triage grid after data load. It aggregates metrics from existing stores with no data duplication.
 
@@ -87,7 +99,7 @@ The analytics header renders above the existing triage grid after data load. It 
 
 ### Lifecycle Progression Tracker
 
-9-stage horizontal strip showing contract progression:
+9-stage horizontal strip showing contract progression. Denominator is real contracts only (orphan/batch-level rows excluded from P0.1).
 
 | Stage | Key | Description |
 |-------|-----|-------------|
@@ -117,27 +129,53 @@ Collapsible table with columns:
 | Patches | Count of patch requests |
 | Rows | Row count in contract |
 
+Collapsed state shows summary chips: total contracts, completed, review, pending.
+
 Actions:
 - Click row → navigates to All Data Grid filtered to that contract
 - "View in Grid" button → navigates to grid filtered by selected stage
 
 ### Schema Snapshot
 
-Read-only mini-panel showing:
+Clickable mini-panel (P0.1):
 
-| Metric | Description |
-|--------|-------------|
-| Field Match % | Percentage of canonical fields found in workbook |
-| Matched / Total | Count of matched vs total canonical fields |
-| Unknown Columns | Columns in workbook but not in field_meta.json |
-| Missing Required | Required canonical fields not found in workbook |
-| Schema Drift | Sum of unknown + missing required |
+| Metric | Click Action | Description |
+|--------|--------------|-------------|
+| Field Match % | (none) | Percentage of canonical fields found in workbook |
+| Unknown Columns | → preflight filter | Columns in workbook but not in field_meta.json |
+| Missing Required | → blocked filter | Required canonical fields not found in workbook |
+| Schema Drift | → needs-review filter | Sum of unknown + missing required |
+
+### Pre-Flight View Routing (P0.1)
+
+Deterministic fallback order when clicking a pre-flight item:
+
+1. If row-level record_id exists and found in workbook → open Record Inspection
+2. If contract-level pointer exists → open All Data Grid filtered by contract
+3. Final fallback → open All Data Grid (unfiltered)
+
+Each decision logged with `[TRIAGE-ANALYTICS][P0.1] preflight_view_route`.
+
+### Patch Queue Sanitization (P0.1)
+
+Items filtered from actionable patch queue:
+- Rows from meta sheets (change_log, RFIs, etc.)
+- Rows from reference/glossary sheets
+- Fields starting with `__meta`, `_glossary`, `_system`, `_internal`
+
+Sanitization count logged: `[TRIAGE-ANALYTICS][P0.1] patch_queue_sanitize`.
 
 ### Console Logging
 
-All analytics operations log with `[TRIAGE-ANALYTICS][P0]` prefix:
-- `refresh`: Outputs lane totals, contract count, schema match
-- `renderHeader`: Outputs display state and contract count
+All analytics operations log with `[TRIAGE-ANALYTICS][P0.1]` prefix:
+- `lifecycle_recompute`: Contract count and orphan exclusion
+- `refresh`: Lane totals, contract count, schema match
+- `renderHeader`: Display state and contract count
+- `contract_summary`: Completed/review/pending breakdown
+- `preflight_view_route`: Routing decision for pre-flight items
+- `patch_queue_sanitize`: Pre/post sanitization counts
+- `schema_snapshot_click`: Schema card click-through type
+- `overlap_layout_guard`: Toast repositioning
 
 ### Refresh Triggers
 
@@ -157,6 +195,7 @@ The analytics header refreshes on:
 | Click lane card (navigate to filtered grid) | Yes | Yes | Yes |
 | Click lifecycle stage (filter contract table) | Yes | Yes | Yes |
 | Click contract row (navigate to filtered grid) | Yes | Yes | Yes |
+| Click schema card (navigate to filtered view) | Yes | Yes | Yes |
 | Click status card (navigate to filtered grid) | Yes | Yes | Yes |
 | Apply filters | Yes | Yes | Yes |
 | Click record row (open inspection) | Yes | Yes | Yes |
@@ -179,7 +218,7 @@ The analytics header refreshes on:
 | Page view | No (read-only navigation) |
 | Filter change | No (ephemeral UI state) |
 | Navigate to record | No (navigation only) |
-| Analytics refresh | Console only (`[TRIAGE-ANALYTICS][P0]`) |
+| Analytics refresh | Console only (`[TRIAGE-ANALYTICS][P0.1]`) |
 
 ## State Transitions
 
