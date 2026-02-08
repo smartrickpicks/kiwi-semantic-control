@@ -56,6 +56,10 @@
 - docs/ui/views/all_data_grid_view.md
 - docs/ui/views/single_row_review_view.md
 
+## Ingestion & Data Pipeline
+- docs/ingestion/DATA_LOADER_PIPELINE.md — End-to-end Excel upload, parsing, caching, signal generation, and future Google Drive plans
+- docs/ingestion/INGESTION_DOCTRINE.md — Folder conventions and attribution patterns
+
 ## Rules and Templates
 - rules/salesforce_rules.txt
 - rules/qa_rules.txt
