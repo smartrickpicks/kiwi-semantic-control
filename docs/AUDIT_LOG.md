@@ -74,6 +74,12 @@ All audit events are persisted in an IndexedDB database (`orchestrate_audit`) wi
 | SCHEMA_CHANGE | SchemaTreeEditor | Schema change with subtype: alias_patch, schema_patch, tenant_rule_patch, suppression_patch (v2.2 P1) |
 | batch_merged | BatchMerge.executeMerge | Batches merged into governance container (v2.2 P2). Canonical name; legacy `BATCH_MERGED` alias-mapped at read time. Payload: merged_batch_id, source_batches, contracts, total_rows, documents, created_by |
 | tenant_rule_promoted_to_batch | BatchMerge.promoteTenantRule | Tenant rule manually promoted to merged batch (v2.2 P2). Canonical name; legacy `TENANT_RULE_PROMOTED_TO_BATCH` alias-mapped. Payload: merged_batch_id, sheet, field, rule, promoted_by, total_promoted |
+| system_change_routed_to_patch | SystemPass.acceptProposal (hinge) | Hinge proposal routed to patch lifecycle (v2.2 P1) |
+| undo_local | UndoManager.undo | Local draft edit undone (session-scoped) (v2.2 P1) |
+| rollback_created | RollbackEngine.createRollback | Rollback artifact created (not yet applied) (v2.2 P1) |
+| rollback_applied | RollbackEngine.applyRollback | Rollback artifact applied (append-only) (v2.2 P1) |
+| preflight_blocker_detected | loadAnalystTriageFromStore | Pre-Flight blocker detected (unknown column, OCR, mojibake) (v2.2 P2) |
+| patch_from_preflight_blocker | createPatchFromBlocker | Patch created from Pre-Flight blocker (v2.2 P2) |
 
 ### No Synthetic Events
 All timeline entries are built exclusively from persisted events. No placeholder or demo rows are generated at render time.
@@ -292,7 +298,7 @@ Evidence arrays are ordered by anchor_id ascending. All anchors must be resolvab
 
 ## UI Rendering Requirements
 - Presentation: vertical timeline grouped by record; event icon by type; badge for review state in STATE_MARKED entries.
-- Filtering: by event_type, actor.role, view, review state transitions, presence of evidence.
+- Filtering: by event_type, actor.role, view, review state transitions, presence of evidence. Saved filter presets are stored locally. Quick chips provide one-click filtering for common categories: system_change, rollback, schema_change, session.
 - Evidence: each evidence anchor must be clickable to open the document viewer at the specified page and highlight the bbox. Opening evidence is read-only.
 - Patch context: PATCH_* events must display the number of changes and allow expanding a read-only diff; no editing from the audit view.
 - Gate provenance: STATE_MARKED events must display the gate_view value and rationale.

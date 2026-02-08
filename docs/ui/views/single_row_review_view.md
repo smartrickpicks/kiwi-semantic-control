@@ -8,6 +8,12 @@ Contract: This document defines the record-level inspection surface. It supports
 >
 > The user-facing label "Record Inspection" appears in the UI header and navigation. All internal tokens, routes, specs, and audit logs retain the canonical name `single_row_review`.
 
+## Recent Changes (v2.2)
+
+- **Local Undo**: `srrUndoLastEdit()` uses UndoManager with 5-min window, draft-only guard. Emits `undo_local` audit event; never deletes history.
+- **Governed Rollback**: RollbackEngine available for field/patch/contract/batch scope reversals. Creates auditable rollback artifacts with before/after snapshots.
+- **Hinge-governed**: Inline edits on hinge fields trigger System Pass re-evaluation. Hinge-field proposals must route through the patch lifecycle via "Route to Patch".
+- **Pre-Flight badges**: Blocker types (unknown column, OCR unreadable, low-confidence extraction, mojibake) shown with severity badges in triage. One-click "Create Patch from Blocker" creates governed `preflight_resolution` patches.
 
 ## Recent Changes (v1.6.59)
 

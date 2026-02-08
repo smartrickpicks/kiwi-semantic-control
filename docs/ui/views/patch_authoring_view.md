@@ -11,6 +11,11 @@
 | Minimum role | Analyst |
 | Issue identified | Recommended (from Single Row Review) |
 
+## System-Suggested and Pre-Flight Patches (v2.2)
+
+- **`system_suggested` patches**: When a System Pass hinge-field proposal is accepted via "Route to Patch", a `system_suggested` patch artifact is auto-created in `PATCH_REQUEST_STORE` and appears in the Patch Queue. These follow the standard patch lifecycle (Draft → Submitted → Verifier Review → Admin Approval → Applied) and require a full Evidence Pack.
+- **`preflight_resolution` patches**: When a Pre-Flight blocker is resolved via "Create Patch from Blocker", a `preflight_resolution` patch artifact is created. These use a simplified evidence format (Justification only required) and follow the standard patch lifecycle.
+
 ## Visible Artifacts
 
 | Artifact | Description | Required |
@@ -81,6 +86,7 @@ Gate parity: SRR submit and Patch Studio submit enforce identical gate condition
 | Correction | Required (cannot be NA) | Required (min 5 chars) | Required (min 5 chars) |
 | Blacklist | Required (cannot be NA) | Required (min 5 chars) | Required (min 5 chars) |
 | RFI | Optional (may be NA) | Optional | Optional |
+| preflight_resolution | Optional (may be NA) | Optional | Optional |
 
 ## Audit/Evidence Requirements
 

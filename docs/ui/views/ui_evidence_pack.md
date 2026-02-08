@@ -32,6 +32,11 @@ The Evidence Pack is the structured justification artifact that accompanies ever
 - No validation rules fire for these fields
 - They are placeholders for V2 routing capabilities
 
+## V2.2 Integration
+
+- **`system_suggested` patches** (from hinge-governed proposals): These patches are auto-created when a System Pass hinge-field proposal is routed to the patch lifecycle. They require a full Evidence Pack (same blocks as Correction type) before submission. The Observation block is pre-populated with the system proposal details.
+- **`preflight_resolution` patches** (from blocker one-click): These patches are created via "Create Patch from Blocker" in Pre-Flight triage. They use a simplified evidence format: only Justification (pre-filled with blocker description) and the resolved value are required. Observation, Expected, and Repro blocks are optional.
+
 ## Related Documents
 
 - [Single Row Review](single_row_review_view.md) — where Evidence Packs are authored

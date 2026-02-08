@@ -32,5 +32,8 @@ Rollback-triggered rerun: If `applyRollback()` detects hinge-field modifications
 
 Audit alignment: `undo_local`, `rollback_created`, `rollback_applied`, `system_change_routed_to_patch` registered in `_canonicalAuditEventName` aliases, `AUDIT_TYPE_CATEGORIES.rollback`, `_inferAuditScope`, and audit filter dropdown ("Undo / Rollback"). Docs: `docs/UNDO_VS_ROLLBACK.md`.
 
+### Final Polish + Release Hardening (v2.2 P2)
+System Changes UX: bulk reject with reason (`SystemPass.bulkReject()`), confidence sort/filter presets, hinge-required badge with "must route via patch" explanation tooltip. Pre-Flight clarity: 4 blocker types (UNKNOWN_COLUMN, OCR_UNREADABLE, LOW_CONFIDENCE, MOJIBAKE) with severity badges and `createPatchFromBlocker()` one-click governed patch creation. Audit panel polish: saved filter presets (localStorage), quick chips for system_change/rollback/schema_change/session categories, live header-to-panel sync on event emission. Export consistency: audit-only export uses stable column ordering (event_id, timestamp, event_type, subtype, actor_role...) with payload_summary truncation at 200 chars and full artifact_refs; full export includes batch_id, contract_id, document_id, document_type, document_role, capabilities, merged_from. Docs hardening: 6 files updated for V2.2 terminology (Pre-Flight, System Pass, Verifier, proposal-only, governed rollback). Export version bumped to v2.2-P2.
+
 ## External Dependencies
 A FastAPI server acts as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF. SheetJS (XLSX) is loaded via CDN for Excel import/export functionality.

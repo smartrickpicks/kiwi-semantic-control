@@ -1809,8 +1809,18 @@
               <option value="admin">Admin</option>
             </select>
             <input id="audit-full-search" placeholder="Search events..." oninput="refreshFullAuditPanel()" style="padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85em; width: 180px;">
+            <button onclick="saveCurrentAuditFilter()" style="padding: 5px 10px; font-size: 0.8em; background: #e8eaf6; border: 1px solid #c5cae9; border-radius: 4px; cursor: pointer;" title="Save current filter as preset">Save Filter</button>
             <span id="audit-full-count" style="font-size: 0.8em; color: #888;"></span>
           </div>
+          <div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; align-items:center;">
+            <span style="font-size:0.78em; color:#888;">Quick:</span>
+            <button onclick="applyAuditQuickChip('system_change')" class="audit-chip-btn" style="padding:2px 10px; font-size:0.78em; background:#fff3e0; border:1px solid #ffe082; border-radius:12px; cursor:pointer;">System Changes</button>
+            <button onclick="applyAuditQuickChip('rollback')" class="audit-chip-btn" style="padding:2px 10px; font-size:0.78em; background:#fce4ec; border:1px solid #f8bbd0; border-radius:12px; cursor:pointer;">Undo / Rollback</button>
+            <button onclick="applyAuditQuickChip('schema_change')" class="audit-chip-btn" style="padding:2px 10px; font-size:0.78em; background:#e8f5e9; border:1px solid #c8e6c9; border-radius:12px; cursor:pointer;">Schema Changes</button>
+            <button onclick="applyAuditQuickChip('session')" class="audit-chip-btn" style="padding:2px 10px; font-size:0.78em; background:#e3f2fd; border:1px solid #bbdefb; border-radius:12px; cursor:pointer;">Session</button>
+            <button onclick="applyAuditQuickChip('')" class="audit-chip-btn" style="padding:2px 10px; font-size:0.78em; background:#f5f5f5; border:1px solid #e0e0e0; border-radius:12px; cursor:pointer;">All</button>
+          </div>
+          <div id="audit-filter-presets" style="margin-bottom:10px;"></div>
           <div id="audit-full-body" style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
             <table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">
               <thead style="background: #f5f5f5;">
@@ -5030,7 +5040,7 @@
         });
 
         console.log('[AuditTimeline]', eventType, event.record_id || '', event.patch_request_id || '');
-        if (typeof refreshAuditHeaderDropdown === 'function') { try { var b = document.getElementById('audit-header-badge'); if (b) b.textContent = this._memCache.length; } catch(e){} }
+        if (typeof refreshAuditHeaderDropdown === 'function') { try { var b = document.getElementById('audit-header-badge'); if (b) b.textContent = this._memCache.length; refreshAuditHeaderDropdown(); if (document.getElementById('audit-full-panel') && document.getElementById('audit-full-panel').style.display !== 'none') refreshFullAuditPanel(); } catch(e){} }
         return event;
       },
 
@@ -6867,6 +6877,32 @@
         return accepted;
       },
 
+      bulkReject: function(reason) {
+        var rejected = 0;
+        this._proposals.forEach(function(p) {
+          if (p.status === 'pending') {
+            p.status = 'rejected';
+            AuditTimeline.emit('system_change_rejected', {
+              record_id: p.record_id,
+              field_key: p.field_key,
+              dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+              metadata: { proposal_id: p.proposal_id, rule_id: p.rule_id, reason: reason || 'bulk_rejected', bulk: true }
+            });
+            rejected++;
+          }
+        });
+        return rejected;
+      },
+
+      getSortedProposals: function(sortBy) {
+        var sorted = this._proposals.slice();
+        if (sortBy === 'confidence_desc') sorted.sort(function(a,b) { return (b.confidence||0) - (a.confidence||0); });
+        else if (sortBy === 'confidence_asc') sorted.sort(function(a,b) { return (a.confidence||0) - (b.confidence||0); });
+        else if (sortBy === 'hinge_first') sorted.sort(function(a,b) { return (b.is_hinge?1:0) - (a.is_hinge?1:0); });
+        else if (sortBy === 'field') sorted.sort(function(a,b) { return (a.field_key||'').localeCompare(b.field_key||''); });
+        return sorted;
+      },
+
       getProposals: function(filter) {
         if (!filter) return this._proposals;
         return this._proposals.filter(function(p) {
@@ -6904,6 +6940,9 @@
       if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
     }
 
+    var _systemPassSort = 'default';
+    var _systemPassFilter = 'all';
+
     function renderSystemPassResults(proposals) {
       var container = document.getElementById('system-pass-results');
       if (!container) return;
@@ -6913,30 +6952,60 @@
         return;
       }
       container.style.display = 'block';
+      var sorted = SystemPass.getSortedProposals(_systemPassSort);
+      if (_systemPassFilter === 'pending') sorted = sorted.filter(function(p) { return p.status === 'pending'; });
+      else if (_systemPassFilter === 'hinge') sorted = sorted.filter(function(p) { return p.is_hinge; });
+      else if (_systemPassFilter === 'non_hinge') sorted = sorted.filter(function(p) { return !p.is_hinge; });
       var pending = proposals.filter(function(p) { return p.status === 'pending'; });
-      var html = '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">';
-      html += '<span style="font-size:0.85em; font-weight:600;">' + proposals.length + ' proposals (' + pending.length + ' pending)</span>';
+      var hingeCount = proposals.filter(function(p) { return p.is_hinge; }).length;
+      var html = '<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; flex-wrap:wrap;">';
+      html += '<span style="font-size:0.85em; font-weight:600;">' + proposals.length + ' proposals (' + pending.length + ' pending, ' + hingeCount + ' hinge)</span>';
+      html += '<select id="sp-sort-select" onchange="changeSystemPassSort(this.value)" style="padding:2px 6px; font-size:0.78em; border:1px solid #ccc; border-radius:3px;">';
+      html += '<option value="default"' + (_systemPassSort==='default'?' selected':'') + '>Default order</option>';
+      html += '<option value="confidence_desc"' + (_systemPassSort==='confidence_desc'?' selected':'') + '>Confidence (high first)</option>';
+      html += '<option value="confidence_asc"' + (_systemPassSort==='confidence_asc'?' selected':'') + '>Confidence (low first)</option>';
+      html += '<option value="hinge_first"' + (_systemPassSort==='hinge_first'?' selected':'') + '>Hinge fields first</option>';
+      html += '<option value="field"' + (_systemPassSort==='field'?' selected':'') + '>By field name</option>';
+      html += '</select>';
+      html += '<select id="sp-filter-select" onchange="changeSystemPassFilter(this.value)" style="padding:2px 6px; font-size:0.78em; border:1px solid #ccc; border-radius:3px;">';
+      html += '<option value="all"' + (_systemPassFilter==='all'?' selected':'') + '>All</option>';
+      html += '<option value="pending"' + (_systemPassFilter==='pending'?' selected':'') + '>Pending only</option>';
+      html += '<option value="hinge"' + (_systemPassFilter==='hinge'?' selected':'') + '>Hinge only</option>';
+      html += '<option value="non_hinge"' + (_systemPassFilter==='non_hinge'?' selected':'') + '>Non-hinge only</option>';
+      html += '</select>';
+      html += '</div>';
+      html += '<div style="display:flex; gap:6px; margin-bottom:8px;">';
       if (pending.length > 0) {
         html += '<button onclick="bulkAcceptSystemPass()" style="padding:3px 10px; font-size:0.8em; background:#4caf50; color:white; border:none; border-radius:4px; cursor:pointer;">Accept All Non-Hinge</button>';
+        html += '<button onclick="promptBulkRejectSystemPass()" style="padding:3px 10px; font-size:0.8em; background:#f44336; color:white; border:none; border-radius:4px; cursor:pointer;">Reject All Pending</button>';
       }
+      html += '</div>';
+      html += '<div id="sp-bulk-reject-prompt" style="display:none; margin-bottom:8px; padding:8px 12px; background:#fff3e0; border:1px solid #ffe082; border-radius:4px;">';
+      html += '<label style="font-size:0.8em; font-weight:600;">Rejection reason:</label> ';
+      html += '<input id="sp-bulk-reject-reason" type="text" placeholder="e.g. Not applicable to this batch" style="padding:3px 8px; font-size:0.8em; border:1px solid #ccc; border-radius:3px; width:220px; margin:0 4px;">';
+      html += '<button onclick="executeBulkRejectSystemPass()" style="padding:3px 10px; font-size:0.8em; background:#f44336; color:white; border:none; border-radius:4px; cursor:pointer;">Confirm Reject</button>';
+      html += '<button onclick="cancelBulkRejectSystemPass()" style="padding:3px 8px; font-size:0.8em; background:#eee; border:1px solid #ccc; border-radius:3px; cursor:pointer; margin-left:4px;">Cancel</button>';
       html += '</div>';
       html += '<div style="max-height:250px; overflow-y:auto; border:1px solid #e0e0e0; border-radius:4px;">';
       html += '<table style="width:100%; border-collapse:collapse; font-size:0.8em;">';
-      html += '<thead><tr style="background:#f5f5f5;"><th style="padding:4px 8px; text-align:left;">Field</th><th style="padding:4px 8px; text-align:left;">Rule</th><th style="padding:4px 8px; text-align:left;">Why</th><th style="padding:4px 8px; text-align:left;">Hinge</th><th style="padding:4px 8px; text-align:left;">Status</th><th style="padding:4px 8px;">Actions</th></tr></thead>';
+      html += '<thead><tr style="background:#f5f5f5;"><th style="padding:4px 8px; text-align:left;">Field</th><th style="padding:4px 8px; text-align:left;">Rule</th><th style="padding:4px 8px; text-align:left;">Confidence</th><th style="padding:4px 8px; text-align:left;">Why</th><th style="padding:4px 8px; text-align:left;">Hinge</th><th style="padding:4px 8px; text-align:left;">Status</th><th style="padding:4px 8px;">Actions</th></tr></thead>';
       html += '<tbody>';
-      proposals.forEach(function(p) {
-        var statusColor = p.status === 'pending' ? '#ff9800' : p.status === 'accepted' ? '#4caf50' : '#f44336';
-        var hingeLabel = p.is_hinge ? '<span style="color:#e65100;">Yes</span>' : 'No';
+      sorted.forEach(function(p) {
+        var statusColor = p.status === 'pending' ? '#ff9800' : p.status === 'accepted' ? '#4caf50' : p.status === 'routed_to_patch' ? '#1565c0' : '#f44336';
+        var hingeBadge = p.is_hinge ? '<span style="display:inline-flex; align-items:center; gap:2px; background:#fff3e0; color:#e65100; padding:1px 6px; border-radius:10px; font-size:0.85em; font-weight:600;" title="Hinge field: must route through patch lifecycle for governed change tracking">&#9888; Hinge</span>' : '<span style="color:#999;">No</span>';
+        var confPct = Math.round((p.confidence || 0) * 100);
+        var confColor = confPct >= 80 ? '#2e7d32' : confPct >= 50 ? '#e65100' : '#c62828';
         html += '<tr style="border-bottom:1px solid #f0f0f0;">';
         html += '<td style="padding:4px 8px;">' + escapeHtml(p.field_key) + '</td>';
         html += '<td style="padding:4px 8px; font-family:monospace; font-size:0.9em;">' + escapeHtml(p.rule_id) + '</td>';
+        html += '<td style="padding:4px 8px;"><span style="color:' + confColor + '; font-weight:600;">' + confPct + '%</span></td>';
         html += '<td style="padding:4px 8px;">' + escapeHtml((p.why || '').substring(0, 50)) + '</td>';
-        html += '<td style="padding:4px 8px;">' + hingeLabel + '</td>';
+        html += '<td style="padding:4px 8px;">' + hingeBadge + '</td>';
         html += '<td style="padding:4px 8px;"><span style="color:' + statusColor + '; font-weight:600;">' + p.status + '</span></td>';
         html += '<td style="padding:4px 8px; text-align:center;">';
         if (p.status === 'pending') {
           if (p.is_hinge) {
-            html += '<button onclick="acceptSystemPassProposal(\'' + p.proposal_id + '\')" style="padding:1px 6px; font-size:0.8em; background:#fff3e0; border:1px solid #ffe082; border-radius:3px; cursor:pointer;">Route to Patch</button>';
+            html += '<button onclick="acceptSystemPassProposal(\'' + p.proposal_id + '\')" style="padding:1px 6px; font-size:0.8em; background:#fff3e0; border:1px solid #ffe082; border-radius:3px; cursor:pointer;" title="Hinge fields must be routed through the patch lifecycle for governed approval">Route to Patch</button>';
           } else {
             html += '<button onclick="acceptSystemPassProposal(\'' + p.proposal_id + '\')" style="padding:1px 6px; font-size:0.8em; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:3px; cursor:pointer; margin-right:2px;">Accept</button>';
             html += '<button onclick="rejectSystemPassProposal(\'' + p.proposal_id + '\')" style="padding:1px 6px; font-size:0.8em; background:#ffebee; border:1px solid #ef9a9a; border-radius:3px; cursor:pointer;">Reject</button>';
@@ -6945,6 +7014,11 @@
         html += '</td></tr>';
       });
       html += '</tbody></table></div>';
+      if (hingeCount > 0) {
+        html += '<div style="margin-top:8px; padding:8px 12px; background:#fff8e1; border:1px solid #ffe082; border-radius:4px; font-size:0.78em; color:#795548;">';
+        html += '<strong>Hinge fields (' + hingeCount + '):</strong> These fields govern downstream calculations. Changes must route through the full patch lifecycle (Draft \u2192 Submitted \u2192 Verifier \u2192 Admin \u2192 Applied) and cannot be directly accepted.';
+        html += '</div>';
+      }
       container.innerHTML = html;
     }
 
@@ -6966,6 +7040,65 @@
       var count = SystemPass.bulkAccept();
       showToast(count + ' proposals accepted (hinge fields excluded)', 'success');
       renderSystemPassResults(SystemPass.getProposals());
+    }
+
+    function promptBulkRejectSystemPass() {
+      var el = document.getElementById('sp-bulk-reject-prompt');
+      if (el) el.style.display = 'block';
+    }
+
+    function cancelBulkRejectSystemPass() {
+      var el = document.getElementById('sp-bulk-reject-prompt');
+      if (el) el.style.display = 'none';
+    }
+
+    function executeBulkRejectSystemPass() {
+      var reasonEl = document.getElementById('sp-bulk-reject-reason');
+      var reason = reasonEl ? reasonEl.value.trim() : '';
+      if (!reason) { showToast('Please provide a rejection reason', 'warning'); return; }
+      var count = SystemPass.bulkReject(reason);
+      showToast(count + ' proposals rejected: ' + reason, 'info');
+      cancelBulkRejectSystemPass();
+      renderSystemPassResults(SystemPass.getProposals());
+    }
+
+    function changeSystemPassSort(val) {
+      _systemPassSort = val;
+      renderSystemPassResults(SystemPass.getProposals());
+    }
+
+    function changeSystemPassFilter(val) {
+      _systemPassFilter = val;
+      renderSystemPassResults(SystemPass.getProposals());
+    }
+
+    function createPatchFromBlocker(blockerId, recordId, fieldName, blockerType) {
+      var patchId = 'PR_PF_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6);
+      var patchArtifact = {
+        request_id: patchId,
+        type: 'preflight_resolution',
+        artifact_type: 'preflight_resolution',
+        status: 'Draft',
+        record_id: recordId,
+        field_name: fieldName,
+        contract_key: '',
+        payload: { blocker_id: blockerId, blocker_type: blockerType, resolution: '', changes: {} },
+        intent: { category: 'preflight_resolution', field: fieldName },
+        submitted_at_utc: new Date().toISOString(),
+        created_at_utc: new Date().toISOString(),
+        actor_id: (AuditTimeline._resolveActor() || {}).id || 'analyst',
+        actor_role: (AuditTimeline._resolveActor() || {}).role || 'analyst',
+        dataset_id: IDENTITY_CONTEXT.dataset_id || ''
+      };
+      PATCH_REQUEST_STORE.save(patchArtifact);
+      AuditTimeline.emit('patch_from_preflight_blocker', {
+        record_id: recordId,
+        field_key: fieldName,
+        dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+        metadata: { patch_request_id: patchId, blocker_id: blockerId, blocker_type: blockerType }
+      });
+      showToast('Patch created from blocker: ' + patchId, 'success');
+      if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
     }
 
     // ========== V2.2 P0: DOCUMENT ROLE INFERENCE (suggestion-only) ==========
@@ -12126,7 +12259,7 @@
           
           // Build sheet array with headers + orchestrate columns
           var exportHeaders = sheetData.headers.slice();
-          var extraCols = ['document_role', 'document_type', 'capabilities', 'group_id'];
+          var extraCols = ['batch_id', 'contract_id', 'document_id', 'document_role', 'document_type', 'capabilities', 'merged_from', 'group_id'];
           extraCols.forEach(function(c) {
             if (exportHeaders.indexOf(c) < 0) exportHeaders.push(c);
           });
@@ -12135,6 +12268,9 @@
           // Add rows
           sheetData.rows.forEach(function(row) {
             var rowArray = exportHeaders.map(function(h) {
+              if (h === 'batch_id') return row._identity && row._identity.batch_id || IDENTITY_CONTEXT.batch_id || '';
+              if (h === 'contract_id') return row._identity && row._identity.contract_id || row._contract_id || '';
+              if (h === 'document_id') return row._identity && row._identity.document_id || row._document_id || '';
               if (h === 'document_role') return row._document_role || 'Unknown';
               if (h === 'document_type') return row._document_type || 'Unknown';
               if (h === 'capabilities') {
@@ -12142,6 +12278,7 @@
                 if (!caps || Object.keys(caps).length === 0) return '';
                 return JSON.stringify(caps);
               }
+              if (h === 'merged_from') return row._merged_from ? JSON.stringify(row._merged_from) : '';
               if (h === 'group_id') return (row._group && row._group.group_id) || '';
               var val = row[h];
               if (val === null || val === undefined) return '';
@@ -12380,7 +12517,7 @@
         [''],
         ['Property', 'Value'],
         ['Export Date', new Date().toISOString()],
-        ['Export Version', 'v1.6.33'],
+        ['Export Version', 'v2.2-P2'],
         ['Dataset ID', IDENTITY_CONTEXT.dataset_id || ''],
         ['Tenant ID', IDENTITY_CONTEXT.tenant_id || ''],
         ['Division ID', IDENTITY_CONTEXT.division_id || ''],
@@ -20351,6 +20488,58 @@
       list.innerHTML = html;
     }
 
+    var _savedAuditFilterPresets = JSON.parse(localStorage.getItem('audit_filter_presets_v1') || '[]');
+
+    function saveCurrentAuditFilter() {
+      var scope = (document.getElementById('audit-full-filter-scope') || {}).value || '';
+      var type = (document.getElementById('audit-full-filter-type') || {}).value || '';
+      var role = (document.getElementById('audit-full-filter-role') || {}).value || '';
+      var search = (document.getElementById('audit-full-search') || {}).value || '';
+      if (!scope && !type && !role && !search) { showToast('No filters to save', 'warning'); return; }
+      var name = prompt('Name this filter preset:');
+      if (!name) return;
+      _savedAuditFilterPresets.push({ name: name, scope: scope, type: type, role: role, search: search });
+      localStorage.setItem('audit_filter_presets_v1', JSON.stringify(_savedAuditFilterPresets));
+      renderAuditFilterPresets();
+      showToast('Filter preset saved: ' + name, 'success');
+    }
+
+    function applyAuditFilterPreset(idx) {
+      var preset = _savedAuditFilterPresets[idx];
+      if (!preset) return;
+      var s = document.getElementById('audit-full-filter-scope'); if (s) s.value = preset.scope || '';
+      var t = document.getElementById('audit-full-filter-type'); if (t) t.value = preset.type || '';
+      var r = document.getElementById('audit-full-filter-role'); if (r) r.value = preset.role || '';
+      var q = document.getElementById('audit-full-search'); if (q) q.value = preset.search || '';
+      refreshFullAuditPanel();
+    }
+
+    function deleteAuditFilterPreset(idx) {
+      _savedAuditFilterPresets.splice(idx, 1);
+      localStorage.setItem('audit_filter_presets_v1', JSON.stringify(_savedAuditFilterPresets));
+      renderAuditFilterPresets();
+    }
+
+    function renderAuditFilterPresets() {
+      var container = document.getElementById('audit-filter-presets');
+      if (!container) return;
+      if (_savedAuditFilterPresets.length === 0) { container.innerHTML = ''; return; }
+      var html = '';
+      _savedAuditFilterPresets.forEach(function(p, i) {
+        html += '<span onclick="applyAuditFilterPreset(' + i + ')" style="display:inline-flex; align-items:center; gap:4px; padding:3px 10px; background:#e3f2fd; border:1px solid #bbdefb; border-radius:12px; font-size:0.78em; cursor:pointer; margin-right:4px;" title="Click to apply">';
+        html += escapeHtml(p.name);
+        html += '<span onclick="event.stopPropagation(); deleteAuditFilterPreset(' + i + ')" style="color:#999; cursor:pointer; font-size:0.9em;" title="Delete preset">&times;</span>';
+        html += '</span>';
+      });
+      container.innerHTML = html;
+    }
+
+    function applyAuditQuickChip(category) {
+      var t = document.getElementById('audit-full-filter-type');
+      if (t) t.value = category;
+      refreshFullAuditPanel();
+    }
+
     function _canonicalAuditEventName(evType) {
       var ALIASES = {
         'BATCH_MERGED': 'batch_merged',
@@ -20494,7 +20683,7 @@
       var events = AuditTimeline._memCache.slice().sort(function(a, b) {
         return (a.timestamp_iso || '').localeCompare(b.timestamp_iso || '');
       });
-      var headers = ['event_id', 'timestamp', 'actor_role', 'scope_type', 'scope_id', 'event_type', 'subtype', 'payload_summary', 'artifact_refs'];
+      var headers = ['event_id', 'timestamp', 'event_type', 'subtype', 'actor_role', 'scope_type', 'scope_id', 'payload_summary', 'artifact_refs'];
       var rows = [headers];
       events.forEach(function(ev) {
         var evType = _canonicalAuditEventName(ev.event_type);
@@ -20503,14 +20692,17 @@
         var subtype = (ev.metadata && ev.metadata.subtype) || (ev.metadata && ev.metadata.event_type) || '';
         var payloadSummary = '';
         if (ev.field_key) payloadSummary += 'field:' + ev.field_key;
-        if (ev.before_value !== null && ev.before_value !== undefined) payloadSummary += ' before:' + String(ev.before_value).substring(0, 50);
-        if (ev.after_value !== null && ev.after_value !== undefined) payloadSummary += ' after:' + String(ev.after_value).substring(0, 50);
+        if (ev.before_value !== null && ev.before_value !== undefined) payloadSummary += ' before:' + String(ev.before_value).substring(0, 80);
+        if (ev.after_value !== null && ev.after_value !== undefined) payloadSummary += ' after:' + String(ev.after_value).substring(0, 80);
         if (ev.metadata) {
           var metaStr = JSON.stringify(ev.metadata);
-          if (metaStr.length > 2) payloadSummary += ' meta:' + metaStr.substring(0, 100);
+          if (metaStr.length > 2) payloadSummary += ' meta:' + metaStr.substring(0, 200);
         }
         var artifactRefs = '';
-        if (ev.patch_request_id) artifactRefs = 'patch:' + ev.patch_request_id;
+        if (ev.patch_request_id) artifactRefs += 'patch:' + ev.patch_request_id;
+        if (ev.metadata && ev.metadata.patch_request_id) artifactRefs += (artifactRefs ? '; ' : '') + 'patch:' + ev.metadata.patch_request_id;
+        if (ev.metadata && ev.metadata.proposal_id) artifactRefs += (artifactRefs ? '; ' : '') + 'proposal:' + ev.metadata.proposal_id;
+        if (ev.metadata && ev.metadata.rollback_id) artifactRefs += (artifactRefs ? '; ' : '') + 'rollback:' + ev.metadata.rollback_id;
         rows.push([ev.event_id, ev.timestamp_iso, ev.actor_role, scopeType, scopeId, evType, subtype, payloadSummary, artifactRefs]);
       });
       var wb = XLSX.utils.book_new();
@@ -21310,7 +21502,14 @@
         analystTriageState.manualItems = analystTriageState.manualItems.concat(metaManualItems);
       }
       
-      // v2.2 P0: Pre-Flight blockers: unknown columns, unreadable OCR, low-confidence extraction, mojibake
+      // v2.2 P0+P2: Pre-Flight blockers: unknown columns, unreadable OCR, low-confidence extraction, mojibake
+      var _preflightBlockerTypes = {
+        UNKNOWN_COLUMN: { label: 'Unknown Column', badge: 'fail', icon: '\u2753', desc: 'Column not found in field_meta.json. Threshold: columns with >0 non-empty values are flagged.' },
+        OCR_UNREADABLE: { label: 'OCR Unreadable', badge: 'fail', icon: '\ud83d\udeab', desc: 'OCR extraction returned unreadable or garbled text. Manual review required.' },
+        LOW_CONFIDENCE: { label: 'Low Confidence', badge: 'warn', icon: '\u26a0', desc: 'Extraction confidence below 60%. Values may be unreliable.' },
+        MOJIBAKE: { label: 'Mojibake', badge: 'fail', icon: '\ud83d\udd20', desc: 'Text contains encoding artifacts (mojibake). Source document may need re-extraction.' }
+      };
+
       if (typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable() && ContractIndex._index) {
         var contracts = ContractIndex.listContracts();
         contracts.forEach(function(c) {
@@ -21328,7 +21527,9 @@
                 status: 'open',
                 updated_at: new Date().toISOString(),
                 source: 'preflight',
-                note_type: 'Pre-Flight Blocker'
+                note_type: 'Pre-Flight Blocker',
+                blocker_type: 'UNKNOWN_COLUMN',
+                can_create_patch: true
               });
               AuditTimeline.emit('preflight_blocker_detected', {
                 record_id: c.contract_id,
@@ -21336,6 +21537,36 @@
                 dataset_id: IDENTITY_CONTEXT.dataset_id || '',
                 metadata: { blocker_type: 'unknown_column', sheet: uc.sheet, non_empty: uc.non_empty, scope: 'contract' }
               });
+            });
+          }
+          // v2.2 P2: OCR unreadable, low-confidence, mojibake detection from rollup signals
+          if (rollup && rollup.extraction_signals) {
+            (rollup.extraction_signals || []).forEach(function(sig) {
+              var bt = sig.blocker_type || '';
+              if (['OCR_UNREADABLE', 'LOW_CONFIDENCE', 'MOJIBAKE'].indexOf(bt) >= 0) {
+                var meta = _preflightBlockerTypes[bt] || {};
+                analystTriageState.manualItems.push({
+                  request_id: 'preflight_' + bt.toLowerCase() + '_' + c.contract_id + '_' + (sig.field || sig.sheet || ''),
+                  type: 'preflight_blocker',
+                  signal_type: bt,
+                  record_id: c.contract_id,
+                  field_name: sig.field || '',
+                  severity: bt === 'LOW_CONFIDENCE' ? 'warning' : 'blocker',
+                  message: meta.label + ': ' + (sig.detail || sig.field || '') + (sig.sheet ? ' (sheet: ' + sig.sheet + ')' : '') + (sig.confidence ? ' [conf: ' + Math.round(sig.confidence * 100) + '%]' : ''),
+                  status: 'open',
+                  updated_at: new Date().toISOString(),
+                  source: 'preflight',
+                  note_type: 'Pre-Flight Blocker',
+                  blocker_type: bt,
+                  can_create_patch: bt !== 'LOW_CONFIDENCE'
+                });
+                AuditTimeline.emit('preflight_blocker_detected', {
+                  record_id: c.contract_id,
+                  field_key: sig.field || '',
+                  dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+                  metadata: { blocker_type: bt.toLowerCase(), sheet: sig.sheet || '', confidence: sig.confidence, scope: 'contract' }
+                });
+              }
             });
           }
         });
@@ -21435,7 +21666,7 @@
       }
     }
     
-    function renderTriageQueueTable(items, containerId, emptyMessage) {
+    function renderTriageQueueTable(items, containerId, emptyMessage, isPreFlight) {
       var container = document.getElementById(containerId);
       if (!container) return;
       
@@ -21468,13 +21699,23 @@
           ? 'openSignalTriageItem(\'' + item.record_id + '\', \'' + item.field_key + '\')'
           : 'openAnalystTriageItem(\'' + item.request_id + '\')';
         
+        var preflightBadge = '';
+        if (isPreFlight && item.blocker_type && typeof _preflightBlockerTypes !== 'undefined') {
+          var bt = _preflightBlockerTypes[item.blocker_type] || {};
+          var badgeClass = bt.badge === 'fail' ? 'background:#ffebee; color:#c62828; border:1px solid #ef9a9a;' : 'background:#fff3e0; color:#e65100; border:1px solid #ffe082;';
+          preflightBadge = ' <span style="display:inline-flex; align-items:center; gap:2px; padding:1px 6px; border-radius:10px; font-size:0.75em; font-weight:600; ' + badgeClass + '" title="' + (bt.desc || '') + '">' + (bt.icon || '') + ' ' + (bt.label || item.blocker_type) + '</span>';
+        }
+        var patchFromBlockerBtn = '';
+        if (isPreFlight && item.can_create_patch && item.status === 'open') {
+          patchFromBlockerBtn = ' <button class="btn-secondary" style="padding:2px 6px; font-size:0.72em; background:#e3f2fd; border:1px solid #bbdefb;" onclick="event.stopPropagation(); createPatchFromBlocker(\'' + (item.request_id || '') + '\', \'' + (item.record_id || '') + '\', \'' + (item.field_name || '') + '\', \'' + (item.blocker_type || '') + '\')">Create Patch</button>';
+        }
         return '<tr style="border-bottom: 1px solid #eee; cursor: pointer; ' + rowStyle + '" onclick="' + clickHandler + '">' +
-          '<td style="padding: 10px 12px;"><span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + typeBadgeColor + '15; color: ' + typeBadgeColor + ';">' + typeLabel + '</span></td>' +
+          '<td style="padding: 10px 12px;"><span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + typeBadgeColor + '15; color: ' + typeBadgeColor + ';">' + typeLabel + '</span>' + preflightBadge + '</td>' +
           '<td style="padding: 10px 12px; font-family: monospace; font-size: 0.85em;">' + recordDisplay + '</td>' +
           '<td style="padding: 10px 12px;">' + (item.field_name || '-') + '</td>' +
           '<td style="padding: 10px 12px;">' + statusBadge + notesIndicator + '</td>' +
           '<td style="padding: 10px 12px; color: #666; font-size: 0.85em;">' + timestamp + '</td>' +
-          '<td style="padding: 10px 12px;"><button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75em;" onclick="event.stopPropagation(); ' + viewHandler + '">View</button></td>' +
+          '<td style="padding: 10px 12px;"><button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75em;" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + patchFromBlockerBtn + '</td>' +
           '</tr>';
       }).join('');
     }
@@ -21491,6 +21732,7 @@
         case 'correction': return 'Correction';
         case 'extraction': return 'Extraction';
         case 'logic': return 'Logic';
+        case 'preflight_blocker': return 'Pre-Flight';
         default: return type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Signal';
       }
     }
@@ -21498,6 +21740,7 @@
     // v1.6.0: Get type color for triage display
     function getTriageTypeColor(type) {
       switch (type) {
+        case 'preflight_blocker': return '#d32f2f';
         case 'rfi': return '#1565c0';
         case 'blacklist': return '#c62828';
         case 'qa': return '#ff9800';
@@ -21604,7 +21847,7 @@
       if (systemCountEl) systemCountEl.textContent = '(' + systemCount + ')';
       
       // Render each queue table
-      renderTriageQueueTable(analystTriageState.manualItems, 'manual-queue-list', 'No pre-flight items');
+      renderTriageQueueTable(analystTriageState.manualItems, 'manual-queue-list', 'No pre-flight items', true);
       renderTriageQueueTable(analystTriageState.sflogicItems, 'sflogic-queue-list', 'No system pass items');
       renderTriageQueueTable(analystTriageState.patchItems, 'patch-queue-list', 'No patch requests yet');
       renderTriageQueueTable(analystTriageState.systemItems, 'system-queue-list', 'No system changes');

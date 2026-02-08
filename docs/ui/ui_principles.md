@@ -147,6 +147,15 @@ Gates are checkpoints that must be satisfied before proceeding. See [gate_view_m
 - **replay_steps** - Steps to replay the change
 - **replay_expected_result** - Expected outcome of the replay
 
+### System Pass
+"System Pass" is the deterministic, proposal-only engine for system-derived changes. Proposals are never auto-applied. Hinge field proposals must route through the patch lifecycle.
+
+### Pre-Flight
+"Pre-Flight" is the first triage bucket. Blockers include unknown columns, OCR unreadable, low-confidence extraction, and mojibake. Pre-Flight items can generate governed patches via one-click "Create Patch from Blocker".
+
+### Governed Rollback
+Rollback is a governed, artifact-based reversal mechanism at 4 scopes (field/patch/contract/batch). Append-only — never deletes history.
+
 ### Agent Language
 - **Agent suggestion**: For optional AI assistance (never "system" when referring to agents)
 - **System-derived**: For deterministic computed values only

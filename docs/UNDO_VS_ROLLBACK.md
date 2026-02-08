@@ -132,6 +132,13 @@ When a rollback is applied and it affects one or more hinge fields:
 3. New proposals are generated and rendered in the System Changes triage bucket
 4. Toast notification informs the user of the auto-rerun and proposal count
 
+## V2.2 P2 Polish
+
+- **System Changes UX**: Bulk reject with reason, confidence sort/filter presets, hinge-required badge. System Pass proposals surface in the System Changes triage bucket with clear accept/reject/route actions.
+- **Pre-Flight integration**: One-click "Create Patch from Blocker" creates governed `preflight_resolution` artifacts. Blocker types include unknown columns, OCR unreadable, low-confidence extraction, and mojibake.
+- **Audit filter presets**: Saved locally, quick chips for system_change/rollback/schema_change/session. Presets persist across sessions via localStorage.
+- **Export stability**: Audit-only export uses stable column ordering (event_id, timestamp, event_type, subtype, actor_role, scope_type, scope_id, payload_summary, artifact_refs). Column order is deterministic and version-pinned.
+
 ## Comparison Table
 
 | Aspect | Local Undo | Governed Rollback |
