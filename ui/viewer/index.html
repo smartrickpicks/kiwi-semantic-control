@@ -1775,6 +1775,61 @@
         </div>
       </div>
 
+
+      <!-- V2.2 P0: Full Audit Panel -->
+      <div id="audit-full-panel" class="page" style="display: none;">
+        <div style="padding: 20px 30px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0;">Audit Log</h2>
+            <div style="display: flex; gap: 8px;">
+              <button onclick="exportAuditLogOnly()" style="padding: 6px 16px; font-size: 0.85em; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer;">Export Audit Log</button>
+              <button onclick="closeFullAuditPanel()" style="padding: 6px 16px; font-size: 0.85em; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">Close</button>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;">
+            <select id="audit-full-filter-scope" onchange="refreshFullAuditPanel()" style="padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85em;">
+              <option value="">All Scopes</option>
+              <option value="batch">Batch</option>
+              <option value="contract">Contract</option>
+              <option value="document">Document</option>
+              <option value="row">Row</option>
+            </select>
+            <select id="audit-full-filter-type" onchange="refreshFullAuditPanel()" style="padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85em;">
+              <option value="">All Types</option>
+              <option value="patch">Patch</option>
+              <option value="schema_change">Schema Change</option>
+              <option value="system_change">System Change</option>
+              <option value="rollback">Rollback</option>
+              <option value="session">Session</option>
+            </select>
+            <select id="audit-full-filter-role" onchange="refreshFullAuditPanel()" style="padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85em;">
+              <option value="">All Roles</option>
+              <option value="analyst">Analyst</option>
+              <option value="verifier">Verifier</option>
+              <option value="admin">Admin</option>
+            </select>
+            <input id="audit-full-search" placeholder="Search events..." oninput="refreshFullAuditPanel()" style="padding: 5px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85em; width: 180px;">
+            <span id="audit-full-count" style="font-size: 0.8em; color: #888;"></span>
+          </div>
+          <div id="audit-full-body" style="border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">
+              <thead style="background: #f5f5f5;">
+                <tr>
+                  <th style="padding: 8px 10px; text-align: left; border-bottom: 1px solid #e0e0e0;">Timestamp</th>
+                  <th style="padding: 8px 10px; text-align: left; border-bottom: 1px solid #e0e0e0;">Event</th>
+                  <th style="padding: 8px 10px; text-align: left; border-bottom: 1px solid #e0e0e0;">Scope</th>
+                  <th style="padding: 8px 10px; text-align: left; border-bottom: 1px solid #e0e0e0;">Actor</th>
+                  <th style="padding: 8px 10px; text-align: left; border-bottom: 1px solid #e0e0e0;">Details</th>
+                </tr>
+              </thead>
+              <tbody id="audit-full-table-body">
+                <tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- ACCESS RESTRICTED PAGE (v1.4.22) -->
       <div class="page" id="page-restricted" style="display: none;">
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center;">
@@ -1797,6 +1852,19 @@
               <h2 id="triage-page-title">Triage</h2>
               </div>
             <p class="page-desc">All items requiring analyst review and action.</p>
+            <!-- V2.2 P0: Audit Header Dropdown (3-tier) -->
+            <div id="audit-header-dropdown-container" style="position: absolute; top: 12px; right: 16px;">
+              <button onclick="toggleAuditHeaderDropdown()" id="btn-audit-header" style="padding: 6px 14px; font-size: 0.8em; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                <span style="font-size: 1.1em;">&#128220;</span> Audit <span id="audit-header-badge" style="background: #e3f2fd; color: #1565c0; padding: 1px 6px; border-radius: 10px; font-size: 0.85em; min-width: 16px; text-align: center;">0</span>
+              </button>
+              <div id="audit-header-dropdown" style="display: none; position: absolute; right: 0; top: 36px; width: 380px; max-height: 420px; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 1000; overflow: hidden;">
+                <div style="padding: 12px 16px; background: #fafafa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-weight: 600; font-size: 0.9em;">Recent Audit Events</span>
+                  <button onclick="openFullAuditPanel()" style="padding: 2px 10px; font-size: 0.8em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">See All</button>
+                </div>
+                <div id="audit-header-list" style="max-height: 340px; overflow-y: auto; padding: 4px 0;"></div>
+              </div>
+            </div>
             <!-- Sticky Search Bar (top right) - frosted glass style with scroll-aware behavior -->
             <div id="triage-search-bar" style="position: fixed; top: 12px; right: 24px; z-index: 100; display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: opacity 0.2s ease, transform 0.2s ease;">
               <!-- v1.6.33: Upload Excel button (failsafe for data import) -->
@@ -1825,10 +1893,10 @@
             <span style="color: #888; margin-left: 8px;" id="triage-merged-batch-stats"></span>
             <button onclick="handleMergedBatchFilterChange('')" style="margin-left: 12px; padding: 2px 8px; background: white; border: 1px solid #bbdefb; border-radius: 4px; cursor: pointer; font-size: 0.85em;">Clear</button>
           </div>
-          <!-- QUEUE 1: Manual Review -->
+          <!-- QUEUE 1: Pre-Flight -->
           <div class="triage-queue-section" style="margin-bottom: 24px;">
             <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-              <h3 style="margin: 0; font-size: 1.05em; color: #333;">Manual Review <span id="manual-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
+              <h3 style="margin: 0; font-size: 1.05em; color: #333;">Pre-Flight <span id="manual-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
             </div>
             <div class="queue-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
@@ -1843,16 +1911,16 @@
                   </tr>
                 </thead>
                 <tbody id="manual-queue-list" style="background: #fffef5;">
-                  <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No manual review items</td></tr>
+                  <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No pre-flight items</td></tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <!-- QUEUE 2: Salesforce Logic Flags -->
+          <!-- QUEUE 2: System Pass -->
           <div class="triage-queue-section" style="margin-bottom: 24px;">
             <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-              <h3 style="margin: 0; font-size: 1.05em; color: #333;">Salesforce Logic Flags <span id="sflogic-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
+              <h3 style="margin: 0; font-size: 1.05em; color: #333;">System Pass <span id="sflogic-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
             </div>
             <div class="queue-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
@@ -1867,10 +1935,32 @@
                   </tr>
                 </thead>
                 <tbody id="sflogic-queue-list" style="background: #fffaf5;">
-                  <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No Salesforce logic flags</td></tr>
+                  <tr><td colspan="6" style="padding: 20px; text-align: center; color: #999;">No system pass items</td></tr>
                 </tbody>
               </table>
             </div>
+          </div>
+
+          <!-- System Pass Controls (Admin/Analyst) -->
+          <div id="system-pass-controls" style="margin-bottom: 24px; padding: 16px; background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <h4 style="margin: 0; font-size: 0.95em; color: #f57f17;">System Pass Engine</h4>
+              <button onclick="rerunSystemPass()" id="btn-rerun-system-pass" class="toolbar-btn" style="padding: 6px 14px; font-size: 0.8em; background: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer;">Re-run System Pass</button>
+            </div>
+            <div style="font-size: 0.8em; color: #666; margin-bottom: 8px;">Deterministic rule evaluation. Outputs are proposals only — never auto-applied.</div>
+            <div id="system-pass-reason-picker" style="display:none; margin-top:8px;">
+              <label style="font-size:0.8em; color:#333;">Reason for re-run:</label>
+              <select id="system-pass-reason" style="margin-left:6px; padding:3px 8px; font-size:0.8em; border:1px solid #ccc; border-radius:4px;">
+                <option value="manual_rerun">Manual re-run</option>
+                <option value="ocr_readable">OCR became readable</option>
+                <option value="hinge_modified">Hinge field modified</option>
+                <option value="extraction_regenerated">Extraction regenerated</option>
+                <option value="schema_updated">Schema updated</option>
+              </select>
+              <button onclick="executeSystemPassRerun()" style="margin-left:6px; padding:3px 12px; font-size:0.8em; background:#4caf50; color:white; border:none; border-radius:4px; cursor:pointer;">Execute</button>
+              <button onclick="cancelSystemPassRerun()" style="margin-left:4px; padding:3px 10px; font-size:0.8em; background:#eee; border:1px solid #ccc; border-radius:4px; cursor:pointer;">Cancel</button>
+            </div>
+            <div id="system-pass-results" style="display:none; margin-top:12px;"></div>
           </div>
 
           <!-- QUEUE 3: Patch Queue -->
@@ -2380,7 +2470,7 @@
                 </div>
                 <select class="srr-evidence-select" id="srr-repro-type" onchange="srrSaveEvidenceDraft()">
                   <option value="">-- Select repro method --</option>
-                  <option value="breaks_salesforce_rule">Breaks Salesforce Rule</option>
+                  <option value="breaks_salesforce_rule">System Pass Violation</option>
                   <option value="breaks_qa_gate">Breaks QA Gate</option>
                   <option value="resolver_mismatch">Resolver Mismatch</option>
                   <option value="doc_evidence_mismatch">Doc Evidence Mismatch (attach file)</option>
@@ -4940,6 +5030,7 @@
         });
 
         console.log('[AuditTimeline]', eventType, event.record_id || '', event.patch_request_id || '');
+        if (typeof refreshAuditHeaderDropdown === 'function') { try { var b = document.getElementById('audit-header-badge'); if (b) b.textContent = this._memCache.length; } catch(e){} }
         return event;
       },
 
@@ -6281,7 +6372,7 @@
         html += '<summary style="padding:10px 14px; cursor:pointer; font-weight:600; background:#fafafa; border-radius:6px 6px 0 0; font-size:0.9em;">' + escapeHtml(sheetName) + ' <span style="color:#888; font-weight:400;">(' + sheetRefs.length + ' rows)</span></summary>';
         html += '<div style="max-height:300px; overflow-y:auto;">';
         html += '<table style="width:100%; border-collapse:collapse; font-size:0.8em;">';
-        html += '<thead><tr style="background:#f5f5f5;"><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Row</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Record ID</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Status</th></tr></thead>';
+        html += '<thead><tr style="background:#f5f5f5;"><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Row</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Record ID</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Role &mdash; Type</th><th style="padding:6px 8px; text-align:left; border-bottom:1px solid #e0e0e0;">Status</th></tr></thead>';
         html += '<tbody>';
         sheetRefs.forEach(function(ref) {
           var row = workbook.sheets[sheetName] && workbook.sheets[sheetName].rows[ref.row_index];
@@ -6290,6 +6381,14 @@
           html += '<tr style="cursor:pointer; border-bottom:1px solid #f0f0f0;" data-sheet="' + escapeHtml(sheetName) + '" data-ridx="' + ref.row_index + '" onclick="closeContractDetailDrawer(); openRowReviewDrawer(this.dataset.sheet, parseInt(this.dataset.ridx))">';
           html += '<td style="padding:5px 8px;">' + (ref.row_index + 1) + '</td>';
           html += '<td style="padding:5px 8px; font-family:monospace; font-size:0.9em;">' + escapeHtml(recId) + '</td>';
+          var docRole = row ? (row._document_role || 'Unknown') : '?';
+          var docType = row ? (row._document_type || 'unknown') : '?';
+          var roleSugg = row && row._document_role_suggestion;
+          var roleDisplay = escapeHtml(docRole) + ' &mdash; ' + escapeHtml(docType);
+          if (roleSugg) {
+            roleDisplay += ' <span style="background:#fff3e0; color:#e65100; padding:1px 6px; border-radius:10px; font-size:0.8em; margin-left:4px;" title="Suggested: ' + escapeHtml(roleSugg.role) + ' (' + Math.round(roleSugg.confidence * 100) + '%)">' + Math.round(roleSugg.confidence * 100) + '%</span>';
+          }
+          html += '<td style="padding:5px 8px;">' + roleDisplay + '</td>';
           html += '<td style="padding:5px 8px;">' + escapeHtml(status) + '</td>';
           html += '</tr>';
         });
@@ -6304,6 +6403,308 @@
       var drawer = document.getElementById('contract-detail-drawer');
       if (drawer) drawer.style.display = 'none';
     }
+
+    // ========== V2.2 P0: SYSTEM PASS ENGINE ==========
+    var SystemPass = {
+      _proposals: [],
+      _lastRunTimestamp: null,
+
+      run: function(reason) {
+        var self = this;
+        self._proposals = [];
+        self._lastRunTimestamp = new Date().toISOString();
+
+        AuditTimeline.emit('system_pass_rerun', {
+          dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+          metadata: { reason: reason, timestamp: self._lastRunTimestamp }
+        });
+
+        var sheets = getDataSheets ? getDataSheets() : Object.keys(workbook.sheets || {});
+        sheets.forEach(function(sheetName) {
+          var sd = workbook.sheets[sheetName];
+          if (!sd || !sd.rows) return;
+          sd.rows.forEach(function(row, idx) {
+            var recordId = (row._identity && row._identity.record_id) || (sheetName + ':' + idx);
+            var signals = signalStore.signals_by_cell[recordId];
+            if (!signals) return;
+            Object.keys(signals).forEach(function(fieldKey) {
+              signals[fieldKey].forEach(function(sig) {
+                if (sig.signal_type === 'QA_FLAG' && (sig.severity === 'error' || sig.severity === 'warning')) {
+                  var proposal = {
+                    proposal_id: 'sp_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 6),
+                    sheet: sheetName,
+                    row_index: idx,
+                    record_id: recordId,
+                    field_key: fieldKey,
+                    rule_id: sig.rule_id || sig.flag_id || 'qa_rule',
+                    before_value: row[fieldKey],
+                    after_value: null,
+                    why: sig.message || sig.signal_type,
+                    confidence: sig.confidence || 0.7,
+                    is_hinge: self._isHingeField(fieldKey, sheetName),
+                    status: 'pending',
+                    created_at: self._lastRunTimestamp
+                  };
+                  self._proposals.push(proposal);
+                  AuditTimeline.emit('system_change_proposed', {
+                    record_id: recordId,
+                    field_key: fieldKey,
+                    dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+                    metadata: {
+                      proposal_id: proposal.proposal_id,
+                      rule_id: proposal.rule_id,
+                      before_value: proposal.before_value,
+                      why: proposal.why,
+                      confidence: proposal.confidence,
+                      is_hinge: proposal.is_hinge
+                    }
+                  });
+                }
+              });
+            });
+          });
+        });
+
+        console.log('[SystemPass] Generated', self._proposals.length, 'proposals, reason:', reason);
+        return self._proposals;
+      },
+
+      _isHingeField: function(fieldKey, sheetName) {
+        if (!rulesBundleCache || !rulesBundleCache.hingeGroups) return false;
+        var hinges = rulesBundleCache.hingeGroups.hinges || [];
+        return hinges.some(function(h) {
+          return h.field_key === fieldKey && (!sheetName || h.sheet === sheetName);
+        });
+      },
+
+      acceptProposal: function(proposalId) {
+        var p = this._proposals.find(function(pr) { return pr.proposal_id === proposalId; });
+        if (!p || p.status !== 'pending') return false;
+        if (p.is_hinge) {
+          showToast('Hinge field changes require a patch request — cannot direct-apply.', 'warning');
+          return false;
+        }
+        p.status = 'accepted';
+        AuditTimeline.emit('system_change_accepted', {
+          record_id: p.record_id,
+          field_key: p.field_key,
+          dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+          before_value: p.before_value,
+          after_value: p.after_value,
+          metadata: { proposal_id: p.proposal_id, rule_id: p.rule_id }
+        });
+        return true;
+      },
+
+      rejectProposal: function(proposalId) {
+        var p = this._proposals.find(function(pr) { return pr.proposal_id === proposalId; });
+        if (!p || p.status !== 'pending') return false;
+        p.status = 'rejected';
+        AuditTimeline.emit('system_change_rejected', {
+          record_id: p.record_id,
+          field_key: p.field_key,
+          dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+          metadata: { proposal_id: p.proposal_id, rule_id: p.rule_id, reason: 'user_rejected' }
+        });
+        return true;
+      },
+
+      bulkAccept: function() {
+        var accepted = 0;
+        this._proposals.forEach(function(p) {
+          if (p.status === 'pending' && !p.is_hinge) {
+            p.status = 'accepted';
+            AuditTimeline.emit('system_change_accepted', {
+              record_id: p.record_id,
+              field_key: p.field_key,
+              dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+              before_value: p.before_value,
+              after_value: p.after_value,
+              metadata: { proposal_id: p.proposal_id, rule_id: p.rule_id, bulk: true }
+            });
+            accepted++;
+          }
+        });
+        return accepted;
+      },
+
+      getProposals: function(filter) {
+        if (!filter) return this._proposals;
+        return this._proposals.filter(function(p) {
+          if (filter.status && p.status !== filter.status) return false;
+          if (filter.record_id && p.record_id !== filter.record_id) return false;
+          return true;
+        });
+      },
+
+      reset: function() {
+        this._proposals = [];
+        this._lastRunTimestamp = null;
+      }
+    };
+
+    function rerunSystemPass() {
+      var picker = document.getElementById('system-pass-reason-picker');
+      if (picker) picker.style.display = 'block';
+    }
+
+    function cancelSystemPassRerun() {
+      var picker = document.getElementById('system-pass-reason-picker');
+      if (picker) picker.style.display = 'none';
+    }
+
+    function executeSystemPassRerun() {
+      var reasonEl = document.getElementById('system-pass-reason');
+      var reason = reasonEl ? reasonEl.value : 'manual_rerun';
+      var picker = document.getElementById('system-pass-reason-picker');
+      if (picker) picker.style.display = 'none';
+
+      var proposals = SystemPass.run(reason);
+      showToast('System Pass complete: ' + proposals.length + ' proposals generated', 'info');
+      renderSystemPassResults(proposals);
+      if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
+    }
+
+    function renderSystemPassResults(proposals) {
+      var container = document.getElementById('system-pass-results');
+      if (!container) return;
+      if (!proposals || proposals.length === 0) {
+        container.style.display = 'block';
+        container.innerHTML = '<div style="padding:10px; color:#666; font-size:0.85em;">No proposals generated.</div>';
+        return;
+      }
+      container.style.display = 'block';
+      var pending = proposals.filter(function(p) { return p.status === 'pending'; });
+      var html = '<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">';
+      html += '<span style="font-size:0.85em; font-weight:600;">' + proposals.length + ' proposals (' + pending.length + ' pending)</span>';
+      if (pending.length > 0) {
+        html += '<button onclick="bulkAcceptSystemPass()" style="padding:3px 10px; font-size:0.8em; background:#4caf50; color:white; border:none; border-radius:4px; cursor:pointer;">Accept All Non-Hinge</button>';
+      }
+      html += '</div>';
+      html += '<div style="max-height:250px; overflow-y:auto; border:1px solid #e0e0e0; border-radius:4px;">';
+      html += '<table style="width:100%; border-collapse:collapse; font-size:0.8em;">';
+      html += '<thead><tr style="background:#f5f5f5;"><th style="padding:4px 8px; text-align:left;">Field</th><th style="padding:4px 8px; text-align:left;">Rule</th><th style="padding:4px 8px; text-align:left;">Why</th><th style="padding:4px 8px; text-align:left;">Hinge</th><th style="padding:4px 8px; text-align:left;">Status</th><th style="padding:4px 8px;">Actions</th></tr></thead>';
+      html += '<tbody>';
+      proposals.forEach(function(p) {
+        var statusColor = p.status === 'pending' ? '#ff9800' : p.status === 'accepted' ? '#4caf50' : '#f44336';
+        var hingeLabel = p.is_hinge ? '<span style="color:#e65100;">Yes</span>' : 'No';
+        html += '<tr style="border-bottom:1px solid #f0f0f0;">';
+        html += '<td style="padding:4px 8px;">' + escapeHtml(p.field_key) + '</td>';
+        html += '<td style="padding:4px 8px; font-family:monospace; font-size:0.9em;">' + escapeHtml(p.rule_id) + '</td>';
+        html += '<td style="padding:4px 8px;">' + escapeHtml((p.why || '').substring(0, 50)) + '</td>';
+        html += '<td style="padding:4px 8px;">' + hingeLabel + '</td>';
+        html += '<td style="padding:4px 8px;"><span style="color:' + statusColor + '; font-weight:600;">' + p.status + '</span></td>';
+        html += '<td style="padding:4px 8px; text-align:center;">';
+        if (p.status === 'pending') {
+          if (p.is_hinge) {
+            html += '<span style="font-size:0.75em; color:#888;">Patch required</span>';
+          } else {
+            html += '<button onclick="acceptSystemPassProposal(\'' + p.proposal_id + '\')" style="padding:1px 6px; font-size:0.8em; background:#e8f5e9; border:1px solid #a5d6a7; border-radius:3px; cursor:pointer; margin-right:2px;">Accept</button>';
+            html += '<button onclick="rejectSystemPassProposal(\'' + p.proposal_id + '\')" style="padding:1px 6px; font-size:0.8em; background:#ffebee; border:1px solid #ef9a9a; border-radius:3px; cursor:pointer;">Reject</button>';
+          }
+        }
+        html += '</td></tr>';
+      });
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+    }
+
+    function acceptSystemPassProposal(proposalId) {
+      if (SystemPass.acceptProposal(proposalId)) {
+        showToast('Proposal accepted', 'success');
+        renderSystemPassResults(SystemPass.getProposals());
+      }
+    }
+
+    function rejectSystemPassProposal(proposalId) {
+      if (SystemPass.rejectProposal(proposalId)) {
+        showToast('Proposal rejected', 'info');
+        renderSystemPassResults(SystemPass.getProposals());
+      }
+    }
+
+    function bulkAcceptSystemPass() {
+      var count = SystemPass.bulkAccept();
+      showToast(count + ' proposals accepted (hinge fields excluded)', 'success');
+      renderSystemPassResults(SystemPass.getProposals());
+    }
+
+    // ========== V2.2 P0: DOCUMENT ROLE INFERENCE (suggestion-only) ==========
+    var DocumentRoleInference = {
+      KEYWORD_MAP: {
+        'amendment': { role: 'Amendment', confidence: 0.85 },
+        'amend': { role: 'Amendment', confidence: 0.75 },
+        'addendum': { role: 'Addendum', confidence: 0.85 },
+        'schedule': { role: 'Schedule', confidence: 0.80 },
+        'exhibit': { role: 'Exhibit', confidence: 0.80 },
+        'sow': { role: 'Statement of Work (SOW)', confidence: 0.80 },
+        'statement of work': { role: 'Statement of Work (SOW)', confidence: 0.90 },
+        'side letter': { role: 'Side Letter', confidence: 0.85 },
+        'rider': { role: 'Rider', confidence: 0.75 },
+        'termination': { role: 'Termination Notice', confidence: 0.80 },
+        'agreement': { role: 'Root Agreement', confidence: 0.60 },
+        'contract': { role: 'Root Agreement', confidence: 0.55 },
+        'license': { role: 'Root Agreement', confidence: 0.50 }
+      },
+
+      infer: function(row) {
+        var fileName = (row.file_name || row.contract_key || '').toLowerCase();
+        var fileUrl = (row.file_url || row.File_URL_c || '').toLowerCase();
+        var combined = fileName + ' ' + fileUrl;
+        var best = { role: 'Unknown', confidence: 0.0 };
+        var keys = Object.keys(this.KEYWORD_MAP);
+        for (var i = 0; i < keys.length; i++) {
+          if (combined.indexOf(keys[i]) >= 0) {
+            var candidate = this.KEYWORD_MAP[keys[i]];
+            if (candidate.confidence > best.confidence) {
+              best = { role: candidate.role, confidence: candidate.confidence };
+            }
+          }
+        }
+        return best.confidence > 0.0 ? { role: best.role, confidence: best.confidence, source: 'keyword_inference' } : null;
+      },
+
+      suggestForRow: function(row) {
+        var suggestion = this.infer(row);
+        if (suggestion) {
+          row._document_role_suggestion = suggestion;
+        }
+        return suggestion;
+      },
+
+      confirmSuggestion: function(row, sheetName, rowIndex) {
+        if (!row._document_role_suggestion) return false;
+        var oldRole = row._document_role || 'Unknown';
+        row._document_role = row._document_role_suggestion.role;
+        AuditTimeline.emit('document_role_confirmed', {
+          record_id: (row._identity && row._identity.record_id) || (sheetName + ':' + rowIndex),
+          dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+          before_value: oldRole,
+          after_value: row._document_role,
+          metadata: {
+            confidence: row._document_role_suggestion.confidence,
+            source: row._document_role_suggestion.source,
+            document_type: row._document_type || 'unknown'
+          }
+        });
+        row._document_role_suggestion = null;
+        if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
+        return true;
+      },
+
+      setManual: function(row, role, sheetName, rowIndex) {
+        var oldRole = row._document_role || 'Unknown';
+        row._document_role = role;
+        AuditTimeline.emit('document_role_set', {
+          record_id: (row._identity && row._identity.record_id) || (sheetName + ':' + rowIndex),
+          dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+          before_value: oldRole,
+          after_value: role,
+          metadata: { source: 'manual' }
+        });
+        if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
+      }
+    };
 
     // ========== BATCH ADD: GROUP ANCHOR MODEL (v1.6.48) ==========
 
@@ -11386,7 +11787,7 @@
           
           // Build sheet array with headers + orchestrate columns
           var exportHeaders = sheetData.headers.slice();
-          var extraCols = ['document_type', 'capabilities', 'group_id'];
+          var extraCols = ['document_role', 'document_type', 'capabilities', 'group_id'];
           extraCols.forEach(function(c) {
             if (exportHeaders.indexOf(c) < 0) exportHeaders.push(c);
           });
@@ -11395,6 +11796,7 @@
           // Add rows
           sheetData.rows.forEach(function(row) {
             var rowArray = exportHeaders.map(function(h) {
+              if (h === 'document_role') return row._document_role || 'Unknown';
               if (h === 'document_type') return row._document_type || 'Unknown';
               if (h === 'capabilities') {
                 var caps = row._capabilities;
@@ -14545,13 +14947,13 @@
         priority: 1
       },
       SALESFORCE_LOGIC: { 
-        label: 'Salesforce Logic', 
+        label: 'System Pass', 
         bg: '#fff3e0',  // soft orange
         text: '#e65100',
         priority: 2
       },
       MANUAL_REVIEW: { 
-        label: 'Manual Review', 
+        label: 'Pre-Flight', 
         bg: '#fffde7',  // soft yellow
         text: '#f57f17',
         priority: 3
@@ -14587,6 +14989,15 @@
     
     // Change type colors for grid highlighting
     // v1.6.11: Strong DataDash-style cell colors for modified dataset
+    // ========== V2.2 P0: DOCUMENT ROLE + TYPE ENUMS ==========
+    var DOCUMENT_ROLE_ENUM = [
+      'Root Agreement', 'Amendment', 'Addendum', 'Schedule', 'Exhibit',
+      'Statement of Work (SOW)', 'Side Letter', 'Rider', 'Termination Notice', 'Other', 'Unknown'
+    ];
+    var DOCUMENT_TYPE_ENUM = [
+      'distribution_agreement', 'amendment', 'termination', 'work_for_hire',
+      'license', 'publishing_admin', 'joint_venture', 'catalog_schedule_only', 'unknown'
+    ];
     var CHANGE_TYPE_STYLES = {
       correction: { bg: '#CFE8FF', border: '#1976d2', label: 'Correction', emoji: '✏️', priority: 3 },
       rfi: { bg: '#FFE7B3', border: '#ff9800', label: 'RFI', emoji: '❓', priority: 2 },
@@ -15787,7 +16198,9 @@
           
           // Backfill document_type and capabilities
           if (!row._document_type) row._document_type = 'Unknown';
+          if (!row._document_role) row._document_role = 'Unknown';
           if (!row._capabilities) row._capabilities = {};
+          if (!row._document_role_suggestion) row._document_role_suggestion = null;
 
           // Get all field keys (excluding internal fields)
           var fieldKeys = Object.keys(row).filter(function(k) {
@@ -16177,7 +16590,7 @@
     // v1.6.60: Internal marker fields — single source of truth (normalized keys)
     var SRR_INTERNAL_FIELDS = [
       'contract_key', 'file_name', 'file_url', 'record_id', 'sheet', 'status',
-      'dataset_id', 'group_id', 'document_type', 'capabilities'
+      'dataset_id', 'group_id', 'document_role', 'document_type', 'capabilities'
     ];
 
     // v1.6.5: Hidden fields - not shown in Field Inspector (analyst view)
@@ -17369,6 +17782,45 @@
         opt.selected = true;
         sel.appendChild(opt);
       }
+    function srrSetDocumentRole(val) {
+      var record = srrState.currentRecord;
+      if (!record) return;
+      DocumentRoleInference.setManual(record, val, srrState.currentSheet, srrState.currentRowIndex);
+      console.log('[SRR] Document role set:', val, 'for', srrState.currentRecordKey);
+    }
+
+    function srrConfirmDocumentRole() {
+      var record = srrState.currentRecord;
+      if (!record) return;
+      if (DocumentRoleInference.confirmSuggestion(record, srrState.currentSheet, srrState.currentRowIndex)) {
+        showToast('Document role confirmed: ' + record._document_role, 'success');
+        srrPopulateDocRoleDropdown(record);
+      }
+    }
+
+    function srrPopulateDocRoleDropdown(record) {
+      var sel = document.getElementById('srr-doc-role');
+      if (!sel) return;
+      var currentVal = (record && record._document_role) || 'Unknown';
+      sel.innerHTML = '';
+      DOCUMENT_ROLE_ENUM.forEach(function(r) {
+        var opt = document.createElement('option');
+        opt.value = r;
+        opt.textContent = r;
+        if (r === currentVal) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      var suggBadge = document.getElementById('srr-doc-role-suggestion');
+      if (suggBadge) {
+        var sugg = record && record._document_role_suggestion;
+        if (sugg) {
+          suggBadge.style.display = 'inline-block';
+          suggBadge.innerHTML = 'Suggested: ' + escapeHtml(sugg.role) + ' (' + Math.round(sugg.confidence * 100) + '%) <button onclick="srrConfirmDocumentRole()" style="margin-left:4px; padding:1px 8px; background:#4caf50; color:white; border:none; border-radius:3px; cursor:pointer; font-size:0.8em;">Confirm</button>';
+        } else {
+          suggBadge.style.display = 'none';
+        }
+      }
+    }
     }
 
     function getSrrNavigationList() {
@@ -19506,6 +19958,222 @@
     
     // v1.6.4: Show audit log for current record using meta sheet data
     // v1.6.59: Audit Log — reads from AuditTimeline IndexedDB store
+    // ========== V2.2 P0: AUDIT UX (3-TIER) ==========
+    function toggleAuditHeaderDropdown() {
+      var dd = document.getElementById('audit-header-dropdown');
+      if (!dd) return;
+      if (dd.style.display === 'none' || !dd.style.display) {
+        refreshAuditHeaderDropdown();
+        dd.style.display = 'block';
+        document.addEventListener('click', _closeAuditDropdownOutside, true);
+      } else {
+        dd.style.display = 'none';
+        document.removeEventListener('click', _closeAuditDropdownOutside, true);
+      }
+    }
+
+    function _closeAuditDropdownOutside(e) {
+      var container = document.getElementById('audit-header-dropdown-container');
+      if (container && !container.contains(e.target)) {
+        var dd = document.getElementById('audit-header-dropdown');
+        if (dd) dd.style.display = 'none';
+        document.removeEventListener('click', _closeAuditDropdownOutside, true);
+      }
+    }
+
+    function refreshAuditHeaderDropdown() {
+      var events = AuditTimeline._memCache.slice().sort(function(a, b) {
+        return (b.timestamp_iso || '').localeCompare(a.timestamp_iso || '');
+      }).slice(0, 10);
+
+      var badge = document.getElementById('audit-header-badge');
+      if (badge) badge.textContent = AuditTimeline._memCache.length;
+
+      var list = document.getElementById('audit-header-list');
+      if (!list) return;
+      if (events.length === 0) {
+        list.innerHTML = '<div style="padding: 16px; text-align: center; color: #999; font-size: 0.85em;">No audit events yet</div>';
+        return;
+      }
+      var html = '';
+      events.forEach(function(ev) {
+        var time = ev.timestamp_iso ? new Date(ev.timestamp_iso).toLocaleTimeString() : '';
+        var evType = _canonicalAuditEventName(ev.event_type);
+        var scopeType = _inferAuditScope(ev);
+        html += '<div style="padding: 8px 16px; border-bottom: 1px solid #f5f5f5; cursor: pointer; transition: background 0.15s;" onmouseover="this.style.background=\'#f5f5f5\'" onmouseout="this.style.background=\'white\'">';
+        html += '<div style="display: flex; justify-content: space-between; align-items: baseline;">';
+        html += '<span style="font-size: 0.85em; font-weight: 600; color: #333;">' + escapeHtml(evType) + '</span>';
+        html += '<span style="font-size: 0.75em; color: #999;">' + escapeHtml(time) + '</span>';
+        html += '</div>';
+        html += '<div style="font-size: 0.78em; color: #888; margin-top: 2px;">' + escapeHtml(ev.actor_role || '') + ' &middot; ' + escapeHtml(scopeType) + (ev.record_id ? ' &middot; ' + escapeHtml((ev.record_id || '').substring(0, 20)) : '') + '</div>';
+        html += '</div>';
+      });
+      list.innerHTML = html;
+    }
+
+    function _canonicalAuditEventName(evType) {
+      var ALIASES = {
+        'BATCH_MERGED': 'batch_merged',
+        'TENANT_RULE_PROMOTED_TO_BATCH': 'tenant_rule_promoted_to_batch',
+        'CONTRACT_INDEX_BUILT': 'contract_index_built',
+        'CONTRACT_ROLLUP_UPDATED': 'contract_rollup_updated',
+        'UNKNOWN_COLUMN_DETECTED': 'unknown_column_detected',
+        'BATCH_CREATED': 'batch_created',
+        'CATALOG_GROUP_SET': 'catalog_group_set',
+        'MANUAL_ROW_ADD': 'manual_row_add',
+        'SESSION_RESTORED': 'session_restored',
+        'SCHEMA_CHANGE': 'schema_change',
+        'FIELD_VERIFIED': 'field_verified',
+        'FIELD_BLACKLISTED': 'field_blacklisted',
+        'FIELD_CORRECTED': 'field_corrected',
+        'REQUEST_CLARIFICATION': 'request_clarification',
+        'PATCH_SUBMITTED': 'patch_submitted',
+        'PATCH_ADMIN_PROMOTED': 'patch_admin_promoted',
+        'SYSTEM_CHANGE_APPLIED': 'system_change_applied'
+      };
+      return ALIASES[evType] || evType;
+    }
+
+    function _inferAuditScope(ev) {
+      var evType = (ev.event_type || '').toLowerCase();
+      if (evType.indexOf('batch') >= 0) return 'batch';
+      if (evType.indexOf('contract') >= 0 || evType.indexOf('rollup') >= 0) return 'contract';
+      if (evType.indexOf('document') >= 0 || evType.indexOf('doc_role') >= 0) return 'document';
+      if (evType.indexOf('schema') >= 0) return 'batch';
+      if (evType.indexOf('session') >= 0) return 'session';
+      if (ev.record_id && ev.record_id.indexOf('ctr_') === 0) return 'contract';
+      if (ev.record_id) return 'row';
+      return 'batch';
+    }
+
+    var AUDIT_TYPE_CATEGORIES = {
+      patch: ['patch_submitted', 'PATCH_SUBMITTED', 'patch_admin_promoted', 'PATCH_ADMIN_PROMOTED', 'field_verified', 'FIELD_VERIFIED', 'field_blacklisted', 'FIELD_BLACKLISTED', 'field_corrected', 'FIELD_CORRECTED', 'request_clarification', 'REQUEST_CLARIFICATION'],
+      schema_change: ['schema_change', 'SCHEMA_CHANGE'],
+      system_change: ['system_pass_rerun', 'system_change_proposed', 'system_change_accepted', 'system_change_rejected', 'system_change_applied', 'SYSTEM_CHANGE_APPLIED'],
+      rollback: ['preflight_blocker_detected'],
+      session: ['session_restored', 'SESSION_RESTORED', 'document_role_confirmed', 'document_role_set', 'catalog_group_set', 'CATALOG_GROUP_SET', 'manual_row_add', 'MANUAL_ROW_ADD', 'batch_merged', 'BATCH_MERGED', 'tenant_rule_promoted_to_batch', 'TENANT_RULE_PROMOTED_TO_BATCH', 'contract_index_built', 'CONTRACT_INDEX_BUILT', 'batch_created', 'BATCH_CREATED', 'contract_rollup_updated', 'CONTRACT_ROLLUP_UPDATED', 'unknown_column_detected', 'UNKNOWN_COLUMN_DETECTED']
+    };
+
+    function _eventMatchesTypeCategory(evType, category) {
+      if (!category) return true;
+      var list = AUDIT_TYPE_CATEGORIES[category];
+      return list ? list.indexOf(evType) >= 0 : false;
+    }
+
+    function openFullAuditPanel() {
+      var dd = document.getElementById('audit-header-dropdown');
+      if (dd) dd.style.display = 'none';
+      var panel = document.getElementById('audit-full-panel');
+      if (panel) panel.style.display = 'block';
+      refreshFullAuditPanel();
+    }
+
+    function closeFullAuditPanel() {
+      var panel = document.getElementById('audit-full-panel');
+      if (panel) panel.style.display = 'none';
+    }
+
+    function refreshFullAuditPanel() {
+      var scopeFilter = document.getElementById('audit-full-filter-scope');
+      var typeFilter = document.getElementById('audit-full-filter-type');
+      var roleFilter = document.getElementById('audit-full-filter-role');
+      var searchInput = document.getElementById('audit-full-search');
+      var scope = scopeFilter ? scopeFilter.value : '';
+      var typeCategory = typeFilter ? typeFilter.value : '';
+      var role = roleFilter ? roleFilter.value : '';
+      var search = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+      var events = AuditTimeline._memCache.slice().sort(function(a, b) {
+        return (b.timestamp_iso || '').localeCompare(a.timestamp_iso || '');
+      });
+
+      var filtered = events.filter(function(ev) {
+        if (scope && _inferAuditScope(ev) !== scope) return false;
+        if (typeCategory && !_eventMatchesTypeCategory(ev.event_type, typeCategory)) return false;
+        if (role && ev.actor_role !== role) return false;
+        if (search) {
+          var hay = ((ev.event_type || '') + ' ' + (ev.record_id || '') + ' ' + (ev.actor_role || '') + ' ' + JSON.stringify(ev.metadata || {})).toLowerCase();
+          if (hay.indexOf(search) < 0) return false;
+        }
+        return true;
+      });
+
+      var countEl = document.getElementById('audit-full-count');
+      if (countEl) countEl.textContent = filtered.length + ' of ' + events.length + ' events';
+
+      var tbody = document.getElementById('audit-full-table-body');
+      if (!tbody) return;
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #999;">No events match filters</td></tr>';
+        return;
+      }
+
+      var displayEvents = filtered.slice(0, 200);
+      var html = '';
+      displayEvents.forEach(function(ev) {
+        var ts = ev.timestamp_iso ? new Date(ev.timestamp_iso).toLocaleString() : '';
+        var evType = _canonicalAuditEventName(ev.event_type);
+        var scopeType = _inferAuditScope(ev);
+        var scopeId = ev.record_id || ev.dataset_id || '';
+        var details = '';
+        if (ev.field_key) details += ev.field_key + ': ';
+        if (ev.before_value !== null && ev.before_value !== undefined) details += '"' + String(ev.before_value).substring(0, 20) + '"→';
+        if (ev.after_value !== null && ev.after_value !== undefined) details += '"' + String(ev.after_value).substring(0, 20) + '"';
+        if (!details && ev.metadata) {
+          var metaKeys = Object.keys(ev.metadata).slice(0, 3);
+          details = metaKeys.map(function(k) { return k + ':' + String(ev.metadata[k]).substring(0, 15); }).join(', ');
+        }
+        html += '<tr style="border-bottom: 1px solid #f0f0f0;">';
+        html += '<td style="padding: 6px 10px; white-space: nowrap; color: #666;">' + escapeHtml(ts) + '</td>';
+        html += '<td style="padding: 6px 10px; font-weight: 600;">' + escapeHtml(evType) + '</td>';
+        html += '<td style="padding: 6px 10px;"><span style="background: #e3f2fd; padding: 1px 6px; border-radius: 3px; font-size: 0.85em;">' + escapeHtml(scopeType) + '</span> <span style="font-size: 0.8em; color: #888;">' + escapeHtml(scopeId.substring(0, 20)) + '</span></td>';
+        html += '<td style="padding: 6px 10px;">' + escapeHtml(ev.actor_role || '') + '</td>';
+        html += '<td style="padding: 6px 10px; font-size: 0.9em; color: #666; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' + escapeHtml(details) + '</td>';
+        html += '</tr>';
+      });
+      if (filtered.length > 200) {
+        html += '<tr><td colspan="5" style="padding: 10px; text-align: center; color: #888; font-size: 0.85em;">Showing 200 of ' + filtered.length + ' events</td></tr>';
+      }
+      tbody.innerHTML = html;
+    }
+
+    function exportAuditLogOnly() {
+      if (typeof XLSX === 'undefined') {
+        showToast('SheetJS not loaded — cannot export', 'error');
+        return;
+      }
+      var events = AuditTimeline._memCache.slice().sort(function(a, b) {
+        return (a.timestamp_iso || '').localeCompare(b.timestamp_iso || '');
+      });
+      var headers = ['event_id', 'timestamp', 'actor_role', 'scope_type', 'scope_id', 'event_type', 'subtype', 'payload_summary', 'artifact_refs'];
+      var rows = [headers];
+      events.forEach(function(ev) {
+        var evType = _canonicalAuditEventName(ev.event_type);
+        var scopeType = _inferAuditScope(ev);
+        var scopeId = ev.record_id || ev.dataset_id || '';
+        var subtype = (ev.metadata && ev.metadata.subtype) || (ev.metadata && ev.metadata.event_type) || '';
+        var payloadSummary = '';
+        if (ev.field_key) payloadSummary += 'field:' + ev.field_key;
+        if (ev.before_value !== null && ev.before_value !== undefined) payloadSummary += ' before:' + String(ev.before_value).substring(0, 50);
+        if (ev.after_value !== null && ev.after_value !== undefined) payloadSummary += ' after:' + String(ev.after_value).substring(0, 50);
+        if (ev.metadata) {
+          var metaStr = JSON.stringify(ev.metadata);
+          if (metaStr.length > 2) payloadSummary += ' meta:' + metaStr.substring(0, 100);
+        }
+        var artifactRefs = '';
+        if (ev.patch_request_id) artifactRefs = 'patch:' + ev.patch_request_id;
+        rows.push([ev.event_id, ev.timestamp_iso, ev.actor_role, scopeType, scopeId, evType, subtype, payloadSummary, artifactRefs]);
+      });
+      var wb = XLSX.utils.book_new();
+      var ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = headers.map(function(h) { return { wch: Math.max(15, h.length + 5) }; });
+      XLSX.utils.book_append_sheet(wb, ws, 'Audit_Log');
+      var dsId = IDENTITY_CONTEXT.dataset_id || 'export';
+      var ts = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+      XLSX.writeFile(wb, 'audit_log_' + dsId + '_' + ts + '.xlsx');
+      showToast('Audit log exported (' + events.length + ' events)', 'success');
+    }
+
     function showAuditLogForRecord() {
       var recordKey = srrState.currentRecordKey || (srrState.currentSheet + ':' + srrState.currentRowIndex);
       console.log('[SRR] Opening audit log for record:', recordKey);
@@ -20293,6 +20961,37 @@
         analystTriageState.manualItems = analystTriageState.manualItems.concat(metaManualItems);
       }
       
+      // v2.2 P0: Pre-Flight blockers: unknown columns, unreadable OCR, low-confidence extraction, mojibake
+      if (typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable() && ContractIndex._index) {
+        var contracts = ContractIndex.listContracts();
+        contracts.forEach(function(c) {
+          var rollup = ContractIndex.getRollup(c.contract_id);
+          if (rollup && rollup.unknown_columns && rollup.unknown_columns.length > 0) {
+            rollup.unknown_columns.forEach(function(uc) {
+              analystTriageState.manualItems.push({
+                request_id: 'preflight_unk_' + c.contract_id + '_' + uc.column,
+                type: 'preflight_blocker',
+                signal_type: 'UNKNOWN_COLUMN',
+                record_id: c.contract_id,
+                field_name: uc.column,
+                severity: 'blocker',
+                message: 'Unknown column: ' + uc.column + ' (sheet: ' + uc.sheet + ', non-empty: ' + uc.non_empty + ')',
+                status: 'open',
+                updated_at: new Date().toISOString(),
+                source: 'preflight',
+                note_type: 'Pre-Flight Blocker'
+              });
+              AuditTimeline.emit('preflight_blocker_detected', {
+                record_id: c.contract_id,
+                field_key: uc.column,
+                dataset_id: IDENTITY_CONTEXT.dataset_id || '',
+                metadata: { blocker_type: 'unknown_column', sheet: uc.sheet, non_empty: uc.non_empty, scope: 'contract' }
+              });
+            });
+          }
+        });
+      }
+
       // System Changes: QA_FLAG with INFO severity
       analystTriageState.systemItems = signalItems.filter(function(item) {
         return item.signal_type === 'QA_FLAG' && item.severity === 'info';
@@ -20308,7 +21007,7 @@
       }
       
       console.log('[AnalystTriage] Queue counts from signals: Manual=' + analystTriageState.manualItems.length + 
-        ', SFLogic=' + analystTriageState.sflogicItems.length + 
+        ', SystemPass=' + analystTriageState.sflogicItems.length + 
         ', Patch=' + analystTriageState.patchItems.length + 
         ', System=' + analystTriageState.systemItems.length);
       
@@ -20556,8 +21255,8 @@
       if (systemCountEl) systemCountEl.textContent = '(' + systemCount + ')';
       
       // Render each queue table
-      renderTriageQueueTable(analystTriageState.manualItems, 'manual-queue-list', 'No manual review items');
-      renderTriageQueueTable(analystTriageState.sflogicItems, 'sflogic-queue-list', 'No Salesforce logic flags');
+      renderTriageQueueTable(analystTriageState.manualItems, 'manual-queue-list', 'No pre-flight items');
+      renderTriageQueueTable(analystTriageState.sflogicItems, 'sflogic-queue-list', 'No system pass items');
       renderTriageQueueTable(analystTriageState.patchItems, 'patch-queue-list', 'No patch requests yet');
       renderTriageQueueTable(analystTriageState.systemItems, 'system-queue-list', 'No system changes');
     }
@@ -28168,8 +28867,8 @@ Add any additional notes here.
             (near.length > 0 ? '<div style="text-align: center; padding: 12px 16px; border-radius: 8px; background: #fff8e1;"><div style="font-size: 1.5em; font-weight: 700; color: #f57f17;">' + near.length + '</div><div style="font-size: 0.75em; color: #666;">Possible Dupes</div></div>' : '') +
             '<div style="text-align: center; padding: 12px 16px; border-radius: 8px; background: #e3f2fd;"><div style="font-size: 1.5em; font-weight: 700; color: #1565c0;">' + newItems.length + '</div><div style="font-size: 0.75em; color: #666;">Create New</div></div>' +
           '</div>' +
-          '<div style="font-size: 0.85em; color: #666; margin-bottom: 16px;">No records will be deleted. Existing matches will be attached to the group. New and possible duplicate rows will be flagged for Manual Review.</div>' +
-          '<div style="background: #fff3e0; padding: 10px 14px; border-radius: 6px; font-size: 0.8em; color: #e65100; text-align: left;">All new rows will appear in the Manual Review triage queue and will be included in exports.</div>' +
+          '<div style="font-size: 0.85em; color: #666; margin-bottom: 16px;">No records will be deleted. Existing matches will be attached to the group. New and possible duplicate rows will be flagged for Pre-Flight.</div>' +
+          '<div style="background: #fff3e0; padding: 10px 14px; border-radius: 6px; font-size: 0.8em; color: #e65100; text-align: left;">All new rows will appear in the Pre-Flight triage queue and will be included in exports.</div>' +
         '</div>';
       footer.innerHTML =
         '<button class="batch-add-btn-cancel" onclick="closeBatchAddModal()">Cancel</button>' +
