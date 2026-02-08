@@ -3390,18 +3390,18 @@
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <div>
                 <h4 style="margin: 0 0 4px 0; font-size: 0.95em; color: #333;">Environment Mode</h4>
-                <p style="margin: 0; font-size: 0.8em; color: #666;">Playground mode enables user management. Production mode is read-only.</p>
+                <p style="margin: 0; font-size: 0.8em; color: #666;">Sandbox mode enables permissionless access with guided Next progression. Production mode uses strict auth and role gates.</p>
               </div>
               <div id="env-mode-toggle" style="display: flex; border: 1px solid #ddd; border-radius: 6px; overflow: hidden;">
                 <button id="env-mode-prod" onclick="setEnvMode('production')" style="padding: 8px 16px; border: none; background: #f5f5f5; color: #666; cursor: pointer; font-size: 0.85em; font-weight: 500;">Production</button>
-                <button id="env-mode-playground" onclick="setEnvMode('playground')" style="padding: 8px 16px; border: none; background: #f5f5f5; color: #666; cursor: pointer; font-size: 0.85em; font-weight: 500;">Playground</button>
+                <button id="env-mode-playground" onclick="setEnvMode('playground')" style="padding: 8px 16px; border: none; background: #f5f5f5; color: #666; cursor: pointer; font-size: 0.85em; font-weight: 500;">Sandbox</button>
               </div>
             </div>
           </div>
           
           <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-              <h3 style="margin: 0; font-size: 1.1em; color: #333;">User Access <span class="info-icon" title="Manage user roles. In Playground mode, changes are stored locally.">&#9432;</span></h3>
+              <h3 style="margin: 0; font-size: 1.1em; color: #333;">User Access <span class="info-icon" title="Manage user roles. In Sandbox mode, changes are stored locally. No Admin role in Sandbox.">&#9432;</span></h3>
               <div id="add-user-btn-container" style="display: flex; gap: 10px; align-items: center;">
                 <button id="add-user-btn" class="toolbar-btn" onclick="openAddUserModal()" style="background: #4caf50; color: white; padding: 8px 14px; font-size: 0.85em; display: flex; align-items: center; gap: 6px;">
                   <span style="font-size: 1.1em;">+</span> Add User
@@ -5550,22 +5550,38 @@
         return fname || null;
       },
 
-      deriveContractId: function(row) {
+      _canonicalizeUrl: function(url) {
+        if (!url) return url;
+        var u = url.trim().replace(/\/+$/, '');
+        u = u.split('?')[0].split('#')[0];
+        try { u = decodeURIComponent(u); } catch(e) {}
+        return u.toLowerCase();
+      },
+
+      deriveContractId: function(row, _returnMeta) {
         var fileUrl = (row.file_url || row.File_URL_c || '').trim();
         var fileName = (row.file_name || row.contract_key || '').trim();
         var validUrl = fileUrl && !this._isHeaderLike(fileUrl);
         var validName = fileName && !this._isHeaderLike(fileName);
+        var id = null, source = null;
+
         if (validUrl) {
-          var fileId = this._extractFileIdentifier(fileUrl);
+          var canonUrl = this._canonicalizeUrl(fileUrl);
+          var fileId = this._extractFileIdentifier(canonUrl);
           if (fileId && !this._isHeaderLike(fileId)) {
-            return 'ctr_' + simpleHash(fileId);
+            id = 'ctr_' + simpleHash(fileId);
+            source = 'extracted';
+          } else {
+            id = 'ctr_' + simpleHash(canonUrl);
+            source = 'url_hash';
           }
-          return 'ctr_' + simpleHash(fileUrl);
+        } else if (validName) {
+          id = 'ctr_' + simpleHash(fileName);
+          source = 'fallback_sig';
         }
-        if (validName) {
-          return 'ctr_' + simpleHash(fileName);
-        }
-        return null;
+
+        if (_returnMeta) return { contract_id: id, contract_id_source: source };
+        return id;
       },
 
       deriveDocumentId: function(row) {
@@ -5607,12 +5623,14 @@
 
             sheet.rows.forEach(function(row, rowIdx) {
               index.stats.total_rows++;
-              var contractId = self.deriveContractId(row);
+              var meta = self.deriveContractId(row, true);
+              var contractId = meta.contract_id;
+              var contractIdSource = meta.contract_id_source;
               var documentId = self.deriveDocumentId(row);
               var recordId = row.record_id || (row._identity && row._identity.record_id) || 'row_' + rowIdx;
 
               if (!contractId) {
-                index.orphan_rows.push({ sheet: sheetName, row_index: rowIdx, record_id: recordId });
+                index.orphan_rows.push({ sheet: sheetName, row_index: rowIdx, record_id: recordId, reason: 'missing_url_and_name' });
                 index.stats.orphan_rows++;
                 return;
               }
@@ -5620,6 +5638,7 @@
               if (!index.contracts[contractId]) {
                 index.contracts[contractId] = {
                   contract_id: contractId,
+                  contract_id_source: contractIdSource,
                   file_name: (function() {
                     var fn = (row.file_name || '').trim();
                     var ck = (row.contract_key || '').trim();
@@ -5703,27 +5722,46 @@
         }
       },
 
+      _UNKNOWN_WARN_THRESHOLD: 0,
+      _UNKNOWN_BLOCKER_THRESHOLD: 3,
+
       _routeUnknownColumns: function(index) {
         var stored = {};
         try { stored = JSON.parse(localStorage.getItem('unknown_columns') || '{}'); } catch(e) {}
 
-        var threshold = 3;
         var seen = {};
+        var self = this;
         Object.keys(stored).forEach(function(sheetName) {
           var cols = stored[sheetName] || [];
           cols.forEach(function(col) {
-            if (col.count_nonempty <= threshold) return;
+            if (col.count_nonempty <= self._UNKNOWN_WARN_THRESHOLD) return;
+
+            var severity = col.count_nonempty > self._UNKNOWN_BLOCKER_THRESHOLD ? 'blocker' : 'warning';
 
             var contractId = null;
+            var attachConfidence = 0;
             if (workbook.sheets[sheetName] && workbook.sheets[sheetName].rows) {
-              for (var i = 0; i < Math.min(workbook.sheets[sheetName].rows.length, 5); i++) {
-                var rid = ContractIndex.deriveContractId(workbook.sheets[sheetName].rows[i]);
-                if (rid) { contractId = rid; break; }
+              var rows = workbook.sheets[sheetName].rows;
+              var votes = {};
+              var totalVoted = 0;
+              for (var i = 0; i < rows.length; i++) {
+                var rid = self.deriveContractId(rows[i]);
+                if (rid) { votes[rid] = (votes[rid] || 0) + 1; totalVoted++; }
+              }
+              var sorted = Object.keys(votes).sort(function(a, b) { return votes[b] - votes[a]; });
+              if (sorted.length > 0) {
+                var topShare = totalVoted > 0 ? (votes[sorted[0]] / totalVoted) : 0;
+                var secondCount = sorted.length > 1 ? votes[sorted[1]] : 0;
+                if (topShare >= 0.6 || (secondCount > 0 && votes[sorted[0]] >= 2 * secondCount)) {
+                  contractId = sorted[0];
+                  attachConfidence = Math.round(topShare * 100);
+                }
               }
             }
 
             var attachTo = contractId || index.batch_id;
             var attachLevel = contractId ? 'contract' : 'batch';
+            var contractSource = contractId && index.contracts[contractId] ? index.contracts[contractId].contract_id_source : null;
             var dedupKey = index.batch_id + '|' + attachLevel + '|' + attachTo + '|' + sheetName + '|' + col.normalized_name;
             if (seen[dedupKey]) return;
             seen[dedupKey] = true;
@@ -5734,8 +5772,12 @@
               column: col.original_name,
               normalized: col.normalized_name,
               non_empty: col.count_nonempty,
+              severity: severity,
               level: attachLevel,
-              batch_id: index.batch_id
+              batch_id: index.batch_id,
+              contract_id: contractId,
+              contract_id_source: contractSource,
+              attach_confidence: attachConfidence
             });
 
             AuditTimeline.emit('UNKNOWN_COLUMN_DETECTED', {
@@ -5745,9 +5787,13 @@
                 normalized: col.normalized_name,
                 sheet: sheetName,
                 non_empty: col.count_nonempty,
+                severity: severity,
                 attached_to: attachTo,
                 level: attachLevel,
-                batch_id: index.batch_id
+                batch_id: index.batch_id,
+                contract_id: contractId || null,
+                contract_id_source: contractSource || null,
+                attach_confidence: attachConfidence
               }
             });
           });
@@ -5769,6 +5815,7 @@
           var c = ContractIndex._index.contracts[cid];
           ref.contract_summaries[cid] = {
             contract_id: cid,
+            contract_id_source: c.contract_id_source || 'unknown',
             file_name: c.file_name,
             file_url: c.file_url,
             row_count: c.row_count,
@@ -5814,6 +5861,7 @@
             var s = ref.contract_summaries[cid];
             self._index.contracts[cid] = {
               contract_id: cid,
+              contract_id_source: s.contract_id_source || 'unknown',
               file_name: s.file_name,
               file_url: s.file_url,
               documents: {},
@@ -6418,29 +6466,10 @@
         return;
       }
 
-      var activeSheet = (typeof gridState !== 'undefined' && gridState.sheet) ? gridState.sheet : null;
       var allContracts = ContractIndex.listContracts();
+      var datasetWideCount = allContracts.length;
 
-      var contracts = [];
-      if (activeSheet && ContractIndex._index) {
-        Object.keys(ContractIndex._index.contracts).forEach(function(cid) {
-          var c = ContractIndex._index.contracts[cid];
-          if (c.sheets && c.sheets[activeSheet] && c.sheets[activeSheet].length > 0) {
-            contracts.push({
-              contract_id: cid,
-              file_name: c.file_name,
-              file_url: c.file_url,
-              row_count: c.sheets[activeSheet].length,
-              sheet_count: Object.keys(c.sheets).length,
-              document_count: Object.keys(c.documents).length
-            });
-          }
-        });
-      } else {
-        contracts = allContracts;
-      }
-
-      if (contracts.length === 0) {
+      if (datasetWideCount === 0) {
         if (filterGroup) filterGroup.style.display = 'none';
         if (statContracts) statContracts.style.display = 'none';
         if (statDivider) statDivider.style.display = 'none';
@@ -6450,14 +6479,34 @@
       if (filterGroup) filterGroup.style.display = 'flex';
       if (statContracts) {
         statContracts.style.display = '';
-        statContracts.querySelector('.stat-value').textContent = contracts.length;
+        statContracts.querySelector('.stat-value').textContent = datasetWideCount;
       }
       if (statDivider) statDivider.style.display = '';
 
+      var activeSheet = (typeof gridState !== 'undefined' && gridState.sheet) ? gridState.sheet : null;
+      var selectorContracts = allContracts;
+      if (activeSheet && ContractIndex._index) {
+        selectorContracts = [];
+        Object.keys(ContractIndex._index.contracts).forEach(function(cid) {
+          var c = ContractIndex._index.contracts[cid];
+          if (c.sheets && c.sheets[activeSheet] && c.sheets[activeSheet].length > 0) {
+            selectorContracts.push({
+              contract_id: cid,
+              file_name: c.file_name,
+              file_url: c.file_url,
+              row_count: c.sheets[activeSheet].length,
+              sheet_count: Object.keys(c.sheets).length,
+              document_count: Object.keys(c.documents).length
+            });
+          }
+        });
+      }
+
       if (!selector) return;
-      var html = '<option value="">All Contracts (' + contracts.length + ')</option>';
-      contracts.sort(function(a, b) { return (a.file_name || '').localeCompare(b.file_name || ''); });
-      contracts.forEach(function(c) {
+      var sheetLabel = activeSheet ? ' in ' + activeSheet : '';
+      var html = '<option value="">All Contracts (' + selectorContracts.length + sheetLabel + ')</option>';
+      selectorContracts.sort(function(a, b) { return (a.file_name || '').localeCompare(b.file_name || ''); });
+      selectorContracts.forEach(function(c) {
         var label = (c.file_name || c.contract_id).substring(0, 40);
         if (label.length < (c.file_name || c.contract_id).length) label += '...';
         html += '<option value="' + c.contract_id + '">' + escapeHtml(label) + ' (' + c.row_count + ' rows)</option>';
@@ -6746,6 +6795,11 @@
     }
 
     function createPatchRollback(patchRequestId, reason) {
+      if (!_governedDecisions.canPerformAction('rollback', currentMode, !isDemoMode())) {
+        showToast('Permission denied: only Admin can create rollbacks in Production mode', 'error');
+        console.log('[T11:GATE] rollback blocked for role:', currentMode);
+        return null;
+      }
       var pr = PATCH_REQUEST_STORE.get(patchRequestId);
       if (!pr) { showToast('Patch request not found', 'error'); return null; }
       return RollbackEngine.createRollback('patch', {
@@ -8067,7 +8121,7 @@
     
     // Reset playground data (v1.5.1)
     function resetPlayground() {
-      if (!confirm('Reset playground? This will clear all RFIs, patches, and event logs.')) {
+      if (!confirm('Reset sandbox? This will clear all RFIs, patches, and event logs.')) {
         return;
       }
       var cleared = ARTIFACT_STORE.resetPlayground();
@@ -8077,7 +8131,7 @@
       // Clear legacy patch storage
       localStorage.removeItem(PATCH_STORAGE_KEY);
       
-      showToast('Playground reset: ' + cleared + ' artifacts cleared', 'success');
+      showToast('Sandbox reset: ' + cleared + ' artifacts cleared', 'success');
       
       // Re-render any active views
       if (typeof renderVerifierTriage === 'function') {
@@ -8203,10 +8257,7 @@
         savedAt: new Date().toISOString()
       };
       SessionDB.saveWorkbookCache(cacheData).catch(function(e) {
-        console.error('[WorkbookCache] IndexedDB save failed, trying localStorage fallback:', e);
-        try {
-          localStorage.setItem(WORKBOOK_CACHE_KEY, JSON.stringify(cacheData));
-        } catch(le) { console.error('[WorkbookCache] localStorage fallback also failed:', le); }
+        console.error('[WorkbookCache] IndexedDB save failed:', e);
       });
       return true;
     }
@@ -8219,20 +8270,8 @@
           return data;
         }
       } catch(e) { console.warn('[WorkbookCache] IndexedDB load failed:', e); }
-      try {
-        var cached = localStorage.getItem(WORKBOOK_CACHE_KEY);
-        if (!cached) return null;
-        var cacheData = JSON.parse(cached);
-        if (!cacheData.workbook || !cacheData.workbook.order || cacheData.workbook.order.length === 0) {
-          clearWorkbookCache();
-          return null;
-        }
-        console.log('[WorkbookCache] Loaded from localStorage fallback:', cacheData.workbook.order.length, 'sheets');
-        return cacheData;
-      } catch (e) {
-        clearWorkbookCache();
-        return null;
-      }
+      console.log('[WorkbookCache] IndexedDB had no data, no localStorage fallback (v2.3 policy)');
+      return null;
     }
     
     function clearWorkbookCache() {
@@ -8313,6 +8352,8 @@
         updateActiveDataSourceBar(session.filename || session.name);
         stagedLoader.setStage('validating');
         try { if (typeof generateAllSignals === 'function') generateAllSignals(); } catch(e) { console.warn('[RESTORE] generateAllSignals error:', e.message); }
+        stagedLoader.setStage('indexing');
+        try { ContractIndex.build(); populateContractSelector(); } catch(e) { console.warn('[ContractIndex] Session restore build failed:', e); }
         stagedLoader.setStage('changemap');
         saveWorkbookToCache();
         stagedLoader.setStage('rendering');
@@ -8572,6 +8613,34 @@
           var parsed = parseCSV(text);
           var sheetName = filename.replace(/\.[^.]+$/, '') || 'Sheet1';
           
+          // v2.3: Header-echo sanitization for CSV
+          var preEchoCsvCount = parsed.rows.length;
+          parsed.rows = parsed.rows.filter(function(rowObj, ri) {
+            var matchCount = 0;
+            var totalFields = 0;
+            parsed.headers.forEach(function(h) {
+              if (!h) return;
+              totalFields++;
+              var val = (rowObj[h] || '').toString().trim().toLowerCase();
+              if (val === h.trim().toLowerCase()) matchCount++;
+            });
+            var matchRatio = totalFields > 0 ? matchCount / totalFields : 0;
+            if (matchRatio >= 0.6) {
+              console.log('[parseWorkbook] Header-echo row removed (CSV): rowIdx=' + ri + ', matchRatio=' + matchRatio.toFixed(2));
+              if (typeof AuditTimeline !== 'undefined') {
+                AuditTimeline.emit('ROW_SANITIZED_HEADER_ECHO', {
+                  dataset_id: '',
+                  metadata: { sheet: sheetName, row_index: ri, match_ratio: matchRatio.toFixed(2) }
+                });
+              }
+              return false;
+            }
+            return true;
+          });
+          if (preEchoCsvCount !== parsed.rows.length) {
+            console.log('[parseWorkbook] Removed ' + (preEchoCsvCount - parsed.rows.length) + ' header-echo rows from CSV');
+          }
+
           var mapping = resolveColumnMapping(parsed.headers);
           result.mapping = mapping;
           var normalizedRows = applyColumnMapping(parsed.rows, parsed.headers, mapping);
@@ -8613,6 +8682,34 @@
               rows.push(rowObj);
             }
             
+            // v2.3: Header-echo sanitization - drop rows that are echoes of header
+            var preEchoCount = rows.length;
+            rows = rows.filter(function(rowObj, ri) {
+              var matchCount = 0;
+              var totalFields = 0;
+              headers.forEach(function(h) {
+                if (!h) return;
+                totalFields++;
+                var val = (rowObj[h] || '').toString().trim().toLowerCase();
+                if (val === h.trim().toLowerCase()) matchCount++;
+              });
+              var matchRatio = totalFields > 0 ? matchCount / totalFields : 0;
+              if (matchRatio >= 0.6) {
+                console.log('[parseWorkbook] Header-echo row removed: sheet=' + sheetName + ', rowIdx=' + ri + ', matchRatio=' + matchRatio.toFixed(2));
+                if (typeof AuditTimeline !== 'undefined') {
+                  AuditTimeline.emit('ROW_SANITIZED_HEADER_ECHO', {
+                    dataset_id: '',
+                    metadata: { sheet: sheetName, row_index: ri, match_ratio: matchRatio.toFixed(2) }
+                  });
+                }
+                return false;
+              }
+              return true;
+            });
+            if (preEchoCount !== rows.length) {
+              console.log('[parseWorkbook] Removed ' + (preEchoCount - rows.length) + ' header-echo rows from ' + sheetName);
+            }
+
             // v1.6.39: Resolve column mapping for each sheet individually
             var sheetMapping = resolveColumnMapping(headers);
             if (idx === 0) {
@@ -8830,14 +8927,15 @@
           gridState.filter = navState.filter || 'all';
         }
         
-        // v2.2: Restore contract index from SessionDB; only rebuild if restore fails
+        // v2.3: Always recompute ContractIndex from workbook to ensure consistency
+        stagedLoader.setStage('indexing');
         try {
-          var ciRestored = await ContractIndex._restoreFromSession();
-          if (!ciRestored && workbook.order.length > 0) {
+          if (workbook.order.length > 0) {
             ContractIndex.build();
+            console.log('[RESTORE] ContractIndex rebuilt from workbook');
           }
           populateContractSelector();
-        } catch(e) { console.warn('[ContractIndex] Restore/build failed:', e); }
+        } catch(e) { console.warn('[ContractIndex] Rebuild failed:', e); }
         // v2.2 P2: Restore merged batches from SessionDB
         try { await BatchMerge.restoreFromSession(); } catch(e) { console.warn('[BatchMerge] Restore failed:', e); }
 
@@ -9773,6 +9871,11 @@
       var request = getPatchRequest(requestId);
       if (!request) return null;
       if (request.status !== 'Draft') return null;
+      if (!_governedDecisions.canPerformAction('submit_patch', actorRole || currentMode, !isDemoMode())) {
+        showToast('Permission denied: ' + (actorRole || currentMode) + ' cannot submit patches in Production mode', 'error');
+        console.log('[T11:GATE] submit_patch blocked for role:', actorRole || currentMode);
+        return null;
+      }
       return updatePatchRequestStatus(requestId, 'Submitted', actor, actorRole, 'Submitted to patch queue');
     }
     
@@ -9806,6 +9909,11 @@
       var request = getPatchRequest(requestId);
       if (!request) return null;
       if (!['Submitted', 'Verifier_Responded'].includes(request.status)) return null;
+      if (!_governedDecisions.canPerformAction('verify_patch', actorRole || currentMode, !isDemoMode())) {
+        showToast('Permission denied: ' + (actorRole || currentMode) + ' cannot verify patches in Production mode', 'error');
+        console.log('[T11:GATE] verify_patch blocked for role:', actorRole || currentMode);
+        return null;
+      }
       return updatePatchRequestStatus(requestId, 'Verifier_Approved', actor, actorRole, 'Approved by verifier');
     }
     
@@ -9813,6 +9921,11 @@
       var request = getPatchRequest(requestId);
       if (!request) return null;
       if (request.status !== 'Verifier_Approved') return null;
+      if (!_governedDecisions.canPerformAction('approve_patch', actorRole || currentMode, !isDemoMode())) {
+        showToast('Permission denied: ' + (actorRole || currentMode) + ' cannot approve patches in Production mode', 'error');
+        console.log('[T11:GATE] approve_patch blocked for role:', actorRole || currentMode);
+        return null;
+      }
       return updatePatchRequestStatus(requestId, 'Admin_Approved', actor, actorRole, 'Approved by admin');
     }
     
@@ -14982,6 +15095,7 @@
     }
 
     function renderGrid() {
+        console.log('[T0:GUARD] renderGrid called, sheet:', gridState.sheet, 'filter:', gridState.filter);
       var perfT = perfStart();
       // v1.6.11: Show/hide change legend based on whether change map is active
       var legendEl = document.getElementById('grid-change-legend');
@@ -17452,6 +17566,8 @@
     }
 
     function openRowReviewDrawer(arg1, arg2) {
+        console.log('[T0:GUARD] openRowReviewDrawer called, args:', typeof arg1, typeof arg2);
+        var _t0_guard = { triggered_download: false, srr_opened: false };
       // v1.5.3 Fix: Determine read-only mode based on current role at render time
       // Analyst mode: always editable (isReadOnly = false)
       // Verifier/Admin mode WITH artifact context: read-only (isReadOnly = true)
@@ -18681,6 +18797,7 @@
     }
 
     function srrNavigatePrev() {
+        console.log('[T0:GUARD] srrNavigatePrev called');
       var list = getSrrNavigationList();
       var pos = srrFindCurrentNavIndex();
       if (pos <= 0) return;
@@ -18689,6 +18806,7 @@
     }
 
     function srrNavigateNext() {
+        console.log('[T0:GUARD] srrNavigateNext called');
       var list = getSrrNavigationList();
       var pos = srrFindCurrentNavIndex();
       if (pos < 0 || pos >= list.length - 1) return;
@@ -22219,6 +22337,66 @@
         MOJIBAKE: { label: 'Mojibake', badge: 'fail', icon: '\ud83d\udd20', desc: 'Text contains encoding artifacts (mojibake). Source document may need re-extraction.' }
       };
 
+      // v2.3 T11: Timeline lock alignment - governed decision enforcement
+      var _governedDecisions = {
+        resolveAsOf: function(record) {
+          var docDate = record.document_date || record.doc_date || record.effective_date || null;
+          var manualDate = record.as_of || record.as_of_date || null;
+          if (docDate) return { as_of: docDate, as_of_source: 'document_date' };
+          if (manualDate) return { as_of: manualDate, as_of_source: 'manual' };
+          return { as_of: new Date().toISOString().split('T')[0], as_of_source: 'system_default' };
+        },
+
+        validateScheduleAttachment: function(scheduleRecord, parentRecord) {
+          if (!parentRecord) {
+            return {
+              valid: false,
+              blocker: {
+                type: 'preflight_blocker',
+                blocker_type: 'UNATTACHED_SCHEDULE',
+                message: 'Schedule document has no parent contract. Attach before proceeding.',
+                severity: 'blocker',
+                can_create_patch: false
+              }
+            };
+          }
+          return { valid: true, blocker: null };
+        },
+
+        canPerformAction: function(action, role, isProduction) {
+          if (!isProduction) return true;
+          var permissions = {
+            'edit_draft': ['analyst', 'admin'],
+            'submit_patch': ['analyst', 'admin'],
+            'verify_patch': ['verifier', 'admin'],
+            'approve_patch': ['admin'],
+            'promote_rule': ['admin'],
+            'attach_schedule': ['analyst', 'admin'],
+            'set_governing': ['analyst', 'admin'],
+            'rollback': ['admin']
+          };
+          var allowed = permissions[action] || [];
+          return allowed.indexOf(role) >= 0;
+        },
+
+        resolveGoverningState: function(documents) {
+          if (!documents || documents.length === 0) return { governing: null, ambiguous: false };
+          var candidates = documents.filter(function(d) {
+            return d.document_role === 'Root Agreement' || d.document_role === 'Amendment' || d.document_role === 'Governing';
+          });
+          if (candidates.length === 0) return { governing: null, ambiguous: false };
+          if (candidates.length === 1) return { governing: candidates[0], ambiguous: false };
+          candidates.sort(function(a, b) {
+            var da = a.effective_date || a.document_date || '';
+            var db = b.effective_date || b.document_date || '';
+            return db.localeCompare(da);
+          });
+          return { governing: candidates[0], ambiguous: true, all_candidates: candidates };
+        }
+      };
+
+      window._governedDecisions = _governedDecisions;
+
       if (typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable() && ContractIndex._index) {
         var contracts = ContractIndex.listContracts();
         contracts.forEach(function(c) {
@@ -24806,12 +24984,8 @@
             }
           };
           
-          // Save to localStorage
-          localStorage.setItem(STORAGE_KEY_DATASET, JSON.stringify({
-            workbook: workbook,
-            allData: allData,
-            columnMapping: result.mapping
-          }));
+          // v2.3: Workbook data persisted to IndexedDB only (no localStorage blobs)
+          // localStorage used for prefs/pointers only
           saveToUploadLibrary({ workbook: workbook }, file.name, ext);
           
           dataLoaded = true;
@@ -24941,17 +25115,27 @@
       // Only admins can toggle playground mode
       var loggedInRole = getLoggedInUserRole();
       if (loggedInRole !== 'admin') {
-        showToast('Only admins can toggle Playground mode', 'error');
+        showToast('Only admins can toggle Sandbox mode', 'error');
         return;
       }
       
       var isPlayground = mode === 'playground';
       setDemoMode(isPlayground);
-      setPlaygroundEnabledFlag(isPlayground); // v1.6.24: Store in demoUser
+      setPlaygroundEnabledFlag(isPlayground);
+      // v2.3 T10: In Sandbox, disable Admin role option
+      var adminOption = document.querySelector('#role-selector option[value="admin"]');
+      if (adminOption && isPlayground) {
+        adminOption.disabled = true;
+        adminOption.textContent = 'Admin (Production only)';
+        if (currentMode === 'admin') { setMode('analyst'); }
+      } else if (adminOption) {
+        adminOption.disabled = false;
+        adminOption.textContent = 'Admin';
+      }
       updateEnvModeUI();
       renderUsersTable(); // Re-render to show/hide controls
       applyRoleBasedModeRestrictions(); // v1.6.24: Re-apply to update role switching
-      showToast(isPlayground ? 'Playground mode enabled - role switching available' : 'Production mode - locked to Admin', 'info');
+      showToast(isPlayground ? 'Sandbox mode enabled - permissionless access, no Admin role' : 'Production mode - strict role gates active', 'info');
       console.log('[EnvMode] Set to:', mode, 'by', loggedInRole);
     }
     

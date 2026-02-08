@@ -24,6 +24,15 @@
 - docs/05_operator_validator_sop.md
 - docs/06_how_to_add_rules.md
 
+## Decision Memos (V2.3 Locked)
+- docs/decisions/DECISION_HIERARCHY.md — Batch→contract→document→sheet→row hierarchy and rebuild policy
+- docs/decisions/DECISION_ID_EXTRACTION.md — ID extraction priority, URL canonicalization, orphan policy
+- docs/decisions/DECISION_UNKNOWN_COLUMNS.md — Unknown column thresholds, frequency-vote attachment, audit payload
+- docs/decisions/DECISION_STORAGE_POLICY.md — localStorage vs IndexedDB payload policy
+- docs/decisions/DECISION_SANDBOX_PRODUCTION.md — Sandbox (permissionless) vs Production (strict gates) split
+- docs/UNDO_VS_ROLLBACK.md — Undo (local, session-scoped) vs Rollback (governed, append-only)
+- config/id_extraction_rules.json — Machine-readable ID extraction and URL canonicalization rules
+
 ## Governance Docs (Scope-Locked)
 - docs/SCOPE_control_plane.md
 - docs/CONTROL_BOARD_ARCHITECTURE.md

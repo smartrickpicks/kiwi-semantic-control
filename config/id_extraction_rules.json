@@ -1,0 +1,45 @@
+{
+  "_version": "2.3",
+  "_description": "Contract ID extraction rules — derivation priority and URL canonicalization",
+  "derivation_priority": [
+    {
+      "order": 1,
+      "source": "extracted",
+      "description": "Extract file identifier from canonical URL path (last segment after stripping query/hash)",
+      "field": "file_url OR File_URL_c",
+      "method": "simpleHash(extractFileIdentifier(canonicalizeUrl(url)))"
+    },
+    {
+      "order": 2,
+      "source": "url_hash",
+      "description": "Hash the full canonical URL when path extraction yields no usable identifier",
+      "field": "file_url OR File_URL_c",
+      "method": "simpleHash(canonicalizeUrl(url))"
+    },
+    {
+      "order": 3,
+      "source": "fallback_sig",
+      "description": "Hash file_name or contract_key as last resort when no URL is present",
+      "field": "file_name OR contract_key",
+      "method": "simpleHash(value)"
+    }
+  ],
+  "url_canonicalization": {
+    "steps": [
+      "trim whitespace",
+      "strip trailing slashes",
+      "remove query string (?...) and fragment (#...)",
+      "decodeURIComponent",
+      "lowercase"
+    ]
+  },
+  "orphan_policy": {
+    "missing_url_and_name": "batch-level orphan",
+    "description": "Rows with no valid URL or name are placed in orphan_rows with reason 'missing_url_and_name'. They are never assigned to a contract."
+  },
+  "unknown_column_attachment": {
+    "method": "sheet-scoped frequency vote",
+    "confidence_rule": "top_share >= 60% OR top_count >= 2x second_count",
+    "fallback": "batch-level when confidence rule fails"
+  }
+}
