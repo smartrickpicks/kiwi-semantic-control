@@ -13,6 +13,8 @@ The UI features a dashboard with a queue-centric sidebar, right-side drawers for
 
 Data handling supports CSV/XLSX import, a Field Inspector for search-filtered fields, inline editing, and a lock-on-commit mechanism. A change map engine tracks cell-level changes. The Verifier Triage employs a 4-queue system, and a localStorage-backed mock filesystem manages artifacts. Workbook session caching persists uploaded Excel data to IndexedDB, supporting multi-session storage and auto-save.
 
+Triage Analytics schema matching uses normalized key comparison (`_normKey`: lowercase + collapse non-alphanumeric to underscore) and `COLUMN_ALIAS_MAP` resolution to match workbook headers against `field_meta.json` canonical keys, boosting match rates from ~8% to ~37% on typical Salesforce-style workbooks.
+
 Semantic rules generate deterministic cell-level signals on dataset load using `field_meta.json` and `qa_flags.json` for validation, populating Analyst Triage queues and driving grid coloring. Rules follow a WHEN/THEN pattern. Record identity is defined by `tenant_id`, `division_id`, `dataset_id`, `record_id`. The system uses email-based access control with Google sign-in for production OAuth.
 
 Features include "Catalog Items Group" for batch adding and deduplication. Each record includes a `_document_type` and `_capabilities` object, with document types loaded from `config/document_types.json`. Export functionality generates XLSX files including all data sheets, change logs, signals summaries, and metadata. An Audit Timeline system uses an IndexedDB-backed store for all governance actions, accessible via a UI with filtering options and exportable to XLSX.
