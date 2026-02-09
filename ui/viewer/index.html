@@ -19877,11 +19877,13 @@
       });
     }
 
-        function getSectionGuidance(docRole, docType) {
+        function getSectionGuidance(docRole, docType, sheetName) {
       if (!_sectionGuidanceConfig || !_sectionGuidanceConfig.guidance) return null;
+      var g = _sectionGuidanceConfig.guidance;
+      if (sheetName && g[sheetName]) return g[sheetName];
       var key1 = (docRole || '') + '::' + (docType || '');
       var key2 = docRole || '';
-      return _sectionGuidanceConfig.guidance[key1] || _sectionGuidanceConfig.guidance[key2] || _sectionGuidanceConfig.guidance['default'] || null;
+      return g[key1] || g[key2] || g['default'] || null;
     }
 
     function renderSectionGuidanceCard(record, container) {
@@ -19889,7 +19891,8 @@
       var docRole = record._document_role || record.document_role || '';
       var docType = record._document_type || record.document_type || '';
       var confidence = record._confidence || record.confidence || null;
-      var guidance = getSectionGuidance(docRole, docType);
+      var _sheetName = (typeof srrState !== 'undefined' && srrState.currentSheetName) ? srrState.currentSheetName : '';
+      var guidance = getSectionGuidance(docRole, docType, _sheetName);
       if (!guidance) return;
 
       if (_guidanceCardExpanded === null) {

@@ -1,7 +1,135 @@
 {
-  "_version": "1.0",
-  "_description": "Section guidance for Record Inspection, keyed by document_role::document_type",
+  "_version": "2.0",
+  "_description": "Section guidance for Record Inspection. Keyed by sheet name, document_role::document_type, or document_role. Sheet-name keys provide category-specific analyst checklists.",
   "guidance": {
+    "Opportunity": {
+      "_section_label": "Opportunity Guidance \u2013 Analyst",
+      "section_label": "General Review",
+      "what_to_look_for": [
+        "Confirm the correct Account is linked (no personal test accounts, no duplicates)",
+        "Check Contract Type / Deal Type (e.g., CMA, CPA, Distribution, Publishing) matches the uploaded contract and internal notes",
+        "Validate Stage and Close Date are realistic: Closed\u2013Won only when fully executed, Close Date matches execution/effective dates",
+        "Ensure key classifiers are set: deal subtype (catalog only vs frontline), primary artist/roster, territory/region flags",
+        "Confirm linkage to downstream records: Financial record present, Contract(s) attached, V2 Addons visible if relevant"
+      ],
+      "common_failure_modes": [
+        "Wrong or missing Contract Type, causing mis-routing or wrong workflows",
+        "Opportunity linked to the wrong Account (similar names, old imprint, holding companies)",
+        "Stage set to Closed\u2013Won before execution, or never updated after signing",
+        "Close Date set to 'today' instead of matching the actual deal timeline",
+        "Missing linkage to Financial or Contracts objects \u2014 downstream tools can't find the deal",
+        "Notes or attachments describe a different deal than the structured fields"
+      ]
+    },
+    "Account": {
+      "_section_label": "Account Guidance \u2013 Analyst",
+      "section_label": "General Review",
+      "what_to_look_for": [
+        "Verify the legal name of the artist/client/partner matches the most recent contract",
+        "Confirm Account Type / Role (artist, label, distributor, publisher, brand, internal entity)",
+        "Check core identity fields: country / primary operating territory, external IDs or internal IDs",
+        "Ensure the Account is the canonical record: no obvious duplicate accounts representing the same entity",
+        "Linked Contacts are the correct business reps (A&R, legal, finance)"
+      ],
+      "common_failure_modes": [
+        "Multiple accounts for the same artist/partner with slightly different spellings or punctuation",
+        "Old label/parent names used instead of current entity",
+        "Country / territory mismatched with the actual contract",
+        "Wrong Account Type (e.g., marking an artist as a label, or vice versa)",
+        "Orphaned Opportunities / Contracts not linked to the main Account",
+        "Contacts on the Account who are no longer relevant (old managers, ex-labels) but still appear as primary"
+      ]
+    },
+    "Financial": {
+      "_section_label": "Financial Guidance \u2013 Analyst",
+      "section_label": "General Review",
+      "what_to_look_for": [
+        "Confirm financial terms match the governing contract(s): advances (amount, currency, recoupment), fees / rev-share or royalty percentages, minimum guarantees / caps / floors",
+        "Verify units and formats: percentages vs decimals (e.g., 0.3 vs 30%), currency codes vs symbols (USD, GBP, EUR)",
+        "Check term and payment structure: correct start/end dates, installment schedules match contract (upfront vs phased)",
+        "Ensure links to Opportunity, Account, Contracts are set and consistent"
+      ],
+      "common_failure_modes": [
+        "Percentages entered as decimals (or vice versa)",
+        "Wrong currency selected (e.g., USD instead of EUR)",
+        "Typo'd amounts (extra zero, missing zero)",
+        "Financial terms not updated after an amendment or restatement",
+        "Financial record exists but is not linked to the corresponding Opportunity/Contract",
+        "Advances or fees captured in notes only, not structured fields"
+      ]
+    },
+    "Schedule": {
+      "_section_label": "Schedule Guidance \u2013 Analyst",
+      "section_label": "General Review",
+      "what_to_look_for": [
+        "Confirm the Schedule is linked to the correct parent Contract / Agreement",
+        "Check what the Schedule is defining: territories, term periods, services, obligations, options",
+        "Validate that effective dates and scopes align with the main agreement (no contradictory term/territory unless explicitly an override)",
+        "Ensure fields describing rights and obligations are clear enough to drive automation (e.g., 'WW excl. US' instead of 'global-ish')",
+        "Check consistency with existing system terminology for territories and right types"
+      ],
+      "common_failure_modes": [
+        "Schedule linked to the wrong contract (similar artist or deal)",
+        "Term/territory values that conflict with the main agreement but not clearly flagged",
+        "Overly vague descriptions that can't be used in automation: 'Standard rights', 'normal term'",
+        "Missing indication of whether this schedule is the first, a replacement, or a supplement",
+        "Schedules that should be catalog-type but are stored as generic schedules (and vice versa)"
+      ]
+    },
+    "Schedule Catalog": {
+      "_section_label": "Schedule Catalog Guidance \u2013 Analyst",
+      "section_label": "General Review",
+      "what_to_look_for": [
+        "Verify each catalog row has the key identifiers: title, artist, ISRC/UPC, internal catalog ID",
+        "Confirm the Schedule Catalog is attached to the correct parent Contract / Opportunity / Account",
+        "Check that assets and territories match the intended scope: full catalog, subset, or termination subset",
+        "Look for indicators of partial supersession: only some assets listed as terminated or transferred",
+        "Ensure no obvious duplicates or conflicts with existing catalog schedules"
+      ],
+      "common_failure_modes": [
+        "Missing or inconsistent ISRC/UPC values",
+        "Same asset appearing in multiple schedules with different ownership/rights and no clear ordering",
+        "Schedule labeled 'full catalog' but obviously missing major releases",
+        "Catalog schedule not marked as new, updated, or termination schedule \u2014 hard to interpret",
+        "Schedule representing partial termination but not tagged as partial in the system"
+      ]
+    },
+    "Contracts": {
+      "_section_label": "Contracts Guidance \u2013 Analyst",
+      "section_label": "General Review",
+      "what_to_look_for": [
+        "Confirm contract type is correctly classified: main agreement, amendment, termination, side letter, schedule, catalog schedule, work-for-hire, restatement",
+        "Check party names and roles: match the Account and any related Opportunities, no outdated or incorrect entity names",
+        "Validate key dates: Effective Date, Signature/Execution Date, Termination Date \u2014 consistent with Salesforce / HUB records",
+        "Confirm linkage: Contract is attached to the right Account, Opportunity, Financial, and Schedules",
+        "Identify whether this document replaces, modifies, or adds to previous documents; is full or partial (especially for terminations)"
+      ],
+      "common_failure_modes": [
+        "Mis-labeling documents (e.g., a side letter stored as an amendment, termination stored as standard amendment)",
+        "Missing or wrong Effective Date, causing timeline ordering issues",
+        "Contract uploaded but not connected to the relevant Opportunity/Account",
+        "New restatement not marked as the 'current' main agreement, leaving old ones incorrectly active",
+        "Partial terminations treated as full terminations in the system"
+      ]
+    },
+    "V2 Addons": {
+      "_section_label": "V2 Addons Guidance \u2013 Analyst",
+      "section_label": "General Review",
+      "what_to_look_for": [
+        "Confirm each Addon is tied to the correct base contract / opportunity",
+        "Identify the purpose of the addon: termination management, partial supersession, LE revisions, contract drafting workflow",
+        "Check that addon fields reflect the real-world intent: for terminations (type, effective dates, catalog selection), for amendments (which clauses or fields are being changed)",
+        "Ensure status fields are accurate: Draft vs proposed vs executed vs offboarded",
+        "Validate that changes implied by the addon are reflected downstream: updated Financial terms, new or updated Schedules, Catalog changes"
+      ],
+      "common_failure_modes": [
+        "Addon object created but never fully wired: not linked to the right base contract, or missing catalog references",
+        "Wrong termination type (partial vs full) vs what the schedule actually lists",
+        "Changes in an addon not propagated to Financial, Schedule, Catalog, or Timeline View",
+        "Conflicting addons: multiple terminations/amendments for the same asset/territory with no clear precedence",
+        "Status left in 'Draft' even though the underlying contract has been executed"
+      ]
+    },
     "Root Agreement::Master Service Agreement": {
       "section_label": "Master Service Agreement",
       "what_to_look_for": [
