@@ -190,19 +190,22 @@ def apply_e2_engine(content):
       var sheetNames = Object.keys(workbook.sheets);
       for (var si = 0; si < sheetNames.length; si++) {
         var sheetName = sheetNames[si];
+        if (sheetName.indexOf('_change_log') !== -1) continue;
+        if (sheetName === 'RFIs & Analyst Notes') continue;
         var sheet = workbook.sheets[sheetName];
         if (!sheet || !sheet.rows) continue;
         for (var ri = 0; ri < sheet.rows.length; ri++) {
           var row = sheet.rows[ri];
           if (!row) continue;
-          var ck = row.contract_key || row.contract_id || '';
-          var url = row.file_url || '';
+          var ck = row.contract_key || row.contract_id || row.File_Name_c || row.File_Name || '';
+          var url = row.file_url || row.File_URL_c || '';
+          var fn = row.file_name || row.File_Name_c || row.File_Name || '';
           if (!ck || !url) continue;
           if (contracts[ck]) continue;
           contracts[ck] = {
             contract_key: ck,
             file_url: url,
-            file_name: row.file_name || '',
+            file_name: fn,
             sheet_name: sheetName,
             record: row
           };

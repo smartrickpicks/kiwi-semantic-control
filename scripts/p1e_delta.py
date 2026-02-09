@@ -78,7 +78,7 @@ P1E_HELPERS = """
         var code = text.charCodeAt(i);
         if (code === 0xFFFD) replacementCount++;
         else if (code < 32 && code !== 10 && code !== 13 && code !== 9) controlCount++;
-        else if (code > 0x024F && code < 0x3000) highNonLatinCount++;
+        else if (code > 0x00FF && code < 0x3000) highNonLatinCount++;
       }
       var replacementRatio = replacementCount / totalChars;
       var controlRatio = controlCount / totalChars;
