@@ -3943,6 +3943,24 @@
               <div id="admin-ruleset-delta" style="background: #263238; color: #eceff1; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.8em; max-height: 300px; overflow-y: auto;"></div>
             </div>
           </div>
+
+          <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 6px; font-size: 1.1em; color: #333;">Canonical Glossary</h3>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">The glossary defines all governed fields, their definitions, return formats, and picklist options. Each data sheet is mapped to its Fields Definitions sheet. Upload a replacement glossary JSON to update schema coverage and validation rules.</p>
+            <div id="glossary-summary" style="background: #e8f5e9; padding: 12px 16px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85em; color: #2e7d32;"></div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <label style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%); color: white; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 600;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Upload Glossary JSON
+                <input type="file" id="glossary-upload-input" accept=".json" style="display: none;" onchange="handleGlossaryUpload(this)">
+              </label>
+              <button class="toolbar-btn" onclick="downloadCurrentGlossary()" style="font-size: 0.85em;">Download Current</button>
+              <button class="toolbar-btn" onclick="resetGlossaryToDefault()" style="font-size: 0.85em; background: #f5f5f5; color: #666;">Reset to Default</button>
+            </div>
+            <div id="glossary-upload-status" style="display: none; padding: 10px; border-radius: 6px; margin-top: 12px; font-size: 0.85em;"></div>
+            <div id="glossary-sheet-map" style="margin-top: 15px;"></div>
+          </div>
+
         </div><!-- end admin-tab-config -->
 
         <!-- INSPECTOR TAB -->
@@ -9952,7 +9970,8 @@
       return COLUMN_MAPPING_STATE;
     }
     
-    function applyColumnMapping(rows, headers, mapping) {
+    function applyColumnMapping(rows, headers, mapping, sheetName) {
+      var _sheetPrefix = sheetName ? (sheetName + ":") : "";
       if (!mapping || !mapping.mappingResolved) return rows;
       
       return rows.map(function(row, idx) {
@@ -9965,7 +9984,7 @@
         if (mapping.fileUrlColumn && mapping.fileUrlColumn !== 'file_url') {
           newRow.file_url = row[mapping.fileUrlColumn] || null;
         }
-        if (!newRow.contract_key) newRow.contract_key = 'ROW_' + (idx + 1);
+        if (!newRow.contract_key) newRow.contract_key = _sheetPrefix + 'ROW_' + (idx + 1);
         if (!newRow.status) newRow.status = 'needs_review';
         return newRow;
       });
@@ -10012,7 +10031,7 @@
 
           var mapping = resolveColumnMapping(parsed.headers);
           result.mapping = mapping;
-          var normalizedRows = applyColumnMapping(parsed.rows, parsed.headers, mapping);
+          var normalizedRows = applyColumnMapping(parsed.rows, parsed.headers, mapping, sheetName);
           for (var _csvSi = 0; _csvSi < parsed.rows.length; _csvSi++) {
             sanitizeDoubleSlashAnnotations(parsed.rows[_csvSi], parsed.headers);
           }
@@ -10086,7 +10105,7 @@
               result.mapping = sheetMapping; // Keep first sheet mapping as result.mapping for legacy
             }
             
-            var normalizedRows = applyColumnMapping(rows, headers, sheetMapping);
+            var normalizedRows = applyColumnMapping(rows, headers, sheetMapping, sheetName);
             result.sheets[sheetName] = { headers: headers, rows: normalizedRows, meta: { sheetIndex: idx, mapping: sheetMapping } };
             result.order.push(sheetName);
           });
@@ -15660,6 +15679,7 @@
       if (tabName === 'qa-runner') {
         QARunner._onTabOpen();
       }
+      if (tabName === 'config' && typeof renderGlossarySummary === 'function') renderGlossarySummary();
     }
 
     function renderBatchAddAdminToggles() {
@@ -16279,6 +16299,142 @@
       showToast('Inspector: ' + type + ' (not yet implemented)', 'info');
     }
     
+
+    // ===== CANONICAL GLOSSARY MANAGEMENT =====
+    var _glossaryDefault = null;
+
+    function renderGlossarySummary() {
+      var summaryEl = document.getElementById('glossary-summary');
+      var mapEl = document.getElementById('glossary-sheet-map');
+      if (!summaryEl) return;
+      if (!rulesBundleCache.loaded || !rulesBundleCache.fieldMeta || !rulesBundleCache.fieldMeta.fields) {
+        summaryEl.innerHTML = '<span style="color: #f57c00;">No glossary loaded. Upload a glossary JSON to enable schema coverage.</span>';
+        summaryEl.style.background = '#fff3e0';
+        if (mapEl) mapEl.innerHTML = '';
+        return;
+      }
+      var fields = rulesBundleCache.fieldMeta.fields;
+      var meta = rulesBundleCache.fieldMeta.meta || {};
+      var sheetMap = meta.sheet_mapping || {};
+      var version = meta.schema_version || '1.0';
+      var updatedAt = meta.updated_at || 'unknown';
+      var sheetCounts = {};
+      for (var i = 0; i < fields.length; i++) {
+        var s = fields[i].sheet || 'Unknown';
+        sheetCounts[s] = (sheetCounts[s] || 0) + 1;
+      }
+      var required = fields.filter(function(f) { return f.requiredness === 'required'; }).length;
+      var picklists = fields.filter(function(f) { return f.picklist; }).length;
+      summaryEl.style.background = '#e8f5e9';
+      summaryEl.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">' +
+        '<div><strong>' + fields.length + ' fields</strong> across <strong>' + Object.keys(sheetCounts).length + ' sheets</strong></div>' +
+        '<div style="display: flex; gap: 12px; font-size: 0.9em; color: #555;">' +
+        '<span>Required: ' + required + '</span>' +
+        '<span>Picklists: ' + picklists + '</span>' +
+        '<span>v' + version + '</span>' +
+        '</div></div>';
+      if (mapEl) {
+        var mapHtml = '<table style="width: 100%; border-collapse: collapse; font-size: 0.85em; margin-top: 8px;">';
+        mapHtml += '<thead><tr style="background: #f5f5f5;"><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd;">Data Sheet</th><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd;">Definitions Sheet</th><th style="padding: 6px 10px; text-align: right; border-bottom: 1px solid #ddd;">Fields</th></tr></thead><tbody>';
+        var sortedSheets = Object.keys(sheetCounts).sort();
+        for (var si = 0; si < sortedSheets.length; si++) {
+          var sn = sortedSheets[si];
+          var defSheet = sheetMap[sn] || '<span style="color: #999;">unmapped</span>';
+          mapHtml += '<tr><td style="padding: 5px 10px; border-bottom: 1px solid #eee;">' + sn + '</td><td style="padding: 5px 10px; border-bottom: 1px solid #eee;">' + defSheet + '</td><td style="padding: 5px 10px; text-align: right; border-bottom: 1px solid #eee;">' + sheetCounts[sn] + '</td></tr>';
+        }
+        mapHtml += '</tbody></table>';
+        mapEl.innerHTML = mapHtml;
+      }
+    }
+
+    function handleGlossaryUpload(input) {
+      var statusEl = document.getElementById('glossary-upload-status');
+      if (!input.files || !input.files[0]) return;
+      var file = input.files[0];
+      if (!file.name.endsWith('.json')) {
+        if (statusEl) { statusEl.style.display = 'block'; statusEl.style.background = '#ffebee'; statusEl.style.color = '#c62828'; statusEl.textContent = 'Please select a .json file.'; }
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var glossary = JSON.parse(e.target.result);
+          var errors = validateGlossarySchema(glossary);
+          if (errors.length > 0) {
+            if (statusEl) { statusEl.style.display = 'block'; statusEl.style.background = '#ffebee'; statusEl.style.color = '#c62828'; statusEl.innerHTML = '<strong>Validation errors:</strong><ul style="margin: 4px 0 0 16px; padding: 0;">' + errors.map(function(err) { return '<li>' + err + '</li>'; }).join('') + '</ul>'; }
+            return;
+          }
+          rulesBundleCache.fieldMeta = glossary;
+          try { localStorage.setItem('orchestrate_glossary_override', JSON.stringify(glossary)); } catch(se) { console.warn('[Glossary] Storage save failed:', se); }
+          renderGlossarySummary();
+          if (typeof TriageAnalytics !== 'undefined') {
+            try { TriageAnalytics.refresh(); TriageAnalytics.renderHeader(); } catch(ae) {}
+          }
+          if (statusEl) { statusEl.style.display = 'block'; statusEl.style.background = '#e8f5e9'; statusEl.style.color = '#2e7d32'; statusEl.textContent = 'Glossary uploaded: ' + glossary.fields.length + ' fields across ' + Object.keys(glossary.meta.sheet_mapping || {}).length + ' sheet mappings. Schema coverage will update on next triage refresh.'; }
+          showToast('Glossary updated: ' + glossary.fields.length + ' fields loaded', 'success');
+          console.log('[Glossary] Uploaded: ' + glossary.fields.length + ' fields, version=' + (glossary.meta && glossary.meta.schema_version || '?'));
+        } catch(parseErr) {
+          if (statusEl) { statusEl.style.display = 'block'; statusEl.style.background = '#ffebee'; statusEl.style.color = '#c62828'; statusEl.textContent = 'Invalid JSON: ' + parseErr.message; }
+        }
+      };
+      reader.readAsText(file);
+      input.value = '';
+    }
+
+    function validateGlossarySchema(glossary) {
+      var errors = [];
+      if (!glossary || typeof glossary !== 'object') { errors.push('Root must be a JSON object'); return errors; }
+      if (!glossary.fields || !Array.isArray(glossary.fields)) { errors.push('Missing or invalid "fields" array'); return errors; }
+      if (glossary.fields.length === 0) { errors.push('"fields" array is empty'); return errors; }
+      var sample = glossary.fields[0];
+      if (!sample.field_key) errors.push('Fields must have "field_key" property');
+      if (!sample.sheet) errors.push('Fields must have "sheet" property (data sheet name)');
+      if (!glossary.meta) errors.push('Missing "meta" object (should contain sheet_mapping)');
+      else if (!glossary.meta.sheet_mapping) errors.push('Missing "meta.sheet_mapping" object (data sheet -> definition sheet mapping)');
+      var sheetsInFields = {};
+      for (var i = 0; i < glossary.fields.length; i++) {
+        var f = glossary.fields[i];
+        if (!f.field_key) { errors.push('Field at index ' + i + ' missing field_key'); break; }
+        sheetsInFields[f.sheet || 'Unknown'] = true;
+      }
+      if (glossary.meta && glossary.meta.sheet_mapping) {
+        var mapped = Object.keys(glossary.meta.sheet_mapping);
+        var unmapped = Object.keys(sheetsInFields).filter(function(s) { return !glossary.meta.sheet_mapping[s]; });
+        if (unmapped.length > 0) errors.push('Unmapped sheets in fields: ' + unmapped.join(', '));
+      }
+      return errors;
+    }
+
+    function downloadCurrentGlossary() {
+      if (!rulesBundleCache.loaded || !rulesBundleCache.fieldMeta) {
+        showToast('No glossary loaded', 'warning');
+        return;
+      }
+      var blob = new Blob([JSON.stringify(rulesBundleCache.fieldMeta, null, 2)], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'field_meta_glossary.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Glossary downloaded', 'info');
+    }
+
+    function resetGlossaryToDefault() {
+      if (!_glossaryDefault) {
+        showToast('Default glossary not available. Reload the page.', 'warning');
+        return;
+      }
+      rulesBundleCache.fieldMeta = JSON.parse(JSON.stringify(_glossaryDefault));
+      try { localStorage.removeItem('orchestrate_glossary_override'); } catch(se) {}
+      renderGlossarySummary();
+      if (typeof TriageAnalytics !== 'undefined') {
+        try { TriageAnalytics.refresh(); TriageAnalytics.renderHeader(); } catch(ae) {}
+      }
+      showToast('Glossary reset to default', 'info');
+      console.log('[Glossary] Reset to default: ' + _glossaryDefault.fields.length + ' fields');
+    }
+
     function loadAdminConfig() {
       console.log('[Admin] loadAdminConfig called');
       showToast('Load Config (not yet implemented)', 'info');
@@ -18515,6 +18671,17 @@
         
         if (fieldMetaRes.ok) {
           rulesBundleCache.fieldMeta = await fieldMetaRes.json();
+          _glossaryDefault = JSON.parse(JSON.stringify(rulesBundleCache.fieldMeta));
+          try {
+            var _gOverride = localStorage.getItem('orchestrate_glossary_override');
+            if (_gOverride) {
+              var _gParsed = JSON.parse(_gOverride);
+              if (_gParsed && _gParsed.fields && _gParsed.fields.length > 0) {
+                rulesBundleCache.fieldMeta = _gParsed;
+                console.log('[Glossary] Override loaded from session: ' + _gParsed.fields.length + ' fields');
+              }
+            }
+          } catch(_gErr) { console.warn('[Glossary] Override load failed:', _gErr); }
           console.log('[RulesBundle] field_meta loaded:', (rulesBundleCache.fieldMeta.fields && rulesBundleCache.fieldMeta.fields.length) || 0, 'fields');
         }
         if (hingeGroupsRes.ok) {
@@ -26047,6 +26214,10 @@
           var _cIdx = item.record_id.lastIndexOf(':');
           if (_cIdx > 0) item.sheet_name = item.record_id.substring(0, _cIdx);
         }
+        if (!item.sheet_name && item.contract_key) {
+          var _ckIdx = item.contract_key.indexOf(':ROW_');
+          if (_ckIdx > 0) item.sheet_name = item.contract_key.substring(0, _ckIdx);
+        }
       });
       
       // Salesforce Logic Flags: QA_FLAG with ERROR or WARNING severity
@@ -26090,6 +26261,10 @@
         if (!item.sheet_name && item.record_id) {
           var _cIdx = item.record_id.lastIndexOf(':');
           if (_cIdx > 0) item.sheet_name = item.record_id.substring(0, _cIdx);
+        }
+        if (!item.sheet_name && item.contract_key) {
+          var _ckIdx = item.contract_key.indexOf(':ROW_');
+          if (_ckIdx > 0) item.sheet_name = item.contract_key.substring(0, _ckIdx);
         }
       });
       analystTriageState.manualItems = analystTriageState.manualItems.concat(validationSignals);
@@ -33574,7 +33749,7 @@ Add any additional notes here.
               newRow[normalized] = row[original] !== '' ? row[original] : null;
             });
             // Ensure required fields have defaults
-            if (!newRow.contract_key) newRow.contract_key = 'ROW_' + (idx + 1);
+            if (!newRow.contract_key) newRow.contract_key = (sheetName ? (sheetName + ':') : '') + 'ROW_' + (idx + 1);
             if (!newRow.status) newRow.status = 'needs_review';
             return newRow;
           });
