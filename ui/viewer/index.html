@@ -1890,6 +1890,11 @@
                 </svg>
                 Upload Excel
               </button>
+              <button onclick="toggleAuditHeaderDropdown()" title="Audit Log"
+                      style="padding: 4px 8px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 5px; font-size: 0.75em; cursor: pointer; display: flex; align-items: center; gap: 3px; color: #555;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Audit
+              </button>
               <input type="file" id="excel-file-import" accept=".xlsx,.xls" style="display: none;" onchange="handleExcelUpload(this)">
               <input type="text" id="global-search-input" placeholder="Search records…" 
                      style="padding: 5px 8px; border: none; background: transparent; border-radius: 4px; font-size: 0.8em; width: 160px; color: #444; outline: none;" 
@@ -2282,6 +2287,13 @@
 
         <!-- Grid Controls -->
         <div id="analyst-grid-controls" class="grid-controls" style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;">
+          <div id="contract-filter-group" style="display: none; align-items: center; gap: 8px;">
+            <label style="font-size: 0.85em; color: #666;">Contract:</label>
+            <select id="grid-contract-selector" class="filter-select" style="min-width: 180px; max-width: 280px;" onchange="handleContractFilterChange(this.value)">
+              <option value="">All Contracts</option>
+            </select>
+            <button id="btn-view-contract" class="top-toolbar-btn" style="display:none; padding: 4px 10px; font-size: 0.8em;" onclick="openContractDetailDrawer()" title="View contract details">View Contract</button>
+          </div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <label style="font-size: 0.85em; color: #666;">Sheet:</label>
             <select id="grid-sheet-selector" class="filter-select" style="min-width: 160px;" onchange="handleGridSheetSelectorChange(this.value)">
@@ -2293,13 +2305,6 @@
             <select id="grid-merged-batch-selector" class="filter-select" style="min-width: 180px; max-width: 280px;" onchange="handleMergedBatchFilterChange(this.value)">
               <option value="">Current Batch</option>
             </select>
-          </div>
-          <div id="contract-filter-group" style="display: none; align-items: center; gap: 8px;">
-            <label style="font-size: 0.85em; color: #666;">Contract:</label>
-            <select id="grid-contract-selector" class="filter-select" style="min-width: 180px; max-width: 280px;" onchange="handleContractFilterChange(this.value)">
-              <option value="">All Contracts</option>
-            </select>
-            <button id="btn-view-contract" class="top-toolbar-btn" style="display:none; padding: 4px 10px; font-size: 0.8em;" onclick="openContractDetailDrawer()" title="View contract details">View Contract</button>
           </div>
           <div style="flex: 1; min-width: 200px;">
             <input type="text" id="grid-search" class="filter-search" placeholder="Search all fields..." style="width: 100%;">
@@ -2316,7 +2321,9 @@
             <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#c62828;margin-right:4px;vertical-align:middle;"></span>Blocked</span>
             <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#1565c0;margin-right:4px;vertical-align:middle;"></span>Finalized</span>
           </div>
-          <button class="top-toolbar-btn" id="grid-column-toggle" onclick="toggleColumnMenu()" title="Toggle columns">Columns</button>
+          <button class="top-toolbar-btn" id="grid-column-toggle" onclick="toggleColumnMenu()" title="Toggle columns" style="padding: 4px 8px; font-size: 0.8em; display: inline-flex; align-items: center; gap: 3px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+              Cols</button>
         </div>
 
         <!-- Column Toggle Menu (hidden by default) -->
@@ -5588,6 +5595,32 @@
 
       UUID_PATH_RE: /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i,
 
+      _sanitizeAnnotation: function(val) {
+        if (!val || typeof val !== 'string') return val;
+        var dblSlash = val.indexOf('//');
+        if (dblSlash > 0 && val.charAt(dblSlash - 1) !== ':') {
+          return val.substring(0, dblSlash).trim();
+        }
+        return val;
+      },
+      _sanitizeUrl: function(url) {
+        if (!url || typeof url !== 'string') return url;
+        url = url.replace(/^[\/\s]+/, '').trim();
+        var dblSlash = url.indexOf('//');
+        if (dblSlash > 8) {
+          var beforeSlash = url.substring(0, dblSlash).trim();
+          if (beforeSlash.indexOf('http') === 0 || beforeSlash.indexOf('/') >= 0) return beforeSlash;
+        }
+        return url;
+      },
+      _stripAutoAnnotation: function(val) {
+        if (!val || typeof val !== 'string') return val;
+        return val.replace(/\/\/\[AUTO\][^]*$/g, '').replace(/\/\/[^]*$/g, function(m) {
+          if (m.indexOf('://') >= 0) return m;
+          return '';
+        }).trim();
+      },
+
       _HEADER_LIKE_VALUES: /^(file_name_c|file_name|file_url|file_url_c|contract_key|sheet|status|record_id|dataset_id|group_id|document_type|capabilities)$/i,
 
       _isHeaderLike: function(val) {
@@ -5614,8 +5647,8 @@
       },
 
       deriveContractId: function(row, _returnMeta) {
-        var fileUrl = (row.file_url || row.File_URL_c || '').trim();
-        var fileName = (row.file_name || row.contract_key || '').trim();
+        var fileUrl = this._sanitizeUrl((row.file_url || row.File_URL_c || '').trim());
+        var fileName = this._sanitizeAnnotation((row.file_name || row.contract_key || '').trim());
         var validUrl = fileUrl && !this._isHeaderLike(fileUrl);
         var validName = fileName && !this._isHeaderLike(fileName);
         var id = null, source = null;
@@ -5677,6 +5710,7 @@
             if (!sheet || !sheet.rows) return;
             if (typeof isMetaSheet === 'function' && isMetaSheet(sheetName)) return;
             if (typeof isReferenceSheet === 'function' && isReferenceSheet(sheetName)) return;
+            if (sheetName && (sheetName.indexOf('_change_log') >= 0 || sheetName.toLowerCase().indexOf('glossary') >= 0)) return;
 
             sheet.rows.forEach(function(row, rowIdx) {
               index.stats.total_rows++;
@@ -8430,6 +8464,11 @@
       stagedLoader.start();
       stagedLoader.setStage('loading');
       SessionDB.loadSession(sessionId).then(function(session) {
+        if (session && session.dataset_id && typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.dataset_id && session.dataset_id !== IDENTITY_CONTEXT.dataset_id) {
+          console.warn('[Session] Cache-cycle guard: restored session dataset_id (' + session.dataset_id + ') does not match active (' + IDENTITY_CONTEXT.dataset_id + '). Skipping stale restore.');
+          if (typeof showToast === 'function') showToast('Session skipped: dataset mismatch', 'warning');
+          return;
+        }
         if (!session || !session.workbook) {
           stagedLoader.finish();
           showToast('Session not found or corrupted', 'error');
@@ -13419,7 +13458,7 @@
         var rowId = page.split('/')[1];
         if (!rowId || rowId === 'undefined' || rowId === 'null' || rowId === 'NaN') {
           console.warn('[Navigate] Invalid row route ignored:', page);
-          navigateTo(dataLoaded ? 'grid' : 'triage');
+          navigateTo('triage');
           return;
         }
         // v1.4.16: If SRR already open with same row, skip re-open (prevents hashchange loop failures)
@@ -13705,6 +13744,12 @@
         }
       }
       keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
+      try {
+        if (typeof SessionDB !== 'undefined' && SessionDB.clearWorkbookCache) SessionDB.clearWorkbookCache().catch(function(){});
+        if (typeof workbook !== 'undefined') { workbook = { sheets: {}, order: [] }; }
+        if (typeof dataLoaded !== 'undefined') dataLoaded = false;
+        if (typeof ContractIndex !== 'undefined' && ContractIndex.clear) ContractIndex.clear();
+      } catch(e) { console.warn('[SignOut] cleanup error:', e); }
       window.location.href = isDemo ? '/ui/demo/' : '/ui/landing/';
     }
     
@@ -17566,7 +17611,8 @@
 
       var expanded = _guidanceCardExpanded;
       var html = '<div id="section-guidance-card" class="section-guidance-card" style="margin-bottom: 16px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #fafbff;">';
-      var guidanceTitle = (guidance._section_label || guidance.label || 'Section Guidance');
+      var _sheetLabel = (typeof srrState !== 'undefined' && srrState.currentSheetName) ? srrState.currentSheetName.replace(/_/g, ' ') : '';
+      var guidanceTitle = guidance._section_label || guidance.label || (_sheetLabel ? _sheetLabel + ' Guidance' : 'Section Guidance');
       html += '<div class="section-guidance-toggle" onclick="toggleGuidanceCard()" style="padding: 10px 14px; background: #f0f4ff; display: flex; justify-content: space-between; align-items: center; border-bottom: ' + (expanded ? '1px solid #e0e0e0' : 'none') + ';">';
       html += '<div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">';
       html += '<span style="font-size: 1.1em;">\u{1F4D6}</span>';
@@ -17617,7 +17663,7 @@
 
     function renderKnowledgeRail(container) {
       if (!container || !_knowledgeLinksConfig || !_knowledgeLinksConfig.links) return;
-      var links = _knowledgeLinksConfig.links
+      var links = (_knowledgeLinksConfig.links || []).filter(function(l) { return l && l.url && l.url.indexOf('http') === 0 && l.label; })
         .filter(function(l) { return l.enabled && l.roles_allowed && l.roles_allowed.indexOf(currentMode) >= 0; })
         .sort(function(a, b) { return (a.order || 99) - (b.order || 99); });
       if (links.length === 0) return;
@@ -21962,7 +22008,7 @@
         var cache = {
           refreshed_at: new Date().toISOString(),
           lanes: {
-            preflight: { unknown_columns: 0, ocr_unreadable: 0, low_confidence: 0, mojibake: 0, total: 0 },
+            preflight: { unknown_columns: 0, ocr_unreadable: 0, low_confidence: 0, mojibake: 0, document_type: 0, total: 0 },
             semantic: { proposals_created: 0, accepted: 0, rejected: 0, pending: 0, hinge_impacted: 0, total: 0 },
             patch_review: { draft: 0, submitted: 0, in_verifier: 0, in_admin: 0, rfi_submitted: 0, clarification: 0, promoted: 0, applied: 0, total: 0 }
           },
@@ -21989,6 +22035,7 @@
           else if (bt === 'OCR_UNREADABLE') cache.lanes.preflight.ocr_unreadable++;
           else if (bt === 'LOW_CONFIDENCE') cache.lanes.preflight.low_confidence++;
           else if (bt === 'MOJIBAKE' || bt === 'MOJIBAKE_DETECTED') { cache.lanes.preflight.mojibake++; cache.lanes.preflight.ocr_unreadable++; }
+          else if (bt === 'DOCUMENT_TYPE_MISSING') { cache.lanes.preflight.document_type++; }
           else if (bt === 'DOCUMENT_TYPE_MISSING') cache.lanes.preflight.document_type = (cache.lanes.preflight.document_type || 0) + 1;
         });
         cache.lanes.preflight.total = cache.lanes.preflight.unknown_columns + cache.lanes.preflight.ocr_unreadable + cache.lanes.preflight.low_confidence + (cache.lanes.preflight.document_type || 0);
@@ -22420,7 +22467,7 @@
         else if (type === 'drift') count = cache.schema.schema_drift;
         if (count === 0 && emptyState) {
           emptyState.style.display = '';
-          emptyState.textContent = 'No ' + (type === 'unknown' ? 'unknown columns' : type === 'missing' ? 'missing required fields' : 'schema drift items') + ' detected in current dataset.';
+          emptyState.textContent = 'No ' + (type === 'unknown' ? 'unknown columns' : type === 'missing' ? 'missing required fields' : 'schema drift items') + ' detected in current dataset. Load or refresh data to update this view.';
           return;
         }
         navigateToGridFiltered(targetFilter);
@@ -24184,8 +24231,10 @@
       
       // Restore evidence pack sections
       // v1.6.57: Restore replay contract as required for Correction/Blacklist
+      // P0.5: Only show for Verifier/Admin
       var replayBlock = document.getElementById('srr-replay-contract-block');
-      if (replayBlock) replayBlock.style.display = 'block';
+      var _replayRole = (localStorage.getItem('viewer_mode_v10') || 'analyst').toLowerCase();
+      if (replayBlock) replayBlock.style.display = (_replayRole === 'verifier' || _replayRole === 'admin') ? 'block' : 'none';
       ['srr-replay-type-required', 'srr-replay-steps-required', 'srr-replay-expected-required'].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.textContent = '(required)';
@@ -31172,7 +31221,7 @@ Add any additional notes here.
 <!-- Feedback FAB + Panel -->
 <style>
   .feedback-fab {
-    position: fixed; bottom: 24px; right: 24px; z-index: 99999;
+    position: fixed; bottom: 80px; right: 24px; z-index: 99999;
     background: #1565c0; color: #fff; border: none; border-radius: 28px;
     padding: 12px 20px; font-size: 14px; font-weight: 600;
     cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
