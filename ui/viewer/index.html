@@ -2057,6 +2057,14 @@
                   <button id="ta-contract-view-grid" onclick="event.stopPropagation(); TriageAnalytics.viewFilteredInGrid();" style="display: none; font-size: 0.7em; padding: 2px 10px; border-radius: 10px; border: 1px solid #1976d2; background: #e3f2fd; color: #1565c0; cursor: pointer; font-weight: 600;">View in Grid</button>
                 </div>
               </div>
+              <div id="ta-health-filter-bar" style="display: none; padding: 6px 16px; background: #fafafa; border-bottom: 1px solid #eee; gap: 8px; flex-wrap: wrap; align-items: center;">
+                <span style="font-size: 0.75em; color: #888; font-weight: 600;">Health:</span>
+                <span class="health-filter-chip" data-health-band="critical" onclick="ContractHealthScore.filterByBand('critical')" style="padding: 2px 10px; border-radius: 10px; font-size: 0.72em; font-weight: 600; cursor: pointer; background: #ffebee; color: #c62828; border: 1px solid transparent;">Critical <span id="health-chip-critical-count">0</span></span>
+                <span class="health-filter-chip" data-health-band="at_risk" onclick="ContractHealthScore.filterByBand('at_risk')" style="padding: 2px 10px; border-radius: 10px; font-size: 0.72em; font-weight: 600; cursor: pointer; background: #fff3e0; color: #e65100; border: 1px solid transparent;">At Risk <span id="health-chip-at-risk-count">0</span></span>
+                <span class="health-filter-chip" data-health-band="watch" onclick="ContractHealthScore.filterByBand('watch')" style="padding: 2px 10px; border-radius: 10px; font-size: 0.72em; font-weight: 600; cursor: pointer; background: #fffde7; color: #f9a825; border: 1px solid transparent;">Watch <span id="health-chip-watch-count">0</span></span>
+                <span class="health-filter-chip" data-health-band="healthy" onclick="ContractHealthScore.filterByBand('healthy')" style="padding: 2px 10px; border-radius: 10px; font-size: 0.72em; font-weight: 600; cursor: pointer; background: #e8f5e9; color: #2e7d32; border: 1px solid transparent;">Healthy <span id="health-chip-healthy-count">0</span></span>
+                <span class="health-filter-chip" data-health-band="all" onclick="ContractHealthScore.filterByBand('all')" style="padding: 2px 10px; border-radius: 10px; font-size: 0.72em; font-weight: 600; cursor: pointer; background: #e3f2fd; color: #1565c0; border: 2px solid #1565c0;">All</span>
+              </div>
               <div id="ta-contract-body" style="max-height: 280px; overflow-y: auto; display: none;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.82em;">
                   <thead style="background: #fafafa; position: sticky; top: 0;">
@@ -2068,10 +2076,11 @@
                       <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #ff9800;">Semantic</th>
                       <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #1976d2;">Patches</th>
                       <th style="padding: 8px 12px; text-align: right; font-weight: 600; color: #555;">Rows</th>
+                      <th style="padding: 8px 12px; text-align: center; font-weight: 600; color: #555;">Health</th>
                     </tr>
                   </thead>
                   <tbody id="ta-contract-tbody">
-                    <tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">No contracts indexed</td></tr>
+                    <tr><td colspan="8" style="padding: 20px; text-align: center; color: #999;">No contracts indexed</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -25037,6 +25046,250 @@
     // ========================================================================
     // V2.3: Triage Analytics Aggregator + Renderer
     // ========================================================================
+
+    // ===== P1G: Contract Health Score Engine =====
+    var ContractHealthScore = {
+      _scores: {},
+      _prevScores: {},
+      _activeBandFilter: 'all',
+
+      PENALTY: {
+        PREFLIGHT_BLOCKER: 20,
+        PREFLIGHT_WARNING: 5,
+        PREFLIGHT_CAP: 60,
+        SP_READY: 10,
+        SP_PROPOSALS_PENDING: 15,
+        SP_REJECTED: 8,
+        LIFECYCLE: {
+          loaded: 15,
+          preflight_complete: 12,
+          system_pass_ready: 10,
+          system_pass_complete: 8,
+          system_changes_reviewed: 6,
+          patch_submitted: 4,
+          rfi_submitted: 4,
+          verifier_complete: 2,
+          admin_promoted: 0,
+          applied: 0
+        },
+        UNKNOWN_COLUMNS: 6,
+        DOC_TYPE_MISSING: 8,
+        STALENESS_PER_30: 2,
+        STALENESS_CAP: 10
+      },
+
+      BANDS: [
+        { key: 'critical', label: 'Critical', min: 0, max: 34, color: '#c62828', bg: '#ffebee' },
+        { key: 'at_risk', label: 'At Risk', min: 35, max: 59, color: '#e65100', bg: '#fff3e0' },
+        { key: 'watch', label: 'Watch', min: 60, max: 84, color: '#f9a825', bg: '#fffde7' },
+        { key: 'healthy', label: 'Healthy', min: 85, max: 100, color: '#2e7d32', bg: '#e8f5e9' }
+      ],
+
+      getBand: function(score) {
+        for (var i = 0; i < this.BANDS.length; i++) {
+          if (score >= this.BANDS[i].min && score <= this.BANDS[i].max) return this.BANDS[i];
+        }
+        return this.BANDS[0];
+      },
+
+      computeScore: function(contractId, contractData, cache) {
+        var base = 100;
+        var penalties = [];
+        var P = this.PENALTY;
+
+        var pfAlerts = contractData.preflight_alerts || 0;
+        var semAlerts = contractData.semantic_alerts || 0;
+        var patchAlerts = contractData.patch_alerts || 0;
+        var stage = contractData.current_stage || 'loaded';
+
+        var pfBlockers = 0, pfWarnings = 0;
+        if (typeof _p1fBatchScanItems !== 'undefined') {
+          _p1fBatchScanItems.forEach(function(item) {
+            if (item.contract_id === contractId || item.contract_key === contractId) {
+              var sev = (item.severity || item.condition || '').toLowerCase();
+              if (sev.indexOf('blocker') >= 0 || sev.indexOf('not_searchable') >= 0 || sev.indexOf('mojibake') >= 0) pfBlockers++;
+              else pfWarnings++;
+            }
+          });
+        }
+        if (typeof analystTriageState !== 'undefined' && analystTriageState.manualItems) {
+          analystTriageState.manualItems.forEach(function(item) {
+            if (item.contract_id === contractId || item.contract_key === contractId) pfWarnings++;
+          });
+        }
+        if (pfBlockers === 0 && pfWarnings === 0 && pfAlerts > 0) {
+          pfBlockers = Math.ceil(pfAlerts / 2);
+          pfWarnings = pfAlerts - pfBlockers;
+        }
+
+        var pfPenalty = Math.min(pfBlockers * P.PREFLIGHT_BLOCKER + pfWarnings * P.PREFLIGHT_WARNING, P.PREFLIGHT_CAP);
+        if (pfPenalty > 0) penalties.push({ reason: 'Pre-Flight issues', detail: pfBlockers + ' blocker, ' + pfWarnings + ' warning', value: pfPenalty });
+
+        var spPenalty = 0;
+        if (stage === 'system_pass_ready') {
+          spPenalty += P.SP_READY;
+          penalties.push({ reason: 'System Pass not processed', detail: 'Awaiting System Pass', value: P.SP_READY });
+        }
+        if (semAlerts > 0) {
+          spPenalty += P.SP_PROPOSALS_PENDING;
+          penalties.push({ reason: 'System proposals pending', detail: semAlerts + ' proposals', value: P.SP_PROPOSALS_PENDING });
+        }
+
+        var lcPenalty = P.LIFECYCLE[stage] || 0;
+        if (lcPenalty > 0) penalties.push({ reason: 'Lifecycle stage', detail: stage.replace(/_/g, ' '), value: lcPenalty });
+
+        var unknownCols = 0;
+        if (typeof ContractIndex !== 'undefined' && ContractIndex._index && ContractIndex._index.unknown_columns) {
+          var uc = ContractIndex._index.unknown_columns[contractId];
+          if (uc && uc.length > 0) unknownCols = uc.length;
+        }
+        if (unknownCols > 0) penalties.push({ reason: 'Unknown columns', detail: unknownCols + ' columns', value: P.UNKNOWN_COLUMNS });
+
+        var docMissing = false;
+        if (!contractData.doc_role || contractData.doc_role === '-' || contractData.doc_role === '') {
+          if (typeof ContractIndex !== 'undefined' && ContractIndex._index && ContractIndex._index.contracts) {
+            var ci = ContractIndex._index.contracts[contractId];
+            if (ci && ci.sheets) {
+              var sheetKeys = Object.keys(ci.sheets);
+              if (sheetKeys.length > 0) docMissing = true;
+            }
+          }
+        }
+        if (docMissing) penalties.push({ reason: 'Document type missing', detail: 'No doc role assigned', value: P.DOC_TYPE_MISSING });
+
+        var staleMin = 0;
+        if (contractData.last_updated) {
+          var updatedAt = new Date(contractData.last_updated);
+          if (!isNaN(updatedAt.getTime())) {
+            staleMin = Math.floor((Date.now() - updatedAt.getTime()) / 60000);
+          }
+        }
+        if (staleMin > 60) {
+          var stalePenalty = Math.min(Math.floor((staleMin - 60) / 30) * P.STALENESS_PER_30, P.STALENESS_CAP);
+          if (stalePenalty > 0) penalties.push({ reason: 'Staleness', detail: Math.floor(staleMin / 60) + 'h idle', value: stalePenalty });
+        }
+
+        var totalPenalty = 0;
+        penalties.forEach(function(p) { totalPenalty += p.value; });
+        var score = Math.max(0, Math.min(100, base - totalPenalty));
+        var band = this.getBand(score);
+
+        return {
+          contract_id: contractId,
+          score: score,
+          band: band,
+          penalties: penalties,
+          total_penalty: totalPenalty
+        };
+      },
+
+      computeAll: function(cache) {
+        if (!cache || !cache.contracts) return;
+        this._prevScores = JSON.parse(JSON.stringify(this._scores || {}));
+        this._scores = {};
+        var bandCounts = { critical: 0, at_risk: 0, watch: 0, healthy: 0 };
+        var self = this;
+
+        cache.contracts.forEach(function(c) {
+          var result = self.computeScore(c.contract_id, c, cache);
+          self._scores[c.contract_id] = result;
+          bandCounts[result.band.key]++;
+          c._health_score = result.score;
+          c._health_band = result.band;
+          c._health_penalties = result.penalties;
+        });
+
+        console.log('[CONTRACT-HEALTH][P1G] score_computed | contracts=' + cache.contracts.length + ', critical=' + bandCounts.critical + ', at_risk=' + bandCounts.at_risk + ', watch=' + bandCounts.watch + ', healthy=' + bandCounts.healthy);
+        console.log('[CONTRACT-HEALTH][P1G] band_assigned | distribution: critical=' + bandCounts.critical + ', at_risk=' + bandCounts.at_risk + ', watch=' + bandCounts.watch + ', healthy=' + bandCounts.healthy);
+
+        this._updateFilterChips(bandCounts);
+        this._updateTrend();
+      },
+
+      _updateFilterChips: function(counts) {
+        var bar = document.getElementById('ta-health-filter-bar');
+        if (bar) bar.style.display = 'flex';
+        var keys = ['critical', 'at_risk', 'watch', 'healthy'];
+        keys.forEach(function(k) {
+          var el = document.getElementById('health-chip-' + k.replace('_', '-') + '-count');
+          if (el) el.textContent = counts[k] || 0;
+        });
+      },
+
+      _updateTrend: function() {
+        var updated = 0;
+        var self = this;
+        Object.keys(this._scores).forEach(function(cid) {
+          var prev = self._prevScores[cid];
+          var curr = self._scores[cid];
+          if (prev && prev.score !== curr.score) {
+            curr.delta = curr.score - prev.score;
+            updated++;
+          } else {
+            curr.delta = 0;
+          }
+        });
+        if (updated > 0) {
+          console.log('[CONTRACT-HEALTH][P1G] trend_updated | contracts_with_delta=' + updated);
+        }
+      },
+
+      renderHealthCell: function(c) {
+        var score = c._health_score != null ? c._health_score : 100;
+        var band = c._health_band || this.getBand(score);
+        var result = this._scores[c.contract_id];
+        var delta = result ? result.delta : 0;
+        var penalties = result ? result.penalties : (c._health_penalties || []);
+
+        var tooltipLines = ['Score: ' + score + '/100 (' + band.label + ')'];
+        if (penalties.length > 0) {
+          tooltipLines.push('---');
+          penalties.forEach(function(p) { tooltipLines.push('-' + p.value + ' ' + p.reason + ' (' + p.detail + ')'); });
+        }
+        var tooltip = tooltipLines.join('\n').replace(/"/g, '&quot;');
+
+        var deltaHtml = '';
+        if (delta > 0) deltaHtml = ' <span style="color:#2e7d32; font-size:0.8em;" title="Improved +' + delta + '">&#9650;' + delta + '</span>';
+        else if (delta < 0) deltaHtml = ' <span style="color:#c62828; font-size:0.8em;" title="Declined ' + delta + '">&#9660;' + Math.abs(delta) + '</span>';
+
+        return '<td style="padding: 8px 12px; text-align: center;" title="' + tooltip + '">' +
+          '<span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; font-size: 0.85em; background: ' + band.bg + '; color: ' + band.color + '; font-weight: 600; cursor: help;">' +
+          score + '</span>' + deltaHtml + '</td>';
+      },
+
+      sortByHealth: function(contracts) {
+        return contracts.slice().sort(function(a, b) {
+          var sa = a._health_score != null ? a._health_score : 100;
+          var sb = b._health_score != null ? b._health_score : 100;
+          return sa - sb;
+        });
+      },
+
+      filterByBand: function(bandKey) {
+        this._activeBandFilter = bandKey;
+
+        var chips = document.querySelectorAll('.health-filter-chip');
+        chips.forEach(function(chip) {
+          var isActive = chip.getAttribute('data-health-band') === bandKey;
+          chip.style.border = isActive ? '2px solid ' + (bandKey === 'all' ? '#1565c0' : chip.style.color) : '1px solid transparent';
+        });
+
+        console.log('[CONTRACT-HEALTH][P1G] filter_applied | band=' + bandKey);
+
+        if (typeof TriageAnalytics !== 'undefined' && TriageAnalytics._cache) {
+          TriageAnalytics._renderContractTable(TriageAnalytics._cache, TriageAnalytics._activeStageFilter);
+        }
+      },
+
+      getFilteredContracts: function(contracts) {
+        if (this._activeBandFilter === 'all') return contracts;
+        var band = this._activeBandFilter;
+        return contracts.filter(function(c) {
+          return c._health_band && c._health_band.key === band;
+        });
+      }
+    };
+
     var TriageAnalytics = {
       _cache: null,
       _lastRefreshedAt: null,
@@ -25380,6 +25633,7 @@
         if (el('ta-pr-promoted')) el('ta-pr-promoted').textContent = cache.lanes.patch_review.promoted;
 
         this._renderLifecycle(cache);
+        if (typeof ContractHealthScore !== 'undefined') ContractHealthScore.computeAll(cache);
         this._renderContractTable(cache);
         this._renderSchemaSnapshot(cache);
 
@@ -25480,12 +25734,24 @@
         console.log('[TRIAGE-ANALYTICS][P0.2] contract_summary_recomputed: total=' + cache.contracts.length + ', completed=' + completedC + ', review=' + reviewC + ', pending=' + pendingC);
 
         if (contracts.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">' + (stageFilter ? 'No contracts at this stage' : 'No contracts indexed') + '</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="8" style="padding: 20px; text-align: center; color: #999;">' + (stageFilter ? 'No contracts at this stage' : 'No contracts indexed') + '</td></tr>';
           return;
         }
 
         var SL = { loaded: 'Loaded', preflight_complete: 'Pre-Flight Done', system_pass_ready: 'SP Ready', system_pass_complete: 'System Pass', system_changes_reviewed: 'Reviewed', patch_submitted: 'Patch Sub.', rfi_submitted: 'RFI', verifier_complete: 'Verifier Done', admin_promoted: 'Promoted', applied: 'Applied' };
         var SC = { loaded: '#9e9e9e', preflight_complete: '#4caf50', system_pass_ready: '#66bb6a', system_pass_complete: '#ff9800', system_changes_reviewed: '#2196f3', patch_submitted: '#1976d2', rfi_submitted: '#f57f17', verifier_complete: '#7b1fa2', admin_promoted: '#00897b', applied: '#2e7d32' };
+
+        // P1G: Apply health band filter
+        if (typeof ContractHealthScore !== 'undefined') {
+          contracts = ContractHealthScore.getFilteredContracts(contracts);
+          contracts = ContractHealthScore.sortByHealth(contracts);
+          console.log('[CONTRACT-HEALTH][P1G] sort_applied | contracts=' + contracts.length + ', filter=' + ContractHealthScore._activeBandFilter);
+        }
+
+        if (contracts.length === 0 && ContractHealthScore._activeBandFilter !== 'all') {
+          tbody.innerHTML = '<tr><td colspan="8" style="padding: 20px; text-align: center; color: #999;">No contracts in this health band</td></tr>';
+          return;
+        }
 
         var html = '';
         contracts.forEach(function(c) {
@@ -25500,6 +25766,7 @@
           html += '<td style="padding: 8px 12px; text-align: center; color: ' + (c.semantic_alerts > 0 ? '#e65100' : '#ccc') + '; font-weight: 600;">' + c.semantic_alerts + '</td>';
           html += '<td style="padding: 8px 12px; text-align: center; color: ' + (c.patch_alerts > 0 ? '#1565c0' : '#ccc') + '; font-weight: 600;">' + c.patch_alerts + '</td>';
           html += '<td style="padding: 8px 12px; text-align: right; color: #666;">' + (c.row_count || 0) + '</td>';
+          html += (typeof ContractHealthScore !== 'undefined') ? ContractHealthScore.renderHealthCell(c) : '<td></td>';
           html += '</tr>';
         });
         tbody.innerHTML = html;
