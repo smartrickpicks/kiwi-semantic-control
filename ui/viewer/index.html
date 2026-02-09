@@ -17835,6 +17835,8 @@
         btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Running...';
       }
 
+      console.log('[RERUN-PREFLIGHT] Clearing all triage state for clean restart');
+
       analystTriageState.manualItems = [];
       _p1fBatchScanItems = [];
 
@@ -17851,6 +17853,25 @@
       _p1fScanState.skipped = 0;
       _p1fScanState.results = {};
 
+      if (typeof _p1f1Reset === 'function') _p1f1Reset();
+      if (typeof _p1f1UnlockAccordion === 'function') _p1f1UnlockAccordion();
+
+      var _liveWrapper = document.getElementById('p1f1-live-intake-wrapper');
+      if (_liveWrapper) _liveWrapper.style.display = 'none';
+      var _liveTbody = document.getElementById('p1f1-live-tbody');
+      if (_liveTbody) _liveTbody.innerHTML = '';
+      var _summaryBar = document.getElementById('p1f1-summary-bar');
+      if (_summaryBar) { _summaryBar.style.display = 'none'; _summaryBar.innerHTML = ''; }
+
+      var _pfc = document.getElementById('p1d-preflight-container');
+      if (_pfc) _pfc.innerHTML = '<div class="p1d-empty-state">Rerunning pre-flight…</div>';
+
+      _p1dGroupState = {};
+
+      try { renderAnalystTriage(); } catch(e) { console.warn('[RERUN-PREFLIGHT] Initial triage clear render error:', e); }
+      try { if (typeof TriageAnalytics !== 'undefined' && typeof TriageAnalytics.refresh === 'function') { TriageAnalytics.refresh(); TriageAnalytics.renderHeader(); } } catch(e) {}
+
+      console.log('[RERUN-PREFLIGHT] State cleared, regenerating signals');
       try { generateSignalsForDataset(); } catch(e) { console.warn('[RERUN-PREFLIGHT] Signal generation error:', e); }
 
       try { if (typeof detectUnknownColumns === 'function') { detectUnknownColumns(allData.contractResults, sessionState.fileName || 'rerun'); } } catch(e) {}
