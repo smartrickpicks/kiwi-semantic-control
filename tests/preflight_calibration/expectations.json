@@ -1,0 +1,42 @@
+{
+  "version": "1.0.0",
+  "policy_checks": {
+    "unknown_column_warn_threshold": {
+      "description": "Unknown columns with >0 non-empty values produce warning",
+      "rule": "non_empty > 0 => severity=warning"
+    },
+    "unknown_column_blocker_threshold": {
+      "description": "Unknown columns with >3 non-empty values produce blocker",
+      "rule": "non_empty > 3 => severity=blocker"
+    },
+    "mojibake_ocr_merge": {
+      "description": "Mojibake detections are folded under OCR Unreadable family",
+      "rule": "MOJIBAKE_DETECTED increments ocr_unreadable count"
+    },
+    "document_type_category": {
+      "description": "DOCUMENT_TYPE_MISSING is a registered preflight blocker type",
+      "rule": "_preflightBlockerTypes.DOCUMENT_TYPE_MISSING exists"
+    },
+    "meta_leakage_prevention": {
+      "description": "Meta sheets (_change_log, RFIs & Analyst Notes) never appear in actionable triage queues",
+      "rule": "isMetaSheet(name) => excluded from manualItems"
+    },
+    "ref_leakage_prevention": {
+      "description": "Reference/glossary sheets never appear in actionable triage queues",
+      "rule": "isReferenceSheet(name) => excluded from manualItems"
+    },
+    "internal_field_exclusion": {
+      "description": "System fields starting with _ are not flagged as unknown columns",
+      "rule": "field.startsWith('_') => not treated as unknown column"
+    }
+  },
+  "fixture_expectations": {
+    "PF_PASS_BASELINE": {"total_preflight": 0, "severity": "none"},
+    "PF_FAIL_UNKNOWN_WARN": {"total_preflight_min": 1, "severity": "warning"},
+    "PF_FAIL_UNKNOWN_BLOCKER": {"total_preflight_min": 4, "severity": "blocker"},
+    "PF_FAIL_OCR_UNREADABLE": {"mojibake_merged_to_ocr": true},
+    "PF_FAIL_DOCUMENT_TYPE": {"document_type_blocker_registered": true},
+    "PF_FAIL_LOW_CONFIDENCE": {"low_confidence_category_exists": true},
+    "PF_FAIL_MIXED": {"multi_issue": true, "meta_leakage": false, "ref_leakage": false}
+  }
+}

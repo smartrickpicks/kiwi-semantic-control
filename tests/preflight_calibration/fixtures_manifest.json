@@ -1,0 +1,142 @@
+{
+  "version": "1.2.0",
+  "description": "Pre-flight calibration fixture manifest for Orchestrate OS triage detectors",
+  "note": "CANONICAL_FIELDS: contract_key, file_name, file_url, status, subtype, severity, sheet, notes. However, column_aliases.json maps 'status' to 'status_c' for Accounts sheet, so 'status' will be detected as unknown. Use only file_name, file_url, contract_key for clean baseline.",
+  "fixtures": {
+    "PF_PASS_BASELINE": {
+      "id": "PF_PASS_BASELINE",
+      "description": "Clean dataset with only strict canonical columns (no alias-mapped fields), no encoding issues",
+      "sheets": {
+        "Accounts": {
+          "headers": ["file_name", "file_url", "contract_key"],
+          "rows": [
+            {"file_name": "contract_alpha.pdf", "file_url": "https://docs.example.com/alpha", "contract_key": "CK-001"},
+            {"file_name": "contract_alpha.pdf", "file_url": "https://docs.example.com/alpha", "contract_key": "CK-001"},
+            {"file_name": "contract_beta.pdf", "file_url": "https://docs.example.com/beta", "contract_key": "CK-002"}
+          ]
+        }
+      },
+      "expected": {
+        "unknown_columns": 0,
+        "total_preflight": 0,
+        "severity": "none"
+      }
+    },
+    "PF_FAIL_UNKNOWN_WARN": {
+      "id": "PF_FAIL_UNKNOWN_WARN",
+      "description": "Dataset with 1 unknown column (mystery_col_x), warning severity",
+      "sheets": {
+        "Accounts": {
+          "headers": ["file_name", "file_url", "contract_key", "mystery_col_x"],
+          "rows": [
+            {"file_name": "c1.pdf", "file_url": "https://docs.example.com/c1", "contract_key": "CK-001", "mystery_col_x": "val1"},
+            {"file_name": "c1.pdf", "file_url": "https://docs.example.com/c1", "contract_key": "CK-001", "mystery_col_x": "val2"},
+            {"file_name": "c1.pdf", "file_url": "https://docs.example.com/c1", "contract_key": "CK-001", "mystery_col_x": "val3"}
+          ]
+        }
+      },
+      "expected": {
+        "unknown_columns_min": 1,
+        "severity": "warning",
+        "total_preflight_min": 1
+      }
+    },
+    "PF_FAIL_UNKNOWN_BLOCKER": {
+      "id": "PF_FAIL_UNKNOWN_BLOCKER",
+      "description": "Dataset with 5 unknown columns, each with >3 non-empty values (blocker severity)",
+      "sheets": {
+        "Accounts": {
+          "headers": ["file_name", "file_url", "contract_key", "unk_a", "unk_b", "unk_c", "unk_d", "unk_e"],
+          "rows": [
+            {"file_name": "c1.pdf", "file_url": "https://docs.example.com/c1", "contract_key": "CK-001", "unk_a": "1", "unk_b": "2", "unk_c": "3", "unk_d": "4", "unk_e": "5"},
+            {"file_name": "c1.pdf", "file_url": "https://docs.example.com/c1", "contract_key": "CK-001", "unk_a": "a", "unk_b": "b", "unk_c": "c", "unk_d": "d", "unk_e": "e"},
+            {"file_name": "c1.pdf", "file_url": "https://docs.example.com/c1", "contract_key": "CK-001", "unk_a": "x", "unk_b": "y", "unk_c": "z", "unk_d": "w", "unk_e": "v"},
+            {"file_name": "c1.pdf", "file_url": "https://docs.example.com/c1", "contract_key": "CK-001", "unk_a": "r1", "unk_b": "r2", "unk_c": "r3", "unk_d": "r4", "unk_e": "r5"}
+          ]
+        }
+      },
+      "expected": {
+        "unknown_columns_min": 4,
+        "has_blocker": true,
+        "total_preflight_min": 4
+      }
+    },
+    "PF_FAIL_OCR_UNREADABLE": {
+      "id": "PF_FAIL_OCR_UNREADABLE",
+      "description": "Validates MOJIBAKE label is merged under OCR/Encoding family in _preflightBlockerTypes",
+      "sheets": {
+        "Accounts": {
+          "headers": ["file_name", "file_url", "contract_key"],
+          "rows": [
+            {"file_name": "c1.pdf", "file_url": "https://docs.example.com/c1", "contract_key": "CK-001"}
+          ]
+        }
+      },
+      "expected": {
+        "ocr_includes_mojibake": true
+      }
+    },
+    "PF_FAIL_DOCUMENT_TYPE": {
+      "id": "PF_FAIL_DOCUMENT_TYPE",
+      "description": "Validates that DOCUMENT_TYPE_MISSING is a registered preflight blocker type",
+      "sheets": {
+        "Accounts": {
+          "headers": ["file_name", "file_url", "contract_key"],
+          "rows": [
+            {"file_name": "c1.pdf", "file_url": "https://docs.example.com/c1", "contract_key": "CK-001"}
+          ]
+        }
+      },
+      "expected": {
+        "document_type_category_exists": true,
+        "blocker_type_registered": true
+      }
+    },
+    "PF_FAIL_LOW_CONFIDENCE": {
+      "id": "PF_FAIL_LOW_CONFIDENCE",
+      "description": "Validates LOW_CONFIDENCE is a registered preflight blocker type",
+      "sheets": {
+        "Accounts": {
+          "headers": ["file_name", "file_url", "contract_key"],
+          "rows": [
+            {"file_name": "c1.pdf", "file_url": "https://docs.example.com/c1", "contract_key": "CK-001"}
+          ]
+        }
+      },
+      "expected": {
+        "low_confidence_category_exists": true
+      }
+    },
+    "PF_FAIL_MIXED": {
+      "id": "PF_FAIL_MIXED",
+      "description": "Dataset with 1 unknown column + meta/ref sheets (leakage test)",
+      "sheets": {
+        "Accounts": {
+          "headers": ["file_name", "file_url", "contract_key", "weird_col"],
+          "rows": [
+            {"file_name": "c1.pdf", "file_url": "https://docs.example.com/c1", "contract_key": "CK-001", "weird_col": "data1"},
+            {"file_name": "c1.pdf", "file_url": "https://docs.example.com/c1", "contract_key": "CK-001", "weird_col": "data2"}
+          ]
+        },
+        "_change_log": {
+          "headers": ["timestamp", "action", "user"],
+          "rows": [
+            {"timestamp": "2025-01-01", "action": "created", "user": "system"}
+          ]
+        },
+        "Glossary_Reference": {
+          "headers": ["term", "definition"],
+          "rows": [
+            {"term": "SLA", "definition": "Service Level Agreement"}
+          ]
+        }
+      },
+      "expected": {
+        "unknown_columns_min": 1,
+        "meta_leakage": false,
+        "ref_leakage": false,
+        "total_preflight_min": 1
+      }
+    }
+  }
+}

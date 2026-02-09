@@ -1,0 +1,23 @@
+{
+  "version": "1.0.0",
+  "run_timestamp": null,
+  "results": {
+    "PF_PASS_BASELINE": {"status": null, "observed": {}, "expected": {}, "notes": ""},
+    "PF_FAIL_UNKNOWN_WARN": {"status": null, "observed": {}, "expected": {}, "notes": ""},
+    "PF_FAIL_UNKNOWN_BLOCKER": {"status": null, "observed": {}, "expected": {}, "notes": ""},
+    "PF_FAIL_OCR_UNREADABLE": {"status": null, "observed": {}, "expected": {}, "notes": ""},
+    "PF_FAIL_DOCUMENT_TYPE": {"status": null, "observed": {}, "expected": {}, "notes": ""},
+    "PF_FAIL_LOW_CONFIDENCE": {"status": null, "observed": {}, "expected": {}, "notes": ""},
+    "PF_FAIL_MIXED": {"status": null, "observed": {}, "expected": {}, "notes": ""}
+  },
+  "policy_checks": {
+    "unknown_column_warn_threshold": null,
+    "unknown_column_blocker_threshold": null,
+    "mojibake_ocr_merge": null,
+    "document_type_category": null,
+    "meta_leakage_prevention": null,
+    "ref_leakage_prevention": null,
+    "internal_field_exclusion": null
+  },
+  "overall_status": null
+}
