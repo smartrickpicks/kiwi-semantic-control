@@ -1937,19 +1937,7 @@
               <h2 id="triage-page-title">Triage</h2>
               </div>
             <p class="page-desc">All items requiring analyst review and action.</p>
-            <!-- V2.2 P0: Audit Header Dropdown (3-tier) -->
-            <div id="audit-header-dropdown-container" style="display: inline-flex; margin-left: auto; z-index: 90; position: relative;">
-              <button onclick="toggleAuditHeaderDropdown()" id="btn-audit-header" style="padding: 6px 14px; font-size: 0.8em; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                <span style="font-size: 1.1em;">&#128220;</span> Audit <span id="audit-header-badge" style="background: #e3f2fd; color: #1565c0; padding: 1px 6px; border-radius: 10px; font-size: 0.85em; min-width: 16px; text-align: center;">0</span>
-              </button>
-              <div id="audit-header-dropdown" style="display: none; position: absolute; right: 0; top: 36px; width: 380px; max-height: 420px; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 1000; overflow: hidden;">
-                <div style="padding: 12px 16px; background: #fafafa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-weight: 600; font-size: 0.9em;">Recent Audit Events</span>
-                  <button onclick="openFullAuditPanel()" style="padding: 2px 10px; font-size: 0.8em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">See All</button>
-                </div>
-                <div id="audit-header-list" style="max-height: 340px; overflow-y: auto; padding: 4px 0;"></div>
-              </div>
-            </div>
+
             <!-- Sticky Search Bar (top right) - repositioned to avoid audit overlap (P0.1) -->
             <div id="triage-search-bar" style="position: fixed; top: 56px; right: 24px; z-index: 100; display: flex; align-items: center; gap: 6px; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 2px 12px rgba(0,0,0,0.08); transition: opacity 0.2s ease, transform 0.2s ease;">
               <!-- v1.6.33: Upload Excel button (failsafe for data import) -->
@@ -1965,11 +1953,20 @@
                 </svg>
                 Upload Excel
               </button>
-              <button onclick="toggleAuditHeaderDropdown()" title="Audit Log"
-                      style="padding: 4px 8px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 5px; font-size: 0.75em; cursor: pointer; display: flex; align-items: center; gap: 3px; color: #555;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                Audit
-              </button>
+              <div id="audit-header-dropdown-container" style="position: relative; display: inline-flex;">
+                <button onclick="toggleAuditHeaderDropdown()" id="btn-audit-header" title="Audit Log"
+                        style="padding: 4px 8px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 5px; font-size: 0.75em; cursor: pointer; display: flex; align-items: center; gap: 3px; color: #555;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  Audit <span id="audit-header-badge" style="background: #e3f2fd; color: #1565c0; padding: 1px 6px; border-radius: 10px; font-size: 0.85em; min-width: 16px; text-align: center;">0</span>
+                </button>
+                <div id="audit-header-dropdown" style="display: none; position: absolute; right: 0; top: 32px; width: 380px; max-height: 420px; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); z-index: 1000; overflow: hidden;">
+                  <div style="padding: 12px 16px; background: #fafafa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 600; font-size: 0.9em;">Recent Audit Events</span>
+                    <button onclick="openFullAuditPanel()" style="padding: 2px 10px; font-size: 0.8em; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer;">See All</button>
+                  </div>
+                  <div id="audit-header-list" style="max-height: 340px; overflow-y: auto; padding: 4px 0;"></div>
+                </div>
+              </div>
               <input type="file" id="excel-file-import" accept=".xlsx,.xls" style="display: none;" onchange="handleExcelUpload(this)">
               <input type="text" id="global-search-input" placeholder="Search records…" 
                      style="padding: 5px 8px; border: none; background: transparent; border-radius: 4px; font-size: 0.8em; width: 160px; color: #444; outline: none;" 
