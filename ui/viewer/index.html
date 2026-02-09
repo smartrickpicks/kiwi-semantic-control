@@ -2163,6 +2163,20 @@
               <h3 style="margin: 0; font-size: 1.05em; color: #333;">Pre-Flight <span id="manual-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
             </div>
             <div id="p1a-preflight-sheet-tabs" style="display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; font-size: 0.82em;"></div>
+            <div id="p1f1-live-intake-wrapper" style="display:none;">
+              <div id="p1f1-summary-bar" class="p1f1-summary-bar"></div>
+              <table class="p1f1-live-intake" id="p1f1-live-table">
+                <thead><tr>
+                  <th>Contract</th>
+                  <th>File</th>
+                  <th>Status</th>
+                  <th>Reason</th>
+                  <th>Started</th>
+                  <th>Finished</th>
+                </tr></thead>
+                <tbody id="p1f1-live-tbody"></tbody>
+              </table>
+            </div>
             <div id="p1d-preflight-container" class="p1d-preflight-container">
               <div class="p1d-empty-state">No pre-flight items</div>
             </div>
@@ -17337,6 +17351,212 @@
 
 
     /* ── P1F: Batch PDF Scan Engine ── */
+    // ═══ P1F.1: Real-Time Pre-Flight Intake ═══
+    var preflightLiveState = {
+      entries: {},
+      order: [],
+      totals: { queued: 0, scanning: 0, flagged: 0, clean: 0, error: 0, processed: 0, total: 0 },
+      active: false,
+      _renderTimer: null,
+      _lastRenderAt: 0
+    };
+
+    function _p1f1Log(event, detail) {
+      var msg = '[PREFLIGHT-LIVE][OCR] ' + event;
+      if (detail) {
+        var parts = [];
+        for (var k in detail) {
+          if (detail.hasOwnProperty(k)) parts.push(k + '=' + detail[k]);
+        }
+        if (parts.length > 0) msg += ' | ' + parts.join(', ');
+      }
+      console.log(msg);
+    }
+
+    function _p1f1TimeStr(d) {
+      if (!d) return '';
+      var h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
+      return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    }
+
+    function _p1f1Enqueue(contract) {
+      var ck = contract.contract_key || '';
+      if (!ck) return;
+      var label = '';
+      try { label = typeof _p1dGetDisplayName === 'function' ? _p1dGetDisplayName(ck, [contract]) : ck; } catch(e) { label = ck; }
+      preflightLiveState.entries[ck] = {
+        contract_id: ck,
+        contract_label: label,
+        file_name: contract.file_name || '',
+        source_url: contract.file_url || '',
+        status: 'queued',
+        reason_codes: [],
+        started_at: null,
+        finished_at: null
+      };
+      preflightLiveState.order.push(ck);
+      preflightLiveState.totals.queued++;
+      preflightLiveState.totals.total++;
+      _p1f1Log('enqueue', { contract_id: ck, file_name: contract.file_name || '' });
+    }
+
+    function _p1f1Start(contractKey) {
+      var e = preflightLiveState.entries[contractKey];
+      if (!e) return;
+      if (e.status === 'queued') preflightLiveState.totals.queued--;
+      e.status = 'scanning';
+      e.started_at = new Date();
+      preflightLiveState.totals.scanning++;
+      _p1f1Log('start', { contract_id: contractKey, file_name: e.file_name });
+      _p1f1ScheduleRender();
+    }
+
+    function _p1f1Flagged(contractKey, reasonCodes) {
+      var e = preflightLiveState.entries[contractKey];
+      if (!e) return;
+      if (e.status === 'scanning') preflightLiveState.totals.scanning--;
+      e.status = 'flagged';
+      e.reason_codes = reasonCodes || [];
+      e.finished_at = new Date();
+      preflightLiveState.totals.flagged++;
+      preflightLiveState.totals.processed++;
+      _p1f1Log('flagged', { contract_id: contractKey, file_name: e.file_name, reason: reasonCodes.join(';') });
+      _p1f1ScheduleRender();
+    }
+
+    function _p1f1Clean(contractKey) {
+      var e = preflightLiveState.entries[contractKey];
+      if (!e) return;
+      if (e.status === 'scanning') preflightLiveState.totals.scanning--;
+      e.status = 'clean';
+      e.finished_at = new Date();
+      preflightLiveState.totals.clean++;
+      preflightLiveState.totals.processed++;
+      _p1f1Log('clean', { contract_id: contractKey, file_name: e.file_name });
+      _p1f1ScheduleRender();
+    }
+
+    function _p1f1Error(contractKey, reason) {
+      var e = preflightLiveState.entries[contractKey];
+      if (!e) return;
+      if (e.status === 'scanning') preflightLiveState.totals.scanning--;
+      e.status = 'error';
+      e.reason_codes = [reason || 'unknown'];
+      e.finished_at = new Date();
+      preflightLiveState.totals.error++;
+      preflightLiveState.totals.processed++;
+      _p1f1Log('error', { contract_id: contractKey, file_name: e.file_name, reason: reason || 'unknown' });
+      _p1f1ScheduleRender();
+    }
+
+    function _p1f1Complete() {
+      preflightLiveState.active = false;
+      _p1f1Log('complete', {
+        total: preflightLiveState.totals.total,
+        flagged: preflightLiveState.totals.flagged,
+        clean: preflightLiveState.totals.clean,
+        error: preflightLiveState.totals.error
+      });
+      _p1f1Render();
+      _p1f1RestoreAccordion();
+      var scanLabel = document.getElementById('p1f1-scan-active-label');
+      if (scanLabel) scanLabel.style.display = 'none';
+    }
+
+    function _p1f1Reset() {
+      preflightLiveState.entries = {};
+      preflightLiveState.order = [];
+      preflightLiveState.totals = { queued: 0, scanning: 0, flagged: 0, clean: 0, error: 0, processed: 0, total: 0 };
+      preflightLiveState.active = false;
+      if (preflightLiveState._renderTimer) { clearTimeout(preflightLiveState._renderTimer); preflightLiveState._renderTimer = null; }
+    }
+
+    function _p1f1ScheduleRender() {
+      var now = Date.now();
+      var elapsed = now - preflightLiveState._lastRenderAt;
+      if (preflightLiveState._renderTimer) clearTimeout(preflightLiveState._renderTimer);
+      if (elapsed > 400) {
+        _p1f1Render();
+      } else {
+        preflightLiveState._renderTimer = setTimeout(function() { _p1f1Render(); }, 400 - elapsed);
+      }
+    }
+
+    function _p1f1Render() {
+      preflightLiveState._lastRenderAt = Date.now();
+      var wrapper = document.getElementById('p1f1-live-intake-wrapper');
+      if (!wrapper) return;
+      var t = preflightLiveState.totals;
+      if (t.total === 0) { wrapper.style.display = 'none'; return; }
+      wrapper.style.display = '';
+      var summaryBar = document.getElementById('p1f1-summary-bar');
+      if (summaryBar) {
+        summaryBar.style.display = '';
+        summaryBar.innerHTML = '<span class="p1f1-stat">Processed ' + t.processed + ' / ' + t.total + '</span>'
+          + '<span class="p1f1-stat p1f1-stat-flagged">Flagged ' + t.flagged + '</span>'
+          + '<span class="p1f1-stat p1f1-stat-clean">Clean ' + t.clean + '</span>'
+          + '<span class="p1f1-stat p1f1-stat-error">Errors ' + t.error + '</span>'
+          + (preflightLiveState.active ? '<span class="p1f1-scan-active-label" id="p1f1-scan-active-label">Scanning\u2026</span>' : '');
+      }
+      var tbody = document.getElementById('p1f1-live-tbody');
+      if (!tbody) return;
+      var html = '';
+      var statusLabels = { queued: 'Queued', scanning: 'Scanning\u2026', flagged: 'Flagged', clean: 'Clean', error: 'Error' };
+      for (var i = 0; i < preflightLiveState.order.length; i++) {
+        var ck = preflightLiveState.order[i];
+        var e = preflightLiveState.entries[ck];
+        if (!e) continue;
+        var fname = e.file_name || ck;
+        var displayFname = fname.length > 40 ? fname.substring(0, 38) + '\u2026' : fname;
+        var displayLabel = e.contract_label || ck;
+        var displayLabelShort = displayLabel.length > 35 ? displayLabel.substring(0, 33) + '\u2026' : displayLabel;
+        html += '<tr>';
+        html += '<td title="' + (typeof escapeHtml === 'function' ? escapeHtml(displayLabel) : displayLabel) + '">' + (typeof escapeHtml === 'function' ? escapeHtml(displayLabelShort) : displayLabelShort) + '</td>';
+        html += '<td title="' + (typeof escapeHtml === 'function' ? escapeHtml(fname) : fname) + '">' + (typeof escapeHtml === 'function' ? escapeHtml(displayFname) : displayFname) + '</td>';
+        html += '<td class="p1f1-status-' + e.status + '">' + (statusLabels[e.status] || e.status) + '</td>';
+        html += '<td>' + (e.reason_codes.length > 0 ? (typeof escapeHtml === 'function' ? escapeHtml(e.reason_codes.join(', ')) : e.reason_codes.join(', ')) : '\u2014') + '</td>';
+        html += '<td>' + _p1f1TimeStr(e.started_at) + '</td>';
+        html += '<td>' + _p1f1TimeStr(e.finished_at) + '</td>';
+        html += '</tr>';
+      }
+      tbody.innerHTML = html;
+    }
+
+    function _p1f1ForceExpandAll() {
+      var children = document.querySelectorAll('.p1d1-child-row');
+      for (var i = 0; i < children.length; i++) {
+        children[i].style.display = '';
+      }
+      var carets = document.querySelectorAll('[data-caret]');
+      for (var j = 0; j < carets.length; j++) {
+        carets[j].textContent = '\u25BC';
+      }
+      _p1dGroupState = {};
+    }
+
+    function _p1f1RestoreAccordion() {
+      // no-op: leave groups expanded after scan, just re-enable manual toggle
+    }
+
+    var _p1f1OrigToggle = null;
+
+    function _p1f1LockAccordion() {
+      if (!_p1f1OrigToggle) {
+        _p1f1OrigToggle = window._p1dToggleGroup;
+      }
+      window._p1dToggleGroup = function(groupId) {
+        console.log('[PREFLIGHT-LIVE][OCR] accordion_locked_during_scan: ' + groupId);
+      };
+    }
+
+    function _p1f1UnlockAccordion() {
+      if (_p1f1OrigToggle) {
+        window._p1dToggleGroup = _p1f1OrigToggle;
+        _p1f1OrigToggle = null;
+      }
+    }
+
+
     var _p1fScanState = {
       running: false,
       total: 0,
@@ -17476,6 +17696,7 @@
       var apiUrl = proxyBase + '/api/pdf/text?url=' + encodeURIComponent(contract.file_url);
 
       _p1fLog('scan_start', { contract: contract.contract_key, url: contract.file_url.substring(0, 60) });
+      _p1f1Start(contract.contract_key);
 
       fetch(apiUrl)
         .then(function(r) {
@@ -17487,6 +17708,7 @@
           if (pages.length === 0) {
             _p1fScanState.skipped++;
             _p1fLog('scan_skip_no_pages', { contract: contract.contract_key });
+            _p1f1Clean(contract.contract_key);
             callback('skip');
             return;
           }
@@ -17504,6 +17726,8 @@
             _p1fRouteToPreFlight(mockRecord, contract.sheet_name, 'TEXT_NOT_SEARCHABLE',
               'PDF has no searchable text: ' + nonSearch.reason);
             _p1fScanState.results[contract.contract_key] = 'non_searchable';
+            _p1f1Flagged(contract.contract_key, ['TEXT_NOT_SEARCHABLE']);
+            try { if (preflightLiveState.active) { _p1f1ForceExpandAll(); if (typeof _p1dRenderGrouped === 'function' && typeof _p1aFiltered !== 'undefined') { _p1dRenderGrouped(_p1aFiltered, 'p1d-preflight-container'); _p1f1ForceExpandAll(); } } } catch(e) {}
             callback('non_searchable');
             return;
           }
@@ -17530,6 +17754,8 @@
               (impactLabels[impact] || 'Mojibake') + ': ' + mojibake.reason + ' (' + Math.round(mojibake.ratio * 100) + '%)',
               severity, impact);
             _p1fScanState.results[contract.contract_key] = 'mojibake_' + impact;
+            _p1f1Flagged(contract.contract_key, [signalType, 'MOJIBAKE_ENCODING']);
+            try { if (preflightLiveState.active) { _p1f1ForceExpandAll(); if (typeof _p1dRenderGrouped === 'function' && typeof _p1aFiltered !== 'undefined') { _p1dRenderGrouped(_p1aFiltered, 'p1d-preflight-container'); _p1f1ForceExpandAll(); } } } catch(e) {}
             callback('mojibake');
             return;
           }
@@ -17537,12 +17763,14 @@
           _p1fScanState.clean++;
           _p1fScanState.results[contract.contract_key] = 'clean';
           _p1fLog('scan_clean', { contract: contract.contract_key, pages: pages.length });
+          _p1f1Clean(contract.contract_key);
           callback('clean');
         })
         .catch(function(err) {
           _p1fScanState.errors++;
           _p1fLog('scan_error', { contract: contract.contract_key, error: err.message });
           _p1fScanState.results[contract.contract_key] = 'error';
+          _p1f1Error(contract.contract_key, err.message || 'unknown');
           callback('error');
         });
     }
@@ -17694,6 +17922,12 @@
 
       _p1fLog('batch_scan_start', { total: contracts.length });
 
+      _p1f1Reset();
+      preflightLiveState.active = true;
+      for (var _ei = 0; _ei < contracts.length; _ei++) { _p1f1Enqueue(contracts[_ei]); }
+      _p1f1Render();
+      _p1f1LockAccordion();
+
       var banner = _p1fCreateBanner();
       _p1fUpdateBanner();
       setTimeout(function() { banner.classList.add('visible'); }, 50);
@@ -17714,6 +17948,8 @@
               processNext();
             } else {
               _p1fScanState.running = false;
+              _p1f1Complete();
+              _p1f1UnlockAccordion();
               _p1fLog('batch_scan_complete', {
                 total: _p1fScanState.total,
                 clean: _p1fScanState.clean,
@@ -34144,6 +34380,25 @@ Add any additional notes here.
     /* ── P1D: Contract-Centric Pre-Flight Grouping ── */
     .p1d-empty-state { text-align: center; padding: 30px; color: #999; font-size: 0.9em; }
     .p1d1-health-table { width: 100%; border-collapse: collapse; font-size: 0.84em; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; }
+    
+    /* P1F.1: Live Intake table styles */
+    .p1f1-live-intake { width: 100%; border-collapse: collapse; font-size: 0.82em; border: 1px solid #dcedc8; border-radius: 6px; overflow: hidden; margin-bottom: 14px; }
+    .p1f1-live-intake thead th { padding: 6px 10px; text-align: left; font-weight: 600; color: #33691e; background: #f1f8e9; border-bottom: 2px solid #c5e1a5; font-size: 0.88em; white-space: nowrap; }
+    .p1f1-live-intake tbody td { padding: 5px 10px; border-bottom: 1px solid #e8f5e9; vertical-align: middle; }
+    .p1f1-live-intake tbody tr:hover { background: #f9fbe7; }
+    .p1f1-live-intake .p1f1-status-queued { color: #9e9e9e; font-weight: 500; }
+    .p1f1-live-intake .p1f1-status-scanning { color: #1565c0; font-weight: 600; }
+    .p1f1-live-intake .p1f1-status-flagged { color: #c62828; font-weight: 600; }
+    .p1f1-live-intake .p1f1-status-clean { color: #2e7d32; font-weight: 500; }
+    .p1f1-live-intake .p1f1-status-error { color: #e65100; font-weight: 600; }
+    .p1f1-summary-bar { padding: 8px 12px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 6px; margin-bottom: 10px; font-size: 0.85em; color: #333; display: none; }
+    .p1f1-summary-bar .p1f1-stat { margin-right: 14px; font-weight: 500; }
+    .p1f1-summary-bar .p1f1-stat-flagged { color: #c62828; }
+    .p1f1-summary-bar .p1f1-stat-clean { color: #2e7d32; }
+    .p1f1-summary-bar .p1f1-stat-error { color: #e65100; }
+    .p1f1-scan-active-label { display: inline-block; background: #e3f2fd; color: #1565c0; font-size: 0.78em; padding: 2px 8px; border-radius: 10px; font-weight: 600; margin-left: 8px; animation: p1f1Pulse 1.5s infinite; }
+    @keyframes p1f1Pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
     .p1d1-health-table thead th { padding: 8px 10px; text-align: left; font-weight: 600; color: #555; background: #f5f5f5; border-bottom: 2px solid #e0e0e0; font-size: 0.88em; white-space: nowrap; }
     .p1d1-parent-row { cursor: pointer; background: #fafafa; border-bottom: 1px solid #e0e0e0; }
     .p1d1-parent-row:hover { background: #f0f4f8; }
