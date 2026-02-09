@@ -16967,12 +16967,12 @@
     }
 
     function _p1dGetGroupKey(item) {
-      var fn = (item.file_name || '').replace(/\s+/g, '_').trim();
-      if (fn) return 'file:' + fn;
       var ck = item.contract_key || item.contract_id || '';
       if (ck) return ck;
+      var fn = (item.file_name || '').replace(/\s+/g, '_').trim();
+      if (fn) return fn;
       var fu = item.file_url || '';
-      if (fu) return 'file:' + fu;
+      if (fu) return fu;
       return '_batch_level';
     }
 
@@ -17000,8 +17000,8 @@
         if (batchName) return cleanName + ' : ' + batchName;
         return cleanName;
       }
-      if (groupKey.indexOf('file:') === 0) {
-        var gkClean = groupKey.substring(5).replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+      var gkClean = groupKey.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+      if (gkClean && gkClean !== '_batch_level') {
         if (batchName) return gkClean + ' : ' + batchName;
         return gkClean;
       }
@@ -17113,16 +17113,26 @@
 
       var _uniqueContracts = {};
       var _uniqueRecords = {};
+      var _seenItemKeys = {};
+      var _dedupedItems = [];
+      var _dupesRemoved = 0;
       for (var ui = 0; ui < items.length; ui++) {
         var itm = items[ui];
         var ck = itm.contract_key || itm.contract_id || '';
+        var dedupeKey = (itm.signal_type || '') + ':' + ck + ':' + (itm.field_name || '') + ':' + (itm.sheet_name || '');
+        if (_seenItemKeys[dedupeKey]) { _dupesRemoved++; continue; }
+        _seenItemKeys[dedupeKey] = true;
+        _dedupedItems.push(itm);
         if (ck) _uniqueContracts[ck] = true;
         var rid = itm.record_id || '';
-        if (rid && ck && _uniqueContracts[ck]) _uniqueRecords[rid] = true;
+        if (rid && ck) _uniqueRecords[rid] = true;
       }
-      var affectedCount = Object.keys(_uniqueContracts).length;
+      items = _dedupedItems;
+      var totalContracts = (typeof _p1fScanState !== 'undefined' && _p1fScanState.total > 0) ? _p1fScanState.total : Object.keys(_uniqueContracts).length;
+      var affectedCount = Math.min(Object.keys(_uniqueContracts).length, totalContracts);
       var impactedCount = Object.keys(_uniqueRecords).length;
-      console.log('[TRIAGE-CONTRACT-HEALTH][P1D.1] metrics_recomputed: affected_contracts=' + affectedCount + ', records_impacted=' + impactedCount + ', total_issues=' + items.length);
+      if (_dupesRemoved > 0) console.log('[TRIAGE-CONTRACT-HEALTH][P1F.2] dedupe_applied | removed=' + _dupesRemoved);
+      console.log('[TRIAGE-CONTRACT-HEALTH][P1D.1] metrics_recomputed: affected_contracts=' + affectedCount + '/' + totalContracts + ', records_impacted=' + impactedCount + ', total_issues=' + items.length + ', duplicate_rows_removed=' + _dupesRemoved);
 
       var html = '<table class="p1d1-health-table">';
       html += '<thead><tr>';
@@ -17147,7 +17157,8 @@
 
         var displayName = _p1dGetDisplayName(gk, gItems);
         var _rawFn = ""; for (var _fni = 0; _fni < gItems.length; _fni++) { if (gItems[_fni].file_name) { _rawFn = gItems[_fni].file_name; break; } } var tooltipText = _rawFn ? _rawFn : gk;
-        var compactId = gk === '_batch_level' ? 'batch' : (gk.length > 22 ? gk.substring(0, 20) + '\u2026' : gk);
+        var rawId = gk.indexOf('file:') === 0 ? gk.substring(5) : gk;
+        var compactId = gk === '_batch_level' ? 'batch' : (rawId.length > 22 ? rawId.substring(0, 20) + '\u2026' : rawId);
         var domainHint = _p1dGetDomainHint(gItems);
 
         var sheetCounts = {};
@@ -17177,7 +17188,21 @@
         html += '<td class="p1d1-caret" data-caret="' + groupId + '">' + caretChar + '</td>';
         html += '<td class="p1d1-contract-name" title="' + escapeHtml(tooltipText) + '">' + escapeHtml(displayName) + '</td>';
         html += '<td class="p1d1-contract-id" title="' + escapeHtml(gk) + '"><code>' + escapeHtml(compactId) + '</code></td>';
-        html += '<td class="p1d1-domain">' + escapeHtml(domainHint) + '</td>';
+        var _srcUrl = '';
+        var _srcLabel = '';
+        for (var _si = 0; _si < gItems.length; _si++) {
+          if (gItems[_si].file_url) { _srcUrl = gItems[_si].file_url; break; }
+        }
+        for (var _sli = 0; _sli < gItems.length; _sli++) {
+          if (gItems[_sli].file_name) { _srcLabel = gItems[_sli].file_name.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim(); break; }
+        }
+        if (!_srcLabel) _srcLabel = domainHint || 'Source';
+        if (_srcLabel.length > 30) _srcLabel = _srcLabel.substring(0, 28) + '\u2026';
+        if (_srcUrl) {
+          html += '<td class="p1d1-domain"><a href="' + escapeHtml(_srcUrl) + '" target="_blank" rel="noopener" title="' + escapeHtml(_srcUrl) + '" style="color:#1565c0;text-decoration:none;font-size:0.9em;" onclick="event.stopPropagation();">' + escapeHtml(_srcLabel) + '</a></td>';
+        } else {
+          html += '<td class="p1d1-domain">' + escapeHtml(_srcLabel) + '</td>';
+        }
         html += '<td class="p1d1-issue-count">' + gItems.length + '</td>';
         html += '<td>' + sevSummary + '</td>';
         html += '<td class="p1d1-sections">' + sectionChips + '</td>';
@@ -17482,6 +17507,7 @@
           + (t.error > 0 ? '<span style="color:#546e7a;">·</span><span style="color:#e65100;">' + t.error + ' errors</span>' : '')
           + '<a href="#" id="p1f1-toggle-log" style="margin-left:auto;font-size:0.88em;color:#1565c0;text-decoration:none;font-weight:500;">Show scan log ▼</a>'
           + '</span>';
+        console.log('[TRIAGE-CONTRACT-HEALTH][P1F.2] summary_intake_attached | total=' + t.total + ', flagged=' + t.flagged + ', clean=' + t.clean + ', errors=' + t.error);
         var toggleLink = document.getElementById('p1f1-toggle-log');
         if (toggleLink) {
           toggleLink.onclick = function(ev) {
@@ -17622,6 +17648,63 @@
           _existKeys[key] = true;
         }
       });
+    }
+
+    var _p1f2CleanItems = [];
+    var _p1f2RunId = '';
+
+    function _p1f2RouteCleanToSystemPass(contract) {
+      var contractKey = contract.contract_key || '';
+      var isDup = _p1f2CleanItems.some(function(m) { return m.contract_key === contractKey; });
+      if (isDup) return;
+      var item = {
+        request_id: 'p1f2_clean_' + contractKey + '_' + Date.now(),
+        type: 'system_change',
+        signal_type: 'PDF_VERIFIED_CLEAN',
+        record_id: contractKey,
+        contract_id: contractKey,
+        contract_key: contractKey,
+        field_name: 'file_url',
+        field_key: 'file_url',
+        sheet_name: contract.sheet_name || '',
+        severity: 'info',
+        message: 'PDF verified clean — no OCR or encoding issues detected',
+        status: 'system_pass_ready',
+        status_label: 'System Pass Ready',
+        status_color: '#2e7d32',
+        updated_at: new Date().toISOString(),
+        source: 'batch_pdf_scan',
+        file_name: contract.file_name || '',
+        file_url: contract.file_url || '',
+        preflight_pdf_status: 'clean',
+        preflight_pdf_clean_at: new Date().toISOString(),
+        preflight_pdf_run_id: _p1f2RunId,
+        preflight_pdf_reason_codes: [],
+        _batch_scan: true,
+        _p1f2_clean: true
+      };
+      _p1f2CleanItems.push(item);
+      console.log('[TRIAGE-CONTRACT-HEALTH][P1F.2] clean_routed_to_system_pass | contract=' + contractKey);
+    }
+
+    function _p1f2MergeCleanToSystemPass() {
+      if (!_p1f2CleanItems || _p1f2CleanItems.length === 0) return;
+      var existKeys = {};
+      analystTriageState.systemItems.forEach(function(m) {
+        if (m.contract_key) existKeys[m.signal_type + ':' + m.contract_key] = true;
+      });
+      var added = 0;
+      _p1f2CleanItems.forEach(function(item) {
+        var key = item.signal_type + ':' + item.contract_key;
+        if (!existKeys[key]) {
+          analystTriageState.systemItems.push(item);
+          existKeys[key] = true;
+          added++;
+        }
+      });
+      if (added > 0) {
+        console.log('[TRIAGE-CONTRACT-HEALTH][P1F.2] dedupe_applied | clean_added=' + added + ', dupes_skipped=' + (_p1f2CleanItems.length - added));
+      }
     }
 
     function _p1fRenderContractHealth() {
@@ -17821,6 +17904,7 @@
           _p1fScanState.clean++;
           _p1fScanState.results[contract.contract_key] = 'clean';
           _p1fLog('scan_clean', { contract: contract.contract_key, pages: pages.length });
+          _p1f2RouteCleanToSystemPass(contract);
           _p1f1Clean(contract.contract_key);
           callback('clean');
         })
@@ -17862,6 +17946,10 @@
         return m.signal_type === condition && m.contract_key === contractKey && m.field_name === 'file_url';
       });
       if (!isDup) {
+        item.preflight_pdf_status = item.severity === 'blocker' ? 'blocker' : 'warning';
+        item.preflight_pdf_clean_at = null;
+        item.preflight_pdf_run_id = _p1f2RunId;
+        item.preflight_pdf_reason_codes = [condition];
         _p1fBatchScanItems.push(item);
         _p1fLog('preflight_routed', { condition: condition, contract: contractKey, impact: impact || '' });
       } else {
@@ -17897,6 +17985,8 @@
 
       analystTriageState.manualItems = [];
       _p1fBatchScanItems = [];
+      _p1f2CleanItems = [];
+      _p1f2RunId = '';
 
       _p1fScanState.running = false;
       _p1fScanState.total = 0;
@@ -18003,6 +18093,9 @@
 
       _p1fLog('batch_scan_start', { total: contracts.length });
 
+      _p1f2RunId = 'run_' + Date.now().toString(36);
+      _p1f2CleanItems = [];
+
       _p1f1Reset();
       preflightLiveState.active = true;
       for (var _ei = 0; _ei < contracts.length; _ei++) { _p1f1Enqueue(contracts[_ei]); }
@@ -18041,7 +18134,14 @@
               });
               _p1fShowComplete();
               _p1fRenderContractHealth();
+              console.log('[TRIAGE-CONTRACT-HEALTH][P1F.2] metrics_recomputed | total_contracts=' + _p1fScanState.total + ', clean=' + _p1fScanState.clean + ', flagged=' + (_p1fScanState.mojibake + _p1fScanState.nonSearchable) + ', errors=' + _p1fScanState.errors);
               try { renderAnalystTriage(); } catch(e) { console.warn('[P1F] Post-scan triage render error:', e); }
+              _p1f2MergeCleanToSystemPass();
+              try {
+                var sysCountEl = document.getElementById('system-queue-count');
+                if (sysCountEl) sysCountEl.textContent = '(' + analystTriageState.systemItems.length + ')';
+                renderTriageQueueTable(analystTriageState.systemItems, 'system-queue-list', 'No system changes');
+              } catch(e) { console.warn('[P1F.2] System queue re-render error:', e); }
             }
           });
         }
