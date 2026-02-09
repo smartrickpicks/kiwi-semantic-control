@@ -1168,6 +1168,8 @@
     .patch-studio-panel { display: none; }
     .patch-studio-panel.active { display: block; }
 
+    .p1a-sheet-tab { transition: all 0.15s ease; }
+    .p1a-sheet-tab:hover { border-color: #1565c0 !important; color: #1565c0 !important; }
     .preflight-checklist { margin-bottom: 15px; }
     .preflight-step { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f9f9f9; border-radius: 6px; margin-bottom: 8px; }
     .preflight-step-num { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75em; font-weight: bold; flex-shrink: 0; }
@@ -2077,6 +2079,7 @@
             <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
               <h3 style="margin: 0; font-size: 1.05em; color: #333;">Pre-Flight <span id="manual-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
             </div>
+            <div id="p1a-preflight-sheet-tabs" style="display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; font-size: 0.82em;"></div>
             <div class="queue-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
               <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
                 <thead style="background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
@@ -23687,11 +23690,29 @@
           var _emptyReasons = {
             unknown: 'No unknown columns detected. All imported columns match the canonical schema.',
             missing: 'No missing required fields. All required fields from field_meta.json are present in the active dataset.',
-            drift: 'No schema drift detected. This may indicate batch-level drift only — check Admin > Schema Tree for cross-batch comparison.'
+            drift: 'No schema drift detected. This is batch-level drift; no record row available. Check Admin > Schema Tree for cross-batch comparison.'
           };
           emptyState.textContent = _emptyReasons[type] || 'No items found for this filter.';
+          console.log('[P1A] schema_deeplink_empty: type=' + type + ', reason=batch_level_no_rows');
           return;
         }
+        var _hasRowTarget = false;
+        if (type === 'unknown' || type === 'drift') {
+          var _pfItems = analystTriageState.manualItems || [];
+          for (var _si = 0; _si < _pfItems.length; _si++) {
+            if (_pfItems[_si].blocker_type === 'UNKNOWN_COLUMN' && _pfItems[_si].row_index >= 0) {
+              _hasRowTarget = true;
+              break;
+            }
+          }
+          if (!_hasRowTarget && emptyState) {
+            emptyState.style.display = '';
+            emptyState.textContent = count + ' ' + type + ' item(s) found. This is batch-level drift; no individual record row available. Items are listed in the Pre-Flight queue below.';
+            console.log('[P1A] schema_deeplink_batch_level: type=' + type + ', count=' + count);
+            return;
+          }
+        }
+        console.log('[P1A] schema_deeplink_navigate: type=' + type + ', filter=' + targetFilter);
         navigateToGridFiltered(targetFilter);
       },
 
@@ -24166,6 +24187,16 @@
     // v1.6.0: Dataset load timestamp for signal items
     var datasetLoadTimestamp = null;
     
+    var _preflightBlockerTypes = {
+        UNKNOWN_COLUMN: { label: 'Unknown Column', badge: 'fail', icon: '\u2753', desc: 'Column not found in field_meta.json. Threshold: columns with >0 non-empty values are flagged.' },
+        OCR_UNREADABLE: { label: 'OCR Unreadable', badge: 'fail', icon: '\ud83d\udeab', desc: 'OCR extraction returned unreadable or garbled text. Manual review required.' },
+        LOW_CONFIDENCE: { label: 'Low Confidence', badge: 'warn', icon: '\u26a0', desc: 'Extraction confidence below 60%. Values may be unreliable.' },
+        MOJIBAKE: { label: 'OCR / Encoding', badge: 'fail', icon: '\ud83d\udeab', desc: 'Text contains encoding artifacts (mojibake). Merged under OCR Unreadable family. Source document may need re-extraction.' },
+        DOCUMENT_TYPE_MISSING: { label: 'Document Type Missing', badge: 'warn', icon: '\ud83d\udcc4', desc: 'Document type not assigned or not recognized. Assign a valid document type before proceeding.' },
+        MISSING_REQUIRED: { label: 'Missing Required', badge: 'fail', icon: '\u2757', desc: 'A required field defined in field_meta.json is missing or empty in this record.' },
+        PICKLIST_INVALID: { label: 'Invalid Picklist', badge: 'warn', icon: '\ud83d\udcdd', desc: 'Field value does not match any allowed option in the picklist.' }
+    };
+
     function loadAnalystTriageFromStore() {
       // v1.6.33: Seed Patch Requests from meta sheet (RFIs from modified dataset)
       // Only seed if data is loaded (workbook populated)
@@ -24265,13 +24296,7 @@
       }
       
       // v2.2 P0+P2: Pre-Flight blockers: unknown columns, unreadable OCR, low-confidence extraction, mojibake
-      var _preflightBlockerTypes = {
-        UNKNOWN_COLUMN: { label: 'Unknown Column', badge: 'fail', icon: '\u2753', desc: 'Column not found in field_meta.json. Threshold: columns with >0 non-empty values are flagged.' },
-        OCR_UNREADABLE: { label: 'OCR Unreadable', badge: 'fail', icon: '\ud83d\udeab', desc: 'OCR extraction returned unreadable or garbled text. Manual review required.' },
-        LOW_CONFIDENCE: { label: 'Low Confidence', badge: 'warn', icon: '\u26a0', desc: 'Extraction confidence below 60%. Values may be unreliable.' },
-        MOJIBAKE: { label: 'OCR / Encoding', badge: 'fail', icon: '\ud83d\udeab', desc: 'Text contains encoding artifacts (mojibake). Merged under OCR Unreadable family. Source document may need re-extraction.' },
-        DOCUMENT_TYPE_MISSING: { label: 'Document Type', badge: 'warn', icon: '\ud83d\udcc4', desc: 'Document type not assigned or not recognized. Assign a valid document type before proceeding.' }
-      };
+      
 
       // v2.3 T11: Timeline lock alignment - governed decision enforcement
       var _governedDecisions = {
@@ -24345,7 +24370,10 @@
                 type: 'preflight_blocker',
                 signal_type: 'UNKNOWN_COLUMN',
                 record_id: c.contract_id,
+                contract_id: c.contract_id,
+                contract_key: c.contract_id,
                 field_name: uc.column,
+                sheet_name: uc.sheet || '',
                 severity: ucSeverity,
                 message: 'Unknown column: ' + uc.column + ' (sheet: ' + uc.sheet + ', non-empty: ' + uc.non_empty + ', severity: ' + ucSeverity + ')',
                 status: 'open',
@@ -24374,7 +24402,10 @@
                   type: 'preflight_blocker',
                   signal_type: bt,
                   record_id: c.contract_id,
+                  contract_id: c.contract_id,
+                  contract_key: c.contract_id,
                   field_name: sig.field || '',
+                  sheet_name: sig.sheet || '',
                   severity: bt === 'LOW_CONFIDENCE' ? 'warning' : 'blocker',
                   message: meta.label + ': ' + (sig.detail || sig.field || '') + (sig.sheet ? ' (sheet: ' + sig.sheet + ')' : '') + (sig.confidence ? ' [conf: ' + Math.round(sig.confidence * 100) + '%]' : ''),
                   status: 'open',
@@ -24509,8 +24540,24 @@
           item.status_color + '15; color: ' + item.status_color + ';">' + item.status_label + '</span>';
         var notesIndicator = item.notes ? '<span title="Has verifier notes" style="margin-left: 4px; color: #f57f17;">💬</span>' : '';
         
-        var recordDisplay = item.contract_key || item.record_id || 'Unknown';
-        if (recordDisplay.length > 20) recordDisplay = recordDisplay.substring(0, 18) + '...';
+        var recordDisplay = '';
+        if (isPreFlight) {
+          var _ck = item.contract_key || item.contract_id || '';
+          var _sn = item.sheet_name || '';
+          var _ri = (item.row_index !== undefined && item.row_index !== null && item.row_index >= 0) ? item.row_index : -1;
+          if (_ck && _sn && _ri >= 0) {
+            recordDisplay = _ck.substring(0, 12) + ' ' + _sn + ':' + _ri;
+          } else if (_ck && _sn) {
+            recordDisplay = _ck.substring(0, 12) + ' ' + _sn;
+          } else if (_ck) {
+            recordDisplay = _ck.substring(0, 18);
+          } else {
+            recordDisplay = 'Batch-level';
+          }
+        } else {
+          recordDisplay = item.contract_key || item.record_id || 'Unknown';
+        }
+        if (recordDisplay.length > 28) recordDisplay = recordDisplay.substring(0, 26) + '...';
         
         var rowStyle = item.section === 'clarification' ? 'background: #fff8e1;' : '';
         
@@ -24539,10 +24586,10 @@
           patchFromBlockerBtn = ' <button class="btn-secondary" style="padding:2px 6px; font-size:0.72em; background:#e3f2fd; border:1px solid #bbdefb;" onclick="event.stopPropagation(); createPatchFromBlocker(\'' + (item.request_id || '') + '\', \'' + (item.record_id || '') + '\', \'' + (item.field_name || '') + '\', \'' + (item.blocker_type || '') + '\')">Create Patch</button>';
         }
         return '<tr style="border-bottom: 1px solid #eee; cursor: pointer; ' + rowStyle + '" onclick="' + clickHandler + '">' +
-          '<td style="padding: 10px 12px;"><span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + typeBadgeColor + '15; color: ' + typeBadgeColor + ';">' + typeLabel + '</span>' + preflightBadge + '</td>' +
+          '<td style="padding: 10px 12px;"><span style="display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; background: ' + typeBadgeColor + '15; color: ' + typeBadgeColor + ';" title="' + getTriageTypeTip(item.type) + '">' + typeLabel + '</span>' + preflightBadge + '</td>' +
           '<td style="padding: 10px 12px; font-family: monospace; font-size: 0.85em;">' + recordDisplay + '</td>' +
           '<td style="padding: 10px 12px;">' + (item.field_name || '-') + '</td>' +
-          '<td style="padding: 10px 12px; font-size: 0.82em;">' + (isPreFlight && item.blocker_type ? '<span style="display:inline-block; padding: 2px 7px; border-radius: 3px; background: #fff3e0; color: #e65100; font-size: 0.85em; font-weight: 500;">' + (item.blocker_type || '').replace(/_/g, ' ') + '</span>' : (item.reason_summary || item.signal_type || '-')) + '</td>' +
+          '<td style="padding: 10px 12px; font-size: 0.82em;">' + (isPreFlight && item.blocker_type ? (function() { var _bt = _preflightBlockerTypes[item.blocker_type] || {}; var _reasonLabel = _bt.label || (item.blocker_type || '').replace(/_/g, ' '); var _reasonTip = _bt.desc || item.message || ''; return '<span style="display:inline-block; padding: 2px 7px; border-radius: 3px; background: #fff3e0; color: #e65100; font-size: 0.85em; font-weight: 500; cursor: help;" title="' + _reasonTip.replace(/"/g, '&quot;') + '">' + _reasonLabel + '</span>'; })() : (item.reason_summary || item.signal_type || '-')) + '</td>' +
           '<td style="padding: 10px 12px;">' + statusBadge + notesIndicator + '</td>' +
           '<td style="padding: 10px 12px; color: #666; font-size: 0.85em;">' + timestamp + '</td>' +
           '<td style="padding: 10px 12px;"><button class="btn-secondary" style="padding: 4px 8px; font-size: 0.75em;" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + patchFromBlockerBtn + '</td>' +
@@ -24551,20 +24598,26 @@
     }
     
     // v1.6.0: Get type label for triage display
+    var _p1aLabelMap = {
+      'rfi': { label: 'RFI', tip: 'Request for Information — analyst needs clarification' },
+      'blacklist': { label: 'Blacklisted', tip: 'Field or value is on the exclusion list' },
+      'qa': { label: 'QA Flag', tip: 'Quality assurance flag from qa_flags.json rules' },
+      'required': { label: 'Missing Required', tip: 'Required field is missing or empty (field_meta.json)' },
+      'picklist': { label: 'Invalid Picklist', tip: 'Value not in allowed picklist options' },
+      'encoding': { label: 'Encoding Issue', tip: 'Character encoding problem detected' },
+      'correction': { label: 'Correction', tip: 'Value correction suggested by system rules' },
+      'extraction': { label: 'Extraction Error', tip: 'Data extraction from source document failed or is suspect' },
+      'logic': { label: 'Logic Flag', tip: 'Business logic rule triggered a warning' },
+      'preflight_blocker': { label: 'Pre-Flight', tip: 'Pre-flight blocker — must resolve before proceeding' }
+    };
     function getTriageTypeLabel(type) {
-      switch (type) {
-        case 'rfi': return 'RFI';
-        case 'blacklist': return 'Blacklist';
-        case 'qa': return 'QA';
-        case 'required': return 'Required';
-        case 'picklist': return 'Picklist';
-        case 'encoding': return 'Encoding';
-        case 'correction': return 'Correction';
-        case 'extraction': return 'Extraction';
-        case 'logic': return 'Logic';
-        case 'preflight_blocker': return 'Pre-Flight';
-        default: return type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Signal';
-      }
+      var entry = _p1aLabelMap[type];
+      if (entry) return entry.label;
+      return type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Signal';
+    }
+    function getTriageTypeTip(type) {
+      var entry = _p1aLabelMap[type];
+      return entry ? entry.tip : '';
     }
     
     // v1.6.0: Get type color for triage display
@@ -24891,6 +24944,46 @@
       executeTriageResolution(item);
     }
 
+    var _p1aActiveSheet = 'All';
+
+    function _p1aBuildSheetTabs(items) {
+      var container = document.getElementById('p1a-preflight-sheet-tabs');
+      if (!container) return;
+      var sheetCounts = {};
+      var totalCount = items.length;
+      for (var i = 0; i < items.length; i++) {
+        var sn = items[i].sheet_name || 'Unknown';
+        sheetCounts[sn] = (sheetCounts[sn] || 0) + 1;
+      }
+      var sheets = Object.keys(sheetCounts).sort();
+      var _q = String.fromCharCode(39);
+      var _makeTab = function(name, count, isActive, isBold) {
+        return '<button class="p1a-sheet-tab' + (isActive ? ' active' : '') + '" onclick="_p1aSelectSheet(' + _q + name.replace(/'/g, '\\' + _q) + _q + ')" style="padding: 4px 10px; border: 1px solid ' + (isActive ? '#1565c0' : '#ccc') + '; background: ' + (isActive ? '#e3f2fd' : '#f5f5f5') + '; color: ' + (isActive ? '#1565c0' : '#666') + '; border-radius: 14px; cursor: pointer; font-weight: ' + (isBold ? '600' : '500') + '; font-size: 0.9em;">' + name + ' <span style="font-weight: 400;">(' + count + ')</span></button>';
+      };
+      var tabsHtml = _makeTab('All', totalCount, _p1aActiveSheet === 'All', true);
+      for (var s = 0; s < sheets.length; s++) {
+        tabsHtml += _makeTab(sheets[s], sheetCounts[sheets[s]], _p1aActiveSheet === sheets[s], false);
+      }
+      container.innerHTML = tabsHtml;
+      console.log('[P1A] preflight_sheet_tabs_built: total=' + totalCount + ', sheets=' + sheets.length + ', active=' + _p1aActiveSheet);
+    }
+
+    function _p1aFilterBySheet(items) {
+      if (_p1aActiveSheet === 'All') return items;
+      var filtered = [];
+      for (var i = 0; i < items.length; i++) {
+        var sn = items[i].sheet_name || 'Unknown';
+        if (sn === _p1aActiveSheet) filtered.push(items[i]);
+      }
+      return filtered;
+    }
+
+    function _p1aSelectSheet(sheetName) {
+      _p1aActiveSheet = sheetName;
+      console.log('[P1A] preflight_sheet_filter: sheet=' + sheetName);
+      renderAnalystTriage();
+    }
+
     function renderAnalystTriage() {
       // Reload from store
       loadAnalystTriageFromStore();
@@ -24902,7 +24995,8 @@
 
       
       // Update queue counts
-      var manualCount = analystTriageState.manualItems.length;
+      var _p1aFilteredItems = _p1aFilterBySheet(analystTriageState.manualItems);
+      var manualCount = _p1aFilteredItems.length;
       var sflogicCount = analystTriageState.sflogicItems.length;
       var patchCount = analystTriageState.patchItems.length;
       var systemCount = analystTriageState.systemItems.length;
@@ -24918,7 +25012,9 @@
       if (systemCountEl) systemCountEl.textContent = '(' + systemCount + ')';
       
       // Render each queue table
-      renderTriageQueueTable(analystTriageState.manualItems, 'manual-queue-list', 'No pre-flight items', true);
+      _p1aBuildSheetTabs(analystTriageState.manualItems);
+      var _p1aFiltered = _p1aFilterBySheet(analystTriageState.manualItems);
+      renderTriageQueueTable(_p1aFiltered, 'manual-queue-list', 'No pre-flight items', true);
       renderTriageQueueTable(analystTriageState.sflogicItems, 'sflogic-queue-list', 'No system pass items');
       renderTriageQueueTable(analystTriageState.patchItems, 'patch-queue-list', 'No patch requests yet');
       renderTriageQueueTable(analystTriageState.systemItems, 'system-queue-list', 'No system changes');

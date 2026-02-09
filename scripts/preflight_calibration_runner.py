@@ -149,7 +149,7 @@ INJECT_HOOKS_JS = """
     // _preflightBlockerTypes is function-scoped inside loadAnalystTriageFromStore
     // Check registration by verifying source code contains the type definitions
     var srcCheck = document.documentElement.innerHTML;
-    result.document_type_registered = srcCheck.indexOf('DOCUMENT_TYPE_MISSING') > -1 && srcCheck.indexOf("label: 'Document Type'") > -1;
+    result.document_type_registered = srcCheck.indexOf('DOCUMENT_TYPE_MISSING') > -1 && (srcCheck.indexOf("label: 'Document Type'") > -1 || srcCheck.indexOf("label: 'Document Type Missing'") > -1);
     result.mojibake_label = srcCheck.indexOf("MOJIBAKE: { label: 'OCR / Encoding'") > -1 ? 'OCR / Encoding' : (srcCheck.indexOf("MOJIBAKE:") > -1 ? 'FOUND_OTHER' : 'NOT_FOUND');
 
     if (typeof TriageAnalytics !== 'undefined') {
