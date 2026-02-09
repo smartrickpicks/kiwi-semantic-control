@@ -17573,6 +17573,28 @@
     };
     var _p1fBatchScanItems = [];
 
+    function _p1fMergeBatchItems() {
+      if (!_p1fBatchScanItems || _p1fBatchScanItems.length === 0) return;
+      var _existKeys = {};
+      analystTriageState.manualItems.forEach(function(m) {
+        if (m.contract_key && m.field_name) _existKeys[m.signal_type + ':' + m.contract_key + ':' + m.field_name] = true;
+      });
+      _p1fBatchScanItems.forEach(function(item) {
+        var key = item.signal_type + ':' + item.contract_key + ':' + item.field_name;
+        if (!_existKeys[key]) {
+          analystTriageState.manualItems.push(item);
+          _existKeys[key] = true;
+        }
+      });
+    }
+
+    function _p1fRenderContractHealth() {
+      _p1fMergeBatchItems();
+      _p1aBuildSheetTabs(analystTriageState.manualItems);
+      var filtered = _p1aFilterBySheet(analystTriageState.manualItems);
+      _p1dRenderGrouped(filtered, 'p1d-preflight-container');
+    }
+
     function _p1fLog(event, detail) {
       var msg = '[PDF-BATCH-SCAN][P1F] ' + event;
       if (detail) {
@@ -17727,7 +17749,7 @@
               'PDF has no searchable text: ' + nonSearch.reason);
             _p1fScanState.results[contract.contract_key] = 'non_searchable';
             _p1f1Flagged(contract.contract_key, ['TEXT_NOT_SEARCHABLE']);
-            try { if (preflightLiveState.active) { _p1f1ForceExpandAll(); if (typeof _p1dRenderGrouped === 'function' && typeof _p1aFiltered !== 'undefined') { _p1dRenderGrouped(_p1aFiltered, 'p1d-preflight-container'); _p1f1ForceExpandAll(); } } } catch(e) {}
+            try { if (preflightLiveState.active) { _p1f1ForceExpandAll(); _p1fRenderContractHealth(); _p1f1ForceExpandAll(); } } catch(e) {}
             callback('non_searchable');
             return;
           }
@@ -17755,7 +17777,7 @@
               severity, impact);
             _p1fScanState.results[contract.contract_key] = 'mojibake_' + impact;
             _p1f1Flagged(contract.contract_key, [signalType, 'MOJIBAKE_ENCODING']);
-            try { if (preflightLiveState.active) { _p1f1ForceExpandAll(); if (typeof _p1dRenderGrouped === 'function' && typeof _p1aFiltered !== 'undefined') { _p1dRenderGrouped(_p1aFiltered, 'p1d-preflight-container'); _p1f1ForceExpandAll(); } } } catch(e) {}
+            try { if (preflightLiveState.active) { _p1f1ForceExpandAll(); _p1fRenderContractHealth(); _p1f1ForceExpandAll(); } } catch(e) {}
             callback('mojibake');
             return;
           }
@@ -17980,9 +18002,8 @@
                 skipped: _p1fScanState.skipped
               });
               _p1fShowComplete();
-              if (typeof renderPreflightList === 'function') {
-                try { renderPreflightList(); } catch(e) {}
-              }
+              _p1fRenderContractHealth();
+              try { renderAnalystTriage(); } catch(e) { console.warn('[P1F] Post-scan triage render error:', e); }
             }
           });
         }
