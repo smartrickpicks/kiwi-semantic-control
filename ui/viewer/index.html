@@ -17708,10 +17708,9 @@
     }
 
     function _p1fRenderContractHealth() {
-      _p1fMergeBatchItems();
-      _p1aBuildSheetTabs(analystTriageState.manualItems);
-      var filtered = _p1aFilterBySheet(analystTriageState.manualItems);
-      _p1dRenderGrouped(filtered, 'p1d-preflight-container');
+      if (typeof TriageAnalytics !== 'undefined') {
+        try { TriageAnalytics.refresh(); TriageAnalytics.renderHeader(); } catch(e) { console.warn('[P1F] Contract health analytics refresh error:', e); }
+      }
     }
 
     function _p1fLog(event, detail) {
@@ -18134,6 +18133,20 @@
               _p1fShowComplete();
               console.log('[TRIAGE-CONTRACT-HEALTH][P1F.2] metrics_recomputed | total_contracts=' + _p1fScanState.total + ', clean=' + _p1fScanState.clean + ', flagged=' + (_p1fScanState.mojibake + _p1fScanState.nonSearchable) + ', errors=' + _p1fScanState.errors);
               try { renderAnalystTriage(); } catch(e) { console.warn('[P1F] Post-scan triage render error:', e); }
+              _p1f2MergeCleanToSystemPass();
+              try {
+                var sysCountEl = document.getElementById('system-queue-count');
+                if (sysCountEl) sysCountEl.textContent = '(' + analystTriageState.systemItems.length + ')';
+                renderTriageQueueTable(analystTriageState.systemItems, 'system-queue-list', 'No system changes');
+              } catch(e) { console.warn('[P1F.2] System queue re-render error:', e); }
+              try {
+                var _csBody = document.getElementById('ta-contract-body');
+                if (_csBody && _csBody.style.display === 'none') {
+                  _csBody.style.display = '';
+                  var _csToggle = document.getElementById('ta-contract-toggle');
+                  if (_csToggle) _csToggle.style.transform = 'rotate(90deg)';
+                }
+              } catch(e) {}
             }
           });
         }
@@ -24984,11 +24997,18 @@
             });
 
             var stage = 'loaded';
-            var hasBlockers = false;
-            (analystTriageState.manualItems || []).forEach(function(item) {
-              if (item.contract_id === cid || item.contract_key === cid) hasBlockers = true;
-            });
-            if (!hasBlockers) stage = 'preflight_complete';
+            var _scanResult = (typeof _p1fScanState !== 'undefined' && _p1fScanState.results) ? _p1fScanState.results[cid] : null;
+            if (_scanResult) {
+              if (_scanResult === 'clean') {
+                stage = 'preflight_complete';
+              }
+            } else {
+              var hasBlockers = false;
+              (analystTriageState.manualItems || []).forEach(function(item) {
+                if (item.contract_id === cid || item.contract_key === cid) hasBlockers = true;
+              });
+              if (!hasBlockers) stage = 'preflight_complete';
+            }
 
             if (typeof SystemPass !== 'undefined' && SystemPass._lastRunTimestamp) {
               stage = 'system_pass_complete';
@@ -25009,6 +25029,11 @@
             cache.lifecycle[stage].count++;
 
             var pfAlerts = 0, semAlerts = 0, patchAlerts = contractPatches.length;
+            if (typeof _p1fBatchScanItems !== 'undefined' && _p1fBatchScanItems.length > 0) {
+              _p1fBatchScanItems.forEach(function(item) {
+                if (item.contract_id === cid || item.contract_key === cid) pfAlerts++;
+              });
+            }
             (analystTriageState.manualItems || []).forEach(function(item) {
               if (item.contract_id === cid || item.contract_key === cid) pfAlerts++;
             });
@@ -26773,8 +26798,7 @@
       // Reload from store
       loadAnalystTriageFromStore();
 
-      // P1F/P1F.2: Re-merge batch scan items after store reload (store rebuild wipes them)
-      if (typeof _p1fMergeBatchItems === 'function') _p1fMergeBatchItems();
+      // P1F.2: Re-merge clean items to System Pass after store reload
       if (typeof _p1f2MergeCleanToSystemPass === 'function') _p1f2MergeCleanToSystemPass();
       // V2.3: Refresh and render analytics header
       if (typeof TriageAnalytics !== 'undefined') {
