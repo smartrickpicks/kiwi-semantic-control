@@ -16912,6 +16912,46 @@
       _p1dGroupState[groupId] = !isCurrentlyHidden;
     }
 
+    // v2.3.5-P1D.1: Resolve account name from workbook data fields for a given contract key
+    function _p1d1ResolveAccountName(contractKey) {
+      var ACCT_FIELDS = [
+        'Account_Name_c', 'Account_Name', 'account_name', 'account_name_c',
+        'Artist_Name_pka_or_dba_c', 'Artist_Name_c', 'artist_name',
+        'Legal_Name_c', 'legal_name',
+        'Payee_c', 'Name'
+      ];
+      if (!contractKey || typeof workbook === 'undefined' || !workbook.sheets) return '';
+      var sheets = Object.keys(workbook.sheets);
+      for (var si = 0; si < sheets.length; si++) {
+        var sn = sheets[si];
+        if (sn.indexOf('_change_log') >= 0 || sn === 'RFIs & Analyst Notes') continue;
+        var rows = (workbook.sheets[sn] && workbook.sheets[sn].rows) || [];
+        for (var ri = 0; ri < rows.length; ri++) {
+          var r = rows[ri];
+          var rck = r.contract_key || r.File_Name_c || r.File_Name || '';
+          if (rck !== contractKey) continue;
+          for (var fi = 0; fi < ACCT_FIELDS.length; fi++) {
+            var val = r[ACCT_FIELDS[fi]];
+            if (val && typeof val === 'string' && val.trim() && val !== 'N/A' && val !== '-' && val.trim().length > 1) {
+              return val.trim();
+            }
+          }
+          return '';
+        }
+      }
+      return '';
+    }
+
+    // v2.3.5-P1D.1: Get human-readable batch name from IDENTITY_CONTEXT or session
+    function _p1d1GetBatchName() {
+      var dsId = (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.dataset_id) || '';
+      if (dsId) {
+        var clean = dsId.replace(/\.(xlsx|csv|xls)$/i, '').replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+        return clean;
+      }
+      return '';
+    }
+
     function _p1dGetGroupKey(item) {
       var fn = (item.file_name || '').replace(/\s+/g, '_').trim();
       if (fn) return 'file:' + fn;
@@ -16924,14 +16964,34 @@
 
     function _p1dGetDisplayName(groupKey, items) {
       if (groupKey === '_batch_level') return 'Batch-level Issues';
-      if (groupKey.indexOf('file:') === 0) {
-        var raw = groupKey.substring(5);
-        return raw.length > 50 ? raw.substring(0, 48) + '...' : raw;
+      var contractKey = '';
+      for (var i = 0; i < items.length; i++) {
+        var ck = items[i].contract_key || items[i].contract_id || '';
+        if (ck) { contractKey = ck; break; }
       }
-      var sample = items[0];
-      var fn = sample.file_name || '';
-      if (fn) return fn.length > 50 ? fn.substring(0, 48) + '...' : fn;
-      return groupKey.length > 40 ? groupKey.substring(0, 38) + '...' : groupKey;
+      var batchName = _p1d1GetBatchName();
+      var acctName = contractKey ? _p1d1ResolveAccountName(contractKey) : '';
+      if (acctName && batchName) {
+        return acctName + ' : ' + batchName;
+      }
+      if (acctName) return acctName;
+      var fn = '';
+      for (var j = 0; j < items.length; j++) {
+        fn = items[j].file_name || '';
+        if (fn) break;
+      }
+      if (!fn && contractKey) fn = contractKey;
+      if (fn) {
+        var cleanName = fn.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+        if (batchName) return cleanName + ' : ' + batchName;
+        return cleanName;
+      }
+      if (groupKey.indexOf('file:') === 0) {
+        var gkClean = groupKey.substring(5).replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+        if (batchName) return gkClean + ' : ' + batchName;
+        return gkClean;
+      }
+      return batchName || groupKey;
     }
 
     function _p1dGetDomainHint(items) {
@@ -17072,6 +17132,7 @@
         var isCollapsed = _p1dGroupState[groupId] !== undefined ? _p1dGroupState[groupId] : defaultCollapsed;
 
         var displayName = _p1dGetDisplayName(gk, gItems);
+        var _rawFn = ""; for (var _fni = 0; _fni < gItems.length; _fni++) { if (gItems[_fni].file_name) { _rawFn = gItems[_fni].file_name; break; } } var tooltipText = _rawFn ? _rawFn : gk;
         var compactId = gk === '_batch_level' ? 'batch' : (gk.length > 22 ? gk.substring(0, 20) + '\u2026' : gk);
         var domainHint = _p1dGetDomainHint(gItems);
 
@@ -17100,7 +17161,7 @@
 
         html += '<tr class="' + parentClass + '" data-group-id="' + groupId + '" onclick="_p1dToggleGroup(\'' + groupId + '\')">';
         html += '<td class="p1d1-caret" data-caret="' + groupId + '">' + caretChar + '</td>';
-        html += '<td class="p1d1-contract-name" title="' + escapeHtml(gk) + '">' + escapeHtml(displayName) + '</td>';
+        html += '<td class="p1d1-contract-name" title="' + escapeHtml(tooltipText) + '">' + escapeHtml(displayName) + '</td>';
         html += '<td class="p1d1-contract-id" title="' + escapeHtml(gk) + '"><code>' + escapeHtml(compactId) + '</code></td>';
         html += '<td class="p1d1-domain">' + escapeHtml(domainHint) + '</td>';
         html += '<td class="p1d1-issue-count">' + gItems.length + '</td>';
@@ -25514,6 +25575,10 @@
           item.file_name = _cm.file_name;
           item.file_url = _cm.file_url;
         }
+        if (!item.sheet_name && item.record_id) {
+          var _cIdx = item.record_id.lastIndexOf(':');
+          if (_cIdx > 0) item.sheet_name = item.record_id.substring(0, _cIdx);
+        }
       });
       
       // Salesforce Logic Flags: QA_FLAG with ERROR or WARNING severity
@@ -25553,6 +25618,10 @@
           item.contract_key = _cm.contract_id;
           item.file_name = _cm.file_name;
           item.file_url = _cm.file_url;
+        }
+        if (!item.sheet_name && item.record_id) {
+          var _cIdx = item.record_id.lastIndexOf(':');
+          if (_cIdx > 0) item.sheet_name = item.record_id.substring(0, _cIdx);
         }
       });
       analystTriageState.manualItems = analystTriageState.manualItems.concat(validationSignals);
@@ -25753,6 +25822,9 @@
         fieldKeys.forEach(function(fieldKey) {
           var signals = fieldSignals[fieldKey];
           signals.forEach(function(signal) {
+            var _sheetFromRid = '';
+            var _colonIdx = recordId.lastIndexOf(':');
+            if (_colonIdx > 0) _sheetFromRid = recordId.substring(0, _colonIdx);
             items.push({
               id: recordId + '|' + fieldKey + '|' + signal.signal_type,
               signal_type: signal.signal_type,
@@ -25760,6 +25832,7 @@
               record_id: recordId,
               field_name: signal.field_label || fieldKey,
               field_key: fieldKey,
+              sheet_name: _sheetFromRid,
               status: signal.signal_type,
               status_label: mapSignalTypeToLabel(signal.signal_type),
               status_color: mapSignalSeverityToColor(signal.severity),
