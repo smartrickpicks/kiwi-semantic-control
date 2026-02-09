@@ -17461,6 +17461,40 @@
       _p1f1RestoreAccordion();
       var scanLabel = document.getElementById('p1f1-scan-active-label');
       if (scanLabel) scanLabel.style.display = 'none';
+
+      var t = preflightLiveState.totals;
+      var liveTable = document.getElementById('p1f1-live-table');
+      if (liveTable) liveTable.style.display = 'none';
+
+      var summaryBar = document.getElementById('p1f1-summary-bar');
+      if (summaryBar) {
+        summaryBar.style.display = '';
+        var flaggedLabel = t.flagged > 0
+          ? '<span style="color:#c62828;font-weight:600;">' + t.flagged + ' flagged</span>'
+          : '<span style="color:#2e7d32;">0 flagged</span>';
+        summaryBar.innerHTML = '<span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+          + '<span style="font-weight:600;color:#333;">Batch Scan Complete</span>'
+          + '<span style="color:#546e7a;">' + t.total + ' contracts scanned</span>'
+          + '<span style="color:#546e7a;">·</span>'
+          + flaggedLabel
+          + '<span style="color:#546e7a;">·</span>'
+          + '<span style="color:#2e7d32;">' + t.clean + ' clean</span>'
+          + (t.error > 0 ? '<span style="color:#546e7a;">·</span><span style="color:#e65100;">' + t.error + ' errors</span>' : '')
+          + '<a href="#" id="p1f1-toggle-log" style="margin-left:auto;font-size:0.88em;color:#1565c0;text-decoration:none;font-weight:500;">Show scan log ▼</a>'
+          + '</span>';
+        var toggleLink = document.getElementById('p1f1-toggle-log');
+        if (toggleLink) {
+          toggleLink.onclick = function(ev) {
+            ev.preventDefault();
+            var tbl = document.getElementById('p1f1-live-table');
+            if (tbl) {
+              var visible = tbl.style.display !== 'none';
+              tbl.style.display = visible ? 'none' : '';
+              this.innerHTML = visible ? 'Show scan log ▼' : 'Hide scan log ▲';
+            }
+          };
+        }
+      }
     }
 
     function _p1f1Reset() {
@@ -17489,6 +17523,8 @@
       var t = preflightLiveState.totals;
       if (t.total === 0) { wrapper.style.display = 'none'; return; }
       wrapper.style.display = '';
+      var liveTable = document.getElementById('p1f1-live-table');
+      if (liveTable && preflightLiveState.active) liveTable.style.display = '';
       var summaryBar = document.getElementById('p1f1-summary-bar');
       if (summaryBar) {
         summaryBar.style.display = '';
@@ -17880,6 +17916,8 @@
 
       var _liveWrapper = document.getElementById('p1f1-live-intake-wrapper');
       if (_liveWrapper) _liveWrapper.style.display = 'none';
+      var _liveTable = document.getElementById('p1f1-live-table');
+      if (_liveTable) _liveTable.style.display = '';
       var _liveTbody = document.getElementById('p1f1-live-tbody');
       if (_liveTbody) _liveTbody.innerHTML = '';
       var _summaryBar = document.getElementById('p1f1-summary-bar');
