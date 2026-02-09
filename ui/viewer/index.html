@@ -17757,6 +17757,8 @@
         var sheetName = sheetNames[si];
         if (sheetName.indexOf('_change_log') !== -1) continue;
         if (sheetName === 'RFIs & Analyst Notes') continue;
+        if (typeof isReferenceSheet === 'function' && isReferenceSheet(sheetName)) continue;
+        if (typeof isMetaSheet === 'function' && isMetaSheet(sheetName)) continue;
         var sheet = workbook.sheets[sheetName];
         if (!sheet || !sheet.rows) continue;
         for (var ri = 0; ri < sheet.rows.length; ri++) {
@@ -18000,17 +18002,33 @@
 
     function _p1fGetDatasetScope() {
       if (!workbook || !workbook.sheets) return '';
-      var counts = [];
+      var sheetContracts = {};
       var sheetNames = Object.keys(workbook.sheets);
       for (var i = 0; i < sheetNames.length; i++) {
         var name = sheetNames[i];
         if (name.indexOf('_change_log') !== -1) continue;
         if (name === 'RFIs & Analyst Notes') continue;
+        if (typeof isReferenceSheet === 'function' && isReferenceSheet(name)) continue;
+        if (typeof isMetaSheet === 'function' && isMetaSheet(name)) continue;
         var sheet = workbook.sheets[name];
         if (!sheet || !sheet.rows || sheet.rows.length === 0) continue;
-        counts.push(sheet.rows.length + ' ' + name);
+        var seen = {};
+        var uniqueCount = 0;
+        for (var ri = 0; ri < sheet.rows.length; ri++) {
+          var row = sheet.rows[ri];
+          if (!row) continue;
+          var ck = row.contract_key || row.contract_id || row.File_Name_c || row.File_Name || '';
+          if (!ck || seen[ck]) continue;
+          seen[ck] = true;
+          uniqueCount++;
+        }
+        if (uniqueCount > 0) sheetContracts[name] = uniqueCount;
       }
-      return counts.length > 0 ? counts.join(', ') : '';
+      var parts = [];
+      for (var sn in sheetContracts) {
+        if (sheetContracts.hasOwnProperty(sn)) parts.push(sheetContracts[sn] + ' ' + sn);
+      }
+      return parts.length > 0 ? parts.join(', ') : '';
     }
 
     function _p1fBatchPdfScan() {
@@ -25085,18 +25103,24 @@
               }
             });
           }
-          var _fieldMatches = function(fk) {
+          var _fieldMatches = function(fk, fl) {
             var fkl = fk.toLowerCase();
             var fkn = _normKey(fk);
             if (wbCols[fkl] || wbCols[fkl + '_c'] || wbCols[fkn] || wbCols[fkn + '_c']) return true;
             if (wbCanonicals[fkl] || wbCanonicals[fkn]) return true;
+            if (fl) {
+              var fll = fl.toLowerCase();
+              var fln = _normKey(fl);
+              if (wbCols[fll] || wbCols[fln] || wbCols[fln + '_c']) return true;
+              if (wbCanonicals[fll] || wbCanonicals[fln]) return true;
+            }
             return false;
           };
           allFields.forEach(function(f) {
-            if (_fieldMatches(f.field_key)) cache.schema.standard_matched++;
+            if (_fieldMatches(f.field_key, f.field_label)) cache.schema.standard_matched++;
           });
           cache.schema.missing_required = allFields.filter(function(f) {
-            return f.required && !_fieldMatches(f.field_key);
+            return f.required && !_fieldMatches(f.field_key, f.field_label);
           }).length;
         }
         if (typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable() && ContractIndex._index && ContractIndex._index.unknown_columns) {
@@ -29027,15 +29051,21 @@
               allRows.push(row);
             });
           });
+          var _uniqueCks = {};
+          allRows.forEach(function(r) {
+            var ck = r.contract_key || r.contract_id || r.File_Name_c || r.File_Name || '';
+            if (ck) _uniqueCks[ck] = true;
+          });
+          var _uniqueContractCount = Object.keys(_uniqueCks).length || allRows.length;
           allData = {
             contractResults: allRows,
             issues: [],
             fieldActions: [],
             changeLog: [],
             summary: {
-              total_contracts: allRows.length,
+              total_contracts: _uniqueContractCount,
               ready: 0,
-              needs_review: allRows.length,
+              needs_review: _uniqueContractCount,
               blocked: 0
             }
           };
