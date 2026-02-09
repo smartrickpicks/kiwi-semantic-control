@@ -16900,21 +16900,16 @@
     var _p1dGroupState = {};
 
     function _p1dToggleGroup(groupId) {
-      console.log('[P1D-PREFLIGHT] group_toggled: ' + groupId);
-      var sec = document.querySelector('.p1d-group[data-group-id="' + groupId + '"]');
-      if (!sec) return;
-      var body = sec.querySelector('.p1d-group-body');
-      var caret = sec.querySelector('.p1d-group-caret');
-      var isCollapsed = body.classList.contains('collapsed');
-      if (isCollapsed) {
-        body.classList.remove('collapsed');
-        if (caret) caret.classList.remove('collapsed');
-        _p1dGroupState[groupId] = false;
-      } else {
-        body.classList.add('collapsed');
-        if (caret) caret.classList.add('collapsed');
-        _p1dGroupState[groupId] = true;
+      console.log('[TRIAGE-CONTRACT-HEALTH][P1D.1] group_toggled: ' + groupId);
+      var children = document.querySelectorAll('.p1d1-child-row[data-parent="' + groupId + '"]');
+      var caretEl = document.querySelector('[data-caret="' + groupId + '"]');
+      if (!children.length) return;
+      var isCurrentlyHidden = children[0].style.display === 'none';
+      for (var i = 0; i < children.length; i++) {
+        children[i].style.display = isCurrentlyHidden ? '' : 'none';
       }
+      if (caretEl) caretEl.textContent = isCurrentlyHidden ? '▼' : '▶';
+      _p1dGroupState[groupId] = !isCurrentlyHidden;
     }
 
     function _p1dGetGroupKey(item) {
@@ -16950,6 +16945,19 @@
       }
       return '';
     }
+
+    function _p1d1ViewContract(contractKey) {
+      console.log('[TRIAGE-CONTRACT-HEALTH][P1D.1] view_contract: ' + contractKey);
+      if (typeof handleContractFilterChange === 'function') {
+        handleContractFilterChange(contractKey);
+      }
+      var gridSelector = document.getElementById('contract-filter-selector') || document.getElementById('sidebar-sheet-selector');
+      if (gridSelector) gridSelector.value = contractKey;
+      window.location.hash = '#/grid';
+      if (typeof renderGrid === 'function') renderGrid();
+    }
+
+
 
 
     // P1X-ref: Resolve a meaningful business reference for a pre-flight item
@@ -17007,28 +17015,63 @@
       for (var i = 0; i < items.length; i++) {
         var key = _p1dGetGroupKey(items[i]);
         if (!groups[key]) {
-          groups[key] = [];
+          groups[key] = { items: [], blockers: 0, warnings: 0 };
           groupOrder.push(key);
         }
-        groups[key].push(items[i]);
+        groups[key].items.push(items[i]);
+        if (items[i].severity === 'blocker') groups[key].blockers++;
+        else groups[key].warnings++;
       }
 
       groupOrder.sort(function(a, b) {
         if (a === '_batch_level') return 1;
         if (b === '_batch_level') return -1;
-        return groups[b].length - groups[a].length;
+        var ga = groups[a], gb = groups[b];
+        if (gb.blockers !== ga.blockers) return gb.blockers - ga.blockers;
+        if (gb.items.length !== ga.items.length) return gb.items.length - ga.items.length;
+        var na = _p1dGetDisplayName(a, ga.items);
+        var nb = _p1dGetDisplayName(b, gb.items);
+        return na < nb ? -1 : (na > nb ? 1 : 0);
       });
 
-      var html = '';
+      console.log('[TRIAGE-CONTRACT-HEALTH][P1D.1] model_built: groups=' + groupOrder.length + ', total_items=' + items.length);
+
+      var _uniqueContracts = {};
+      var _uniqueRecords = {};
+      for (var ui = 0; ui < items.length; ui++) {
+        var itm = items[ui];
+        var ck = itm.contract_key || itm.contract_id || '';
+        if (ck) _uniqueContracts[ck] = true;
+        var rid = itm.record_id || '';
+        if (rid && ck && _uniqueContracts[ck]) _uniqueRecords[rid] = true;
+      }
+      var affectedCount = Object.keys(_uniqueContracts).length;
+      var impactedCount = Object.keys(_uniqueRecords).length;
+      console.log('[TRIAGE-CONTRACT-HEALTH][P1D.1] metrics_recomputed: affected_contracts=' + affectedCount + ', records_impacted=' + impactedCount + ', total_issues=' + items.length);
+
+      var html = '<table class="p1d1-health-table">';
+      html += '<thead><tr>';
+      html += '<th style="width:30px;"></th>';
+      html += '<th>Contract</th>';
+      html += '<th>ID</th>';
+      html += '<th>Source</th>';
+      html += '<th>Issues</th>';
+      html += '<th>Severity</th>';
+      html += '<th>Contract Sections</th>';
+      html += '<th>Actions</th>';
+      html += '</tr></thead><tbody>';
+
+      var childrenRendered = 0;
       for (var gi = 0; gi < groupOrder.length; gi++) {
         var gk = groupOrder[gi];
-        var gItems = groups[gk];
-        var groupId = 'p1d-g-' + gi;
+        var g = groups[gk];
+        var gItems = g.items;
+        var groupId = 'p1d1-g-' + gi;
         var defaultCollapsed = gi >= 5;
         var isCollapsed = _p1dGroupState[groupId] !== undefined ? _p1dGroupState[groupId] : defaultCollapsed;
 
         var displayName = _p1dGetDisplayName(gk, gItems);
-        var compactId = gk === '_batch_level' ? '' : (gk.length > 20 ? gk.substring(0, 18) + '...' : gk);
+        var compactId = gk === '_batch_level' ? 'batch' : (gk.length > 22 ? gk.substring(0, 20) + '\u2026' : gk);
         var domainHint = _p1dGetDomainHint(gItems);
 
         var sheetCounts = {};
@@ -17036,34 +17079,36 @@
           var sn = gItems[si].sheet_name || 'Unknown';
           sheetCounts[sn] = (sheetCounts[sn] || 0) + 1;
         }
-        var sheetChips = '';
+        var sectionChips = '';
         var sheetNames = Object.keys(sheetCounts).sort();
         for (var sc = 0; sc < sheetNames.length; sc++) {
-          sheetChips += '<span class="p1d-sheet-chip">' + escapeHtml(sheetNames[sc]) + ' (' + sheetCounts[sheetNames[sc]] + ')</span>';
+          sectionChips += '<span class="p1d1-section-chip">' + escapeHtml(sheetNames[sc]) + '(' + sheetCounts[sheetNames[sc]] + ')</span>';
         }
 
-        var caretClass = 'p1d-group-caret' + (isCollapsed ? ' collapsed' : '');
-        var bodyClass = 'p1d-group-body' + (isCollapsed ? ' collapsed' : '');
+        var sevSummary = '';
+        if (g.blockers > 0) sevSummary += '<span class="p1d1-sev-badge blocker">' + g.blockers + ' blocker' + (g.blockers > 1 ? 's' : '') + '</span>';
+        if (g.warnings > 0) sevSummary += '<span class="p1d1-sev-badge warning">' + g.warnings + ' warning' + (g.warnings > 1 ? 's' : '') + '</span>';
 
-        html += '<div class="p1d-group" data-group-id="' + groupId + '" data-group-key="' + escapeHtml(gk) + '">';
-        html += '<div class="p1d-group-header" onclick="_p1dToggleGroup(' + String.fromCharCode(39) + groupId + String.fromCharCode(39) + ')">';
-        html += '<span class="' + caretClass + '">&#9660;</span>';
-        html += '<span class="p1d-group-name" title="' + escapeHtml(gk) + '">' + escapeHtml(displayName) + '</span>';
-        if (compactId && compactId !== displayName) {
-          html += '<span class="p1d-group-id" title="' + escapeHtml(gk) + '">' + escapeHtml(compactId) + '</span>';
+        var caretChar = isCollapsed ? '\u25B6' : '\u25BC';
+        var parentClass = 'p1d1-parent-row' + (g.blockers > 0 ? ' has-blockers' : '');
+
+        var viewContractAction = '';
+        if (gk !== '_batch_level') {
+          viewContractAction = '<button class="p1d1-view-btn" onclick="event.stopPropagation(); _p1d1ViewContract(\'' + escapeHtml(gk.replace(/'/g, "\\'")) + '\')">View Contract</button>';
         }
-        if (domainHint) {
-          html += '<span class="p1d-domain-hint">' + escapeHtml(domainHint) + '</span>';
-        }
-        html += '<span class="p1d-group-count">' + gItems.length + ' issue' + (gItems.length !== 1 ? 's' : '') + '</span>';
-        html += '<div class="p1d-group-sheets">' + sheetChips + '</div>';
-        html += '</div>';
 
-        html += '<div class="' + bodyClass + '">';
-        html += '<table><thead><tr>';
-        html += '<th>Contract Section</th><th>Reference</th><th>Issue</th><th>Severity</th><th>Status</th><th>Actions</th>';
-        html += '</tr></thead><tbody>';
+        html += '<tr class="' + parentClass + '" data-group-id="' + groupId + '" onclick="_p1dToggleGroup(\'' + groupId + '\')">';
+        html += '<td class="p1d1-caret" data-caret="' + groupId + '">' + caretChar + '</td>';
+        html += '<td class="p1d1-contract-name" title="' + escapeHtml(gk) + '">' + escapeHtml(displayName) + '</td>';
+        html += '<td class="p1d1-contract-id" title="' + escapeHtml(gk) + '"><code>' + escapeHtml(compactId) + '</code></td>';
+        html += '<td class="p1d1-domain">' + escapeHtml(domainHint) + '</td>';
+        html += '<td class="p1d1-issue-count">' + gItems.length + '</td>';
+        html += '<td>' + sevSummary + '</td>';
+        html += '<td class="p1d1-sections">' + sectionChips + '</td>';
+        html += '<td>' + viewContractAction + '</td>';
+        html += '</tr>';
 
+        var childDisplay = isCollapsed ? 'none' : '';
         for (var ri = 0; ri < gItems.length; ri++) {
           var item = gItems[ri];
           var sName = escapeHtml(item.sheet_name || 'Unknown');
@@ -17074,41 +17119,43 @@
             var bt = _preflightBlockerTypes[item.blocker_type] || {};
             var rLabel = bt.label || (item.blocker_type || '').replace(/_/g, ' ');
             var rTip = (bt.desc || item.message || '').replace(/"/g, '&quot;');
-            reasonHtml = '<span style="display:inline-block; padding: 2px 7px; border-radius: 3px; background: #fff3e0; color: #e65100; font-size: 0.85em; font-weight: 500; cursor: help;" title="' + rTip + '">' + escapeHtml(rLabel) + '</span>';
+            reasonHtml = '<span class="p1d1-reason-chip" title="' + rTip + '">' + escapeHtml(rLabel) + '</span>';
           } else if (item.reason_summary || item.signal_type) {
             reasonHtml = escapeHtml(item.reason_summary || item.signal_type || '-');
           }
 
           var sevColor = item.severity === 'blocker' ? '#c62828' : (item.severity === 'warning' ? '#f57c00' : '#666');
           var sevLabel = item.severity ? item.severity.charAt(0).toUpperCase() + item.severity.slice(1) : '-';
-          var sevHtml = '<span style="color:' + sevColor + '; font-weight: 500; font-size: 0.85em;">' + sevLabel + '</span>';
+          var sevHtml = '<span style="color:' + sevColor + '; font-weight:500; font-size:0.85em;">' + sevLabel + '</span>';
 
-          var stBadge = '<span style="display:inline-block; padding:2px 7px; border-radius:4px; font-size:0.75em; font-weight:600; background:' + (item.status_color || '#9e9e9e') + '15; color:' + (item.status_color || '#9e9e9e') + ';">' + (item.status_label || item.status || 'open') + '</span>';
+          var stBadge = '<span class="p1d1-status-badge" style="background:' + (item.status_color || '#9e9e9e') + '15; color:' + (item.status_color || '#9e9e9e') + ';">' + (item.status_label || item.status || 'open') + '</span>';
 
           var _q = String.fromCharCode(39);
           var _esc = function(v) { return (v || '').replace(/'/g, String.fromCharCode(92) + String.fromCharCode(39)); };
           var viewHandler = 'openPreflightItem(' + _q + _esc(item.request_id) + _q + ', ' + _q + _esc(item.record_id) + _q + ', ' + _q + _esc(item.contract_id || item.contract_key) + _q + ', ' + _q + _esc(item.field_name || item.field_key) + _q + ')';
           var patchBtn = '';
           if (item.can_create_patch && item.status === 'open') {
-            patchBtn = ' <button class="btn-secondary" style="padding:2px 6px; font-size:0.72em; background:#e3f2fd; border:1px solid #bbdefb;" onclick="event.stopPropagation(); createPatchFromBlocker(' + _q + _esc(item.request_id) + _q + ', ' + _q + _esc(item.record_id) + _q + ', ' + _q + _esc(item.field_name) + _q + ', ' + _q + _esc(item.blocker_type) + _q + ')">Patch</button>';
+            patchBtn = ' <button class="p1d1-patch-btn" onclick="event.stopPropagation(); createPatchFromBlocker(' + _q + _esc(item.request_id) + _q + ', ' + _q + _esc(item.record_id) + _q + ', ' + _q + _esc(item.field_name) + _q + ', ' + _q + _esc(item.blocker_type) + _q + ')">Patch</button>';
           }
 
-          html += '<tr onclick="event.stopPropagation(); ' + viewHandler + '">';
-          html += '<td>' + sName + '</td>';
-          html += '<td>' + fName + '</td>';
+          html += '<tr class="p1d1-child-row" data-parent="' + groupId + '" style="display:' + childDisplay + ';" onclick="event.stopPropagation(); ' + viewHandler + '">';
+          html += '<td></td>';
+          html += '<td class="p1d1-child-section">' + sName + '</td>';
+          html += '<td class="p1d1-child-ref">' + fName + '</td>';
           html += '<td>' + reasonHtml + '</td>';
           html += '<td>' + sevHtml + '</td>';
           html += '<td>' + stBadge + '</td>';
-          html += '<td><button class="btn-secondary" style="padding:3px 8px; font-size:0.75em;" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + patchBtn + '</td>';
+          html += '<td></td>';
+          html += '<td><button class="p1d1-view-btn small" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + patchBtn + '</td>';
           html += '</tr>';
+          childrenRendered++;
         }
-
-        html += '</tbody></table></div></div>';
-        console.log('[P1D-PREFLIGHT] group_rendered: ' + gk + ' issues=' + gItems.length + ' sheets=' + sheetNames.length);
       }
 
+      html += '</tbody></table>';
       container.innerHTML = html;
-      console.log('[P1D-PREFLIGHT] total_groups=' + groupOrder.length + ' total_items=' + items.length);
+      console.log('[TRIAGE-CONTRACT-HEALTH][P1D.1] parent_rows_rendered: ' + groupOrder.length);
+      console.log('[TRIAGE-CONTRACT-HEALTH][P1D.1] child_rows_rendered: ' + childrenRendered);
       console.log('[TRIAGE-CANONICAL][P1X] grouping_rendered: groups=' + groupOrder.length + ', items=' + items.length);
     }
 
@@ -33968,25 +34015,35 @@ Add any additional notes here.
 
 
     /* ── P1D: Contract-Centric Pre-Flight Grouping ── */
-    .p1d-group { margin-bottom: 10px; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; }
-    .p1d-group-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fafafa; cursor: pointer; user-select: none; border-bottom: 1px solid #eee; flex-wrap: wrap; }
-    .p1d-group-header:hover { background: #f0f4f8; }
-    .p1d-group-caret { font-size: 0.75em; transition: transform 0.15s; display: inline-block; color: #666; }
-    .p1d-group-caret.collapsed { transform: rotate(-90deg); }
-    .p1d-group-name { font-weight: 600; font-size: 0.9em; color: #333; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .p1d-group-id { font-size: 0.75em; color: #888; font-family: monospace; }
-    .p1d-group-count { font-size: 0.78em; color: #555; background: #e8e8e8; padding: 1px 8px; border-radius: 10px; font-weight: 600; }
-    .p1d-group-sheets { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
-    .p1d-sheet-chip { font-size: 0.7em; padding: 1px 7px; border-radius: 10px; font-weight: 500; background: #e3f2fd; color: #1565c0; }
-    .p1d-group-body { overflow: hidden; }
-    .p1d-group-body.collapsed { display: none; }
-    .p1d-group-body table { width: 100%; border-collapse: collapse; font-size: 0.84em; }
-    .p1d-group-body table th { padding: 6px 10px; text-align: left; font-weight: 600; color: #555; background: #f9f9f9; border-bottom: 1px solid #e0e0e0; font-size: 0.9em; }
-    .p1d-group-body table td { padding: 7px 10px; border-bottom: 1px solid #f0f0f0; }
-    .p1d-group-body table tr:hover { background: #fafafa; }
-    .p1d-group-body table tr { cursor: pointer; }
-    .p1d-domain-hint { font-size: 0.72em; color: #999; margin-left: 4px; }
     .p1d-empty-state { text-align: center; padding: 30px; color: #999; font-size: 0.9em; }
+    .p1d1-health-table { width: 100%; border-collapse: collapse; font-size: 0.84em; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; }
+    .p1d1-health-table thead th { padding: 8px 10px; text-align: left; font-weight: 600; color: #555; background: #f5f5f5; border-bottom: 2px solid #e0e0e0; font-size: 0.88em; white-space: nowrap; }
+    .p1d1-parent-row { cursor: pointer; background: #fafafa; border-bottom: 1px solid #e0e0e0; }
+    .p1d1-parent-row:hover { background: #f0f4f8; }
+    .p1d1-parent-row.has-blockers { border-left: 3px solid #c62828; }
+    .p1d1-parent-row td { padding: 9px 10px; font-weight: 500; vertical-align: middle; }
+    .p1d1-caret { width: 30px; text-align: center; color: #666; font-size: 0.75em; user-select: none; }
+    .p1d1-contract-name { font-weight: 600; color: #333; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .p1d1-contract-id code { font-size: 0.8em; color: #888; background: #f0f0f0; padding: 1px 5px; border-radius: 3px; }
+    .p1d1-domain { font-size: 0.78em; color: #999; }
+    .p1d1-issue-count { font-weight: 700; color: #333; text-align: center; }
+    .p1d1-sections { display: flex; gap: 3px; flex-wrap: wrap; }
+    .p1d1-section-chip { font-size: 0.72em; padding: 1px 6px; border-radius: 10px; font-weight: 500; background: #e3f2fd; color: #1565c0; white-space: nowrap; }
+    .p1d1-sev-badge { display: inline-block; font-size: 0.72em; padding: 1px 7px; border-radius: 10px; font-weight: 600; margin-right: 3px; }
+    .p1d1-sev-badge.blocker { background: #ffebee; color: #c62828; }
+    .p1d1-sev-badge.warning { background: #fff3e0; color: #e65100; }
+    .p1d1-child-row { background: #fff; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+    .p1d1-child-row:hover { background: #f8f9fa; }
+    .p1d1-child-row td { padding: 7px 10px; font-weight: 400; font-size: 0.95em; color: #444; }
+    .p1d1-child-section { font-weight: 500; color: #1565c0; }
+    .p1d1-child-ref { color: #555; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .p1d1-reason-chip { display: inline-block; padding: 2px 7px; border-radius: 3px; background: #fff3e0; color: #e65100; font-size: 0.88em; font-weight: 500; cursor: help; }
+    .p1d1-status-badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 0.75em; font-weight: 600; }
+    .p1d1-view-btn { padding: 4px 10px; font-size: 0.78em; font-weight: 500; border: 1px solid #bbdefb; background: #e3f2fd; color: #1565c0; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+    .p1d1-view-btn:hover { background: #bbdefb; }
+    .p1d1-view-btn.small { padding: 2px 7px; font-size: 0.74em; }
+    .p1d1-patch-btn { padding: 2px 6px; font-size: 0.72em; background: #e3f2fd; border: 1px solid #bbdefb; border-radius: 4px; color: #1565c0; cursor: pointer; margin-left: 4px; }
+    .p1d1-patch-btn:hover { background: #bbdefb; }
 
 </style>
 <button class="feedback-fab" onclick="document.querySelector('.feedback-overlay').classList.add('open');document.querySelector('.feedback-panel').classList.add('open');" aria-label="Send Feedback">

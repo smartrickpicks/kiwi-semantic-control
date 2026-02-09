@@ -2,6 +2,18 @@
 
 > Alert summary view showing Review State counts and status cards for quick navigation.
 
+## Recent Changes (v2.3.5 P1D.1)
+
+- **Contract Health Pre-Flight Table**: Replaced fragmented per-contract card blocks with a single unified nested table. Parent rows represent contracts (accordion expand/collapse), child rows are individual issues.
+- **Parent row schema**: Expand icon, contract name, compact ID, source/domain hint, total issue count, severity summary badges (blocker/warning), contract section chips (e.g., Accounts(3), Financials(1)), "View Contract" quick action.
+- **Child row schema**: Contract Section (renamed from Sheet), Reference (business identifier lookup), Issue (human-readable reason chip), Severity, Status, View/Patch actions.
+- **Counting semantics**: Affected Contracts = unique `contract_id` with ≥1 pre-flight issue (not flat issue count). Records Impacted = unique `record_id` under affected contracts. Distinct from total issue rows.
+- **Grouping model**: Grouped map keyed by `contract_id` (fallback: batch-level bucket). Explicit "Batch-level (Unassigned)" group for unresolved scope. Parent rows sorted by blocker count desc → issue count desc → name asc.
+- **OCR taxonomy**: OCR is parent bucket. Mojibake remains child reason under OCR. One parent per contract regardless of child issue count.
+- **Routing**: Parent "View Contract" routes to contract-filtered all-data-grid. Child "View" uses existing resolver chain. Unresolved items show diagnostic modal (no dead-end toasts).
+- **Terminology**: "Sheet" → "Contract Section" in Pre-Flight nested table.
+- **Logging**: 5 events with `[TRIAGE-CONTRACT-HEALTH][P1D.1]` prefix: `model_built`, `parent_rows_rendered`, `child_rows_rendered`, `group_toggled`, `metrics_recomputed`.
+
 ## Recent Changes (v2.3 P1)
 
 - **Live telemetry cache**: `TriageTelemetry` aggregator keyed by active dataset with `files_total`, `files_processed`, `processing_state` (idle|running|stale|complete), `lane_counts`, `lifecycle_stage_counts`, `last_updated_at`. Recomputed on upload load, demo/sandbox load, restore/session load, pre-flight rerun, system pass rerun, patch status transitions, and audit events.
@@ -203,6 +215,43 @@ Clickable mini-panel (P0.1 + P0.2):
 | Schema Drift | → needs-review filter | Sum of unknown + missing required |
 
 If a click-through yields zero results, an empty-state helper message is shown inline (P0.2).
+
+### Pre-Flight Contract Health Table (P1D.1)
+
+The Pre-Flight queue renders as a single nested table (not individual cards per contract). Rows are split into two types:
+
+**Parent Rows** (contract-level, clickable to expand/collapse):
+
+| Column | Description |
+|--------|-------------|
+| Expand Icon | ▶ collapsed / ▼ expanded |
+| Contract | Display name (from file_name, cleaned) |
+| ID | Compact contract_key (truncated to 22 chars) |
+| Source | Domain hint extracted from file_url |
+| Issues | Total issue count for this contract |
+| Severity | Blocker/warning count badges |
+| Contract Sections | Chips per section with counts, e.g., Accounts(3) |
+| Actions | "View Contract" button → routes to contract-filtered all-data-grid |
+
+**Child Rows** (issue-level, hidden when parent collapsed):
+
+| Column | Description |
+|--------|-------------|
+| Contract Section | Sheet name (renamed from "Sheet") |
+| Reference | Business identifier resolved from workbook row data |
+| Issue | Human-readable reason chip with tooltip |
+| Severity | Blocker (red) or Warning (orange) |
+| Status | Open/Resolved badge |
+| Actions | View (opens resolver chain) / Patch (when applicable) |
+
+**Sorting**: Parent rows ordered by blocker count desc → issue count desc → name asc. Batch-level group always last.
+
+**Expand/Collapse**: First 5 groups expanded by default, rest collapsed. State persisted during session.
+
+**Metric Semantics**:
+- Affected Contracts = count of unique `contract_id` values with ≥1 pre-flight issue
+- Records Impacted = count of unique `record_id` values under affected contracts
+- These are distinct from total issue row count (one contract may have many issues)
 
 ### Pre-Flight View Routing (P0.1 + P0.2)
 
