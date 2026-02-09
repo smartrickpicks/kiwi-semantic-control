@@ -7893,6 +7893,8 @@
       _activeContractFilter = contractId || '';
       var btn = document.getElementById('btn-view-contract');
       if (btn) btn.style.display = contractId ? 'inline-block' : 'none';
+      var sidebarSelector = document.getElementById('sidebar-sheet-selector');
+      if (sidebarSelector) sidebarSelector.value = _activeContractFilter || 'all';
       renderGrid();
     }
 
@@ -13878,39 +13880,81 @@
 
     function updateSidebarSheetSelector() {
       var selector = document.getElementById('sidebar-sheet-selector');
-      if (!selector || !workbook || !workbook.order) return;
-      
-      selector.innerHTML = '<option value="all">All Sheets</option>';
-      var dataSheets = getDataSheets();
-      dataSheets.forEach(function(sheetName) {
-        var sheet = workbook.sheets[sheetName];
-        if (!sheet) return;
-        var opt = document.createElement('option');
-        opt.value = sheetName;
-        opt.textContent = sheetName + ' (' + (sheet.rows ? sheet.rows.length : 0) + ')';
-        selector.appendChild(opt);
-      });
-      if (gridState.sheet) {
-        selector.value = gridState.sheet;
-      } else {
-        selector.value = 'all';
+      if (!selector) return;
+
+      if (typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable()) {
+        var allContracts = ContractIndex.listContracts().filter(function(c) {
+          var fn = (c.file_name || c.contract_id || '').toLowerCase();
+          if (fn.includes('_change_log') || fn === 'rfis & analyst notes' || fn.includes('glossary_reference') || fn.includes('_reference')) return false;
+          var sheets = c.sheets ? Object.keys(c.sheets) : [];
+          var allMeta = sheets.length > 0 && sheets.every(function(s) {
+            return (typeof isMetaSheet === 'function' && isMetaSheet(s)) || (typeof isReferenceSheet === 'function' && isReferenceSheet(s));
+          });
+          return !allMeta;
+        });
+        var seen = {};
+        allContracts = allContracts.filter(function(c) { if (seen[c.contract_id]) return false; seen[c.contract_id] = true; return true; });
+        allContracts.sort(function(a, b) { return (a.file_name || '').localeCompare(b.file_name || ''); });
+
+        selector.innerHTML = '<option value="all">All Contracts (' + allContracts.length + ')</option>';
+        allContracts.forEach(function(c) {
+          var opt = document.createElement('option');
+          opt.value = c.contract_id;
+          var label = (c.file_name || c.contract_id);
+          if (label.length > 35) label = label.substring(0, 33) + '...';
+          opt.textContent = label + ' (' + c.row_count + ')';
+          selector.appendChild(opt);
+        });
+        if (_activeContractFilter) {
+          selector.value = _activeContractFilter;
+        } else {
+          selector.value = 'all';
+        }
+      } else if (workbook && workbook.order) {
+        selector.innerHTML = '<option value="all">All Sheets</option>';
+        var dataSheets = getDataSheets();
+        dataSheets.forEach(function(sheetName) {
+          var sheet = workbook.sheets[sheetName];
+          if (!sheet) return;
+          var opt = document.createElement('option');
+          opt.value = sheetName;
+          opt.textContent = sheetName + ' (' + (sheet.rows ? sheet.rows.length : 0) + ')';
+          selector.appendChild(opt);
+        });
+        if (gridState.sheet) {
+          selector.value = gridState.sheet;
+        } else {
+          selector.value = 'all';
+        }
       }
     }
 
     function handleSheetSelectorChange(value) {
-      console.log('[Sidebar] Sheet selector changed:', value);
-      if (value === 'all') {
-        gridState.sheet = null;
+      console.log('[Sidebar] Selector changed:', value);
+      if (typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable()) {
+        if (value === 'all') {
+          _activeContractFilter = '';
+        } else {
+          _activeContractFilter = value;
+        }
+        var gridContractSelector = document.getElementById('grid-contract-selector');
+        if (gridContractSelector) gridContractSelector.value = _activeContractFilter;
+        renderGrid();
+        updateProgressBlock();
+        saveNavStateToCache(); scheduleAutosave();
       } else {
-        gridState.sheet = value;
+        if (value === 'all') {
+          gridState.sheet = null;
+        } else {
+          gridState.sheet = value;
+        }
+        populateContractSelector();
+        renderGrid();
+        updateProgressBlock();
+        saveNavStateToCache(); scheduleAutosave();
+        var gridSelector = document.getElementById('grid-sheet-selector');
+        if (gridSelector) gridSelector.value = gridState.sheet ? gridState.sheet : '';
       }
-      populateContractSelector();
-      renderGrid();
-      updateProgressBlock();
-      saveNavStateToCache(); scheduleAutosave();
-      // Sync grid selector
-      var gridSelector = document.getElementById('grid-sheet-selector');
-      if (gridSelector) gridSelector.value = gridState.sheet ? gridState.sheet : '';
     }
     
     // v1.6.46: Grid sheet selector change handler - syncs both selectors
@@ -13921,10 +13965,10 @@
       } else {
         gridState.sheet = value;
       }
-      // Sync sidebar selector
-      var sidebarSelector = document.getElementById('sidebar-sheet-selector');
-      if (sidebarSelector) sidebarSelector.value = gridState.sheet ? gridState.sheet : 'all';
-      
+      if (!(typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable())) {
+        var sidebarSelector = document.getElementById('sidebar-sheet-selector');
+        if (sidebarSelector) sidebarSelector.value = gridState.sheet ? gridState.sheet : 'all';
+      }
       populateContractSelector();
       renderGrid();
       updateProgressBlock();
@@ -17571,8 +17615,7 @@
     var _p1cSectionState = {};
 
     function _p1cIsCompositeMode() {
-      return _activeContractFilter && _activeContractFilter !== '' &&
-             (!gridState.sheet || gridState.sheet === '' || gridState.sheet === 'all');
+      return (!gridState.sheet || gridState.sheet === '' || gridState.sheet === 'all');
     }
 
     function _p1cExpandAll() {
@@ -17822,7 +17865,7 @@
       var filterInfo = [];
       if (gridState.filter !== 'all') filterInfo.push('Status: ' + gridState.filter);
       if (gridState.search) filterInfo.push('Search: "' + gridState.search + '"');
-      filterInfo.push('Contract: ' + _activeContractFilter.substring(0, 20));
+      if (_activeContractFilter) filterInfo.push('Contract: ' + _activeContractFilter.substring(0, 20));
       document.getElementById('grid-filter-info').textContent = filterInfo.join(' | ');
       updateGridSheetStats(allRecords, filtered);
     }
