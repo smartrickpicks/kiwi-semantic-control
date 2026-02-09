@@ -2141,10 +2141,15 @@
             <!-- 5) Schema Snapshot -->
             <div style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 16px;">
               <h4 style="margin: 0 0 12px; font-size: 0.9em; color: #333;">Schema Snapshot</h4>
-              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+              <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
+                <div style="text-align: center; padding: 10px; background: #e8f5e9; border-radius: 8px;">
+                  <div id="ta-glossary-integrity-pct" style="font-size: 1.4em; font-weight: 700; color: #1b5e20;">--</div>
+                  <div style="font-size: 0.75em; color: #666;">Glossary Integrity</div>
+                  <div id="ta-glossary-integrity-count" style="font-size: 0.7em; color: #999;">0 / 0</div>
+                </div>
                 <div style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px;">
                   <div id="ta-schema-matched-pct" style="font-size: 1.4em; font-weight: 700; color: #2e7d32;">--</div>
-                  <div style="font-size: 0.75em; color: #666;">Fields Matched</div>
+                  <div style="font-size: 0.75em; color: #666;">Batch Coverage</div>
                   <div id="ta-schema-matched-count" style="font-size: 0.7em; color: #999;">0 / 0</div>
                 </div>
                 <div onclick="TriageAnalytics.handleSchemaClick('unknown')" style="text-align: center; padding: 10px; background: #fff3e0; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
@@ -25366,7 +25371,7 @@
             applied: { count: 0, pct: 0 }
           },
           contracts: [],
-          schema: { standard_matched: 0, standard_total: 0, unknown_columns: 0, missing_required: 0, schema_drift: 0 },
+          schema: { standard_matched: 0, standard_total: 0, unknown_columns: 0, missing_required: 0, schema_drift: 0, glossary_integrity_total: 0, glossary_integrity_loaded: 0, defsheet_extracted_keys: 0, defsheet_fallback_hits: 0 },
           processing: { queued: 0, processing: 0, completed: 0, failed: 0 },
           total_contracts: 0
         };
@@ -25500,6 +25505,8 @@
         if (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.fields) {
           var allFields = rulesBundleCache.fieldMeta.fields;
           cache.schema.standard_total = allFields.length;
+          cache.schema.glossary_integrity_total = allFields.length;
+          cache.schema.glossary_integrity_loaded = allFields.length;
           var _normKey = function(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); };
           var wbCols = {};
           var wbCanonicals = {};
@@ -25527,15 +25534,31 @@
               });
               if (sn.toLowerCase().indexOf('fields defini') >= 0 && sh && sh.headers && sh.rows) {
                 var apiIdx = -1; var labelIdx = -1;
+                var _canonicalKeyRe = /[A-Za-z][A-Za-z0-9_]*__(c|r)|[A-Za-z][A-Za-z0-9_]*(Id|ID)\b/;
                 for (var hi = 0; hi < sh.headers.length; hi++) {
-                  var hn = sh.headers[hi].toLowerCase();
-                  if (hn === 'field api name' || hn === 'field_api_name' || hn === 'api name' || hn === 'api_name') apiIdx = hi;
+                  var hn = sh.headers[hi].toLowerCase().replace(/[^a-z0-9_ ]/g, '').trim();
+                  if (hn === 'field api name' || hn === 'field_api_name' || hn === 'api name' || hn === 'api_name' || hn === 'field name' || hn === 'field_name') apiIdx = hi;
                   if (hn === 'field label' || hn === 'field_label' || hn === 'label') labelIdx = hi;
                 }
+                var _defsheetExtracted = 0;
+                var _defsheetFallbackHits = 0;
                 sh.rows.forEach(function(row) {
-                  var apiVal = apiIdx >= 0 ? (row[sh.headers[apiIdx]] || '') : '';
+                  var apiVal = apiIdx >= 0 ? String(row[sh.headers[apiIdx]] || '').trim() : '';
+                  var isInvalid = !apiVal || apiVal === '(' || apiVal.length < 2;
+                  if (isInvalid && sh.headers) {
+                    for (var ci = 0; ci < sh.headers.length; ci++) {
+                      var cellVal = String(row[sh.headers[ci]] || '').trim();
+                      var m = cellVal.match(_canonicalKeyRe);
+                      if (m) {
+                        apiVal = m[0];
+                        _defsheetFallbackHits++;
+                        break;
+                      }
+                    }
+                  }
                   var labelVal = labelIdx >= 0 ? (row[sh.headers[labelIdx]] || '') : '';
-                  if (apiVal) {
+                  if (apiVal && apiVal.length >= 2 && apiVal !== '(') {
+                    _defsheetExtracted++;
                     wbCols[apiVal.toLowerCase()] = true;
                     wbCols[_normKey(apiVal)] = true;
                   }
@@ -25556,6 +25579,8 @@
                     }
                   }
                 });
+                cache.schema.defsheet_extracted_keys += _defsheetExtracted;
+                cache.schema.defsheet_fallback_hits += _defsheetFallbackHits;
               }
             });
           }
@@ -25589,6 +25614,10 @@
         this._lastRefreshedAt = cache.refreshed_at;
         console.log('[TRIAGE-ANALYTICS][P0.1] lifecycle_recompute: contracts=' + cache.total_contracts + ', orphan_excluded=' + (cache._orphan_row_count || 0));
         console.log('[TRIAGE-ANALYTICS][P0.1] refresh: PreFlight=' + cache.lanes.preflight.total + ', Semantic=' + cache.lanes.semantic.total + ', PatchReview=' + cache.lanes.patch_review.total + ', Contracts=' + cache.total_contracts + ', Schema=' + cache.schema.standard_matched + '/' + cache.schema.standard_total);
+        console.log('[GLOSSARY-MAP] fields_total=' + cache.schema.glossary_integrity_total);
+        console.log('[GLOSSARY-MAP] batch_matched=' + cache.schema.standard_matched);
+        console.log('[GLOSSARY-MAP] defsheet_extracted_keys=' + cache.schema.defsheet_extracted_keys);
+        console.log('[GLOSSARY-MAP] defsheet_fallback_hits=' + cache.schema.defsheet_fallback_hits);
 
         // P0.2: Compute batch summary
         var totalRecords = 0;
@@ -25825,6 +25854,9 @@
 
       _renderSchemaSnapshot: function(cache) {
         var el = function(id) { return document.getElementById(id); };
+        var giPct = cache.schema.glossary_integrity_total > 0 ? Math.round((cache.schema.glossary_integrity_loaded / cache.schema.glossary_integrity_total) * 100) : 0;
+        if (el('ta-glossary-integrity-pct')) el('ta-glossary-integrity-pct').textContent = giPct + '%';
+        if (el('ta-glossary-integrity-count')) el('ta-glossary-integrity-count').textContent = cache.schema.glossary_integrity_loaded + ' / ' + cache.schema.glossary_integrity_total;
         var pct = cache.schema.standard_total > 0 ? Math.round((cache.schema.standard_matched / cache.schema.standard_total) * 100) : 0;
         if (el('ta-schema-matched-pct')) el('ta-schema-matched-pct').textContent = pct + '%';
         if (el('ta-schema-matched-count')) el('ta-schema-matched-count').textContent = cache.schema.standard_matched + ' / ' + cache.schema.standard_total;
