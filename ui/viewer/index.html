@@ -2084,23 +2084,8 @@
               <h3 style="margin: 0; font-size: 1.05em; color: #333;">Pre-Flight <span id="manual-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
             </div>
             <div id="p1a-preflight-sheet-tabs" style="display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; font-size: 0.82em;"></div>
-            <div class="queue-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; text-align: left;">
-                <thead style="background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
-                  <tr>
-                    <th style="padding: 8px 12px;">Type</th>
-                    <th style="padding: 8px 12px;">Record</th>
-                    <th style="padding: 8px 12px;">Field</th>
-                    <th style="padding: 8px 12px;">Reason</th>
-                    <th style="padding: 8px 12px;">Status</th>
-                    <th style="padding: 8px 12px;">Last Updated</th>
-                    <th style="padding: 8px 12px;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="manual-queue-list" style="background: #fffef5;">
-                  <tr><td colspan="7" style="padding: 20px; text-align: center; color: #999;">No pre-flight items</td></tr>
-                </tbody>
-              </table>
+            <div id="p1d-preflight-container" class="p1d-preflight-container">
+              <div class="p1d-empty-state">No pre-flight items</div>
             </div>
           </div>
 
@@ -16881,6 +16866,181 @@
     }
 
 
+
+    // ═══ P1D: Contract-Centric Pre-Flight Grouping ═══
+    var _p1dGroupState = {};
+
+    function _p1dToggleGroup(groupId) {
+      console.log('[P1D-PREFLIGHT] group_toggled: ' + groupId);
+      var sec = document.querySelector('.p1d-group[data-group-id="' + groupId + '"]');
+      if (!sec) return;
+      var body = sec.querySelector('.p1d-group-body');
+      var caret = sec.querySelector('.p1d-group-caret');
+      var isCollapsed = body.classList.contains('collapsed');
+      if (isCollapsed) {
+        body.classList.remove('collapsed');
+        if (caret) caret.classList.remove('collapsed');
+        _p1dGroupState[groupId] = false;
+      } else {
+        body.classList.add('collapsed');
+        if (caret) caret.classList.add('collapsed');
+        _p1dGroupState[groupId] = true;
+      }
+    }
+
+    function _p1dGetGroupKey(item) {
+      if (item.contract_id || item.contract_key) return item.contract_id || item.contract_key;
+      var fu = item.file_url || '';
+      var fn = item.file_name || '';
+      if (fu) return 'file:' + fu;
+      if (fn) return 'file:' + fn;
+      return '_batch_level';
+    }
+
+    function _p1dGetDisplayName(groupKey, items) {
+      if (groupKey === '_batch_level') return 'Batch-level Issues';
+      if (groupKey.indexOf('file:') === 0) {
+        var raw = groupKey.substring(5);
+        return raw.length > 50 ? raw.substring(0, 48) + '...' : raw;
+      }
+      var sample = items[0];
+      var fn = sample.file_name || '';
+      if (fn) return fn.length > 50 ? fn.substring(0, 48) + '...' : fn;
+      return groupKey.length > 40 ? groupKey.substring(0, 38) + '...' : groupKey;
+    }
+
+    function _p1dGetDomainHint(items) {
+      for (var i = 0; i < items.length; i++) {
+        var u = items[i].file_url || '';
+        if (u) {
+          try {
+            var m = u.match(/^https?:\/\/([^\/]+)/);
+            if (m) return m[1];
+          } catch(e) {}
+        }
+      }
+      return '';
+    }
+
+    function _p1dRenderGrouped(items, containerId) {
+      var container = document.getElementById(containerId);
+      if (!container) return;
+
+      if (items.length === 0) {
+        container.innerHTML = '<div class="p1d-empty-state">No pre-flight items</div>';
+        return;
+      }
+
+      var groups = {};
+      var groupOrder = [];
+      for (var i = 0; i < items.length; i++) {
+        var key = _p1dGetGroupKey(items[i]);
+        if (!groups[key]) {
+          groups[key] = [];
+          groupOrder.push(key);
+        }
+        groups[key].push(items[i]);
+      }
+
+      groupOrder.sort(function(a, b) {
+        if (a === '_batch_level') return 1;
+        if (b === '_batch_level') return -1;
+        return groups[b].length - groups[a].length;
+      });
+
+      var html = '';
+      for (var gi = 0; gi < groupOrder.length; gi++) {
+        var gk = groupOrder[gi];
+        var gItems = groups[gk];
+        var groupId = 'p1d-g-' + gi;
+        var defaultCollapsed = gi >= 5;
+        var isCollapsed = _p1dGroupState[groupId] !== undefined ? _p1dGroupState[groupId] : defaultCollapsed;
+
+        var displayName = _p1dGetDisplayName(gk, gItems);
+        var compactId = gk === '_batch_level' ? '' : (gk.length > 20 ? gk.substring(0, 18) + '...' : gk);
+        var domainHint = _p1dGetDomainHint(gItems);
+
+        var sheetCounts = {};
+        for (var si = 0; si < gItems.length; si++) {
+          var sn = gItems[si].sheet_name || 'Unknown';
+          sheetCounts[sn] = (sheetCounts[sn] || 0) + 1;
+        }
+        var sheetChips = '';
+        var sheetNames = Object.keys(sheetCounts).sort();
+        for (var sc = 0; sc < sheetNames.length; sc++) {
+          sheetChips += '<span class="p1d-sheet-chip">' + escapeHtml(sheetNames[sc]) + ' (' + sheetCounts[sheetNames[sc]] + ')</span>';
+        }
+
+        var caretClass = 'p1d-group-caret' + (isCollapsed ? ' collapsed' : '');
+        var bodyClass = 'p1d-group-body' + (isCollapsed ? ' collapsed' : '');
+
+        html += '<div class="p1d-group" data-group-id="' + groupId + '" data-group-key="' + escapeHtml(gk) + '">';
+        html += '<div class="p1d-group-header" onclick="_p1dToggleGroup(' + String.fromCharCode(39) + groupId + String.fromCharCode(39) + ')">';
+        html += '<span class="' + caretClass + '">&#9660;</span>';
+        html += '<span class="p1d-group-name" title="' + escapeHtml(gk) + '">' + escapeHtml(displayName) + '</span>';
+        if (compactId && compactId !== displayName) {
+          html += '<span class="p1d-group-id" title="' + escapeHtml(gk) + '">' + escapeHtml(compactId) + '</span>';
+        }
+        if (domainHint) {
+          html += '<span class="p1d-domain-hint">' + escapeHtml(domainHint) + '</span>';
+        }
+        html += '<span class="p1d-group-count">' + gItems.length + ' issue' + (gItems.length !== 1 ? 's' : '') + '</span>';
+        html += '<div class="p1d-group-sheets">' + sheetChips + '</div>';
+        html += '</div>';
+
+        html += '<div class="' + bodyClass + '">';
+        html += '<table><thead><tr>';
+        html += '<th>Sheet</th><th>Field</th><th>Reason</th><th>Severity</th><th>Status</th><th>Actions</th>';
+        html += '</tr></thead><tbody>';
+
+        for (var ri = 0; ri < gItems.length; ri++) {
+          var item = gItems[ri];
+          var sName = escapeHtml(item.sheet_name || 'Unknown');
+          var fName = escapeHtml(item.field_name || item.field_key || '-');
+
+          var reasonHtml = '-';
+          if (item.blocker_type && typeof _preflightBlockerTypes !== 'undefined') {
+            var bt = _preflightBlockerTypes[item.blocker_type] || {};
+            var rLabel = bt.label || (item.blocker_type || '').replace(/_/g, ' ');
+            var rTip = (bt.desc || item.message || '').replace(/"/g, '&quot;');
+            reasonHtml = '<span style="display:inline-block; padding: 2px 7px; border-radius: 3px; background: #fff3e0; color: #e65100; font-size: 0.85em; font-weight: 500; cursor: help;" title="' + rTip + '">' + escapeHtml(rLabel) + '</span>';
+          } else if (item.reason_summary || item.signal_type) {
+            reasonHtml = escapeHtml(item.reason_summary || item.signal_type || '-');
+          }
+
+          var sevColor = item.severity === 'blocker' ? '#c62828' : (item.severity === 'warning' ? '#f57c00' : '#666');
+          var sevLabel = item.severity ? item.severity.charAt(0).toUpperCase() + item.severity.slice(1) : '-';
+          var sevHtml = '<span style="color:' + sevColor + '; font-weight: 500; font-size: 0.85em;">' + sevLabel + '</span>';
+
+          var stBadge = '<span style="display:inline-block; padding:2px 7px; border-radius:4px; font-size:0.75em; font-weight:600; background:' + (item.status_color || '#9e9e9e') + '15; color:' + (item.status_color || '#9e9e9e') + ';">' + (item.status_label || item.status || 'open') + '</span>';
+
+          var _q = String.fromCharCode(39);
+          var _esc = function(v) { return (v || '').replace(/'/g, String.fromCharCode(92) + String.fromCharCode(39)); };
+          var viewHandler = 'openPreflightItem(' + _q + _esc(item.request_id) + _q + ', ' + _q + _esc(item.record_id) + _q + ', ' + _q + _esc(item.contract_id || item.contract_key) + _q + ', ' + _q + _esc(item.field_name || item.field_key) + _q + ')';
+          var patchBtn = '';
+          if (item.can_create_patch && item.status === 'open') {
+            patchBtn = ' <button class="btn-secondary" style="padding:2px 6px; font-size:0.72em; background:#e3f2fd; border:1px solid #bbdefb;" onclick="event.stopPropagation(); createPatchFromBlocker(' + _q + _esc(item.request_id) + _q + ', ' + _q + _esc(item.record_id) + _q + ', ' + _q + _esc(item.field_name) + _q + ', ' + _q + _esc(item.blocker_type) + _q + ')">Patch</button>';
+          }
+
+          html += '<tr onclick="event.stopPropagation(); ' + viewHandler + '">';
+          html += '<td>' + sName + '</td>';
+          html += '<td>' + fName + '</td>';
+          html += '<td>' + reasonHtml + '</td>';
+          html += '<td>' + sevHtml + '</td>';
+          html += '<td>' + stBadge + '</td>';
+          html += '<td><button class="btn-secondary" style="padding:3px 8px; font-size:0.75em;" onclick="event.stopPropagation(); ' + viewHandler + '">View</button>' + patchBtn + '</td>';
+          html += '</tr>';
+        }
+
+        html += '</tbody></table></div></div>';
+        console.log('[P1D-PREFLIGHT] group_rendered: ' + gk + ' issues=' + gItems.length + ' sheets=' + sheetNames.length);
+      }
+
+      container.innerHTML = html;
+      console.log('[P1D-PREFLIGHT] total_groups=' + groupOrder.length + ' total_items=' + items.length);
+    }
+
+
     // ═══ P1C: Contract Composite Grid — Helpers ═══
     var _p1cSectionState = {};
 
@@ -25277,6 +25437,7 @@
     }
     
     function openPreflightItem(requestId, recordId, contractId, fieldName) {
+      console.log('[P1D-PREFLIGHT] view_routed: contract=' + contractId + ' record=' + recordId + ' field=' + fieldName);
       console.log('[TRIAGE-ANALYTICS][P0.2] route_decision_start: requestId=' + requestId + ', recordId=' + recordId + ', contractId=' + contractId);
       var item = {
         request_id: requestId,
@@ -25325,7 +25486,7 @@
 
     function _p1aSelectSheet(sheetName) {
       _p1aActiveSheet = sheetName;
-      console.log('[P1A] preflight_sheet_filter: sheet=' + sheetName);
+      console.log('[P1A] preflight_sheet_filter: sheet=' + sheetName); console.log('[P1D-PREFLIGHT] sheet_filter_applied: ' + sheetName);
       renderAnalystTriage();
     }
 
@@ -25359,7 +25520,7 @@
       // Render each queue table
       _p1aBuildSheetTabs(analystTriageState.manualItems);
       var _p1aFiltered = _p1aFilterBySheet(analystTriageState.manualItems);
-      renderTriageQueueTable(_p1aFiltered, 'manual-queue-list', 'No pre-flight items', true);
+      _p1dRenderGrouped(_p1aFiltered, 'p1d-preflight-container');
       renderTriageQueueTable(analystTriageState.sflogicItems, 'sflogic-queue-list', 'No system pass items');
       renderTriageQueueTable(analystTriageState.patchItems, 'patch-queue-list', 'No patch requests yet');
       renderTriageQueueTable(analystTriageState.systemItems, 'system-queue-list', 'No system changes');
@@ -33165,6 +33326,28 @@ Add any additional notes here.
     .p1c-section-body table td.status-finalized { color: #1565c0; }
     .p1c-section-body table td.status-flagged { color: #7b1fa2; }
     .p1c-empty-state { text-align: center; padding: 40px; color: #666; }
+
+
+    /* ── P1D: Contract-Centric Pre-Flight Grouping ── */
+    .p1d-group { margin-bottom: 10px; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; }
+    .p1d-group-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fafafa; cursor: pointer; user-select: none; border-bottom: 1px solid #eee; flex-wrap: wrap; }
+    .p1d-group-header:hover { background: #f0f4f8; }
+    .p1d-group-caret { font-size: 0.75em; transition: transform 0.15s; display: inline-block; color: #666; }
+    .p1d-group-caret.collapsed { transform: rotate(-90deg); }
+    .p1d-group-name { font-weight: 600; font-size: 0.9em; color: #333; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .p1d-group-id { font-size: 0.75em; color: #888; font-family: monospace; }
+    .p1d-group-count { font-size: 0.78em; color: #555; background: #e8e8e8; padding: 1px 8px; border-radius: 10px; font-weight: 600; }
+    .p1d-group-sheets { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+    .p1d-sheet-chip { font-size: 0.7em; padding: 1px 7px; border-radius: 10px; font-weight: 500; background: #e3f2fd; color: #1565c0; }
+    .p1d-group-body { overflow: hidden; }
+    .p1d-group-body.collapsed { display: none; }
+    .p1d-group-body table { width: 100%; border-collapse: collapse; font-size: 0.84em; }
+    .p1d-group-body table th { padding: 6px 10px; text-align: left; font-weight: 600; color: #555; background: #f9f9f9; border-bottom: 1px solid #e0e0e0; font-size: 0.9em; }
+    .p1d-group-body table td { padding: 7px 10px; border-bottom: 1px solid #f0f0f0; }
+    .p1d-group-body table tr:hover { background: #fafafa; }
+    .p1d-group-body table tr { cursor: pointer; }
+    .p1d-domain-hint { font-size: 0.72em; color: #999; margin-left: 4px; }
+    .p1d-empty-state { text-align: center; padding: 30px; color: #999; font-size: 0.9em; }
 
 </style>
 <button class="feedback-fab" onclick="document.querySelector('.feedback-overlay').classList.add('open');document.querySelector('.feedback-panel').classList.add('open');" aria-label="Send Feedback">
