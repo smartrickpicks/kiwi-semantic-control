@@ -2234,6 +2234,7 @@
             <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
               <h3 style="margin: 0; font-size: 1.05em; color: #333;">Pre-Flight <span id="manual-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
             </div>
+            <div id="p1a-preflight-issue-filters" style="display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; font-size: 0.82em; align-items: center;"></div>
             <div id="p1a-preflight-sheet-tabs" style="display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; font-size: 0.82em;"></div>
             <div id="p1f1-live-intake-wrapper" style="display:none;">
               <div id="p1f1-summary-bar" class="p1f1-summary-bar"></div>
@@ -29180,6 +29181,107 @@
     }
 
     var _p1aActiveSheet = 'All';
+    var _p1aActiveIssueType = 'All';
+    var _p1aActiveSeverity = 'All';
+
+    var _ISSUE_TYPE_LABELS = {
+      'MISSING_REQUIRED': 'Missing Required',
+      'PICKLIST_INVALID': 'Invalid Picklist',
+      'OCR_UNREADABLE': 'OCR Unreadable',
+      'OCR_MOJIBAKE': 'Mojibake',
+      'TEXT_NOT_SEARCHABLE': 'Non-Searchable PDF',
+      'UNKNOWN_COLUMN': 'Unknown Column',
+      'PDF_VERIFIED_CLEAN': 'PDF Clean',
+      'LOW_CONFIDENCE': 'Low Confidence',
+      'HEADER_ECHO': 'Header Echo',
+      'MANUAL_REVIEW': 'Manual Review',
+      'QA_FLAG': 'QA Flag'
+    };
+
+    var _ISSUE_TYPE_COLORS = {
+      'MISSING_REQUIRED': { border: '#c62828', bg: '#ffebee', text: '#c62828' },
+      'PICKLIST_INVALID': { border: '#e65100', bg: '#fff3e0', text: '#e65100' },
+      'OCR_UNREADABLE': { border: '#b71c1c', bg: '#fce4ec', text: '#b71c1c' },
+      'OCR_MOJIBAKE': { border: '#880e4f', bg: '#fce4ec', text: '#880e4f' },
+      'TEXT_NOT_SEARCHABLE': { border: '#4a148c', bg: '#f3e5f5', text: '#4a148c' },
+      'UNKNOWN_COLUMN': { border: '#1565c0', bg: '#e3f2fd', text: '#1565c0' },
+      'PDF_VERIFIED_CLEAN': { border: '#2e7d32', bg: '#e8f5e9', text: '#2e7d32' }
+    };
+
+    function _p1aBuildIssueFilters(items) {
+      var container = document.getElementById('p1a-preflight-issue-filters');
+      if (!container) return;
+      var typeCounts = {};
+      var sevCounts = { blocker: 0, warning: 0 };
+      for (var i = 0; i < items.length; i++) {
+        var rc = items[i].reason_code || items[i].blocker_type || items[i].signal_type || 'OTHER';
+        typeCounts[rc] = (typeCounts[rc] || 0) + 1;
+        var sev = (items[i].severity || '').toLowerCase();
+        if (sev === 'blocker') sevCounts.blocker++;
+        else sevCounts.warning++;
+      }
+      var typeKeys = Object.keys(typeCounts).sort(function(a, b) { return typeCounts[b] - typeCounts[a]; });
+      var totalCount = items.length;
+      var _q = String.fromCharCode(39);
+
+      var html = '<span style="font-size:0.85em;color:#888;margin-right:4px;font-weight:500;">Issue:</span>';
+      var allActive = _p1aActiveIssueType === 'All';
+      html += '<button onclick="_p1aSelectIssueType(' + _q + 'All' + _q + ')" style="padding:3px 9px;border:1px solid ' + (allActive ? '#1565c0' : '#ccc') + ';background:' + (allActive ? '#e3f2fd' : '#fff') + ';color:' + (allActive ? '#1565c0' : '#555') + ';border-radius:12px;cursor:pointer;font-size:0.88em;font-weight:' + (allActive ? '600' : '400') + ';">All <span style="font-weight:400;">(' + totalCount + ')</span></button>';
+
+      for (var t = 0; t < typeKeys.length; t++) {
+        var tk = typeKeys[t];
+        var tLabel = _ISSUE_TYPE_LABELS[tk] || tk.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+        var isActive = _p1aActiveIssueType === tk;
+        var colors = _ISSUE_TYPE_COLORS[tk] || { border: '#888', bg: '#f5f5f5', text: '#555' };
+        html += '<button onclick="_p1aSelectIssueType(' + _q + tk.replace(/'/g, '\\' + _q) + _q + ')" style="padding:3px 9px;border:1px solid ' + (isActive ? colors.border : '#ddd') + ';background:' + (isActive ? colors.bg : '#fff') + ';color:' + (isActive ? colors.text : '#666') + ';border-radius:12px;cursor:pointer;font-size:0.88em;font-weight:' + (isActive ? '600' : '400') + ';">' + escapeHtml(tLabel) + ' <span style="font-weight:400;">(' + typeCounts[tk] + ')</span></button>';
+      }
+
+      html += '<span style="margin-left:10px;border-left:1px solid #ddd;padding-left:10px;font-size:0.85em;color:#888;margin-right:4px;font-weight:500;">Severity:</span>';
+      var sevAllActive = _p1aActiveSeverity === 'All';
+      html += '<button onclick="_p1aSelectSeverity(' + _q + 'All' + _q + ')" style="padding:3px 9px;border:1px solid ' + (sevAllActive ? '#1565c0' : '#ccc') + ';background:' + (sevAllActive ? '#e3f2fd' : '#fff') + ';color:' + (sevAllActive ? '#1565c0' : '#555') + ';border-radius:12px;cursor:pointer;font-size:0.88em;font-weight:' + (sevAllActive ? '600' : '400') + ';">All</button>';
+      if (sevCounts.blocker > 0) {
+        var bActive = _p1aActiveSeverity === 'blocker';
+        html += '<button onclick="_p1aSelectSeverity(' + _q + 'blocker' + _q + ')" style="padding:3px 9px;border:1px solid ' + (bActive ? '#c62828' : '#ddd') + ';background:' + (bActive ? '#ffebee' : '#fff') + ';color:' + (bActive ? '#c62828' : '#666') + ';border-radius:12px;cursor:pointer;font-size:0.88em;font-weight:' + (bActive ? '600' : '400') + ';">Blockers <span style="font-weight:400;">(' + sevCounts.blocker + ')</span></button>';
+      }
+      if (sevCounts.warning > 0) {
+        var wActive = _p1aActiveSeverity === 'warning';
+        html += '<button onclick="_p1aSelectSeverity(' + _q + 'warning' + _q + ')" style="padding:3px 9px;border:1px solid ' + (wActive ? '#e65100' : '#ddd') + ';background:' + (wActive ? '#fff3e0' : '#fff') + ';color:' + (wActive ? '#e65100' : '#666') + ';border-radius:12px;cursor:pointer;font-size:0.88em;font-weight:' + (wActive ? '600' : '400') + ';">Warnings <span style="font-weight:400;">(' + sevCounts.warning + ')</span></button>';
+      }
+
+      container.innerHTML = html;
+    }
+
+    function _p1aFilterByIssueAndSeverity(items) {
+      var filtered = items;
+      if (_p1aActiveIssueType !== 'All') {
+        var result = [];
+        for (var i = 0; i < filtered.length; i++) {
+          var rc = filtered[i].reason_code || filtered[i].blocker_type || filtered[i].signal_type || 'OTHER';
+          if (rc === _p1aActiveIssueType) result.push(filtered[i]);
+        }
+        filtered = result;
+      }
+      if (_p1aActiveSeverity !== 'All') {
+        var result2 = [];
+        for (var j = 0; j < filtered.length; j++) {
+          if ((filtered[j].severity || '').toLowerCase() === _p1aActiveSeverity) result2.push(filtered[j]);
+        }
+        filtered = result2;
+      }
+      return filtered;
+    }
+
+    function _p1aSelectIssueType(issueType) {
+      _p1aActiveIssueType = issueType;
+      console.log('[P1A] preflight_issue_filter: type=' + issueType);
+      renderAnalystTriage();
+    }
+
+    function _p1aSelectSeverity(severity) {
+      _p1aActiveSeverity = severity;
+      console.log('[P1A] preflight_severity_filter: severity=' + severity);
+      renderAnalystTriage();
+    }
 
     function _p1aBuildSheetTabs(items) {
       var container = document.getElementById('p1a-preflight-sheet-tabs');
@@ -29268,8 +29370,10 @@
         enrichPreflightItem(analystTriageState.manualItems[_ei]);
       }
       _logPfTermStats('renderAnalystTriage');
-      _p1aBuildSheetTabs(analystTriageState.manualItems);
-      var _p1aFiltered = _p1aFilterBySheet(analystTriageState.manualItems);
+      _p1aBuildIssueFilters(analystTriageState.manualItems);
+      var _p1aIssueFiltered = _p1aFilterByIssueAndSeverity(analystTriageState.manualItems);
+      _p1aBuildSheetTabs(_p1aIssueFiltered);
+      var _p1aFiltered = _p1aFilterBySheet(_p1aIssueFiltered);
       _p1dRenderGrouped(_p1aFiltered, 'p1d-preflight-container');
       renderTriageQueueTable(analystTriageState.sflogicItems, 'sflogic-queue-list', 'No system pass items');
       renderTriageQueueTable(analystTriageState.patchItems, 'patch-queue-list', 'No patch requests yet');
