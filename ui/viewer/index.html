@@ -1681,7 +1681,7 @@
           <!-- Sheet Selector (stub) -->
           <div style="padding: 4px 16px 8px;">
             <select class="sheet-selector" id="sidebar-sheet-selector" onchange="handleSheetSelectorChange(this.value)">
-              <option value="all">All Sheets</option>
+              <option value="all">All Records</option>
             </select>
           </div>
           <!-- View Mode Buttons: Triage → All Data Grid → Record Inspection -->
@@ -2393,7 +2393,7 @@
           <div style="display: flex; align-items: center; gap: 8px;">
             <label style="font-size: 0.85em; color: #666;">Contract Section:</label>
             <select id="grid-sheet-selector" class="filter-select" style="min-width: 160px;" onchange="handleGridSheetSelectorChange(this.value)">
-              <option value="">All Sheets</option>
+              <option value="">All Records</option>
             </select>
           </div>
           <div id="merged-batch-filter-group" style="display: none; align-items: center; gap: 8px;">
@@ -13965,7 +13965,7 @@
           selector.value = 'all';
         }
       } else if (workbook && workbook.order) {
-        selector.innerHTML = '<option value="all">All Sheets</option>';
+        selector.innerHTML = '<option value="all">All Records</option>';
         var dataSheets = getDataSheets();
         dataSheets.forEach(function(sheetName) {
           var sheet = workbook.sheets[sheetName];
@@ -16699,7 +16699,7 @@
       var selector = document.getElementById('grid-sheet-selector');
       if (!selector) return;
       
-      selector.innerHTML = '<option value="">All Sheets</option>';
+      selector.innerHTML = '<option value="">All Records</option>';
       var sheets = [];
       
       // Priority: workbook.order > dataset extraction
@@ -16722,7 +16722,7 @@
       // Sort deterministically
       sheets.sort();
       
-      // v1.6.33: Keep "All Sheets" as default; only set first sheet if explicitly needed
+      // v1.6.33: Keep "All Records" as default; only set first sheet if explicitly needed
       
       sheets.forEach(function(sheet) {
         var opt = document.createElement('option');
