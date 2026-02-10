@@ -76,7 +76,7 @@ Contract: This document defines the governed, offline-first Data Source experien
 ### V1: Local Upload (Implemented)
 - **Status**: Available
 - **Behavior**: Direct upload via Data Source panel drop zone
-- **Supported formats**: CSV, XLSX (multi-sheet)
+- **Supported formats**: CSV, XLSX (multi-contract-section)
 - **Offline-compatible**: Yes (SheetJS library loaded from CDN, cached)
 - **Parser entrypoint**: `parseWorkbook(arrayBuffer, filename)` for reuse in V1.5 Drive integration
 
@@ -99,19 +99,19 @@ This design ensures analysts can work on flights, in low-connectivity environmen
 - **Requires**: OAuth, Drive API read access
 
 ### CSV Ingestion (v1.4.12)
-- Single-sheet workbook created from CSV file
-- Sheet name derived from filename (without extension)
+- Single contract section workbook created from CSV file
+- Contract section name derived from filename (without extension)
 - Delimiter auto-detected (comma, tab, semicolon, pipe)
 - Column mapping applied for file_name/file_url (see below)
 
 ### XLSX Ingestion (v1.4.12)
-- Multi-sheet workbook support via SheetJS library
-- Sheet names from Excel workbook
-- Sheet selector populated with all sheet names (lexically sorted)
-- Switching sheets updates Grid and Triage context
+- Multi-contract-section workbook support via SheetJS library
+- Contract section names from Excel workbook
+- Contract section selector populated with all contract section names (lexically sorted)
+- Switching contract sections updates Grid and Triage context
 
 ### Column Mapping Rules (v1.4.12)
-Per-row `file_name` and `file_url` are resolved for SRR PDF viewer:
+Per-row `file_name` and `file_url` are resolved for Record Inspection PDF viewer:
 
 1. **Primary (explicit headers)**: Case-insensitive match for:
    - `file_name`, `filename`, `file name` → maps to `file_name`
@@ -123,7 +123,7 @@ Per-row `file_name` and `file_url` are resolved for SRR PDF viewer:
 
 3. **Missing columns**: If mapping cannot be resolved:
    - Warning banner shown in Data Source panel: "Missing required columns: file_name/file_url"
-   - SRR shows empty PDF state with guidance
+   - Record Inspection shows empty PDF state with guidance
 
 Column mapping is persisted in session state (not source bytes).
 

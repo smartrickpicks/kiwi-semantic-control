@@ -11,7 +11,7 @@
 
 ## Recent Changes (v1.5.2)
 
-- **SRR Hydration Refactor**: Loads PatchRequest by `patch_request_id` first, then record by `record_id`
+- **Record Inspection Hydration Refactor**: Loads PatchRequest by `patch_request_id` first, then record by `record_id`
 - **Blocking Error UI**: Shows exact storage key when PatchRequest not found
 - **Debug Panel**: `?debug=1` URL param shows traceability info
 
@@ -24,7 +24,7 @@
 
 ---
 
-## SRR Hydration Sequence (v1.5.2)
+## Record Inspection Hydration Sequence (v1.5.2)
 
 When opening a queue item for review, the system follows a strict lookup sequence:
 
@@ -39,11 +39,11 @@ patch_request_id → PATCH_REQUEST_STORE.get("pr:{patch_request_id}")
 ```
 record_id → workbook.sheets[*].rows.find(r => r.record_id === record_id)
 ```
-- Searches all sheets for matching `record_id`
+- Searches all contract sections for matching `record_id`
 - Falls back to `_identity.record_id` if top-level missing
 - Legacy fallback: `contract_key` (deprecated)
 
-### Step 3: Bind SRR Context
+### Step 3: Bind Record Inspection Context
 ```javascript
 srrState.currentRecordId = record_id;
 srrState.currentPatchRequestId = patch_request_id;
@@ -51,7 +51,7 @@ srrState.currentPatchRequest = patchRequest;
 ```
 
 ### Blocking Error Behavior
-If PatchRequest not found, SRR displays:
+If PatchRequest not found, Record Inspection displays:
 - Red error banner: "PatchRequest not found"
 - Storage key attempted: `pr:{patch_request_id}`
 - No record data loaded (prevents stale binding)

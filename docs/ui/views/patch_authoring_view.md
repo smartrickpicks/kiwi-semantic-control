@@ -77,7 +77,7 @@ This view owns three gates (see [gate_view_mapping.md](../gate_view_mapping.md))
 | gate_evidence | All required blocks populated per patch type | Block submission, highlight missing |
 | gate_replay | Replay contract satisfied per patch type rules | Block submission, show missing replay fields |
 
-Gate parity: SRR submit and Patch Studio submit enforce identical gate conditions via the shared `validateSubmissionGates()` function.
+Gate parity: Record Inspection submit and Patch Studio submit enforce identical gate conditions via the shared `validateSubmissionGates()` function.
 
 ## Replay Contract Validation (v1.6.57)
 

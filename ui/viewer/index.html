@@ -3602,9 +3602,9 @@
           <!-- v1.6.48: Batch Add Settings -->
           <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Catalog Item Wizard <span class="info-icon" title="Catalog Item Wizard allows Analysts to mark records as catalog item anchors and batch-add catalog items. The feature is per-record.">&#9432;</span></h3>
-            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Catalog Item Wizard is enabled per-record. Analysts use the + button in the Field Inspector to open the wizard directly. Per-sheet overrides below are optional.</p>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Catalog Item Wizard is enabled per-record. Analysts use the + button in the Field Inspector to open the wizard directly. Per-section overrides below are optional.</p>
             <div id="admin-batch-add-toggles" style="display: flex; flex-direction: column; gap: 8px;">
-              <div style="color: #999; font-size: 0.85em; font-style: italic;">Load a dataset to see available sheets.</div>
+              <div style="color: #999; font-size: 0.85em; font-style: italic;">Load a dataset to see available contract sections.</div>
             </div>
           </div>
         <div class="admin-section" id="batch-merge-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -3924,7 +3924,7 @@
             </div>
             <div class="modal-footer" style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px; flex-wrap:wrap;">
               <button id="p08-btn-open-contract" class="toolbar-btn" style="background:#1565c0; color:#fff; display:none;" onclick="p08ActionOpenContract()">Open Contract in Grid</button>
-              <button id="p08-btn-open-sheet" class="toolbar-btn" style="background:#2e7d32; color:#fff; display:none;" onclick="p08ActionOpenSheet()">Open Sheet Row</button>
+              <button id="p08-btn-open-sheet" class="toolbar-btn" style="background:#2e7d32; color:#fff; display:none;" onclick="p08ActionOpenSheet()">Open Section Row</button>
               <button class="toolbar-btn" onclick="p08CopyDebugJSON()" style="background:#546e7a; color:#fff;">Copy Debug JSON</button>
               <button class="toolbar-btn" onclick="closeUnresolvedModal()">Dismiss</button>
             </div>
@@ -4005,7 +4005,7 @@
         <!-- STANDARDIZER TAB -->
         <div id="admin-tab-standardizer" class="admin-tab-panel" data-admin-section="true" style="display: none;">
         <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Schema Tree Editor <span class="info-icon" title="Browse and edit the canonical schema tree: sheets, fields, aliases, QA flags, and document types. Changes are buffered locally and can be exported as a patch.">&#9432;</span></h3>
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Schema Tree Editor <span class="info-icon" title="Browse and edit the canonical schema tree: contract sections, fields, aliases, QA flags, and document types. Changes are buffered locally and can be exported as a patch.">&#9432;</span></h3>
           <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
             <button class="toolbar-btn" onclick="schemaTreeExpandAll()">Expand All</button>
             <button class="toolbar-btn" onclick="schemaTreeCollapseAll()">Collapse All</button>
@@ -4051,7 +4051,7 @@
 
           <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <h3 style="margin: 0 0 6px; font-size: 1.1em; color: #333;">Canonical Glossary</h3>
-            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">The glossary defines all governed fields, their definitions, return formats, and picklist options. Each data sheet is mapped to its Fields Definitions sheet. Upload a replacement glossary JSON to update schema coverage and validation rules.</p>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">The glossary defines all governed fields, their definitions, return formats, and picklist options. Each contract section is mapped to its Fields Definitions source. Upload a replacement glossary JSON to update schema coverage and validation rules.</p>
             <div id="glossary-summary" style="background: #e8f5e9; padding: 12px 16px; border-radius: 6px; margin-bottom: 15px; font-size: 0.85em; color: #2e7d32;"></div>
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
               <label style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: linear-gradient(135deg, #1565c0 0%, #0d47a1 100%); color: white; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 600;">
@@ -7727,7 +7727,7 @@
             mb.promoted_rules.forEach(function(pr) {
               html += '<div style="font-size: 0.82em; padding: 3px 0; border-bottom: 1px solid #f0f0f0;">';
               html += '<span style="font-weight: 600;">' + escapeHtml(pr.field) + '</span>';
-              html += ' <span style="color: #888;">(sheet: ' + escapeHtml(pr.sheet) + ')</span>';
+              html += ' <span style="color: #888;">(section: ' + escapeHtml(pr.sheet) + ')</span>';
               html += ' &mdash; <em>' + escapeHtml(pr.rule) + '</em>';
               html += ' <span style="color: #aaa; font-size: 0.85em;">' + (pr.promoted_at || '').substring(0, 19) + '</span>';
               html += '</div>';
@@ -7746,7 +7746,7 @@
       },
 
       _promptPromoteRule: function(mergedBatchId) {
-        var sheet = prompt('Enter sheet name for the tenant rule:');
+        var sheet = prompt('Enter contract section name for the tenant rule:');
         if (!sheet) return;
         var field = prompt('Enter field key:');
         if (!field) return;
@@ -7766,7 +7766,7 @@
         html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">File</th>';
         html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">Source Batch</th>';
         html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">Rows</th>';
-        html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">Sheets</th>';
+        html += '<th style="padding: 6px 8px; text-align: left; border-bottom: 1px solid #ddd;">Sections</th>';
         html += '</tr></thead><tbody>';
         
         Object.keys(batch.contract_refs).forEach(function(cid) {
@@ -8043,7 +8043,7 @@
 
       html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">';
       html += '<div style="background:#f5f5f5; padding:12px; border-radius:8px;"><div style="font-size:0.75em; color:#888;">Rows</div><div style="font-size:1.4em; font-weight:700; color:#333;">' + rollup.row_count + '</div></div>';
-      html += '<div style="background:#f5f5f5; padding:12px; border-radius:8px;"><div style="font-size:0.75em; color:#888;">Sheets</div><div style="font-size:1.4em; font-weight:700; color:#333;">' + rollup.sheets.length + '</div></div>';
+      html += '<div style="background:#f5f5f5; padding:12px; border-radius:8px;"><div style="font-size:0.75em; color:#888;">Sections</div><div style="font-size:1.4em; font-weight:700; color:#333;">' + rollup.sheets.length + '</div></div>';
       html += '<div style="background:#f5f5f5; padding:12px; border-radius:8px;"><div style="font-size:0.75em; color:#888;">Signals</div><div style="font-size:1.4em; font-weight:700; color:#e65100;">' + rollup.signal_count + '</div></div>';
       var statusKeys = Object.keys(rollup.status_counts);
       var statusHtml = statusKeys.map(function(s) { return s + ': ' + rollup.status_counts[s]; }).join(', ') || 'n/a';
@@ -8061,7 +8061,7 @@
         html += '<div style="margin-bottom:16px; padding:10px; background:#fff3e0; border-radius:6px; border-left:3px solid #ff9800;">';
         html += '<div style="font-weight:600; color:#e65100; margin-bottom:6px;">Unknown Columns (' + rollup.unknown_columns.length + ')</div>';
         rollup.unknown_columns.forEach(function(uc) {
-          html += '<div style="font-size:0.85em; padding:2px 0;"><code>' + escapeHtml(uc.column) + '</code> <span style="color:#888;">(sheet: ' + escapeHtml(uc.sheet) + ', non-empty: ' + uc.non_empty + ')</span></div>';
+          html += '<div style="font-size:0.85em; padding:2px 0;"><code>' + escapeHtml(uc.column) + '</code> <span style="color:#888;">(section: ' + escapeHtml(uc.sheet) + ', non-empty: ' + uc.non_empty + ')</span></div>';
         });
         html += '</div>';
       }
@@ -9997,7 +9997,7 @@
             '<div class="saved-session-meta">' +
               '<span>' + timeStr + '</span>' +
               '<span class="saved-session-dot">\u00b7</span>' +
-              '<span>' + (s.sheetCount || 0) + ' sheets</span>' +
+              '<span>' + (s.sheetCount || 0) + ' sections</span>' +
               '<span class="saved-session-dot">\u00b7</span>' +
               '<span>' + (s.rowCount || 0) + ' rows</span>' +
               '<span class="saved-session-dot">\u00b7</span>' +
@@ -12989,7 +12989,7 @@
       addCanonicalField: function(sheet, fieldKey, fieldLabel) {
         var path = 'field_meta/' + sheet + '/' + fieldKey;
         this._emitChange('schema_patch', path, 'add_field', null, { field_key: fieldKey, field_label: fieldLabel, sheet: sheet });
-        if (typeof showToast === 'function') showToast('Field "' + fieldKey + '" added to ' + sheet, 'success');
+        if (typeof showToast === 'function') showToast('Field "' + fieldKey + '" added to section ' + sheet, 'success');
       },
 
       addTenantRule: function(sheet, fieldKey, rule) {
@@ -14537,14 +14537,14 @@
         ['Dataset ID', IDENTITY_CONTEXT.dataset_id || ''],
         ['Tenant ID', IDENTITY_CONTEXT.tenant_id || ''],
         ['Division ID', IDENTITY_CONTEXT.division_id || ''],
-        ['Total Sheets', workbook.order.length],
-        ['Data Sheets', getDataSheets().length],
-        ['Meta Sheets', getMetaSheets().length],
+        ['Total Sections', workbook.order.length],
+        ['Data Sections', getDataSheets().length],
+        ['Meta Sections', getMetaSheets().length],
         ['Total Records', getTotalRecordCount()],
         ['Signal Count', signalStore && signalStore.stats ? signalStore.stats.total : 0],
         ['Patch Requests', PATCH_REQUEST_STORE.list().length],
         [''],
-        ['Sheet Order'],
+        ['Section Order'],
         ...workbook.order.map(function(s, i) { return [(i + 1), s]; }),
         [''],
         ['Signal Types'],
@@ -16004,7 +16004,7 @@
       
       var sheets = getDataSheets();
       if (sheets.length === 0) {
-        container.innerHTML = '<div style="color: #999; font-size: 0.85em; font-style: italic;">Load a dataset to see available sheets.</div>';
+        container.innerHTML = '<div style="color: #999; font-size: 0.85em; font-style: italic;">Load a dataset to see available contract sections.</div>';
         return;
       }
       
@@ -16643,7 +16643,7 @@
       var picklists = fields.filter(function(f) { return f.picklist; }).length;
       summaryEl.style.background = '#e8f5e9';
       summaryEl.innerHTML = '<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">' +
-        '<div><strong>' + fields.length + ' fields</strong> across <strong>' + Object.keys(sheetCounts).length + ' sheets</strong></div>' +
+        '<div><strong>' + fields.length + ' fields</strong> across <strong>' + Object.keys(sheetCounts).length + ' sections</strong></div>' +
         '<div style="display: flex; gap: 12px; font-size: 0.9em; color: #555;">' +
         '<span>Required: ' + required + '</span>' +
         '<span>Picklists: ' + picklists + '</span>' +
@@ -16651,7 +16651,7 @@
         '</div></div>';
       if (mapEl) {
         var mapHtml = '<table style="width: 100%; border-collapse: collapse; font-size: 0.85em; margin-top: 8px;">';
-        mapHtml += '<thead><tr style="background: #f5f5f5;"><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd;">Data Sheet</th><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd;">Definitions Sheet</th><th style="padding: 6px 10px; text-align: right; border-bottom: 1px solid #ddd;">Fields</th></tr></thead><tbody>';
+        mapHtml += '<thead><tr style="background: #f5f5f5;"><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd;">Data Section</th><th style="padding: 6px 10px; text-align: left; border-bottom: 1px solid #ddd;">Definitions Source</th><th style="padding: 6px 10px; text-align: right; border-bottom: 1px solid #ddd;">Fields</th></tr></thead><tbody>';
         var sortedSheets = Object.keys(sheetCounts).sort();
         for (var si = 0; si < sortedSheets.length; si++) {
           var sn = sortedSheets[si];
@@ -16686,7 +16686,7 @@
           if (typeof TriageAnalytics !== 'undefined') {
             try { TriageAnalytics.refresh(); TriageAnalytics.renderHeader(); } catch(ae) {}
           }
-          if (statusEl) { statusEl.style.display = 'block'; statusEl.style.background = '#e8f5e9'; statusEl.style.color = '#2e7d32'; statusEl.textContent = 'Glossary uploaded: ' + glossary.fields.length + ' fields across ' + Object.keys(glossary.meta.sheet_mapping || {}).length + ' sheet mappings. Schema coverage will update on next triage refresh.'; }
+          if (statusEl) { statusEl.style.display = 'block'; statusEl.style.background = '#e8f5e9'; statusEl.style.color = '#2e7d32'; statusEl.textContent = 'Glossary uploaded: ' + glossary.fields.length + ' fields across ' + Object.keys(glossary.meta.sheet_mapping || {}).length + ' section mappings. Schema coverage will update on next triage refresh.'; }
           showToast('Glossary updated: ' + glossary.fields.length + ' fields loaded', 'success');
           console.log('[Glossary] Uploaded: ' + glossary.fields.length + ' fields, version=' + (glossary.meta && glossary.meta.schema_version || '?'));
         } catch(parseErr) {
@@ -16716,7 +16716,7 @@
       if (glossary.meta && glossary.meta.sheet_mapping) {
         var mapped = Object.keys(glossary.meta.sheet_mapping);
         var unmapped = Object.keys(sheetsInFields).filter(function(s) { return !glossary.meta.sheet_mapping[s]; });
-        if (unmapped.length > 0) errors.push('Unmapped sheets in fields: ' + unmapped.join(', '));
+        if (unmapped.length > 0) errors.push('Unmapped sections in fields: ' + unmapped.join(', '));
       }
       return errors;
     }
@@ -17030,7 +17030,7 @@
         var sheetName = workbook.activeSheet || 'unknown';
         document.getElementById('grid-tbody').innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">' +
           '<div style="font-weight: 600; margin-bottom: 5px;">0 rows in sheet: ' + escapeHtml(sheetName) + '</div>' +
-          '<div style="font-size: 0.85em; color: #888;">The selected sheet has no data rows.</div>' +
+          '<div style="font-size: 0.85em; color: #888;">The selected section has no data rows.</div>' +
           '</td></tr>';
         document.getElementById('grid-row-count').textContent = '0 records in ' + sheetName;
         return;
@@ -21660,7 +21660,7 @@
         if (workbook.order.length > 0) {
           sheetName = getActiveSheetName();
           if (!sheetName) {
-            showToast('No active sheet selected', 'warning');
+            showToast('No active section selected', 'warning');
             return;
           }
           var sheet = workbook.sheets[sheetName];
@@ -31279,7 +31279,7 @@
             }
           }
           saveWorkbookToCache();
-          showToast(ext.toUpperCase() + ' imported: ' + result.order.length + ' sheet(s), ' + allRows.length + ' rows', 'success');
+          showToast(ext.toUpperCase() + ' imported: ' + result.order.length + ' section(s), ' + allRows.length + ' rows', 'success');
           if (!validateWorkbookState()) {
             showLoaderError('Import completed but no data was loaded. Please check the file format.');
             return;

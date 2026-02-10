@@ -1,4 +1,4 @@
-# Single Row Review View — Authoritative, Per-Record Inspection
+# Record Inspection View — Authoritative, Per-Record Inspection
 
 Contract: This document defines the record-level inspection surface. It supports Evidence Pack authoring and Patch Draft creation by Analysts while remaining read-only for Verifier/Admin with respect to gates and Review State transitions.
 
@@ -17,7 +17,7 @@ Contract: This document defines the record-level inspection surface. It supports
 
 ## Recent Changes (v1.6.59)
 
-- **Real Audit Timeline**: Audit Log button reads from AuditTimeline IndexedDB store instead of meta sheet scraping
+- **Real Audit Timeline**: Audit Log button reads from AuditTimeline IndexedDB store instead of meta section scraping
 - **Event Emission**: srrVerifyField, srrBlacklistField, and srrSubmitPatchRequest now emit real timeline events (FIELD_VERIFIED, FIELD_BLACKLISTED, PATCH_SUBMITTED)
 - **No Synthetic Entries**: No placeholder rows; all timeline data is event-backed and persisted
 
@@ -175,8 +175,8 @@ The Field Inspector orders fields using the rules bundle for semantic grouping:
 
 The ordering system loads these files from `/rules/rules_bundle/` on app init:
 - `field_meta.json` — Field definitions and metadata
-- `hinge_groups.json` — Hinge field classifications per sheet
-- `sheet_order.json` — Canonical sheet ordering
+- `hinge_groups.json` — Hinge field classifications per contract section
+- `sheet_order.json` — Canonical contract section ordering
 
 **Key Normalization:**
 

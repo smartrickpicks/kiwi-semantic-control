@@ -10,9 +10,9 @@
 
 ## Attachment Routing
 
-Unknown columns are attached to contracts or batches using a **sheet-scoped frequency vote**:
+Unknown columns are attached to contracts or batches using a **contract-section-scoped frequency vote**:
 
-1. For each sheet containing unknown columns, derive `contract_id` for every row
+1. For each contract section containing unknown columns, derive `contract_id` for every row
 2. Count votes per contract ID
 3. Attach to the top-voted contract only if:
    - `top_share >= 60%` (top contract has ≥60% of all voted rows), OR

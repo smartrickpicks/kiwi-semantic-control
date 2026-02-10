@@ -12,7 +12,7 @@ batch → contract → document → sheet → row
 - **Batch**: A single upload/import session. Identified by `dataset_id`.
 - **Contract**: Grouped by canonical file URL or fallback signature. Identified by `contract_id`.
 - **Document**: Unique by full URL. One contract may contain multiple documents (amendments, schedules).
-- **Sheet**: Excel sheet within the workbook containing rows for a document.
+- **Contract Section**: A section within the workbook containing rows for a document.
 - **Row**: Individual record with `record_id`.
 
 ## Identity Fields

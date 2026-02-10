@@ -9,7 +9,7 @@ Provide a deterministic, step-by-step procedure to propose, validate, preview, s
 ## Outline
 - Preparation
   - Read docs/INDEX.md and relevant governance docs
-  - Confirm use of canonical fields and sheets
+  - Confirm use of canonical fields and contract sections
 - Drafting a Rule
   - State intent in plain English (WHEN/THEN)
   - Choose severity aligned with risk

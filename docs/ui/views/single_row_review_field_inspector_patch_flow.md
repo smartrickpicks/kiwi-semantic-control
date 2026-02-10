@@ -4,7 +4,7 @@
 
 ## Overview
 
-The Field Inspector Patch Flow enables analysts to edit field values directly within the Record Inspection (SRR) view, create structured evidence packs, and submit patch requests to the local Patch Console queue.
+The Field Inspector Patch Flow enables analysts to edit field values directly within the Record Inspection view, create structured evidence packs, and submit patch requests to the local Patch Console queue.
 
 ## Implementation Status (v1.4.18)
 
@@ -75,7 +75,7 @@ The Field Inspector Patch Flow enables analysts to edit field values directly wi
 
 ## Workflow
 
-1. **Load Record**: Navigate to a row in the grid, opens SRR
+1. **Load Record**: Navigate to a row in the grid, opens Record Inspection
 2. **Search/Filter**: Use search input or filter chips to find fields
 3. **Edit Field**: Click field value to enter edit mode
 4. **Commit Edit**: Press Enter or blur to commit; field locks
@@ -120,7 +120,7 @@ srrState = {
 
 When submitted, creates a `PatchRequest` with:
 - `record_identity`: contract_key, file_url, file_name
-- `target_scope`: sheet, field (or "multiple" if >1 field changed)
+- `target_scope`: contract section, field (or "multiple" if >1 field changed)
 - `intent_structured`: condition_type=FIELD_VALUE, action_type=SET_VALUE
 - `evidence`: Observation, Expected, Justification, Repro blocks
 - `proposed_change`: Summary of old → new values

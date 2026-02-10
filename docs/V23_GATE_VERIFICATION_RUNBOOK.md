@@ -65,11 +65,11 @@ Deterministic steps for verifying each gate (G1–G9). Open browser DevTools Con
 
 ## G4 — Unknown Column Frequency Vote Routing
 
-**Setup:** Upload file with unknown columns across sheets with contract data.
+**Setup:** Upload file with unknown columns across contract sections with contract data.
 
 **Action:** ContractIndex builds.
 
-**Assertion:** Unknown columns are routed via sheet-scoped frequency vote.
+**Assertion:** Unknown columns are routed via contract-section-scoped frequency vote.
 
 **Expected log:**
 ```
@@ -118,15 +118,15 @@ or
 
 ## G7 — Contract Selector Dataset-Wide
 
-**Setup:** Upload file with contracts across multiple sheets.
+**Setup:** Upload file with contracts across multiple contract sections.
 
-**Action:** Change sheet filter in the grid.
+**Action:** Change contract section filter in the grid.
 
-**Assertion:** Contract count in the stat badge and dropdown total remain stable across sheet changes.
+**Assertion:** Contract count in the stat badge and dropdown total remain stable across contract section changes.
 
 **Expected log:**
 ```
-[V2.3-GATE][G7] PASS contract count dataset-wide: N contracts across all sheets
+[V2.3-GATE][G7] PASS contract count dataset-wide: N contracts across all contract sections
 ```
 
 ---

@@ -35,7 +35,7 @@ What it produces
 - Workbench feeds Patch Studio context (record + field/issue links) and supports in-app patch submission.
 
 Where it goes
-- When clicking Build Patch, Patch Studio receives current record context (identity keys, sheet/field, issue references) for drafting.
+- When clicking Build Patch, Patch Studio receives current record context (identity keys, contract section/field, issue references) for drafting.
 - When clicking Submit Patch Request, the patch enters the review pipeline with its evidence pack, replay contract, and preflight results.
 
 Offline-first vs Submit

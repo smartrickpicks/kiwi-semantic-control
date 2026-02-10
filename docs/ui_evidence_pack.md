@@ -4,7 +4,7 @@ Audience
 - Analysts authoring patches, Verifiers reviewing, and Admins preparing governance bundles.
 
 Purpose
-- Assemble a structured evidence bundle that gates patch submission and supports audit review. Evidence Pack validation enforces identical gates for both SRR and Patch Studio submit surfaces.
+- Assemble a structured evidence bundle that gates patch submission and supports audit review. Evidence Pack validation enforces identical gates for both Record Inspection and Patch Studio submit surfaces.
 
 ## Evidence Pack Blocks (canonical)
 
@@ -37,7 +37,7 @@ If required replay fields are missing or invalid, submission is blocked with an 
 
 ## Gate Enforcement
 
-Evidence Pack completeness is enforced at submission time via `validateSubmissionGates()`, a shared validation path used by both SRR and Patch Studio. This ensures gate parity — identical conditions block or allow submission regardless of the submit surface.
+Evidence Pack completeness is enforced at submission time via `validateSubmissionGates()`, a shared validation path used by both Record Inspection and Patch Studio. This ensures gate parity — identical conditions block or allow submission regardless of the submit surface.
 
 | Gate | Check | On Failure |
 |------|-------|------------|

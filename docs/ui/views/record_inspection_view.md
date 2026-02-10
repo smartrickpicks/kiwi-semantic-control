@@ -2,7 +2,7 @@
 
 This file is a maintenance stub retained to avoid broken links.
 
-Canonical surface: Single Row Review
+Canonical surface: Record Inspection
 - Primary contract: docs/ui/views/single_row_review_view.md
 - Purpose: authoritative, per-record inspection with evidence and patch authoring by Analysts; Verifier/Admin read-only in this view.
 - Review States: To Do, Needs Review, Flagged, Blocked, Finalized (badges are rendered; no transitions here).

@@ -13,7 +13,7 @@ localStorage is reserved for lightweight preferences and pointers only:
 
 ## Prohibited in localStorage
 
-- Workbook data (sheet rows, headers)
+- Workbook data (contract section rows, headers)
 - Dataset blobs (`allData`, `contractResults`)
 - Any payload exceeding ~10KB
 

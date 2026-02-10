@@ -10,5 +10,5 @@ See [data_source_view.md](data_source_view.md) for the current governed Data Sou
 - **Entry point**: Top quick-action "Data Source" button (no sidebar nav item).
 - **Panel type**: Right-side drawer (not modal).
 - **Layout**: Active Dataset card → Upload|Connect row → Search stub → Saved Datasets.
-- **File support**: CSV and XLSX with multi-sheet workbook support.
+- **File support**: CSV and XLSX with multi-contract-section workbook support.
 - **Terminology**: "Data Source" (not "Load Data"), "Review States" (not "Queues").

@@ -94,7 +94,7 @@ Shape
 }
 ```
 Notes
-- Join strategy must be respected across sheets: primary contract_key; fallback file_url; last resort file_name.
+- Join strategy must be respected across contract sections: primary contract_key; fallback file_url; last resort file_name.
 - Additional fields are allowed if they do not contradict the canonical headers.
 
 ---

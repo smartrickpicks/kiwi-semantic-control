@@ -20,20 +20,20 @@ Three interrelated issues have been identified that affect the accuracy and comp
 ## Issue 1: Pre-Flight Contract Section Coverage
 
 ### Observed Behavior
-When the batch PDF scan runs, pre-flight items are created with only the "Accounts" contract section populated. Other sections such as Opportunities, Financials, Catalog, Schedule, V2 Add Ons, and Contacts do not appear even when the workbook contains data sheets mapped to those sections.
+When the batch PDF scan runs, pre-flight items are created with only the "Accounts" contract section populated. Other sections such as Opportunities, Financials, Catalog, Schedule, V2 Add Ons, and Contacts do not appear even when the workbook contains data contract sections mapped to those sections.
 
 ### Root Cause Hypothesis
 The function `_p1fExtractUniqueContracts()` (line ~18397) deduplicates contracts by `file_name.trim().toLowerCase()`. When it finds the **first row** matching a given file_name, it records that row's `sheet_name` as the contract's sheet. All subsequent rows for the same contract (which may be on different sheets/sections) are skipped via `if (contracts[groupKey]) continue`.
 
 When `_p1fRouteToPreFlight()` is called (line ~18520), it stamps the pre-flight item with the `sheet_name` from that single extracted contract record. The `enrichPreflightItem()` function then resolves `contract_section_label` from this single sheet_name via `canonicalContractSection()`.
 
-**The result:** If the first row for a contract happens to be on an "Accounts" sheet, the pre-flight item is tagged "Accounts" — and no separate pre-flight items are created for Opportunities, Financials, etc., even though those sections also contain data for the same contract.
+**The result:** If the first row for a contract happens to be on an "Accounts" contract section, the pre-flight item is tagged "Accounts" — and no separate pre-flight items are created for Opportunities, Financials, etc., even though those sections also contain data for the same contract.
 
 ### What Should Happen
 When a contract is flagged (mojibake, non-searchable, etc.), **all contract sections** that contain rows for that contract should receive pre-flight items. The scan should:
 1. Identify the contract by file_name (current behavior, correct).
-2. Look up ALL sheets/sections in the workbook that contain rows for that contract.
-3. Create a pre-flight item for EACH affected section, not just the first-encountered sheet.
+2. Look up ALL contract sections in the workbook that contain rows for that contract.
+3. Create a pre-flight item for EACH affected section, not just the first-encountered contract section.
 
 ### Files to Audit
 | File | Lines | Function |

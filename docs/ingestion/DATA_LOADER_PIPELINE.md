@@ -145,13 +145,13 @@ var workbook = {
 **Post-population steps** (in order):
 - `dataLoaded = true`
 - `updateUIForDataState()` — shows/hides empty state vs data views
-- `populateSubtypeDropdown()` — populates sheet filter dropdown
-- `populateGridSheetSelector()` — populates grid sheet tabs
+- `populateSubtypeDropdown()` — populates contract section filter dropdown
+- `populateGridSheetSelector()` — populates grid contract section tabs
 - `renderAllTables()` — renders legacy tables
 - `renderGrid()` — renders the main All-Data Grid
 - `persistAllRecordsToStore()` — saves all records to the Canonical Record Store (localStorage) for Record Inspection rehydration
 - `generateSignalsForDataset()` — runs the signal engine (next stage)
-- `seedPatchRequestsFromMetaSheet()` — seeds patch requests from RFI meta sheets if present
+- `seedPatchRequestsFromMetaSheet()` — seeds patch requests from RFI meta sections if present
 
 **File**: `ui/viewer/index.html`, function `handleFileImport` (~line 20951)
 
@@ -169,7 +169,7 @@ The signal engine runs deterministically on every cell of every record after dat
   - `field_meta.json` (442 fields) — field definitions, types, required flags, picklist options
   - `qa_flags.json` (3 flags) — QA validation flag definitions
   - `hinge_groups.json` (47 hinges) — primary/secondary decision fields
-  - `sheet_order.json` (8 sheets) — canonical sheet ordering
+  - `sheet_order.json` (8 contract sections) — canonical contract section ordering
 
 **Signal types generated**:
 
@@ -182,7 +182,7 @@ The signal engine runs deterministically on every cell of every record after dat
 
 **Process**:
 1. Resets `signalStore.signals_by_cell` and stats
-2. Iterates all sheets → all rows → all non-internal fields (fields not starting with `_`)
+2. Iterates all contract sections → all rows → all non-internal fields (fields not starting with `_`)
 3. For each cell, `generateCellSignals(row, fieldKey, sheetName, recordId)` produces signals
 4. Signals are stored in `signalStore.signals_by_cell[recordId][fieldKey]`
 5. Stats are aggregated by type
@@ -198,10 +198,10 @@ Signals are routed into four Analyst Triage queues:
 
 | Queue | Signal Filter |
 |-------|---------------|
-| **Manual Review** | `MOJIBAKE_DETECTED` + `MISSING_REQUIRED` + `PICKLIST_INVALID` signals, plus items seeded from `RFIs & Analyst Notes` meta sheet (Note Type = "Manual Review") |
+| **Manual Review** | `MOJIBAKE_DETECTED` + `MISSING_REQUIRED` + `PICKLIST_INVALID` signals, plus items seeded from `RFIs & Analyst Notes` meta section (Note Type = "Manual Review") |
 | **Salesforce Logic Flags** | `QA_FLAG` with ERROR or WARNING severity |
-| **Patch Requests** | Actual patch requests only (RFIs, corrections); seeded from `RFIs & Analyst Notes` meta sheet; sorted by `updated_at` descending |
-| **System Changes** | `QA_FLAG` with INFO severity, plus items seeded from `*_change_log` sheets |
+| **Patch Requests** | Actual patch requests only (RFIs, corrections); seeded from `RFIs & Analyst Notes` meta section; sorted by `updated_at` descending |
+| **System Changes** | `QA_FLAG` with INFO severity, plus items seeded from `*_change_log` sections |
 
 Queue counts appear in the sidebar Progress card (TO DO / REVIEW / DONE) and in the Triage view.
 
@@ -212,7 +212,7 @@ Queue counts appear in the sidebar Progress card (TO DO / REVIEW / DONE) and in 
 The All-Data Grid renders records with:
 - **Status-colored rows** using `STATUS_COLOR_MAP` (ready=green, needs_review=orange, blocked=red, finalized=blue, flagged=purple)
 - **Signal-driven cell highlighting** based on `signalStore`
-- **Sheet tabs** for multi-sheet navigation
+- **Contract section tabs** for multi-contract-section navigation
 - **Filter bar** for status filtering (All, Ready, Needs Review, Blocked)
 - **Search** across all fields
 - **Column visibility** controls via Columns button
@@ -255,7 +255,7 @@ If IndexedDB is unavailable or fails:
 
 ### Canonical Record Store
 
-Separate from the workbook cache, `persistAllRecordsToStore()` saves each record individually to localStorage keyed by `record_id`. This enables Record Inspection (SRR) to rehydrate individual records without loading the entire workbook.
+Separate from the workbook cache, `persistAllRecordsToStore()` saves each record individually to localStorage keyed by `record_id`. This enables Record Inspection to rehydrate individual records without loading the entire workbook.
 
 ---
 
@@ -376,7 +376,7 @@ As the data standard evolves, these are the key areas that need updating:
 When fields are added, renamed, or removed:
 1. Update `rules/rules_bundle/field_meta.json` — add/modify field definitions, types, required flags, picklist options
 2. Update `rules/rules_bundle/hinge_groups.json` — if hinge fields change
-3. Update `rules/rules_bundle/sheet_order.json` — if sheets are added/renamed/reordered
+3. Update `rules/rules_bundle/sheet_order.json` — if contract sections are added/renamed/reordered
 4. Regenerate rules bundle (NOTE: `scripts/build_rules_bundle.py` not found in repo — edit JSON files directly or use Schema Tree Editor in Admin panel)
 5. Validate against schemas in `rules/rules_bundle/schemas/`
 
@@ -435,7 +435,7 @@ The Config Pack Model (`config_pack.base.json` for baseline, `config_pack.patch.
 | `restoreSessionFromStorage()` | ~10134 | Legacy session restore (JSON artifacts) |
 | `saveCurrentSession(name)` | (search for function) | Saves named session to IndexedDB |
 | `renderGrid()` | (search for function) | Renders the All-Data Grid |
-| `seedPatchRequestsFromMetaSheet()` | (search for function) | Seeds patch requests from meta sheets |
+| `seedPatchRequestsFromMetaSheet()` | (search for function) | Seeds patch requests from meta sections |
 
 ### Storage Module
 
@@ -450,7 +450,7 @@ The Config Pack Model (`config_pack.base.json` for baseline, `config_pack.patch.
 |------|---------|
 | `rules/rules_bundle/field_meta.json` | Field definitions, types, validation rules (442 fields) |
 | `rules/rules_bundle/hinge_groups.json` | Hinge field classifications (47 hinges) |
-| `rules/rules_bundle/sheet_order.json` | Canonical sheet ordering (8 sheets) |
+| `rules/rules_bundle/sheet_order.json` | Canonical contract section ordering (8 contract sections) |
 | `rules/rules_bundle/qa_flags.json` | QA flag definitions (3 flags) |
 | `config/document_types.json` | Document type definitions (5 types) |
 | `config/config_pack.base.json` | Baseline configuration |
@@ -516,7 +516,7 @@ Post-Load Processing
     ▼
 UI Rendering
     │  renderGrid() → All-Data Grid with status colors + signal highlights
-    │  populateSubtypeDropdown() → Sheet filter
+    │  populateSubtypeDropdown() → Contract section filter
     │  renderAllTables() → Legacy tables
     │  updateUIForDataState() → Show data views, hide empty state
     ▼

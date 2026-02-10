@@ -12,7 +12,7 @@ Describe, at a conceptual level, the sequence of semantic stages and handoffs th
 - Conceptual Stage Order (from current ground truth)
   - Orchestrator → Loader → Packager → Standardizer → Resolver → Extractor → QA → Salesforce Rules → A&R → Review
 - Where Semantics Apply
-  - Standardizer: canonical sheets/headers
+  - Standardizer: canonical contract sections/headers
   - QA: quality signals and statuses
   - Salesforce Rules: field requirements and formatting actions
 - Artifacts & Handoffs

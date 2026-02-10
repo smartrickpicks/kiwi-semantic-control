@@ -23,9 +23,9 @@ Open PRs: unknown/none
 - Unknown — requires audit
 
 ## Constraints / Do-Not-Change List
-- **Canonical terminology only**: Data Source, All Data Grid, Single Row Review, Verifier Review, Admin Approval; Review States; Submit Patch Request; Evidence Pack blocks (Observation, Expected, Justification, Repro)
+- **Canonical terminology only**: Data Source, All Data Grid, Record Inspection, Verifier Review, Admin Approval; Review States; Submit Patch Request; Evidence Pack blocks (Observation, Expected, Justification, Repro)
 - **Forbidden terms**: Queue, Load Data, Apply Patch, Reviewer Hub
-- **Exception**: "Record Inspection" is the UI label for Single Row Review (allowed as user-facing label; canonical name remains `single_row_review` in code/specs/audit)
+- **Note**: "Record Inspection" is the user-facing label; canonical name remains `single_row_review` in code/specs/audit
 
 ## Files Likely to Touch
 - docs/ui/views/single_row_review_view.md

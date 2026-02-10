@@ -45,7 +45,7 @@ All audit events are persisted in an IndexedDB database (`orchestrate_audit`) wi
 ### Event Coverage (v1.6.59)
 | Event Type | Emitted By | Description |
 |------------|-----------|-------------|
-| PATCH_SUBMITTED | srrSubmitPatchRequest | Analyst submits a patch request from SRR |
+| PATCH_SUBMITTED | srrSubmitPatchRequest | Analyst submits a patch request from Record Inspection |
 | PATCH_REQUEST_SUBMITTED | updatePatchRequestStatus | Patch enters Submitted status |
 | VERIFIER_APPROVED | updatePatchRequestStatus | Verifier approves patch |
 | ADMIN_APPROVED | updatePatchRequestStatus | Admin approves patch |
@@ -69,7 +69,7 @@ All audit events are persisted in an IndexedDB database (`orchestrate_audit`) wi
 | PATCH_APPLIED | updatePatchRequestStatus | Patch applied to dataset |
 | CONTRACT_INDEX_BUILT | ContractIndex.build | Contract index built after workbook population (v2.2 P0) |
 | CONTRACT_ROLLUP_UPDATED | openContractDetailDrawer | Contract rollup viewed with aggregate counts (v2.2 P0) |
-| UNKNOWN_COLUMN_DETECTED | ContractIndex._routeUnknownColumns | Unknown column detected in sheet (v2.2 P0) |
+| UNKNOWN_COLUMN_DETECTED | ContractIndex._routeUnknownColumns | Unknown column detected in contract section (v2.2 P0) |
 | BATCH_CREATED | ContractIndex.build | Batch created from workbook data (v2.2 P0) |
 | SCHEMA_CHANGE | SchemaTreeEditor | Schema change with subtype: alias_patch, schema_patch, tenant_rule_patch, suppression_patch (v2.2 P1) |
 | batch_merged | BatchMerge.executeMerge | Batches merged into governance container (v2.2 P2). Canonical name; legacy `BATCH_MERGED` alias-mapped at read time. Payload: merged_batch_id, source_batches, contracts, total_rows, documents, created_by |

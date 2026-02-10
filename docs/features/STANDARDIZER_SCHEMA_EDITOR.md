@@ -34,7 +34,7 @@ Today, when an analyst uploads an Excel file with non-standard column names:
 The Schema Tree Editor needs to render and allow editing of the following data sources. These are the files an implementing agent must read and understand:
 
 #### 1. Field Metadata — `rules/rules_bundle/field_meta.json`
-The canonical field schema. 442 fields organized by sheet.
+The canonical field schema. 442 fields organized by contract section.
 
 **Current structure**:
 ```json
@@ -61,16 +61,16 @@ The canonical field schema. 442 fields organized by sheet.
 }
 ```
 
-**Tree hierarchy**: `sheet` → fields within that sheet. Each field has properties (label, type, requiredness, picklist options, definition).
+**Tree hierarchy**: `sheet` → fields within that contract section. Each field has properties (label, type, requiredness, picklist options, definition).
 
 **What the tree should show**:
-- Top level: sheets (Accounts, Opportunities, Contracts, etc.)
-- Second level: fields within each sheet (expandable)
+- Top level: contract sections (Accounts, Opportunities, Contracts, etc.)
+- Second level: fields within each contract section (expandable)
 - Third level: field properties (return_format, requiredness, options, definition, etc.)
 - Editable leaf nodes for property values
 
 #### 2. Hinge Groups — `rules/rules_bundle/hinge_groups.json`
-Defines which fields are primary and secondary decision-critical fields per sheet.
+Defines which fields are primary and secondary decision-critical fields per contract section.
 
 **Current structure**:
 ```json
@@ -90,8 +90,8 @@ Defines which fields are primary and secondary decision-critical fields per shee
 
 **Tree display**: Show hinge fields as tagged/badged nodes in the tree (e.g., a "PRIMARY" or "SECONDARY" badge next to hinge fields).
 
-#### 3. Sheet Order — `rules/rules_bundle/sheet_order.json`
-Canonical ordering of sheets with reasoning.
+#### 3. Contract Section Order — `rules/rules_bundle/sheet_order.json`
+Canonical ordering of contract sections with reasoning.
 
 **Current structure**:
 ```json
@@ -108,7 +108,7 @@ Canonical ordering of sheets with reasoning.
 }
 ```
 
-**Tree display**: Sheet order determines the top-level node ordering. The "why" and "primary_outputs" should be visible in a tooltip or expanded detail panel.
+**Tree display**: Contract section order determines the top-level node ordering. The "why" and "primary_outputs" should be visible in a tooltip or expanded detail panel.
 
 #### 4. QA Flags — `rules/rules_bundle/qa_flags.json`
 QA validation flag definitions.
@@ -169,11 +169,11 @@ Currently detected unknown columns from the most recent upload. This data should
 
 - **Expand/Collapse** — Click `▼`/`▶` toggles to show/hide children at any level
 - **Inline Editing** — Click any leaf value to edit it in-place (text input, dropdown for enums like `requiredness`)
-- **Add Field** — "+" button at sheet level to add a new field with default properties
-- **Add Sheet** — "+" button at root level to add a new sheet
+- **Add Field** — "+" button at contract section level to add a new field with default properties
+- **Add Contract Section** — "+" button at root level to add a new contract section
 - **Delete** — Right-click or trash icon to remove a field (with confirmation)
-- **Search/Filter** — Search bar at top to filter the tree by field key, label, or sheet name
-- **Drag to Reorder** — Optional: drag sheets to change order (updates `sheet_order.json`)
+- **Search/Filter** — Search bar at top to filter the tree by field key, label, or contract section name
+- **Drag to Reorder** — Optional: drag contract sections to change order (updates `sheet_order.json`)
 
 #### Color Coding
 
@@ -191,7 +191,7 @@ Currently detected unknown columns from the most recent upload. This data should
 
 ### Schema Drift Classification Workflow
 
-When an unknown column is detected (from the existing Unknown Cols detection), it appears in the tree under its detected sheet with an amber highlight. The Admin has four actions:
+When an unknown column is detected (from the existing Unknown Cols detection), it appears in the tree under its detected contract section with an amber highlight. The Admin has four actions:
 
 #### Action 1: Rename to Existing Field
 The unknown column is just a different name for an existing canonical field.
@@ -278,7 +278,7 @@ Every schema change emits an audit event to the `AuditTimeline` store:
 | **Critical** | `ui/viewer/index.html` | Single-file app — all HTML, CSS, JS lives here. Search for `admin-tab-standardizer`, `runStandardizer`, `resolveColumnMapping`, `unknown_columns` |
 | **Critical** | `rules/rules_bundle/field_meta.json` | The canonical schema (442 fields). This is what the tree renders. |
 | **Critical** | `rules/rules_bundle/hinge_groups.json` | Hinge field classifications (47 hinges). Drives badge display in tree. |
-| **Critical** | `rules/rules_bundle/sheet_order.json` | Sheet ordering (8 sheets). Drives top-level tree node order. |
+| **Critical** | `rules/rules_bundle/sheet_order.json` | Contract section ordering (8 contract sections). Drives top-level tree node order. |
 | **Critical** | `rules/rules_bundle/qa_flags.json` | QA flag definitions. Part of the tree. |
 | **High** | `config/document_types.json` | Document type definitions (5 types). Part of the tree. |
 | **High** | `docs/ingestion/DATA_LOADER_PIPELINE.md` | How uploaded data flows through the system — context for where schema drift is detected |
@@ -337,7 +337,7 @@ The primary use case driving this feature is Salesforce data governance. Differe
 
 ## Success Criteria
 
-1. Admin can open the Standardizer tab and see a fully rendered, collapsible tree of the canonical schema (all 442 fields organized by 8 sheets)
+1. Admin can open the Standardizer tab and see a fully rendered, collapsible tree of the canonical schema (all 442 fields organized by 8 contract sections)
 2. Unknown columns from the current dataset appear inline in the tree with amber highlighting
 3. Admin can classify each unknown column (rename/add/tenant rule/ignore) with a clear UI action
 4. All edits are tracked, diffable, and exportable as a patch artifact

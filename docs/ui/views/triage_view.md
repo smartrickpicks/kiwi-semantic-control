@@ -40,7 +40,7 @@
 
 - **Lifecycle count fix**: Removed false "Unassigned (Batch Level)" pseudo-contract from lifecycle denominator. Orphan rows are tracked internally but excluded from contract-level progression counts.
 - **Pre-Flight View routing**: Deterministic 3-tier fallback: row-level → Record Inspection, contract-level → filtered grid, final → all-data grid. Logged via `openPreflightItem()`.
-- **Patch queue sanitization**: Meta sheets, reference/glossary sheets, and system columns (`__meta*`, `_glossary*`, `_system`, `_internal`) filtered from actionable patch items.
+- **Patch queue sanitization**: Meta sections, reference/glossary sections, and system columns (`__meta*`, `_glossary*`, `_system`, `_internal`) filtered from actionable patch items.
 - **System Pass Engine**: Standalone block removed; folded into compact inline control above the System Pass queue.
 - **Contract Summary chips**: Collapsed state now shows done/review/pending counts alongside total contracts.
 - **Schema snapshot click-through**: Unknown Columns → preflight filter, Missing Required → blocked filter, Schema Drift → needs-review filter.
@@ -108,7 +108,7 @@ Compact horizontal strip showing batch-level totals:
 | Metric | ID | Description |
 |--------|-----|-------------|
 | Contracts | ta-bs-contracts | Total indexed contracts |
-| Records | ta-bs-records | Total data rows (excluding meta sheets) |
+| Records | ta-bs-records | Total data rows (excluding meta sections) |
 | Completed | ta-bs-completed | Contracts at "applied" stage |
 | Needs Review | ta-bs-review | Contracts with active alerts |
 | Pending | ta-bs-pending | Contracts without alerts or completion |
@@ -131,7 +131,7 @@ If they match: `lifecycle_reconcile_ok` logged.
 | analystTriageState | Pre-flight blocker counts by type |
 | SystemPass._proposals | Semantic proposal counts by status |
 | PATCH_REQUEST_STORE | Patch lifecycle status counts |
-| ContractIndex | Contract-level stage, row counts, sheets |
+| ContractIndex | Contract-level stage, row counts, contract sections |
 | rulesBundleCache | Schema field matching, unknown columns |
 
 ### Lane A: Pre-Flight
@@ -268,8 +268,8 @@ Each decision logged with `[TRIAGE-ANALYTICS][P0.2] route_decision_*`.
 ### Patch Queue Sanitization (P0.1 + P0.2)
 
 Items filtered from actionable patch queue:
-- Rows from meta sheets (change_log, RFIs, etc.)
-- Rows from reference/glossary sheets
+- Rows from meta sections (change_log, RFIs, etc.)
+- Rows from reference/glossary sections
 - Fields starting with `__meta`, `_glossary`, `_system`, `_internal`
 
 P0.2 adds per-type exclusion counters: `meta_sheets`, `ref_sheets`, `sys_fields` emitted in `queue_exclusions_applied` log.

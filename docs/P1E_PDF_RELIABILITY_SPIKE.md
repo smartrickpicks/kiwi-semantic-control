@@ -88,7 +88,7 @@ Variants are tried sequentially. First match wins. If all 5 fail, a `[P1E] match
 Signals are keyed by `contract_key + signal_type`. Duplicate routing attempts are silently dropped. Log: `[P1E] preflight_dedup_skipped`.
 
 ### Integration with P1D
-P1E Pre-Flight items appear in P1D's contract-grouped view. Items group under the contract's file_name with domain hint. Sheet chips show "PDF" for document-level items.
+P1E Pre-Flight items appear in P1D's contract-grouped view. Items group under the contract's file_name with domain hint. Contract section chips show "PDF" for document-level items.
 
 ---
 

@@ -12,7 +12,7 @@ Define how conflicting rules are identified, evaluated, and resolved through exp
 
 ## Conflict Detection (Validator Expectations)
 - Unique rule_id and clear description
-- Canonical sheet/field names and valid operators/actions
+- Canonical contract section/field names and valid operators/actions
 - Overlap analysis for WHEN conditions on the same targets
 - Contradiction analysis for THEN actions on the same targets
 - Severity coherence checks across overlapping scenarios

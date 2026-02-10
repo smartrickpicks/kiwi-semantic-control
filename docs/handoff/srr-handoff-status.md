@@ -1,6 +1,6 @@
-# SRR Handoff Documentation Status
+# Record Inspection Handoff Documentation Status
 
-> Audit of documentation coverage for SRR handoffs and role-based workflows.
+> Audit of documentation coverage for Record Inspection handoffs and role-based workflows.
 
 **Last Updated:** v1.5.2
 
@@ -12,7 +12,7 @@
 
 | Topic | Location | Status |
 |-------|----------|--------|
-| SRR layout and field actions | `docs/ui/views/single_row_review_view.md` | Complete |
+| Record Inspection layout and field actions | `docs/ui/views/single_row_review_view.md` | Complete |
 | Field Inspector 6-state model | `docs/ui/views/single_row_review_view.md` | Complete |
 | Evidence Pack structure | `docs/ui/views/single_row_review_view.md` | Complete |
 | Verifier Review view contract | `docs/ui/views/verifier_review_view.md` | Complete |
@@ -30,7 +30,7 @@
 | record_id routing strategy | Documented | [single_row_review_view.md](../ui/views/single_row_review_view.md#record-identity-model-v152) |
 | UUID alias capture | Documented | [single_row_review_view.md](../ui/views/single_row_review_view.md#uuid-alias-capture-v152) |
 | Debug panel | Documented | [verifier_review_view.md](../ui/views/verifier_review_view.md#debug-panel-v152) |
-| Verifier SRR hydration | Documented | [verifier_review_view.md](../ui/views/verifier_review_view.md#srr-hydration-sequence-v152) |
+| Verifier Record Inspection hydration | Documented | [verifier_review_view.md](../ui/views/verifier_review_view.md#srr-hydration-sequence-v152) |
 | Artifact Store integration | Documented | [INTERFACES.md](../INTERFACES.md#artifact-store-v152) |
 | Queue item schema | Documented | [HANDOFF.md](./HANDOFF.md#queue-item-schema-v152) |
 
@@ -46,7 +46,7 @@ See **Recent Changes (v1.5.2)** below.
 
 - **record_id Routing (no row index)**: Stable `record_id` generated via `hash(tenant_id + dataset_id + canonicalizeRowForFingerprint(row))`. Replaces row-index-based lookups that broke on sort/filter.
 
-- **Verifier SRR Hydration from patch_request_id**: `vrOpenSingleRowReview()` now loads PatchRequest by `patch_request_id` FIRST, then resolves record by `record_id`. Blocking error UI if PatchRequest not found.
+- **Verifier Record Inspection Hydration from patch_request_id**: `vrOpenSingleRowReview()` now loads PatchRequest by `patch_request_id` FIRST, then resolves record by `record_id`. Blocking error UI if PatchRequest not found.
 
 - **UUID Aliases Capture**: During import, `extractUuidAliases()` scans row values for RFC4122 UUIDs and stores in `_identity.aliases[]`. Enables cross-system ID matching.
 

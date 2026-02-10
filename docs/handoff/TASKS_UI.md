@@ -13,8 +13,8 @@ Open PRs: unknown/none
 
 ## Backlog
 
-### SRR: Field Order & Guard Modal (docs-only)
-- Scope: Ensure Field Cards/Groups/Filters/Proposed Change/mini prompt/guard modal copy present in SRR doc
+### Record Inspection: Field Order & Guard Modal (docs-only)
+- Scope: Ensure Field Cards/Groups/Filters/Proposed Change/mini prompt/guard modal copy present in Record Inspection doc
 - Files likely to touch: docs/ui/views/single_row_review_view.md
 - Acceptance: sections added; no runtime claims; Evidence link: Unknown — requires audit
 
@@ -28,7 +28,7 @@ Open PRs: unknown/none
 - Files likely to touch: docs/specs/Human-Agent-Workflow-V1.json; docs/ui/gate_view_mapping.md
 - Acceptance: spec uses data_source/single_row_review/submit_patch_request; gate_parse owner is data_source_panel; Evidence link: Unknown — requires audit
 
-### SRR: Evidence Pack + Patch Editor Refinement (v1.4.19)
+### Record Inspection: Evidence Pack + Patch Editor Refinement (v1.4.19)
 - Scope: Refine Evidence Pack to reduce analyst load; make patch semantics deterministic and patch-type driven
 - Files likely to touch: ui/viewer/index.html; docs/ui/views/single_row_review_view.md
 - Acceptance tests:
@@ -40,20 +40,20 @@ Open PRs: unknown/none
   - Docs updated to match UI
 - Evidence link: Unknown — requires audit
 
-### SRR: Mini-Queue + Auto Patch Type Semantics (v1.4.20 — docs-only)
+### Record Inspection: Mini-Queue + Auto Patch Type Semantics (v1.4.20 — docs-only)
 - Scope: Document Field Inspector as mini-queue with field states and auto Patch Type behavior
 - Files likely to touch: docs/ui/views/single_row_review_view.md
 - Acceptance tests:
-  - SRR doc includes mini-queue field states (TODO, VERIFIED, RFI, PATCHED)
-  - SRR doc includes field actions (Verify, Blacklist Flag, RFI, Patch)
-  - SRR doc includes auto Patch Type behavior (read-only, action-driven)
-  - SRR doc includes Blacklist category dropdown + subject derivation
-  - SRR doc includes RFI behavior (Justification = question)
-  - SRR doc includes guard modal for unresolved PATCHED/RFI fields
+  - Record Inspection doc includes mini-queue field states (TODO, VERIFIED, RFI, PATCHED)
+  - Record Inspection doc includes field actions (Verify, Blacklist Flag, RFI, Patch)
+  - Record Inspection doc includes auto Patch Type behavior (read-only, action-driven)
+  - Record Inspection doc includes Blacklist category dropdown + subject derivation
+  - Record Inspection doc includes RFI behavior (Justification = question)
+  - Record Inspection doc includes guard modal for unresolved PATCHED/RFI fields
   - No UI code files modified
 - Evidence link: Unknown — requires audit
 
-### SRR: Field Inspector Mini-Queue UI Implementation (v1.4.20)
+### Record Inspection: Field Inspector Mini-Queue UI Implementation (v1.4.20)
 - Scope: Implement Field Inspector mini-queue behavior with field states, actions, filters, and guard modal
 - Files likely to touch: ui/viewer/index.html
 - Acceptance tests:
@@ -62,6 +62,6 @@ Open PRs: unknown/none
   - AT-03: RFI action sets RFI + auto Patch Type = RFI
   - AT-04: Editing a field sets PATCHED + auto Patch Type = Correction
   - AT-05: Filter chips reflect correct counts (TODO/Verified/RFI/Patched/All)
-  - AT-06: Guard modal appears when leaving SRR with unresolved PATCHED/RFI fields
+  - AT-06: Guard modal appears when leaving Record Inspection with unresolved PATCHED/RFI fields
   - AT-07: Patch Type is not user-editable (read-only display)
 - Evidence link: Unknown — requires audit

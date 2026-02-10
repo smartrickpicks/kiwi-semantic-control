@@ -7,8 +7,8 @@ Tenant
   └── Legal Entity (implicit from dataset context)
         └── Batch (workbook upload or merge container)
               └── Contract (derived from file_url / file_name)
-                    └── Document (derived from file_url + sheet context)
-                          └── Record (row-level, per sheet)
+                    └── Document (derived from file_url + contract section context)
+                          └── Record (row-level, per contract section)
 ```
 
 ## ID Derivation
@@ -35,12 +35,12 @@ Tenant
 
 ### document_id
 - Derived by `ContractIndex.deriveDocumentId(row)`.
-- Combines file_url (or file_name) with sheet context.
+- Combines file_url (or file_name) with contract section context.
 - Format: `doc_{hash(combined)}`.
 
 ### record_id
 - From `row.record_id` or `row._identity.record_id` or `row_{rowIdx}` fallback.
-- Scoped to sheet within a document.
+- Scoped to contract section within a document.
 
 ## Identity Context
 

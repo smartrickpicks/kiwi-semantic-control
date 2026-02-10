@@ -29,7 +29,7 @@
 - docs/memos/V23_GATE_DECISIONS.md — G1–G9 locked gate rules (derivation, rebuild, thresholds, routing, sanitization, storage, selector, orphan, payload)
 - docs/memos/V23_MODE_SPLIT.md — Production vs Sandbox mode split, permission gates, Admin role scope
 - docs/memos/V23_ID_MODEL.md — Identity model: Tenant → Contract → Document → Record; ID derivation and contract_id_source
-- docs/decisions/DECISION_HIERARCHY.md — Batch→contract→document→sheet→row hierarchy and rebuild policy
+- docs/decisions/DECISION_HIERARCHY.md — Batch→contract→document→contract section→row hierarchy and rebuild policy
 - docs/decisions/DECISION_ID_EXTRACTION.md — ID extraction priority, URL canonicalization, orphan policy
 - docs/decisions/DECISION_UNKNOWN_COLUMNS.md — Unknown column thresholds, frequency-vote attachment, audit payload
 - docs/decisions/DECISION_STORAGE_POLICY.md — localStorage vs IndexedDB payload policy
@@ -99,7 +99,7 @@
 - docs/features/STANDARDIZER_SCHEMA_EDITOR.md — Schema Tree Editor for Admin Standardizer tab (V2 proposal)
 
 ## Handoff & Status
-- docs/handoff/srr-handoff-status.md — SRR handoff documentation audit (v1.5.2)
+- docs/handoff/srr-handoff-status.md — Record Inspection handoff documentation audit (v1.5.2)
 - docs/handoff/TASKS_UI.md — UI backlog tracker
 - docs/handoff/STATUS.md — General status
 - docs/handoff/HANDOFF.md — Handoff guide

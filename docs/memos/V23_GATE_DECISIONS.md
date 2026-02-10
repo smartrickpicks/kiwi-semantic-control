@@ -49,8 +49,8 @@ This memo captures the locked gate rules enforced by V2.3. Each gate has a deter
 
 ## G4 — Unknown Column Attachment (Frequency Vote)
 
-**Rule:** Unknown columns are attached to contracts via sheet-scoped frequency vote:
-- For each unknown column's sheet, count contract ID votes across all rows.
+**Rule:** Unknown columns are attached to contracts via contract-section-scoped frequency vote:
+- For each unknown column's contract section, count contract ID votes across all rows.
 - Attach to top contract if `top_share >= 60%` OR `top_count >= 2 * second_count`.
 - Otherwise, attach to batch-level.
 
@@ -86,12 +86,12 @@ This memo captures the locked gate rules enforced by V2.3. Each gate has a deter
 
 ## G7 — Contract Selector Semantics
 
-**Rule:** Primary contract selector count and options are dataset-wide across all sheets.
+**Rule:** Primary contract selector count and options are dataset-wide across all contract sections.
 
 **Locked behavior:**
 - Stat badge shows `datasetWideCount` from `ContractIndex.listContracts()`.
-- Dropdown always lists all contracts; sheet context shown as secondary `[N in sheet]` annotation.
-- Primary count does not change when sheet filter changes.
+- Dropdown always lists all contracts; contract section context shown as secondary `[N in section]` annotation.
+- Primary count does not change when contract section filter changes.
 
 ## G8 — Missing URL / Orphan Handling
 

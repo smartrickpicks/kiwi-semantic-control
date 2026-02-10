@@ -9,7 +9,7 @@ Use this checklist before approving any Patch Request. All items must be satisfi
 - [ ] Scope boundaries are explicit (what is included and excluded)
 
 ## Schema Correctness
-- [ ] Canonical sheet and field names (no deprecated aliases)
+- [ ] Canonical contract section and field names (no deprecated aliases)
 - [ ] Valid operators/actions for the data type
 - [ ] Required attributes present (e.g., severity when applicable)
 - [ ] Patch base_version matches the current canonical base

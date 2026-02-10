@@ -1,13 +1,13 @@
 # Rules Bundle Overview
 
-The rules bundle is a collection of JSON configuration files that define semantic field metadata, hinge groupings, and sheet ordering for the Orchestrate OS viewer application.
+The rules bundle is a collection of JSON configuration files that define semantic field metadata, hinge groupings, and contract section ordering for the Orchestrate OS viewer application.
 
 ## Purpose
 
 The rules bundle provides:
 - **Field metadata** for semantic understanding of dataset fields
 - **Hinge groupings** to identify primary and secondary decision-critical fields
-- **Sheet ordering** for consistent navigation across views
+- **Contract section ordering** for consistent navigation across views
 
 The bundle is loaded on application startup and cached in memory for fast access during Field Inspector rendering and other semantic operations.
 
@@ -16,15 +16,15 @@ The bundle is loaded on application startup and cached in memory for fast access
 | File | Purpose | Record Count |
 |------|---------|--------------|
 | `field_meta.json` | Field definitions with labels, types, and validation rules | ~442 fields |
-| `hinge_groups.json` | Primary/Secondary hinge field classifications per sheet | ~47 hinges |
-| `sheet_order.json` | Canonical ordering of sheets for navigation and display | 8 sheets |
+| `hinge_groups.json` | Primary/Secondary hinge field classifications per contract section | ~47 hinges |
+| `sheet_order.json` | Canonical ordering of contract sections for navigation and display | 8 contract sections |
 
 ### Additional Reference Files
 
 | File | Purpose |
 |------|---------|
-| `sheet_aliases.json` | Maps sheet name variations to canonical names |
-| `opportunity_field_catalog.json` | Extended field catalog for Opportunity sheet |
+| `sheet_aliases.json` | Maps contract section name variations to canonical names |
+| `opportunity_field_catalog.json` | Extended field catalog for Opportunity contract section |
 | `qa_flags.json` | QA flag definitions and severity levels |
 | `dealtype_matrix.json` | Deal type classification rules |
 | `knowledge_keepers.json` | Subject matter expert routing rules |
@@ -57,7 +57,7 @@ The rules bundle is generated from source configuration files. The original buil
 |-------------|--------|
 | `field_meta.json` | Master Glossary spreadsheet |
 | `hinge_groups.json` | Hinge Configuration document |
-| `sheet_order.json` | Sheet Order configuration |
+| `sheet_order.json` | Contract Section Order configuration |
 
 ### Build Requirements
 
