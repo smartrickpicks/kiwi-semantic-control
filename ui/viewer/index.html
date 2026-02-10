@@ -2198,11 +2198,12 @@
             <div style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 16px;">
               <h4 style="margin: 0 0 12px; font-size: 0.9em; color: #333;">Schema Snapshot</h4>
               <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-                <div style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px;">
+                <div onclick="TriageAnalytics.handleSchemaClick('matched')" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-matched-pct" style="font-size: 1.4em; font-weight: 700; color: #2e7d32;">--</div>
-                  <div style="font-size: 0.75em; color: #666;">Fields Matched</div>
+                  <div style="font-size: 0.75em; color: #666;">Batch Coverage</div>
                   <div id="ta-schema-matched-count" style="font-size: 0.7em; color: #999;">0 / 0</div>
                   <div id="ta-schema-matched-scope" style="font-size: 0.65em; color: #aaa;"></div>
+                  <div id="ta-schema-glossary-secondary" style="font-size: 0.6em; color: #bbb;"></div>
                 </div>
                 <div onclick="TriageAnalytics.handleSchemaClick('unknown')" style="text-align: center; padding: 10px; background: #fff3e0; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-unknown" style="font-size: 1.4em; font-weight: 700; color: #e65100;">0</div>
@@ -2212,15 +2213,15 @@
                 <div onclick="TriageAnalytics.handleSchemaClick('missing')" style="text-align: center; padding: 10px; background: #ffebee; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-missing" style="font-size: 1.4em; font-weight: 700; color: #c62828;">0</div>
                   <div style="font-size: 0.75em; color: #666;">Missing Required</div>
-                  <div style="font-size: 0.6em; color: #aaa;">Expected but absent</div>
+                  <div id="ta-schema-missing-split" style="font-size: 0.6em; color: #aaa;"></div>
                 </div>
                 <div onclick="TriageAnalytics.handleSchemaClick('drift')" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-drift" style="font-size: 1.4em; font-weight: 700; color: #555;">0</div>
                   <div style="font-size: 0.75em; color: #666;">Total Gaps</div>
                   <div id="ta-schema-drift-detail" style="font-size: 0.6em; color: #aaa;"></div>
+                  <div style="font-size: 0.55em; color: #ccc;" title="Drift = Unknown Columns + Missing Required Headers">Drift = Unk + MisHdr</div>
                 </div>
               </div>
-              <div id="ta-schema-empty-state" style="display: none; padding: 12px; text-align: center; color: #999; font-size: 0.8em; border-top: 1px solid #eee; margin-top: 12px;">No matching items found for this filter. Try loading a dataset with more columns.</div>
             </div>
           </div>
 
@@ -26709,7 +26710,7 @@
             applied: { count: 0, pct: 0 }
           },
           contracts: [],
-          schema: { standard_matched: 0, standard_total: 0, unknown_columns: 0, missing_required: 0, schema_drift: 0, defsheet_extracted_keys: 0, defsheet_fallback_hits: 0 },
+          schema: { standard_matched: 0, standard_total: 0, unknown_columns: 0, missing_required: 0, schema_drift: 0, defsheet_extracted_keys: 0, defsheet_fallback_hits: 0, batch_headers_total: 0, batch_headers_mapped: 0, schema_missing_required_headers: 0, data_missing_required_values: 0, _batch_mapped_items: [], _batch_unmapped_items: [], _missing_headers_items: [], _missing_values_items: [] },
           processing: { queued: 0, processing: 0, completed: 0, failed: 0 },
           total_contracts: 0
         };
@@ -26988,9 +26989,104 @@
           allFields.forEach(function(f) {
             if (_fieldMatches(f.field_key, f.field_label)) cache.schema.standard_matched++;
           });
-          cache.schema.missing_required = allFields.filter(function(f) {
-            return f.requiredness === 'required' && !_fieldMatches(f.field_key, f.field_label);
-          }).length;
+
+          var _missingHeaderItems = [];
+          var _missingValueItems = [];
+          allFields.forEach(function(f) {
+            if (f.requiredness !== 'required') return;
+            var matched = _fieldMatches(f.field_key, f.field_label);
+            if (!matched) {
+              _missingHeaderItems.push({ field_key: f.field_key, label: f.field_label || f.field_key, sheet: f.sheet || '', requiredness: f.requiredness });
+            } else if (typeof workbook !== 'undefined' && workbook.order) {
+              var fkn = _normKey(f.field_key);
+              var fln = f.field_label ? _normKey(f.field_label) : '';
+              workbook.order.forEach(function(sn) {
+                var sh = workbook.sheets[sn];
+                if (!sh || !sh.headers || !sh.rows) return;
+                var matchedHeader = null;
+                for (var _hi = 0; _hi < sh.headers.length; _hi++) {
+                  var hn = _normKey(sh.headers[_hi]);
+                  if (hn === fkn || hn === fln || (typeof COLUMN_ALIAS_MAP !== 'undefined' && COLUMN_ALIAS_MAP[hn])) {
+                    var isAlias = typeof COLUMN_ALIAS_MAP !== 'undefined' && COLUMN_ALIAS_MAP[hn];
+                    if (hn === fkn || hn === fln) { matchedHeader = sh.headers[_hi]; break; }
+                    if (isAlias) {
+                      var _ae = COLUMN_ALIAS_MAP[hn];
+                      for (var _ai = 0; _ai < _ae.length; _ai++) {
+                        if (_normKey(_ae[_ai].canonical_key) === fkn) { matchedHeader = sh.headers[_hi]; break; }
+                      }
+                      if (matchedHeader) break;
+                    }
+                  }
+                }
+                if (!matchedHeader) return;
+                var blankCount = 0;
+                for (var _ri = 0; _ri < sh.rows.length; _ri++) {
+                  var val = sh.rows[_ri] ? sh.rows[_ri][matchedHeader] : undefined;
+                  if (val === null || val === undefined || String(val).trim() === '') blankCount++;
+                }
+                if (blankCount > 0) {
+                  _missingValueItems.push({ field_key: f.field_key, label: f.field_label || f.field_key, section: sn, header: matchedHeader, blank_count: blankCount, total_rows: sh.rows.length });
+                }
+              });
+            }
+          });
+          cache.schema.schema_missing_required_headers = _missingHeaderItems.length;
+          cache.schema.data_missing_required_values = _missingValueItems.length;
+          cache.schema._missing_headers_items = _missingHeaderItems;
+          cache.schema._missing_values_items = _missingValueItems;
+          cache.schema.missing_required = _missingHeaderItems.length;
+
+          var _batchHeaderSet = {};
+          var _batchMappedItems = [];
+          var _batchUnmappedItems = [];
+          if (typeof workbook !== 'undefined' && workbook.order) {
+            workbook.order.forEach(function(sn) {
+              var sh = workbook.sheets[sn];
+              if (!sh || !sh.headers) return;
+              if (sn.indexOf('_change_log') !== -1) return;
+              if (sn === 'RFIs & Analyst Notes') return;
+              if (typeof isReferenceSheet === 'function' && isReferenceSheet(sn)) return;
+              if (typeof isMetaSheet === 'function' && isMetaSheet(sn)) return;
+              sh.headers.forEach(function(h) {
+                if (!h || h.charAt(0) === '_') return;
+                var norm = _normKey(h);
+                if (!norm) return;
+                var dedupKey = sn + '||' + norm;
+                if (_batchHeaderSet[dedupKey]) return;
+                _batchHeaderSet[dedupKey] = true;
+                var mapped = false;
+                var canonicalMatch = '';
+                
+                var resolved = typeof normalizeColumnName === 'function' ? normalizeColumnName(h, sn) : norm;
+                if (!mapped) {
+                  for (var _gi = 0; _gi < allFields.length; _gi++) {
+                    var gfk = _normKey(allFields[_gi].field_key);
+                    var gfl = allFields[_gi].field_label ? _normKey(allFields[_gi].field_label) : '';
+                    if (norm === gfk || norm === gfl || resolved === gfk || resolved === gfl) {
+                      mapped = true;
+                      canonicalMatch = allFields[_gi].field_key;
+                      break;
+                    }
+                  }
+                }
+                if (!mapped && typeof COLUMN_ALIAS_MAP !== 'undefined' && COLUMN_ALIAS_MAP[norm]) {
+                  mapped = true;
+                  canonicalMatch = COLUMN_ALIAS_MAP[norm][0] ? COLUMN_ALIAS_MAP[norm][0].canonical_key : norm;
+                }
+                var sysFields = { contract_key:1, file_name:1, file_url:1, status:1, sheet:1, record_id:1, dataset_id:1, group_id:1, document_type:1 };
+                if (!mapped && sysFields[norm]) { mapped = true; canonicalMatch = norm + ' (system)'; }
+                if (mapped) {
+                  _batchMappedItems.push({ section: sn, header: h, canonical: canonicalMatch });
+                } else {
+                  _batchUnmappedItems.push({ section: sn, header: h, normalized: norm });
+                }
+              });
+            });
+          }
+          cache.schema.batch_headers_total = _batchMappedItems.length + _batchUnmappedItems.length;
+          cache.schema.batch_headers_mapped = _batchMappedItems.length;
+          cache.schema._batch_mapped_items = _batchMappedItems;
+          cache.schema._batch_unmapped_items = _batchUnmappedItems;
         }
         if (typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable() && ContractIndex._index && ContractIndex._index.unknown_columns) {
           var _ucTotal = 0;
@@ -26999,8 +27095,8 @@
           });
           cache.schema.unknown_columns = _ucTotal;
         }
-        cache.schema.schema_drift = cache.schema.unknown_columns + cache.schema.missing_required;
-        cache.schema._drift_detail = 'Unknown(' + cache.schema.unknown_columns + ') + Missing(' + cache.schema.missing_required + ')';
+        cache.schema.schema_drift = cache.schema.unknown_columns + cache.schema.schema_missing_required_headers;
+        cache.schema._drift_detail = 'Unknown(' + cache.schema.unknown_columns + ') + MissingHeaders(' + cache.schema.schema_missing_required_headers + ')';
         cache.processing.completed = totalContracts;
 
         this._cache = cache;
@@ -27009,6 +27105,7 @@
         console.log('[TRIAGE-ANALYTICS][P0.1] refresh: PreFlight=' + cache.lanes.preflight.total + ', Semantic=' + cache.lanes.semantic.total + ', PatchReview=' + cache.lanes.patch_review.total + ', Contracts=' + cache.total_contracts + ', Schema=' + cache.schema.standard_matched + '/' + cache.schema.standard_total);
         console.log('[GLOSSARY-MAP] fields_total=' + cache.schema.standard_total);
         console.log('[GLOSSARY-MAP] batch_matched=' + cache.schema.standard_matched);
+        console.log('[SCHEMA-SNAPSHOT] batch_coverage=' + cache.schema.batch_headers_mapped + '/' + cache.schema.batch_headers_total + ', missing_headers=' + cache.schema.schema_missing_required_headers + ', missing_values=' + cache.schema.data_missing_required_values + ', drift=' + cache.schema.schema_drift);
         console.log('[GLOSSARY-MAP] defsheet_extracted_keys=' + cache.schema.defsheet_extracted_keys);
         console.log('[GLOSSARY-MAP] defsheet_fallback_hits=' + cache.schema.defsheet_fallback_hits);
 
@@ -27263,17 +27360,23 @@
 
       _renderSchemaSnapshot: function(cache) {
         var el = function(id) { return document.getElementById(id); };
-        var pct = cache.schema.standard_total > 0 ? Math.round((cache.schema.standard_matched / cache.schema.standard_total) * 100) : 0;
-        if (el('ta-schema-matched-pct')) el('ta-schema-matched-pct').textContent = pct + '%';
-        if (el('ta-schema-matched-count')) el('ta-schema-matched-count').textContent = cache.schema.standard_matched + ' / ' + cache.schema.standard_total;
+        var batchPct = cache.schema.batch_headers_total > 0 ? Math.round((cache.schema.batch_headers_mapped / cache.schema.batch_headers_total) * 100) : 0;
+        if (el('ta-schema-matched-pct')) el('ta-schema-matched-pct').textContent = batchPct + '%';
+        if (el('ta-schema-matched-count')) el('ta-schema-matched-count').textContent = cache.schema.batch_headers_mapped + ' / ' + cache.schema.batch_headers_total + ' batch headers';
         if (el('ta-schema-matched-scope')) {
           var _scopeLabel = cache.schema._active_sections > 0
             ? cache.schema._active_sections + ' active sections'
             : 'all sections';
           el('ta-schema-matched-scope').textContent = _scopeLabel;
         }
+        if (el('ta-schema-glossary-secondary')) {
+          var gPct = cache.schema.standard_total > 0 ? Math.round((cache.schema.standard_matched / cache.schema.standard_total) * 100) : 0;
+          el('ta-schema-glossary-secondary').textContent = 'Glossary: ' + cache.schema.standard_matched + '/' + cache.schema.standard_total + ' (' + gPct + '%)';
+        }
         if (el('ta-schema-unknown')) el('ta-schema-unknown').textContent = cache.schema.unknown_columns;
-        if (el('ta-schema-missing')) el('ta-schema-missing').textContent = cache.schema.missing_required;
+        var missingTotal = cache.schema.schema_missing_required_headers + cache.schema.data_missing_required_values;
+        if (el('ta-schema-missing')) el('ta-schema-missing').textContent = missingTotal;
+        if (el('ta-schema-missing-split')) el('ta-schema-missing-split').textContent = cache.schema.schema_missing_required_headers + ' hdr / ' + cache.schema.data_missing_required_values + ' val';
         if (el('ta-schema-drift')) el('ta-schema-drift').textContent = cache.schema.schema_drift;
         if (el('ta-schema-drift-detail')) el('ta-schema-drift-detail').textContent = cache.schema._drift_detail || '';
       },
@@ -27354,45 +27457,135 @@
       },
 
       handleSchemaClick: function(type) {
-        console.log('[TRIAGE-ANALYTICS][P0.2] snapshot_filter_applied: type=' + type);
-        var emptyState = document.getElementById('ta-schema-empty-state');
-        if (emptyState) emptyState.style.display = 'none';
-        var targetFilter = type === 'unknown' ? 'preflight' : (type === 'missing' ? 'blocked' : 'needs_review');
-        var count = 0;
+        console.log('[SCHEMA-SNAPSHOT] detail_click: type=' + type);
         var cache = this.getCache();
-        if (type === 'unknown') count = cache.schema.unknown_columns;
-        else if (type === 'missing') count = cache.schema.missing_required;
-        else if (type === 'drift') count = cache.schema.schema_drift;
-        if (count === 0 && emptyState) {
-          emptyState.style.display = '';
-          var _emptyReasons = {
-            unknown: 'No unknown columns detected. All imported columns match the canonical schema.',
-            missing: 'No missing required fields. All required fields from field_meta.json are present in the active dataset.',
-            drift: 'No schema drift detected. This is batch-level drift; no record row available. Check Admin > Schema Tree for cross-batch comparison.'
-          };
-          emptyState.textContent = _emptyReasons[type] || 'No items found for this filter.';
-          console.log('[P1A] schema_deeplink_empty: type=' + type + ', reason=batch_level_no_rows');
-          return;
-        }
-        var _hasRowTarget = false;
-        if (type === 'unknown' || type === 'drift') {
-          var _pfItems = analystTriageState.manualItems || [];
-          for (var _si = 0; _si < _pfItems.length; _si++) {
-            if (_pfItems[_si].blocker_type === 'UNKNOWN_COLUMN' && _pfItems[_si].row_index >= 0) {
-              _hasRowTarget = true;
-              break;
-            }
+        this._openSchemaDetailModal(type, cache);
+      },
+
+      _openSchemaDetailModal: function(type, cache) {
+        var existing = document.getElementById('schema-detail-modal');
+        if (existing) existing.remove();
+
+        var overlay = document.createElement('div');
+        overlay.id = 'schema-detail-modal';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;';
+        overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+        var modal = document.createElement('div');
+        modal.style.cssText = 'background:#fff;border-radius:12px;max-width:800px;width:90%;max-height:80vh;overflow:auto;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,0.2);';
+
+        var title = '';
+        var html = '';
+
+        if (type === 'matched') {
+          var bPct = cache.schema.batch_headers_total > 0 ? Math.round((cache.schema.batch_headers_mapped / cache.schema.batch_headers_total) * 100) : 0;
+          title = 'Batch Coverage: ' + bPct + '% (' + cache.schema.batch_headers_mapped + ' / ' + cache.schema.batch_headers_total + ' headers)';
+          var gPct = cache.schema.standard_total > 0 ? Math.round((cache.schema.standard_matched / cache.schema.standard_total) * 100) : 0;
+          html += '<div style="margin-bottom:12px;padding:8px 12px;background:#f0f4f8;border-radius:6px;font-size:0.85em;color:#555;">Glossary coverage: ' + cache.schema.standard_matched + ' / ' + cache.schema.standard_total + ' (' + gPct + '%)</div>';
+          if (cache.schema._batch_mapped_items && cache.schema._batch_mapped_items.length > 0) {
+            html += '<h4 style="margin:12px 0 8px;font-size:0.9em;color:#2e7d32;">Mapped Headers (' + cache.schema._batch_mapped_items.length + ')</h4>';
+            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;"><thead><tr style="background:#f5f5f5;"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Section</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Header</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Canonical Field</th></tr></thead><tbody>';
+            cache.schema._batch_mapped_items.forEach(function(item) {
+              html += '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.section + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.header + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;color:#2e7d32;">' + item.canonical + '</td></tr>';
+            });
+            html += '</tbody></table>';
           }
-          if (!_hasRowTarget && emptyState) {
-            emptyState.style.display = '';
-            emptyState.textContent = count + ' ' + type + ' item(s) found. This is batch-level drift; no individual record row available. Items are listed in the Pre-Flight queue below.';
-            console.log('[TRIAGE-CANONICAL][P1X] batch_level_explainer_shown: type=' + type + ', count=' + count);
-            console.log('[P1A] schema_deeplink_batch_level: type=' + type + ', count=' + count);
-            return;
+          if (cache.schema._batch_unmapped_items && cache.schema._batch_unmapped_items.length > 0) {
+            html += '<h4 style="margin:16px 0 8px;font-size:0.9em;color:#e65100;">Unmapped Headers (' + cache.schema._batch_unmapped_items.length + ')</h4>';
+            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;"><thead><tr style="background:#fff3e0;"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Section</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Header</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Normalized</th></tr></thead><tbody>';
+            cache.schema._batch_unmapped_items.forEach(function(item) {
+              html += '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.section + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.header + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;color:#e65100;">' + item.normalized + '</td></tr>';
+            });
+            html += '</tbody></table>';
+          }
+        } else if (type === 'unknown') {
+          title = 'Unknown Columns (' + cache.schema.unknown_columns + ')';
+          var unknownStored = {};
+          try { unknownStored = JSON.parse(localStorage.getItem('unknown_columns') || '{}'); } catch(e) {}
+          var decisions = {};
+          try { decisions = JSON.parse(localStorage.getItem('unknown_columns_decisions') || '{}'); } catch(e) {}
+          var sections = Object.keys(unknownStored);
+          if (sections.length === 0) {
+            html += '<div style="padding:16px;text-align:center;color:#999;">No unknown columns detected. All imported columns match the canonical schema.</div>';
+          } else {
+            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;"><thead><tr style="background:#fff3e0;"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Section</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Original Header</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Normalized</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Suggested</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Decision</th></tr></thead><tbody>';
+            sections.forEach(function(sn) {
+              var cols = unknownStored[sn] || [];
+              cols.forEach(function(col) {
+                var decKey = sn + '||' + col.normalized_name;
+                var curDecision = (decisions[decKey] && decisions[decKey].decision) || col.decision || '';
+                var suggested = col.suggested_canonical || '';
+                html += '<tr>';
+                html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;">' + sn + '</td>';
+                html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;font-weight:600;">' + col.original_name + '</td>';
+                html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;color:#888;">' + col.normalized_name + '</td>';
+                html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;color:#1565c0;">' + (suggested || '—') + '</td>';
+                html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;">';
+                html += '<select data-uc-section="' + sn + '" data-uc-norm="' + col.normalized_name + '" onchange="TriageAnalytics._saveUnknownDecision(this)" style="font-size:0.9em;padding:2px 4px;border:1px solid #ccc;border-radius:4px;">';
+                html += '<option value=""' + (curDecision === '' ? ' selected' : '') + '>—</option>';
+                html += '<option value="add_global"' + (curDecision === 'add_global' ? ' selected' : '') + '>Add to glossary</option>';
+                html += '<option value="source_specific"' + (curDecision === 'source_specific' ? ' selected' : '') + '>Source-specific</option>';
+                html += '<option value="ignore"' + (curDecision === 'ignore' ? ' selected' : '') + '>Ignore</option>';
+                html += '</select></td></tr>';
+              });
+            });
+            html += '</tbody></table>';
+          }
+        } else if (type === 'missing') {
+          var missingTotal = cache.schema.schema_missing_required_headers + cache.schema.data_missing_required_values;
+          title = 'Missing Required (' + missingTotal + ')';
+          if (cache.schema._missing_headers_items && cache.schema._missing_headers_items.length > 0) {
+            html += '<h4 style="margin:0 0 8px;font-size:0.9em;color:#c62828;">Missing Headers (' + cache.schema._missing_headers_items.length + ')</h4>';
+            html += '<div style="margin-bottom:6px;font-size:0.75em;color:#888;">Required glossary fields with no matching column header in the workbook.</div>';
+            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;margin-bottom:16px;"><thead><tr style="background:#ffebee;"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Field Key</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Label</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Expected Section</th></tr></thead><tbody>';
+            cache.schema._missing_headers_items.forEach(function(item) {
+              html += '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;font-family:monospace;font-size:0.9em;">' + item.field_key + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.label + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + (item.sheet || '—') + '</td></tr>';
+            });
+            html += '</tbody></table>';
+          } else {
+            html += '<div style="padding:8px;color:#4caf50;font-size:0.85em;margin-bottom:12px;">All required headers present.</div>';
+          }
+          if (cache.schema._missing_values_items && cache.schema._missing_values_items.length > 0) {
+            html += '<h4 style="margin:0 0 8px;font-size:0.9em;color:#ef6c00;">Missing Values (' + cache.schema._missing_values_items.length + ')</h4>';
+            html += '<div style="margin-bottom:6px;font-size:0.75em;color:#888;">Required fields present as headers but with blank/missing values in records.</div>';
+            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;"><thead><tr style="background:#fff3e0;"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Field</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Section</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Header</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Blank</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Total</th></tr></thead><tbody>';
+            cache.schema._missing_values_items.forEach(function(item) {
+              var pct = item.total_rows > 0 ? Math.round((item.blank_count / item.total_rows) * 100) : 0;
+              html += '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;font-family:monospace;font-size:0.9em;">' + item.field_key + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.section + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.header + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;color:#e65100;">' + item.blank_count + ' (' + pct + '%)</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.total_rows + '</td></tr>';
+            });
+            html += '</tbody></table>';
+          } else {
+            html += '<div style="padding:8px;color:#4caf50;font-size:0.85em;">No blank required values detected.</div>';
+          }
+        } else if (type === 'drift') {
+          title = 'Total Gaps (' + cache.schema.schema_drift + ')';
+          html += '<div style="margin-bottom:12px;padding:10px 14px;background:#f0f4f8;border-radius:6px;font-size:0.85em;color:#555;">Drift = Unknown Columns (' + cache.schema.unknown_columns + ') + Missing Required Headers (' + cache.schema.schema_missing_required_headers + ')</div>';
+          if (cache.schema.unknown_columns > 0) {
+            html += '<div style="margin-bottom:8px;cursor:pointer;color:#1565c0;font-size:0.85em;text-decoration:underline;" onclick="document.getElementById(\x27schema-detail-modal\x27).remove();TriageAnalytics.handleSchemaClick(\x27unknown\x27);">View ' + cache.schema.unknown_columns + ' unknown column(s)</div>';
+          }
+          if (cache.schema.schema_missing_required_headers > 0) {
+            html += '<div style="cursor:pointer;color:#1565c0;font-size:0.85em;text-decoration:underline;" onclick="document.getElementById(\x27schema-detail-modal\x27).remove();TriageAnalytics.handleSchemaClick(\x27missing\x27);">View ' + cache.schema.schema_missing_required_headers + ' missing required header(s)</div>';
+          }
+          if (cache.schema.schema_drift === 0) {
+            html += '<div style="padding:16px;text-align:center;color:#4caf50;">No schema drift detected.</div>';
           }
         }
-        console.log('[P1A] schema_deeplink_navigate: type=' + type + ', filter=' + targetFilter);
-        navigateToGridFiltered(targetFilter);
+
+        modal.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;"><h3 style="margin:0;font-size:1.1em;color:#333;">' + title + '</h3><button onclick="document.getElementById(\x27schema-detail-modal\x27).remove()" style="background:none;border:none;font-size:1.4em;cursor:pointer;color:#999;padding:0 4px;">&times;</button></div>' + html;
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+      },
+
+      _saveUnknownDecision: function(selectEl) {
+        var section = selectEl.getAttribute('data-uc-section');
+        var norm = selectEl.getAttribute('data-uc-norm');
+        var decision = selectEl.value;
+        var decisions = {};
+        try { decisions = JSON.parse(localStorage.getItem('unknown_columns_decisions') || '{}'); } catch(e) {}
+        var key = section + '||' + norm;
+        decisions[key] = { section: section, normalized: norm, decision: decision, timestamp: new Date().toISOString() };
+        localStorage.setItem('unknown_columns_decisions', JSON.stringify(decisions));
+        console.log('[SCHEMA-SNAPSHOT] unknown_decision_saved: ' + key + ' -> ' + decision);
       },
 
       handleContractClick: function(contractId, stage) {
