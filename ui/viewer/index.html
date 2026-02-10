@@ -17803,9 +17803,15 @@
           var item = _cdEntry.item;
           var _dupCount = _cdEntry.count;
           var sName = escapeHtml(item.contract_section_label || item.sheet_name || 'Unknown');
-          var fLabel = item.field_label || _p1xGetReference(item);
+          var fLabel;
+          if (item._batch_scan && item.file_name) {
+            fLabel = item.file_name;
+            if (fLabel.length > 45) fLabel = fLabel.substring(0, 43) + '...';
+          } else {
+            fLabel = item.field_label || _p1xGetReference(item);
+          }
           var fName = escapeHtml(fLabel);
-          if (item.field_key && item.field_key !== fLabel) {
+          if (!item._batch_scan && item.field_key && item.field_key !== fLabel) {
             fName += ' <span style="color:#999;font-size:0.82em;">' + escapeHtml(item.field_key) + '</span>';
           }
           if (item.field_definition) {
