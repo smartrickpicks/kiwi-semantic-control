@@ -29208,18 +29208,53 @@
       'PDF_VERIFIED_CLEAN': { border: '#2e7d32', bg: '#e8f5e9', text: '#2e7d32' }
     };
 
+    function _p1aCountContracts(items) {
+      var seen = {};
+      for (var i = 0; i < items.length; i++) {
+        var ck = items[i]._contract_group_id || items[i].contract_key || items[i].contract_id || items[i].record_id || ('_item_' + i);
+        if (ck && ck !== '_batch_level') seen[ck] = true;
+      }
+      return Object.keys(seen).length;
+    }
+
+    function _p1aCountContractsByKey(items, keyFn) {
+      var groups = {};
+      for (var i = 0; i < items.length; i++) {
+        var gk = keyFn(items[i]);
+        if (!groups[gk]) groups[gk] = {};
+        var ck = items[i]._contract_group_id || items[i].contract_key || items[i].contract_id || items[i].record_id || ('_item_' + i);
+        if (ck && ck !== '_batch_level') groups[gk][ck] = true;
+      }
+      var result = {};
+      var keys = Object.keys(groups);
+      for (var j = 0; j < keys.length; j++) {
+        result[keys[j]] = Object.keys(groups[keys[j]]).length;
+      }
+      return result;
+    }
+
     function _p1aBuildIssueFilters(items) {
       var container = document.getElementById('p1a-preflight-issue-filters');
       if (!container) return;
-      var typeCounts = {};
-      var sevCounts = { blocker: 0, warning: 0 };
+      var typeContractMap = {};
+      var sevContractMap = { blocker: {}, warning: {} };
       for (var i = 0; i < items.length; i++) {
         var rc = items[i].reason_code || items[i].blocker_type || items[i].signal_type || 'OTHER';
-        typeCounts[rc] = (typeCounts[rc] || 0) + 1;
-        var sev = (items[i].severity || '').toLowerCase();
-        if (sev === 'blocker') sevCounts.blocker++;
-        else sevCounts.warning++;
+        if (!typeContractMap[rc]) typeContractMap[rc] = {};
+        var _ck = items[i]._contract_group_id || items[i].contract_key || items[i].contract_id || items[i].record_id || ('_item_' + i);
+        if (_ck && _ck !== '_batch_level') {
+          typeContractMap[rc][_ck] = true;
+          var sev = (items[i].severity || '').toLowerCase();
+          if (sev === 'blocker') sevContractMap.blocker[_ck] = true;
+          else sevContractMap.warning[_ck] = true;
+        }
       }
+      var typeCounts = {};
+      var _tcKeys = Object.keys(typeContractMap);
+      for (var _tci = 0; _tci < _tcKeys.length; _tci++) {
+        typeCounts[_tcKeys[_tci]] = Object.keys(typeContractMap[_tcKeys[_tci]]).length;
+      }
+      var sevCounts = { blocker: Object.keys(sevContractMap.blocker).length, warning: Object.keys(sevContractMap.warning).length };
       var typeKeys = Object.keys(typeCounts).sort(function(a, b) { return typeCounts[b] - typeCounts[a]; });
 
       var activeIssueLabel = _p1aActiveIssueType === 'All' ? 'All Issues' : (_ISSUE_TYPE_LABELS[_p1aActiveIssueType] || _p1aActiveIssueType.replace(/_/g, ' '));
@@ -29334,18 +29369,25 @@
     function _p1aBuildSheetTabs(items) {
       var container = document.getElementById('p1a-preflight-sheet-tabs');
       if (!container) return;
-      var sheetCounts = {};
-      var totalCount = items.length;
+      var totalCount = _p1aCountContracts(items);
+      var sheetContractMap = {};
       if (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.meta && rulesBundleCache.fieldMeta.meta.sheet_mapping) {
         var glossarySheets = Object.keys(rulesBundleCache.fieldMeta.meta.sheet_mapping);
         for (var gi = 0; gi < glossarySheets.length; gi++) {
           var _csResult = canonicalContractSection(glossarySheets[gi]);
-          sheetCounts[_csResult.contract_section_label] = 0;
+          sheetContractMap[_csResult.contract_section_label] = {};
         }
       }
       for (var i = 0; i < items.length; i++) {
         var sn = items[i].contract_section_label || items[i].sheet_name || 'Unknown';
-        sheetCounts[sn] = (sheetCounts[sn] || 0) + 1;
+        if (!sheetContractMap[sn]) sheetContractMap[sn] = {};
+        var _ck = items[i]._contract_group_id || items[i].contract_key || items[i].contract_id || items[i].record_id || ('_item_' + i);
+        if (_ck && _ck !== '_batch_level') sheetContractMap[sn][_ck] = true;
+      }
+      var sheetCounts = {};
+      var _smKeys = Object.keys(sheetContractMap);
+      for (var _smi = 0; _smi < _smKeys.length; _smi++) {
+        sheetCounts[_smKeys[_smi]] = Object.keys(sheetContractMap[_smKeys[_smi]]).length;
       }
       var sheets = Object.keys(sheetCounts).sort();
       var _q = String.fromCharCode(39);
@@ -29397,7 +29439,7 @@
       
       // Update queue counts
       var _p1aFilteredItems = _p1aFilterBySheet(analystTriageState.manualItems);
-      var manualCount = _p1aFilteredItems.length;
+      var manualCount = _p1aCountContracts(analystTriageState.manualItems);
       var sflogicCount = analystTriageState.sflogicItems.length;
       var patchCount = analystTriageState.patchItems.length;
       var systemCount = analystTriageState.systemItems.length;
