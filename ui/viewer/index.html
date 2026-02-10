@@ -7211,8 +7211,7 @@
           console.log('[V2.3-GATE][G3] PASS thresholds locked: warn>' + this._UNKNOWN_WARN_THRESHOLD + ' blocker>' + this._UNKNOWN_BLOCKER_THRESHOLD);
           this._gateG3Logged = true;
         }
-        var stored = {};
-        try { stored = JSON.parse(localStorage.getItem('unknown_columns') || '{}'); } catch(e) {}
+        var stored = getCurrentUnknownColumnsSnapshot();
 
         var seen = {};
         var self = this;
@@ -27472,8 +27471,7 @@
           }
         } else if (type === 'unknown') {
           title = 'Unknown Columns (' + cache.schema.unknown_columns + ')';
-          var unknownStored = {};
-          try { unknownStored = JSON.parse(localStorage.getItem('unknown_columns') || '{}'); } catch(e) {}
+          var unknownStored = getCurrentUnknownColumnsSnapshot();
           var decisions = {};
           try { decisions = JSON.parse(localStorage.getItem('unknown_columns_decisions') || '{}'); } catch(e) {}
           var sections = Object.keys(unknownStored);
@@ -30954,9 +30952,42 @@
       return normalized;
     }
     
+    function getCurrentUnknownColumnsSnapshot() {
+      var raw = {};
+      try { raw = JSON.parse(localStorage.getItem('unknown_columns') || '{}'); } catch(e) { raw = {}; }
+      var validSections = (typeof workbook !== 'undefined' && workbook && workbook.order) ? workbook.order : null;
+      var sanitized = {};
+      Object.keys(raw).forEach(function(sectionName) {
+        if (validSections && validSections.indexOf(sectionName) === -1) return;
+        var cols = raw[sectionName];
+        if (!Array.isArray(cols)) return;
+        var seen = {};
+        var cleanCols = [];
+        cols.forEach(function(col) {
+          var origName = col.original_name || col.original || null;
+          var normName = col.normalized_name || col.normalized || null;
+          if (!origName || !normName) return;
+          var dedupKey = sectionName + '||' + normName;
+          if (seen[dedupKey]) return;
+          seen[dedupKey] = true;
+          cleanCols.push({
+            original_name: origName,
+            normalized_name: normName,
+            count_nonempty: col.count_nonempty || col.nonEmptyCount || 0,
+            sample_values: col.sample_values || col.samples || [],
+            suggested_canonical: col.suggested_canonical || null,
+            decision: col.decision || null
+          });
+        });
+        if (cleanCols.length > 0) sanitized[sectionName] = cleanCols;
+      });
+      localStorage.setItem('unknown_columns', JSON.stringify(sanitized));
+      return sanitized;
+    }
+
     function refreshUnknownColumnsTable() {
       var tbody = document.getElementById('unknown-cols-tbody');
-      var stored = JSON.parse(localStorage.getItem('unknown_columns') || '{}');
+      var stored = getCurrentUnknownColumnsSnapshot();
       var decisions = JSON.parse(localStorage.getItem('unknown_columns_decisions') || '{}');
       
       var allCols = [];
