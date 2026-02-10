@@ -17543,7 +17543,7 @@
         var g = groups[gk];
         var gItems = g.items;
         var groupId = 'p1d1-g-' + gi;
-        var defaultCollapsed = gi >= 5;
+        var defaultCollapsed = true;
         var isCollapsed = _p1dGroupState[groupId] !== undefined ? _p1dGroupState[groupId] : defaultCollapsed;
 
         var displayName = _p1dGetDisplayName(gk, gItems);
@@ -18015,18 +18015,15 @@
     function _p1f1RestoreAccordion() {
       _p1dAccordionLocked = false;
       _p1dGroupState = {};
+      var allChildren = document.querySelectorAll('.p1d1-child-row');
+      for (var i = 0; i < allChildren.length; i++) {
+        allChildren[i].style.display = 'none';
+      }
       var carets = document.querySelectorAll('[data-caret]');
       for (var j = 0; j < carets.length; j++) {
-        var gid = carets[j].getAttribute('data-caret');
-        var gi = parseInt((gid || '').replace('p1d1-g-', ''), 10);
-        var shouldCollapse = !isNaN(gi) && gi >= 5;
-        carets[j].textContent = shouldCollapse ? '\u25B6' : '\u25BC';
-        var children = document.querySelectorAll('.p1d1-child-row[data-parent="' + gid + '"]');
-        for (var k = 0; k < children.length; k++) {
-          children[k].style.display = shouldCollapse ? 'none' : '';
-        }
+        carets[j].textContent = '\u25B6';
       }
-      console.log('[PREFLIGHT-LIVE] accordion_restored: default collapse state applied');
+      console.log('[PREFLIGHT-LIVE] accordion_restored: all groups collapsed');
     }
 
     function _p1f1LockAccordion() {
@@ -18372,7 +18369,7 @@
               'PDF has no searchable text: ' + nonSearch.reason);
             _p1fScanState.results[contract.contract_key] = 'non_searchable';
             _p1f1Flagged(contract.contract_key, ['TEXT_NOT_SEARCHABLE']);
-            try { if (preflightLiveState.active) { _p1f1ForceExpandAll(); _p1fRenderContractHealth(); _p1f1ForceExpandAll(); } } catch(e) {}
+            try { if (preflightLiveState.active) { _p1fRenderContractHealth(); } } catch(e) {}
             callback('non_searchable');
             return;
           }
@@ -18400,7 +18397,7 @@
               severity, impact);
             _p1fScanState.results[contract.contract_key] = 'mojibake_' + impact;
             _p1f1Flagged(contract.contract_key, [signalType, 'MOJIBAKE_ENCODING']);
-            try { if (preflightLiveState.active) { _p1f1ForceExpandAll(); _p1fRenderContractHealth(); _p1f1ForceExpandAll(); } } catch(e) {}
+            try { if (preflightLiveState.active) { _p1fRenderContractHealth(); } } catch(e) {}
             callback('mojibake');
             return;
           }
