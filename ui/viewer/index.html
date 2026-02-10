@@ -2211,17 +2211,17 @@
                   <div style="font-size: 0.75em; color: #666;">Unknown Columns</div>
                   <div style="font-size: 0.6em; color: #aaa;">Not in glossary</div>
                 </div>
-                <div onclick="TriageAnalytics.handleSchemaClick('missing')" style="text-align: center; padding: 10px; background: #ffebee; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Required glossary fields that are either missing as headers or have blank/invalid values in the data. These need analyst attention." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
+                <div onclick="TriageAnalytics.handleSchemaClick('missing')" style="text-align: center; padding: 10px; background: #ffebee; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Required glossary fields with blank, missing, or invalid picklist values in the data. These need analyst attention." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-missing" style="font-size: 1.4em; font-weight: 700; color: #c62828;">0</div>
-                  <div style="font-size: 0.75em; color: #666;">Missing Required</div>
+                  <div style="font-size: 0.75em; color: #666;">Missing Values</div>
                   <div id="ta-schema-missing-split" style="font-size: 0.6em; color: #aaa;"></div>
-                  <div style="font-size: 0.55em; color: #bbb;">Required fields needing analyst action</div>
+                  <div style="font-size: 0.55em; color: #bbb;">Fields needing analyst completion</div>
                 </div>
                 <div onclick="TriageAnalytics.handleSchemaClick('drift')" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Structural schema issues only: columns not in the glossary plus required headers missing entirely. Missing values are tracked separately." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-drift" style="font-size: 1.4em; font-weight: 700; color: #555;">0</div>
                   <div style="font-size: 0.75em; color: #666;">Schema Structure Issues</div>
                   <div id="ta-schema-drift-detail" style="font-size: 0.6em; color: #aaa;"></div>
-                  <div style="font-size: 0.55em; color: #bbb;">Unknown columns + missing required headers (values excluded)</div>
+                  <div style="font-size: 0.55em; color: #bbb;">Unknown columns not in the glossary</div>
                 </div>
               </div>
             </div>
@@ -27232,7 +27232,10 @@
             }
           });
           cache.schema.schema_missing_required_headers = _missingHeaderItems.length;
-          cache.schema.data_missing_required_values = _missingValueItems.length;
+          var _totalMvErrors = 0;
+          for (var _mve = 0; _mve < _missingValueItems.length; _mve++) { _totalMvErrors += _missingValueItems[_mve].blank_count; }
+          cache.schema.data_missing_required_values = _totalMvErrors;
+          cache.schema._data_missing_values_field_count = _missingValueItems.length;
           cache.schema._missing_headers_items = _missingHeaderItems;
           cache.schema._missing_values_items = _missingValueItems;
           cache.schema.missing_required = _missingHeaderItems.length;
@@ -27314,8 +27317,8 @@
           });
         }
         console.log('[SCHEMA-SNAPSHOT] unknown_snapshot=' + _snapshotTotal + ' unknown_contract_index=' + _ciTotal);
-        cache.schema.schema_drift = cache.schema.unknown_columns + cache.schema.schema_missing_required_headers;
-        cache.schema._drift_detail = 'Unknown(' + cache.schema.unknown_columns + ') + MissingHeaders(' + cache.schema.schema_missing_required_headers + ')';
+        cache.schema.schema_drift = cache.schema.unknown_columns;
+        cache.schema._drift_detail = 'Unknown(' + cache.schema.unknown_columns + ')';
         cache.processing.completed = totalContracts;
 
         this._cache = cache;
@@ -27598,9 +27601,9 @@
           el('ta-schema-glossary-secondary').textContent = 'Glossary: ' + cache.schema.standard_matched + '/' + cache.schema.standard_total + ' (' + gPct + '%)';
         }
         if (el('ta-schema-unknown')) el('ta-schema-unknown').textContent = cache.schema.unknown_columns;
-        var missingTotal = cache.schema.schema_missing_required_headers + cache.schema.data_missing_required_values;
+        var missingTotal = cache.schema.data_missing_required_values;
         if (el('ta-schema-missing')) el('ta-schema-missing').textContent = missingTotal;
-        if (el('ta-schema-missing-split')) el('ta-schema-missing-split').textContent = cache.schema.schema_missing_required_headers + ' missing headers / ' + cache.schema.data_missing_required_values + ' missing values';
+        if (el('ta-schema-missing-split')) el('ta-schema-missing-split').textContent = missingTotal + ' errors across ' + (cache.schema._data_missing_values_field_count || 0) + ' fields';
         if (el('ta-schema-drift')) el('ta-schema-drift').textContent = cache.schema.schema_drift;
         if (el('ta-schema-drift-detail')) el('ta-schema-drift-detail').textContent = cache.schema._drift_detail || '';
       },
@@ -27755,89 +27758,107 @@
             html += '</tbody></table>';
           }
         } else if (type === 'missing') {
-          var missingTotal = cache.schema.schema_missing_required_headers + cache.schema.data_missing_required_values;
-          title = 'Missing Required (' + missingTotal + ')';
-          if (cache.schema._missing_headers_items && cache.schema._missing_headers_items.length > 0) {
-            html += '<h4 style="margin:0 0 8px;font-size:0.9em;color:#c62828;">Missing Headers (' + cache.schema._missing_headers_items.length + ')</h4>';
-            html += '<div style="margin-bottom:6px;font-size:0.75em;color:#888;">Required glossary fields with no matching column header in the workbook.</div>';
-            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;margin-bottom:16px;"><thead><tr style="background:#ffebee;"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Field Key</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Label</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Expected Section</th></tr></thead><tbody>';
-            cache.schema._missing_headers_items.forEach(function(item) {
-              html += '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;font-family:monospace;font-size:0.9em;">' + item.field_key + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.label + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + (item.sheet || '—') + '</td></tr>';
-            });
-            html += '</tbody></table>';
-          } else {
-            html += '<div style="padding:8px;color:#4caf50;font-size:0.85em;margin-bottom:12px;">All required headers present.</div>';
-          }
-          if (cache.schema._missing_values_items && cache.schema._missing_values_items.length > 0) {
-            html += '<h4 style="margin:0 0 8px;font-size:0.9em;color:#ef6c00;display:flex;align-items:center;gap:6px;">Missing Values (' + cache.schema._missing_values_items.length + ') <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#ef6c00;color:#fff;font-size:0.7em;cursor:pointer;font-style:normal;font-weight:700;position:relative;" onclick="event.stopPropagation();var p=this.querySelector(\x27.mv-legend-pop\x27);if(p){p.style.display=p.style.display===\x27none\x27?\x27block\x27:\x27none\x27;}" title="Column legend">i<div class="mv-legend-pop" style="display:none;position:absolute;top:24px;left:0;z-index:9999;background:#fff;border:1px solid #ddd;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.15);padding:12px 14px;width:320px;font-size:12px;font-weight:400;color:#333;text-align:left;line-height:1.5;cursor:default;" onclick="event.stopPropagation()"><div style="font-weight:600;margin-bottom:6px;font-size:13px;color:#ef6c00;">Column Legend</div><div style="margin-bottom:4px;"><b>Field</b> &mdash; The canonical field name from the glossary that is required.</div><div style="margin-bottom:4px;"><b>Section</b> &mdash; The contract section (sheet) where this field appears in your workbook.</div><div style="margin-bottom:4px;"><b>Reason</b> &mdash; Why the error was flagged: <span style="color:#e65100;">Blank / missing</span> means the cell is empty; <span style="color:#6a1b9a;">Invalid picklist</span> means the value doesn\x27t match the allowed options.</div><div style="margin-bottom:4px;"><b>Errors</b> &mdash; How many records have this problem, with the percentage of all records in that section.</div><div><b>Rows in Section</b> &mdash; Total number of records in that contract section. This is the denominator for the error percentage.</div></div></span></h4>';
-            html += '<div style="margin-bottom:6px;font-size:0.75em;color:#888;">Required fields present as headers but with blank/missing values in records. Click a row to expand and see affected records.</div>';
-            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;" id="mv-expand-table"><thead><tr style="background:#fff3e0;"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;width:20px;"></th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Field</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Section</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Reason</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Errors</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Rows in Section</th></tr></thead><tbody>';
-            cache.schema._missing_values_items.forEach(function(item, idx) {
-              var pct = item.total_rows > 0 ? Math.round((item.blank_count / item.total_rows) * 100) : 0;
-              var reasonLabel = item.reason === 'invalid_picklist' ? 'Invalid picklist' : 'Blank / missing';
-              var reasonColor = item.reason === 'invalid_picklist' ? '#6a1b9a' : '#e65100';
-              var rowId = 'mv-expand-' + idx;
-              html += '<tr style="cursor:pointer;" onclick="(function(){var el=document.getElementById(\x27' + rowId + '\x27);if(el){el.style.display=el.style.display===\x27none\x27?\x27table-row\x27:\x27none\x27;var arrow=document.getElementById(\x27' + rowId + '-arrow\x27);if(arrow)arrow.textContent=el.style.display===\x27none\x27?\x27\u25B6\x27:\x27\u25BC\x27;}})()">';
-              html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;color:#888;font-size:0.85em;" id="' + rowId + '-arrow">\u25B6</td>';
-              html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;font-family:monospace;font-size:0.9em;">' + escapeHtml(item.field_key) + '</td>';
-              html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;">' + escapeHtml(item.section) + '</td>';
-              html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;color:' + reasonColor + ';font-size:0.85em;">' + reasonLabel + '</td>';
-              html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;color:#e65100;font-weight:600;">' + item.blank_count + ' (' + pct + '%)</td>';
-              html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.total_rows + '</td>';
-              html += '</tr>';
-              html += '<tr id="' + rowId + '" style="display:none;"><td colspan="6" style="padding:0;border-bottom:1px solid #ddd;">';
-              html += '<div style="max-height:200px;overflow-y:auto;background:#fafafa;padding:6px 12px 6px 28px;">';
-              var rows = item.affected_rows || [];
-              if (rows.length === 0) {
-                html += '<div style="color:#888;font-size:0.8em;padding:4px 0;">No individual row data available.</div>';
-              } else {
-                var wb = (typeof workbook !== 'undefined') ? workbook : null;
-                var sh = (wb && wb.sheets && wb.sheets[item.section]) ? wb.sheets[item.section] : null;
-                for (var ri = 0; ri < rows.length; ri++) {
-                  var rowIdx = rows[ri];
-                  var rowData = (sh && sh.rows && sh.rows[rowIdx]) ? sh.rows[rowIdx] : null;
-                  var contractLabel = '';
-                  if (rowData) {
-                    var rawName = rowData.file_name || rowData.contract_key || '';
-                    if (rawName && typeof ContractIndex !== 'undefined' && typeof ContractIndex._isHeaderLike === 'function' && !ContractIndex._isHeaderLike(rawName)) {
-                      contractLabel = rawName;
-                      if (contractLabel.length > 40) contractLabel = contractLabel.substring(0, 37) + '...';
-                    }
-                  }
-                  var rowLabel = 'Row ' + (rowIdx + 1);
-                  if (rowData && typeof _srrGetAccountName === 'function') {
-                    var acctName = _srrGetAccountName(rowData);
-                    if (acctName && acctName !== 'Unknown') {
-                      rowLabel = acctName;
-                      if (rowLabel.length > 30) rowLabel = rowLabel.substring(0, 27) + '...';
-                    }
-                  }
-                  var cellVal = rowData ? rowData[item.header] : '';
-                  var displayVal = (cellVal === null || cellVal === undefined || String(cellVal).trim() === '') ? '(empty)' : String(cellVal);
-                  if (displayVal.length > 40) displayVal = displayVal.substring(0, 37) + '...';
-                  var escapedSection = item.section.replace(/\x27/g, '\\\x27');
-                  html += '<div style="display:flex;align-items:center;padding:3px 0;border-bottom:1px solid #f0f0f0;font-size:0.82em;" class="mv-record-row">';
-                  html += '<span style="cursor:pointer;color:#1565c0;text-decoration:underline;flex:0 0 auto;margin-right:8px;" onclick="event.stopPropagation();var _m=document.getElementById(\x27schema-detail-modal\x27);if(_m)_m.remove();openRowReviewDrawer(\x27' + escapedSection + '\x27,' + rowIdx + ')">' + escapeHtml(rowLabel) + '</span>';
-                  if (contractLabel) html += '<span style="color:#555;margin-right:8px;flex:0 0 auto;">' + escapeHtml(contractLabel) + '</span>';
-                  html += '<span style="color:#999;font-family:monospace;font-size:0.9em;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(displayVal) + '</span>';
-                  html += '</div>';
-                }
+          var mvItems = cache.schema._missing_values_items || [];
+          var totalErrors = 0;
+          for (var _mvi = 0; _mvi < mvItems.length; _mvi++) { totalErrors += mvItems[_mvi].blank_count; }
+          var fieldGroups = {};
+          var fieldOrder = [];
+          if (mvItems.length > 0) {
+            for (var _gi = 0; _gi < mvItems.length; _gi++) {
+              var _gItem = mvItems[_gi];
+              var _gfk = _gItem.field_key;
+              if (!fieldGroups[_gfk]) { fieldGroups[_gfk] = { label: _gItem.label, items: [], totalErrors: 0 }; fieldOrder.push(_gfk); }
+              fieldGroups[_gfk].items.push(_gItem);
+              fieldGroups[_gfk].totalErrors += _gItem.blank_count;
+            }
+            title = 'Missing Values (' + totalErrors + ' total errors across ' + fieldOrder.length + ' field' + (fieldOrder.length !== 1 ? 's' : '') + ')';
+            html += '<div style="margin-bottom:6px;font-size:0.75em;color:#888;">Required fields with blank, missing, or invalid picklist values. Expand a field to see affected sections, then individual records.</div>';
+            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;" id="mv-expand-table">';
+            for (var _fi = 0; _fi < fieldOrder.length; _fi++) {
+              var _fk = fieldOrder[_fi];
+              var _fg = fieldGroups[_fk];
+              var _fid = 'mv-field-' + _fi;
+              var _secCount = _fg.items.length;
+              var _reasonSet = {};
+              for (var _ri2 = 0; _ri2 < _fg.items.length; _ri2++) {
+                _reasonSet[_fg.items[_ri2].reason] = true;
               }
-              html += '</div></td></tr>';
-            });
-            html += '</tbody></table>';
+              var _reasonChips = '';
+              if (_reasonSet['blank_like']) _reasonChips += '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:0.8em;background:#fff3e0;color:#e65100;margin-left:4px;">Blank</span>';
+              if (_reasonSet['invalid_picklist']) _reasonChips += '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:0.8em;background:#f3e5f5;color:#6a1b9a;margin-left:4px;">Invalid picklist</span>';
+              html += '<tr style="cursor:pointer;background:#f9f9f9;border-bottom:2px solid #e0e0e0;" onclick="(function(){var el=document.getElementById(\x27' + _fid + '\x27);el.style.display=el.style.display===\x27none\x27?\x27table-row\x27:\x27none\x27;var a=document.getElementById(\x27' + _fid + '-arrow\x27);if(a)a.textContent=el.style.display===\x27none\x27?\x27\u25B6\x27:\x27\u25BC\x27;})()">';
+              html += '<td style="padding:8px 10px;width:20px;color:#888;" id="' + _fid + '-arrow">\u25B6</td>';
+              html += '<td style="padding:8px 10px;font-family:monospace;font-weight:600;font-size:0.95em;" colspan="2">' + escapeHtml(_fk) + ' <span style="color:#999;font-weight:400;font-size:0.85em;">(' + escapeHtml(_fg.label) + ')</span></td>';
+              html += '<td style="padding:8px 10px;text-align:right;">' + _reasonChips + '</td>';
+              html += '<td style="padding:8px 10px;text-align:right;color:#e65100;font-weight:700;">' + _fg.totalErrors + ' errors</td>';
+              html += '<td style="padding:8px 10px;text-align:right;color:#888;font-size:0.85em;">' + _secCount + ' section' + (_secCount > 1 ? 's' : '') + '</td>';
+              html += '</tr>';
+              html += '<tr id="' + _fid + '" style="display:none;"><td colspan="6" style="padding:0;">';
+              for (var _si = 0; _si < _fg.items.length; _si++) {
+                var _sItem = _fg.items[_si];
+                var _sid = _fid + '-sec-' + _si;
+                var _sPct = _sItem.total_rows > 0 ? Math.round((_sItem.blank_count / _sItem.total_rows) * 100) : 0;
+                var _sReasonLabel = _sItem.reason === 'invalid_picklist' ? 'Invalid picklist' : 'Blank / missing';
+                var _sReasonColor = _sItem.reason === 'invalid_picklist' ? '#6a1b9a' : '#e65100';
+                html += '<div style="margin-left:28px;border-left:2px solid #e0e0e0;padding:0;">';
+                html += '<div style="padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:8px;background:#f5f5f5;border-bottom:1px solid #eee;" onclick="(function(){var el=document.getElementById(\x27' + _sid + '\x27);el.style.display=el.style.display===\x27none\x27?\x27block\x27:\x27none\x27;var a=document.getElementById(\x27' + _sid + '-arrow\x27);if(a)a.textContent=el.style.display===\x27none\x27?\x27\u25B6\x27:\x27\u25BC\x27;})()">';
+                html += '<span id="' + _sid + '-arrow" style="color:#888;font-size:0.85em;">\u25B6</span>';
+                html += '<span style="font-weight:500;font-size:0.88em;">' + escapeHtml(_sItem.section) + '</span>';
+                html += '<span style="color:' + _sReasonColor + ';font-size:0.8em;">' + _sReasonLabel + '</span>';
+                html += '<span style="color:#e65100;font-weight:600;font-size:0.85em;">' + _sItem.blank_count + ' / ' + _sItem.total_rows + ' (' + _sPct + '%)</span>';
+                html += '</div>';
+                html += '<div id="' + _sid + '" style="display:none;max-height:200px;overflow-y:auto;background:#fafafa;padding:4px 12px 4px 20px;">';
+                var _sRows = _sItem.affected_rows || [];
+                if (_sRows.length === 0) {
+                  html += '<div style="color:#888;font-size:0.8em;padding:4px 0;">No individual row data available.</div>';
+                } else {
+                  var _wb = (typeof workbook !== 'undefined') ? workbook : null;
+                  var _sh = (_wb && _wb.sheets && _wb.sheets[_sItem.section]) ? _wb.sheets[_sItem.section] : null;
+                  for (var _rj = 0; _rj < _sRows.length; _rj++) {
+                    var _rowIdx = _sRows[_rj];
+                    var _rowData = (_sh && _sh.rows && _sh.rows[_rowIdx]) ? _sh.rows[_rowIdx] : null;
+                    var _contractLabel = '';
+                    if (_rowData) {
+                      var _rawName = _rowData.file_name || _rowData.contract_key || '';
+                      if (_rawName && typeof ContractIndex !== 'undefined' && typeof ContractIndex._isHeaderLike === 'function' && !ContractIndex._isHeaderLike(_rawName)) {
+                        _contractLabel = _rawName;
+                        if (_contractLabel.length > 40) _contractLabel = _contractLabel.substring(0, 37) + '...';
+                      }
+                    }
+                    var _rowLabel = 'Row ' + (_rowIdx + 1);
+                    if (_rowData && typeof _srrGetAccountName === 'function') {
+                      var _acctName = _srrGetAccountName(_rowData);
+                      if (_acctName && _acctName !== 'Unknown') {
+                        _rowLabel = _acctName;
+                        if (_rowLabel.length > 30) _rowLabel = _rowLabel.substring(0, 27) + '...';
+                      }
+                    }
+                    var _cellVal = _rowData ? _rowData[_sItem.header] : '';
+                    var _displayVal = (_cellVal === null || _cellVal === undefined || String(_cellVal).trim() === '') ? '(empty)' : String(_cellVal);
+                    if (_displayVal.length > 40) _displayVal = _displayVal.substring(0, 37) + '...';
+                    var _escapedSection = _sItem.section.replace(/\x27/g, '\\\x27');
+                    html += '<div style="display:flex;align-items:center;padding:3px 0;border-bottom:1px solid #f0f0f0;font-size:0.82em;" class="mv-record-row">';
+                    html += '<span style="cursor:pointer;color:#1565c0;text-decoration:underline;flex:0 0 auto;margin-right:8px;" onclick="event.stopPropagation();var _m=document.getElementById(\x27schema-detail-modal\x27);if(_m)_m.remove();openRowReviewDrawer(\x27' + _escapedSection + '\x27,' + _rowIdx + ')">' + escapeHtml(_rowLabel) + '</span>';
+                    if (_contractLabel) html += '<span style="color:#555;margin-right:8px;flex:0 0 auto;">' + escapeHtml(_contractLabel) + '</span>';
+                    html += '<span style="color:#999;font-family:monospace;font-size:0.9em;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(_displayVal) + '</span>';
+                    html += '</div>';
+                  }
+                }
+                html += '</div></div>';
+              }
+              html += '</td></tr>';
+            }
+            html += '</table>';
           } else {
             html += '<div style="padding:8px;color:#4caf50;font-size:0.85em;">No blank required values detected.</div>';
           }
         } else if (type === 'drift') {
           title = 'Schema Structure Issues (' + cache.schema.schema_drift + ')';
-          html += '<div style="margin-bottom:12px;padding:10px 14px;background:#f0f4f8;border-radius:6px;font-size:0.85em;color:#555;">Schema Structure Issues = Unknown Columns (' + cache.schema.unknown_columns + ') + Missing Required Headers (' + cache.schema.schema_missing_required_headers + ') (excludes missing values).</div>';
+          html += '<div style="margin-bottom:12px;padding:10px 14px;background:#f0f4f8;border-radius:6px;font-size:0.85em;color:#555;">Schema Structure Issues = Unknown Columns (' + cache.schema.unknown_columns + '). Headers not present in this dataset are expected and not counted as issues.</div>';
           if (cache.schema.unknown_columns > 0) {
             html += '<div style="margin-bottom:8px;cursor:pointer;color:#1565c0;font-size:0.85em;text-decoration:underline;" onclick="document.getElementById(\x27schema-detail-modal\x27).remove();TriageAnalytics.handleSchemaClick(\x27unknown\x27);">View ' + cache.schema.unknown_columns + ' unknown column(s)</div>';
           }
-          if (cache.schema.schema_missing_required_headers > 0) {
-            html += '<div style="cursor:pointer;color:#1565c0;font-size:0.85em;text-decoration:underline;" onclick="document.getElementById(\x27schema-detail-modal\x27).remove();TriageAnalytics.handleSchemaClick(\x27missing\x27);">View ' + cache.schema.schema_missing_required_headers + ' missing required header(s)</div>';
-          }
+
           if (cache.schema.schema_drift === 0) {
             html += '<div style="padding:16px;text-align:center;color:#4caf50;">No schema drift detected.</div>';
           }
