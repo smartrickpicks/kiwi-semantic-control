@@ -23286,9 +23286,9 @@
       var sheetNames = Object.keys(sheets).sort();
 
       if (filterEl) {
-        var filterHtml = '<span class="srr-filter-chip active" data-gsheet="all" onclick="srrFilterGlossarySheet('all')" style="font-size:0.75em; padding:3px 8px; cursor:pointer; border-radius:12px; background:#e3f2fd; color:#1565c0; border:1px solid #bbdefb;">All</span>';
+        var filterHtml = '<span class="srr-filter-chip active" data-gsheet="all" onclick="srrFilterGlossarySheet(\'all\')" style="font-size:0.75em; padding:3px 8px; cursor:pointer; border-radius:12px; background:#e3f2fd; color:#1565c0; border:1px solid #bbdefb;">All</span>';
         for (var i = 0; i < sheetNames.length; i++) {
-          filterHtml += '<span class="srr-filter-chip" data-gsheet="' + sheetNames[i] + '" onclick="srrFilterGlossarySheet('' + sheetNames[i] + '')" style="font-size:0.75em; padding:3px 8px; cursor:pointer; border-radius:12px; background:#f5f5f5; color:#666; border:1px solid #ddd;">' + sheetNames[i] + ' (' + sheets[sheetNames[i]].length + ')</span>';
+          filterHtml += '<span class="srr-filter-chip" data-gsheet="' + sheetNames[i] + '" onclick="srrFilterGlossarySheet(\''+sheetNames[i]+'\')" style="font-size:0.75em; padding:3px 8px; cursor:pointer; border-radius:12px; background:#f5f5f5; color:#666; border:1px solid #ddd;">' + sheetNames[i] + ' (' + sheets[sheetNames[i]].length + ')</span>';
         }
         filterEl.innerHTML = filterHtml;
       }
