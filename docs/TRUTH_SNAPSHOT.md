@@ -7,7 +7,7 @@ Define what is considered ground truth for semantics at any point in time and ho
 Semantic ground truth is the approved set of meanings, expectations, and rule behaviors captured as human-authored, reviewable configuration artifacts. It is independent of runtime execution and remains stable even when downstream systems fail or behave unexpectedly.
 
 Ground truth is:
-- Plain-English intent documented for operators and reviewers
+- Plain-English intent documented for operators and verifiers
 - Structured rules expressed as versioned config files
 - Audited through documented rationale and changelog entries
 
@@ -26,8 +26,8 @@ Ground truth is not:
 - The changelog records why the change is needed, how it was validated, and what was impacted.
 - Each changelog entry links to the reviewed patch and any example previews used during evaluation.
 
-## Reviewer Decision: What Becomes Canonical
-A rule or change becomes canonical only when reviewers confirm that it:
+## Verifier Decision: What Becomes Canonical
+A rule or change becomes canonical only when verifiers confirm that it:
 - States intent clearly in plain English
 - Aligns with canonical schemas and naming
 - Passes offline preview on example datasets

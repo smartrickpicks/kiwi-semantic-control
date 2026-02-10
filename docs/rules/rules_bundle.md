@@ -127,5 +127,5 @@ Invalid bundle files will cause the loader to fail, triggering fallback behavior
 
 ## References
 
-- [Single Row Review View](../ui/views/single_row_review_view.md) - Field Inspector ordering usage
+- [Record Inspection View](../ui/views/single_row_review_view.md) - Field Inspector ordering usage
 - [Field Inspector Patch Flow](../ui/views/single_row_review_field_inspector_patch_flow.md)

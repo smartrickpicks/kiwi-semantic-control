@@ -18,7 +18,7 @@ Define how conflicting rules are identified, evaluated, and resolved through exp
 - Severity coherence checks across overlapping scenarios
 - Base/version compatibility between patch and canonical state
 
-## Decision Process (Operators + Reviewers)
+## Decision Process (Operators + Verifiers)
 - Clarify intent: Compare stated intent, examples, and rationale for each rule.
 - Prefer precision: Favor narrower, well-scoped rules over broad patterns when both address the same issue.
 - Prefer safety: When uncertain, select outcomes that minimize incorrect downstream population.

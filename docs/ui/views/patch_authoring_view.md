@@ -9,7 +9,7 @@
 | Dataset loaded | Yes |
 | User authenticated | Yes (any role) |
 | Minimum role | Analyst |
-| Issue identified | Recommended (from Single Row Review) |
+| Issue identified | Recommended (from Record Inspection) |
 
 ## System-Suggested and Pre-Flight Patches (v2.2)
 

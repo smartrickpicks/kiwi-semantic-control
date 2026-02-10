@@ -1,11 +1,11 @@
 # INTERFACES (Scope-Locked)
 
-This document defines the offline, deterministic interfaces used by the Kiwi Semantic Control Board. No runtime, no APIs, no credentials.
+This document defines the offline, deterministic interfaces used by the Semantic Control Board. No runtime, no APIs, no credentials.
 
 ---
 
 ## config_pack.base.json
-Producer: Kiwi Control Board
+Producer: Semantic Control Board
 Consumer: Offline preview tools (local_runner)
 
 Required
@@ -46,8 +46,8 @@ Example
 ---
 
 ## config_pack.patch.json
-Producer: Kiwi Control Board
-Consumer: Reviewers, Offline preview
+Producer: Semantic Control Board
+Consumer: Verifiers, Offline preview
 
 Required
 - base_version: string
@@ -101,7 +101,7 @@ Notes
 
 ## sf_packet (preview)
 Producer: Offline Preview Engine (local_runner)
-Consumer: Operators/Reviewers
+Consumer: Operators/Verifiers
 
 Required Keys
 - sf_summary: { contracts, blocked, needs_review, ready }

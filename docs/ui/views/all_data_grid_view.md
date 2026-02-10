@@ -5,7 +5,7 @@ Contract: This document defines the bulk inspection grid. It is read-only and pr
 ## Purpose
 - Provide a scalable, filterable, and sortable overview of all records.
 - Surface critical indicators (system-derived vs user-modified, flags, warnings, blocked status) at a glance.
-- Route operators into the Single Row Review view for detailed work.
+- Route operators into the Record Inspection view for detailed work.
 
 ## Read-Only Guarantees
 - No cell editing, no inline patching, no state transitions.
@@ -41,8 +41,8 @@ Additional columns may be added if purely informational and read-only.
 - Workbook sheet selector (XLSX only):
   - If the active dataset is an Excel workbook, show a sheet selector.
   - Default to the first sheet; switching sheets updates the grid deterministically.
-- Row click opens Single Row Review for that record in a new governed route.
-- Deep links: the grid may display links to evidence counts that route to Single Row Review with the evidence panel pre-opened.
+- Row click opens Record Inspection for that record in a new governed route.
+- Deep links: the grid may display links to evidence counts that route to Record Inspection with the evidence panel pre-opened.
 - No other destinations (e.g., no direct links to approval or promotion views).
 
 ## Empty & Error States

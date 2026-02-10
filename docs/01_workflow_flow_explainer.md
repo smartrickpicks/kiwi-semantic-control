@@ -1,7 +1,7 @@
 # 01 — Workflow Flow Explainer (Conceptual)
 
 ## Intended Audience
-Operators and Reviewers needing a conceptual map of how semantic artifacts align with the broader pipeline.
+Operators and Verifiers needing a conceptual map of how semantic artifacts align with the broader pipeline.
 
 ## Purpose
 Describe, at a conceptual level, the sequence of semantic stages and handoffs that the control board anticipates. This document does not specify runtime logic; it clarifies where semantics matter and how artifacts relate.

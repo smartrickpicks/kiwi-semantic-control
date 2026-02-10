@@ -13,4 +13,4 @@
 - Smoke Evidence: Strict baseline/edge pass/fail proof of preview determinism.
 - Patch Overlay: In‑place overlay to author rule/patch snippets contextual to a field/record (copy‑only export).
 - Review States (To Do / Needs Review / Flagged / Blocked / Finalized): Deterministic sets driving triage and record state.
-- Roles (Analyst/Reviewer/Admin): Analyst drafts; Reviewer verifies and approves; Admin governs configuration and policy.
+- Roles (Analyst/Verifier/Admin): Analyst drafts; Verifier verifies and approves; Admin governs configuration and policy.

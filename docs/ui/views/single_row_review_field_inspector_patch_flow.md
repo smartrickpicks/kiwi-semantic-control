@@ -1,10 +1,10 @@
-# Single Row Review: Field Inspector Patch Flow
+# Record Inspection: Field Inspector Patch Flow
 
 > v1.4.18 — Field-level editing with patch creation via local queue.
 
 ## Overview
 
-The Field Inspector Patch Flow enables analysts to edit field values directly within the Single Row Review (SRR) view, create structured evidence packs, and submit patch requests to the local Patch Console queue.
+The Field Inspector Patch Flow enables analysts to edit field values directly within the Record Inspection (SRR) view, create structured evidence packs, and submit patch requests to the local Patch Console queue.
 
 ## Implementation Status (v1.4.18)
 

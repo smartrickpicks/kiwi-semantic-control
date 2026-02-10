@@ -19,7 +19,7 @@
 
 - **Verifier Triage Integration**: Clicking a row in Verifier Triage opens the Verifier Review detail view
 - **Payload Data Display**: Review fields populated from localStorage verifier queue (not sample data)
-- **Back Navigation**: Returns to Verifier Triage (triage page in Reviewer mode)
+- **Back Navigation**: Returns to Verifier Triage (triage page in Verifier mode)
 - **Status Mapping**: Payload statuses (pending, needs_clarification, sent_to_admin, resolved) map to review states
 
 ---
@@ -78,7 +78,7 @@ Add `?debug=1` to the URL:
 
 | Field | Description |
 |-------|-------------|
-| Role | Current user role (Analyst/Reviewer/Admin) |
+| Role | Current user role (Analyst/Verifier/Admin) |
 | tenant_id | Active tenant context |
 | division_id | Active division context |
 | dataset_id | Current dataset identifier |
@@ -137,7 +137,7 @@ Add `?debug=1` to the URL:
 | Preflight Report | Badge summary from submission | Yes |
 | Revision History | All revisions with diff summaries | Yes |
 | Author Info | Submitting actor and timestamp | Yes |
-| Review Notes | Previous reviewer notes if any | If any |
+| Review Notes | Previous verifier notes if any | If any |
 
 ## Allowed Actions by Role
 

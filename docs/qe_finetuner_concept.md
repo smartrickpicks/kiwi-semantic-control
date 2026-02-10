@@ -19,7 +19,7 @@ Outputs (proposal)
 
 Boundaries (hard)
 - Must not edit Truth Config directly; no runtime execution; no Salesforce API logic
-- Copy‑only JSON suggestions; Admin/Reviewer approval and smoke pass required before adoption
+- Copy‑only JSON suggestions; Admin/Verifier approval and smoke pass required before adoption
 
 Suggested JSON schema (proposal)
 ```
@@ -44,4 +44,4 @@ Suggested JSON schema (proposal)
 ```
 
 Review & adoption
-- Admin reviews suggestions, merges into a new patch draft if accepted, and coordinates reviewer approval + smoke pass. Version bump documented in CHANGELOG.
+- Admin reviews suggestions, merges into a new patch draft if accepted, and coordinates verifier approval + smoke pass. Version bump documented in CHANGELOG.

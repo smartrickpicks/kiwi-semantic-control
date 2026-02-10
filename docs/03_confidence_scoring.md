@@ -1,7 +1,7 @@
 # 03 — Confidence Scoring (Concept Outline)
 
 ## Intended Audience
-Operators and Reviewers who need a stable, human-readable approach to interpreting preview confidence and status.
+Operators and Verifiers who need a stable, human-readable approach to interpreting preview confidence and status.
 
 ## Purpose
 Define a conceptual approach to confidence and status mapping for preview results without prescribing runtime implementation.

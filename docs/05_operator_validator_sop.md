@@ -1,7 +1,7 @@
 # 05 — Operator + Validator SOP
 
 ## Intended Audience
-Operators and Reviewers performing day-to-day governance actions on rules.
+Operators and Verifiers performing day-to-day governance actions on rules.
 
 ## Purpose
 Provide a deterministic, step-by-step procedure to propose, validate, preview, smoke-test, and review configuration changes.

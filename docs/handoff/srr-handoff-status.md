@@ -46,7 +46,7 @@ See **Recent Changes (v1.5.2)** below.
 
 - **record_id Routing (no row index)**: Stable `record_id` generated via `hash(tenant_id + dataset_id + canonicalizeRowForFingerprint(row))`. Replaces row-index-based lookups that broke on sort/filter.
 
-- **Reviewer SRR Hydration from patch_request_id**: `vrOpenSingleRowReview()` now loads PatchRequest by `patch_request_id` FIRST, then resolves record by `record_id`. Blocking error UI if PatchRequest not found.
+- **Verifier SRR Hydration from patch_request_id**: `vrOpenSingleRowReview()` now loads PatchRequest by `patch_request_id` FIRST, then resolves record by `record_id`. Blocking error UI if PatchRequest not found.
 
 - **UUID Aliases Capture**: During import, `extractUuidAliases()` scans row values for RFC4122 UUIDs and stores in `_identity.aliases[]`. Enables cross-system ID matching.
 
@@ -68,7 +68,7 @@ Analyst → Verifier → Admin
    │          └─ Verifier Review View
    │             (gate_verifier owner)
    │
-   └─ Single Row Review
+   └─ Record Inspection
       (gate_evidence owner)
 ```
 

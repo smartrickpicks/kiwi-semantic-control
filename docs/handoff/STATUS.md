@@ -1,6 +1,6 @@
 # STATUS (Handoff)
 
-Audience: Governance reviewers and operators
+Audience: Governance verifiers and operators
 Purpose: Snapshot of current governance/doc state for Orchestrate OS
 Scope: Docs-only; no implementation or runtime claims
 Non-Goals: Do not assert code, runtime, or PR merges
@@ -24,7 +24,7 @@ Open PRs: unknown/none
 - Canonical index: docs/INDEX.md
 - UI principles: docs/ui/ui_principles.md
 - Data Source panel: docs/ui/views/data_source_view.md
-- Single Row Review: docs/ui/views/single_row_review_view.md
+- Record Inspection: docs/ui/views/single_row_review_view.md
 - Gate view mapping: docs/ui/gate_view_mapping.md
 
 ## Notes

@@ -7,7 +7,7 @@ Orchestrate OS provides two distinct mechanisms for reversing changes: **Local U
 ## Local Undo (`UndoManager`)
 
 ### Purpose
-Quick reversal of draft-only edits made in SRR (Single Row Review) or Patch Studio during the current session.
+Quick reversal of draft-only edits made in SRR (Record Inspection) or Patch Studio during the current session.
 
 ### Behavior
 - **Window-based**: Entries expire after 5 minutes (300,000 ms)

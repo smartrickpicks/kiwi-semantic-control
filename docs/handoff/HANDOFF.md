@@ -1,6 +1,6 @@
 # HANDOFF (Governance Packet)
 
-Audience: Reviewers and operators
+Audience: Verifiers and operators
 Purpose: Provide a consistent packet for review and continuation
 Scope: Docs and governance contracts only
 Non-Goals: No code changes, no runtime actions, no PR merges

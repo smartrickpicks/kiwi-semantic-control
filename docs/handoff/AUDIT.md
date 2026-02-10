@@ -1,6 +1,6 @@
 # AUDIT (Docs-Only)
 
-Audience: Governance reviewers
+Audience: Governance verifiers
 Purpose: Record audit checks, findings, and minimal diffs
 Scope: Only allowed paths; docs-only assertions
 Non-Goals: No claims about code execution, pipelines, or merges

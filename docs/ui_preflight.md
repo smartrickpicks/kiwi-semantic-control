@@ -1,7 +1,7 @@
 # Orchestrate OS — Preflight (Evidence Gate)
 
 Audience
-- Reviewers (primary), Analysts (to prepare evidence).
+- Verifiers (primary), Analysts (to prepare evidence).
 
 Purpose
 - Gate PR readiness using paste‑in evidence only. No execution; no file writes. Preflight must show all gates satisfied: Base Version Check, Validation Report, Conflict Check, Smoke Evidence.

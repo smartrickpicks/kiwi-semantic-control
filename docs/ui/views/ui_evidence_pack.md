@@ -39,5 +39,5 @@ The Evidence Pack is the structured justification artifact that accompanies ever
 
 ## Related Documents
 
-- [Single Row Review](single_row_review_view.md) — where Evidence Packs are authored
+- [Record Inspection](single_row_review_view.md) — where Evidence Packs are authored
 - [UI Principles](../ui_principles.md) — governing design principles

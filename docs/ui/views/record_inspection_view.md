@@ -1,4 +1,4 @@
-# Single Row Review (stub)
+# Record Inspection (stub)
 
 This file is a maintenance stub retained to avoid broken links.
 

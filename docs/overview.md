@@ -12,10 +12,10 @@ All documentation, UI labels, and schemas must use canonical terms only. No syno
 
 Review States are the entry point, mirroring DataDash familiarity:
 - To Do: records with READY/NEEDS_REVIEW and not finalized/blocked
-- Needs Review: records awaiting reviewer confirmation
+- Needs Review: records awaiting verifier confirmation
 - Flagged: attention items with warnings or explicit flags
 - Blocked: blocking issues (e.g., join failure) needing a fix/route
-- Finalized: reviewer‑approved records
+- Finalized: verifier‑approved records
 
 ## What “Packets” Are
 Packets are evidence artifacts used for deterministic review:
@@ -34,7 +34,7 @@ Packets are evidence artifacts used for deterministic review:
 ### Surfaces
 - Data Source
 - All Data Grid
-- Single Row Review
+- Record Inspection
 - Verifier Review
 - Admin Approval
 - Audit Log

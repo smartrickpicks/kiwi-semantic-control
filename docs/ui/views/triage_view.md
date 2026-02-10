@@ -57,7 +57,7 @@
 
 ## Recent Changes (v1.5.0)
 
-- **Verifier Triage Mode**: In Reviewer mode, Triage page shows Verifier Triage instead of Analyst Triage
+- **Verifier Triage Mode**: In Verifier mode, Triage page shows Verifier Triage instead of Analyst Triage
 - **Payload Queue System**: RFI, Correction, and Blacklist submissions appear in Verifier queue
 - **Queue Tabs**: Pending, Clarification, To Admin, Resolved with live counts
 - **Row Click Navigation**: Clicking a triage row opens Verifier Review detail view
@@ -444,11 +444,11 @@ This view does not initiate state transitions. It is a navigation hub.
 
 ## Verifier Triage (v1.5.0)
 
-When in **Reviewer mode**, the Triage page displays Verifier Triage instead of the Analyst Triage view.
+When in **Verifier mode**, the Triage page displays Verifier Triage instead of the Analyst Triage view.
 
 ### Mode Switching
 - **Analyst mode**: Shows Analyst Triage (status cards, filters, record list)
-- **Reviewer mode**: Shows Verifier Triage (payload queue with action buttons)
+- **Verifier mode**: Shows Verifier Triage (payload queue with action buttons)
 
 ### Verifier Triage Layout
 
@@ -510,7 +510,7 @@ Clicking any row in the Verifier Triage table:
 ## Related Documents
 
 - [data_source_view.md](data_source_view.md) — Data Source panel
-- [single_row_review_view.md](single_row_review_view.md) — Single Row Review view
+- [single_row_review_view.md](single_row_review_view.md) — Record Inspection view
 - [verifier_review_view.md](verifier_review_view.md) — Verifier Review view
 - [ui_principles.md](../ui_principles.md) — UI principles
 - [analyst.md](../roles/analyst.md) — Analyst role permissions

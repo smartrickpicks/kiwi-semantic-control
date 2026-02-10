@@ -1,6 +1,6 @@
 # Ingestion Doctrine
 
-Audience: Operators and governance reviewers
+Audience: Operators and governance verifiers
 Purpose: Define inbound/outbound conventions, attribution patterns, and routing rules
 Scope: Docs-only; offline-first governance contracts
 Non-Goals: No runtime implementation claims; no external service integrations

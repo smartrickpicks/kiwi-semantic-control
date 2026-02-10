@@ -1,6 +1,6 @@
 # TASKS (Handoff)
 
-Audience: Governance reviewers and operators
+Audience: Governance verifiers and operators
 Purpose: Enumerate governance-aligned tasks with evidence references
 Scope: Docs-only; no runtime or implementation tasks
 Non-Goals: Do not claim code merges or runtime changes

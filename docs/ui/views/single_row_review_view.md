@@ -367,7 +367,7 @@ If the user attempts to navigate away (Back to Grid) with **unresolved PATCHED o
 
 | Button | Action |
 |--------|--------|
-| Cancel | Close modal, stay on Single Row Review |
+| Cancel | Close modal, stay on Record Inspection |
 | Discard Changes | Clear all PATCHED and RFI states, navigate to Grid |
 | Submit Patch Request | Run `submit_patch_request` for pending items, then navigate to Grid |
 
@@ -381,7 +381,7 @@ If the user attempts to navigate away (Back to Grid) with **unresolved PATCHED o
 - No STATE_MARKED events originate from this view.
 
 ## Navigation
-- From All Data Grid → Single Row Review (this view).
+- From All Data Grid → Record Inspection (this view).
 - From this view:
   - Open Audit Log detail (read-only overlay or linked panel).
   - Navigate to governed gating views via explicit links.

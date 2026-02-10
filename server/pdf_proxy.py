@@ -32,7 +32,7 @@ import fitz  # type: ignore[import-untyped]  # PyMuPDF
 
 app = FastAPI(
     title="Orchestrate OS PDF Proxy",
-    description="CORS-safe PDF proxy for Single Row Review with static file serving",
+    description="CORS-safe PDF proxy for Record Inspection with static file serving",
     version="1.1.0"
 )
 

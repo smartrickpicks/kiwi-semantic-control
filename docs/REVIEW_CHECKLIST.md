@@ -58,7 +58,7 @@ Use this checklist before approving any Patch Request. All items must be satisfi
 - [ ] Hold (needs clarifications or more examples)
 - [ ] Reject (conflicts or risks not resolved)
 
-Reviewer:
+Verifier:
 - Name: ______________________  Date: ____________
 - Notes: ____________________________________________________________
 

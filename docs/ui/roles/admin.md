@@ -68,7 +68,7 @@ Based on the Review State Transition Matrix:
 | View | Access Level |
 |------|-------------|
 | Triage | Full access |
-| Single Row Review | Full access |
+| Record Inspection | Full access |
 | Patch Authoring (Patch Studio) | Full access |
 | Verifier Review | Full access |
 | Admin Approval | Full access (authoring surface) |

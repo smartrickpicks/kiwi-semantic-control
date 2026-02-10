@@ -149,7 +149,7 @@ var workbook = {
 - `populateGridSheetSelector()` — populates grid sheet tabs
 - `renderAllTables()` — renders legacy tables
 - `renderGrid()` — renders the main All-Data Grid
-- `persistAllRecordsToStore()` — saves all records to the Canonical Record Store (localStorage) for Single Row Review rehydration
+- `persistAllRecordsToStore()` — saves all records to the Canonical Record Store (localStorage) for Record Inspection rehydration
 - `generateSignalsForDataset()` — runs the signal engine (next stage)
 - `seedPatchRequestsFromMetaSheet()` — seeds patch requests from RFI meta sheets if present
 
@@ -255,7 +255,7 @@ If IndexedDB is unavailable or fails:
 
 ### Canonical Record Store
 
-Separate from the workbook cache, `persistAllRecordsToStore()` saves each record individually to localStorage keyed by `record_id`. This enables Single Row Review (SRR) to rehydrate individual records without loading the entire workbook.
+Separate from the workbook cache, `persistAllRecordsToStore()` saves each record individually to localStorage keyed by `record_id`. This enables Record Inspection (SRR) to rehydrate individual records without loading the entire workbook.
 
 ---
 
@@ -474,7 +474,7 @@ No other external dependencies. The rest of the application uses only browser-na
 | Ingestion Doctrine | `docs/ingestion/INGESTION_DOCTRINE.md` | Folder conventions and attribution patterns |
 | Rules Bundle | `docs/rules/rules_bundle.md` | How semantic rules are structured and regenerated |
 | All-Data Grid View | `docs/ui/views/all_data_grid_view.md` | Grid rendering and interaction patterns |
-| Record Inspection View | `docs/ui/views/record_inspection_view.md` | Single Row Review and field inspection |
+| Record Inspection View | `docs/ui/views/record_inspection_view.md` | Record Inspection and field inspection |
 | Triage View | `docs/ui/views/triage_view.md` | Triage queue structure and routing |
 | Audit Log | `docs/AUDIT_LOG.md` | Audit timeline system (IndexedDB-backed) |
 | UI Principles | `docs/ui/ui_principles.md` | General UI/UX governance rules |

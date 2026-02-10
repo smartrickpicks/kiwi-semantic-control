@@ -1,6 +1,6 @@
 # TASKS_UI (Handoff — UI Backlog)
 
-Audience: Governance reviewers and UI operators
+Audience: Governance verifiers and UI operators
 Purpose: Track UI tasks with governance constraints and evidence links
 Scope: UI copy and contracts only; no runtime or implementation claims
 Non-Goals: No claims of completion without evidence (commit/PR URL)

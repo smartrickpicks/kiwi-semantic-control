@@ -1,7 +1,7 @@
 # Orchestrate OS — Patch Studio (Overlay Authoring)
 
 Audience
-- Non‑technical Analysts preparing Proposed Changes; Reviewers inspecting drafts.
+- Non‑technical Analysts preparing Proposed Changes; Verifiers inspecting drafts.
 
 Purpose
 - Create copy‑only JSON for rule patches inside a contextual overlay (no execution, no writes). Patch Studio can be opened from Workbench (recommended) or from navigation.
@@ -30,7 +30,7 @@ Determinism safeguards
 - Allowed actions: REQUIRE_PRESENT, REQUIRE_BLANK, SET_VALUE
 - Severity order influences gates and sorting; choose the lowest severity that protects quality.
 
-Reviewer notes
-- Reviewers can inspect the overlay, request changes, or accept at Preflight after evidence is pasted.
+Verifier notes
+- Verifiers can inspect the overlay, request changes, or accept at Preflight after evidence is pasted.
 
 [screenshot: Patch Studio overlay]

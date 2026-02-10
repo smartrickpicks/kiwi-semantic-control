@@ -1,7 +1,7 @@
 # 00 — System Overview (Semantic Control Plane)
 
 ## Intended Audience
-Operators, Analysts, and Reviewers responsible for authoring and approving semantic rules.
+Operators, Analysts, and Verifiers responsible for authoring and approving semantic rules.
 
 ## Purpose
 Provide a high-level orientation to the governance-only semantic control plane: what it owns, how it remains deterministic and offline, and how artifacts flow through the control board.
