@@ -26993,7 +26993,11 @@
           }).length;
         }
         if (typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable() && ContractIndex._index && ContractIndex._index.unknown_columns) {
-          cache.schema.unknown_columns = Object.keys(ContractIndex._index.unknown_columns).length;
+          var _ucTotal = 0;
+          Object.keys(ContractIndex._index.unknown_columns).forEach(function(k) {
+            _ucTotal += (ContractIndex._index.unknown_columns[k] || []).length;
+          });
+          cache.schema.unknown_columns = _ucTotal;
         }
         cache.schema.schema_drift = cache.schema.unknown_columns + cache.schema.missing_required;
         cache.schema._drift_detail = 'Unknown(' + cache.schema.unknown_columns + ') + Missing(' + cache.schema.missing_required + ')';
