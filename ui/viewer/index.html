@@ -2141,15 +2141,10 @@
             <!-- 5) Schema Snapshot -->
             <div style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 16px;">
               <h4 style="margin: 0 0 12px; font-size: 0.9em; color: #333;">Schema Snapshot</h4>
-              <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
-                <div style="text-align: center; padding: 10px; background: #e8f5e9; border-radius: 8px;">
-                  <div id="ta-glossary-integrity-pct" style="font-size: 1.4em; font-weight: 700; color: #1b5e20;">--</div>
-                  <div style="font-size: 0.75em; color: #666;">Glossary Integrity</div>
-                  <div id="ta-glossary-integrity-count" style="font-size: 0.7em; color: #999;">0 / 0</div>
-                </div>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
                 <div style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px;">
                   <div id="ta-schema-matched-pct" style="font-size: 1.4em; font-weight: 700; color: #2e7d32;">--</div>
-                  <div style="font-size: 0.75em; color: #666;">Batch Coverage</div>
+                  <div style="font-size: 0.75em; color: #666;">Fields Matched</div>
                   <div id="ta-schema-matched-count" style="font-size: 0.7em; color: #999;">0 / 0</div>
                 </div>
                 <div onclick="TriageAnalytics.handleSchemaClick('unknown')" style="text-align: center; padding: 10px; background: #fff3e0; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
@@ -25371,7 +25366,7 @@
             applied: { count: 0, pct: 0 }
           },
           contracts: [],
-          schema: { standard_matched: 0, standard_total: 0, unknown_columns: 0, missing_required: 0, schema_drift: 0, glossary_integrity_total: 0, glossary_integrity_loaded: 0, defsheet_extracted_keys: 0, defsheet_fallback_hits: 0 },
+          schema: { standard_matched: 0, standard_total: 0, unknown_columns: 0, missing_required: 0, schema_drift: 0, defsheet_extracted_keys: 0, defsheet_fallback_hits: 0 },
           processing: { queued: 0, processing: 0, completed: 0, failed: 0 },
           total_contracts: 0
         };
@@ -25505,8 +25500,6 @@
         if (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.fields) {
           var allFields = rulesBundleCache.fieldMeta.fields;
           cache.schema.standard_total = allFields.length;
-          cache.schema.glossary_integrity_total = allFields.length;
-          cache.schema.glossary_integrity_loaded = allFields.length;
           var _normKey = function(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''); };
           var wbCols = {};
           var wbCanonicals = {};
@@ -25614,7 +25607,7 @@
         this._lastRefreshedAt = cache.refreshed_at;
         console.log('[TRIAGE-ANALYTICS][P0.1] lifecycle_recompute: contracts=' + cache.total_contracts + ', orphan_excluded=' + (cache._orphan_row_count || 0));
         console.log('[TRIAGE-ANALYTICS][P0.1] refresh: PreFlight=' + cache.lanes.preflight.total + ', Semantic=' + cache.lanes.semantic.total + ', PatchReview=' + cache.lanes.patch_review.total + ', Contracts=' + cache.total_contracts + ', Schema=' + cache.schema.standard_matched + '/' + cache.schema.standard_total);
-        console.log('[GLOSSARY-MAP] fields_total=' + cache.schema.glossary_integrity_total);
+        console.log('[GLOSSARY-MAP] fields_total=' + cache.schema.standard_total);
         console.log('[GLOSSARY-MAP] batch_matched=' + cache.schema.standard_matched);
         console.log('[GLOSSARY-MAP] defsheet_extracted_keys=' + cache.schema.defsheet_extracted_keys);
         console.log('[GLOSSARY-MAP] defsheet_fallback_hits=' + cache.schema.defsheet_fallback_hits);
@@ -25854,9 +25847,6 @@
 
       _renderSchemaSnapshot: function(cache) {
         var el = function(id) { return document.getElementById(id); };
-        var giPct = cache.schema.glossary_integrity_total > 0 ? Math.round((cache.schema.glossary_integrity_loaded / cache.schema.glossary_integrity_total) * 100) : 0;
-        if (el('ta-glossary-integrity-pct')) el('ta-glossary-integrity-pct').textContent = giPct + '%';
-        if (el('ta-glossary-integrity-count')) el('ta-glossary-integrity-count').textContent = cache.schema.glossary_integrity_loaded + ' / ' + cache.schema.glossary_integrity_total;
         var pct = cache.schema.standard_total > 0 ? Math.round((cache.schema.standard_matched / cache.schema.standard_total) * 100) : 0;
         if (el('ta-schema-matched-pct')) el('ta-schema-matched-pct').textContent = pct + '%';
         if (el('ta-schema-matched-count')) el('ta-schema-matched-count').textContent = cache.schema.standard_matched + ' / ' + cache.schema.standard_total;
@@ -27290,6 +27280,12 @@
       if (!container) return;
       var sheetCounts = {};
       var totalCount = items.length;
+      if (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.meta && rulesBundleCache.fieldMeta.meta.sheet_mapping) {
+        var glossarySheets = Object.keys(rulesBundleCache.fieldMeta.meta.sheet_mapping);
+        for (var gi = 0; gi < glossarySheets.length; gi++) {
+          sheetCounts[glossarySheets[gi]] = 0;
+        }
+      }
       for (var i = 0; i < items.length; i++) {
         var sn = items[i].sheet_name || 'Unknown';
         sheetCounts[sn] = (sheetCounts[sn] || 0) + 1;
