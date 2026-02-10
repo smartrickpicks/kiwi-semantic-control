@@ -18713,11 +18713,27 @@
           };
         }
       }
+      var ciAvailable = typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable && ContractIndex.isAvailable();
+      if (ciAvailable) {
+        for (var gk in contracts) {
+          if (!contracts.hasOwnProperty(gk)) continue;
+          var entry = contracts[gk];
+          var ciContract = ContractIndex.getContract(entry.contract_key);
+          if (ciContract && ciContract.sheets) {
+            var ciSheets = Object.keys(ciContract.sheets);
+            for (var cs = 0; cs < ciSheets.length; cs++) {
+              if (entry.sheet_names.indexOf(ciSheets[cs]) === -1) {
+                entry.sheet_names.push(ciSheets[cs]);
+              }
+            }
+          }
+        }
+      }
       var list = [];
       for (var k in contracts) {
         if (contracts.hasOwnProperty(k)) list.push(contracts[k]);
       }
-      console.log('[P1F][P0-A] _p1fExtractUniqueContracts: ' + list.length + ' unique contracts (canonical), sheets collected per contract');
+      console.log('[P1F][P0-A] _p1fExtractUniqueContracts: ' + list.length + ' unique contracts (canonical), sheets collected per contract' + (ciAvailable ? ' (ContractIndex enriched)' : ' (row-scan only)'));
       return list;
     }
 
