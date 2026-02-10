@@ -2198,10 +2198,11 @@
             <div style="margin-bottom: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 16px;">
               <h4 style="margin: 0 0 12px; font-size: 0.9em; color: #333;">Schema Snapshot</h4>
               <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-                <div onclick="TriageAnalytics.handleSchemaClick('matched')" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
+                <div onclick="TriageAnalytics.handleSchemaClick('matched')" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="How many uploaded column headers match the canonical glossary. Higher is better." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-matched-pct" style="font-size: 1.4em; font-weight: 700; color: #2e7d32;">--</div>
-                  <div style="font-size: 0.75em; color: #666;">Batch Coverage</div>
+                  <div style="font-size: 0.75em; color: #666;">Columns Mapped</div>
                   <div id="ta-schema-matched-count" style="font-size: 0.7em; color: #999;">0 / 0</div>
+                  <div id="ta-schema-matched-subtext" style="font-size: 0.6em; color: #aaa;"></div>
                   <div id="ta-schema-matched-scope" style="font-size: 0.65em; color: #aaa;"></div>
                   <div id="ta-schema-glossary-secondary" style="font-size: 0.6em; color: #bbb;"></div>
                 </div>
@@ -2210,16 +2211,17 @@
                   <div style="font-size: 0.75em; color: #666;">Unknown Cols</div>
                   <div style="font-size: 0.6em; color: #aaa;">Not in glossary</div>
                 </div>
-                <div onclick="TriageAnalytics.handleSchemaClick('missing')" style="text-align: center; padding: 10px; background: #ffebee; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
+                <div onclick="TriageAnalytics.handleSchemaClick('missing')" style="text-align: center; padding: 10px; background: #ffebee; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Required glossary fields that are either missing as headers or have blank/invalid values in the data. These need analyst attention." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-missing" style="font-size: 1.4em; font-weight: 700; color: #c62828;">0</div>
                   <div style="font-size: 0.75em; color: #666;">Missing Required</div>
                   <div id="ta-schema-missing-split" style="font-size: 0.6em; color: #aaa;"></div>
+                  <div style="font-size: 0.55em; color: #bbb;">Required fields needing analyst action</div>
                 </div>
-                <div onclick="TriageAnalytics.handleSchemaClick('drift')" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
+                <div onclick="TriageAnalytics.handleSchemaClick('drift')" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Structural schema issues only: columns not in the glossary plus required headers missing entirely. Missing values are tracked separately." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-drift" style="font-size: 1.4em; font-weight: 700; color: #555;">0</div>
-                  <div style="font-size: 0.75em; color: #666;">Total Gaps</div>
+                  <div style="font-size: 0.75em; color: #666;">Schema Structure Issues</div>
                   <div id="ta-schema-drift-detail" style="font-size: 0.6em; color: #aaa;"></div>
-                  <div style="font-size: 0.55em; color: #ccc;" title="Drift = Unknown Columns + Missing Required Headers">Drift = Unk + MisHdr</div>
+                  <div style="font-size: 0.55em; color: #bbb;">Unknown columns + missing required headers (values excluded)</div>
                 </div>
               </div>
             </div>
@@ -18419,6 +18421,79 @@
       });
     }
 
+    var _missingValuePreflightItems = [];
+
+    function _buildMissingValuePreflightItems() {
+      _missingValuePreflightItems = [];
+      if (typeof TriageAnalytics === 'undefined' || !TriageAnalytics._cache || !TriageAnalytics._cache.schema) return;
+      var items = TriageAnalytics._cache.schema._missing_values_items;
+      if (!items || items.length === 0) return;
+      var ciAvail = typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable() && ContractIndex._index && ContractIndex._index.contracts;
+      for (var i = 0; i < items.length; i++) {
+        var mv = items[i];
+        var contractKey = '';
+        if (ciAvail) {
+          var cids = Object.keys(ContractIndex._index.contracts);
+          for (var ci = 0; ci < cids.length; ci++) {
+            var c = ContractIndex._index.contracts[cids[ci]];
+            if (c && c.sections) {
+              for (var si = 0; si < c.sections.length; si++) {
+                if (c.sections[si].sheet_name === mv.section) { contractKey = cids[ci]; break; }
+              }
+            }
+            if (contractKey) break;
+          }
+        }
+        var condition = mv.reason === 'invalid_picklist' ? 'PICKLIST_INVALID' : 'MISSING_REQUIRED';
+        var pct = mv.total_rows > 0 ? Math.round((mv.blank_count / mv.total_rows) * 100) : 0;
+        var msg = mv.reason === 'invalid_picklist'
+          ? mv.blank_count + ' of ' + mv.total_rows + ' rows (' + pct + '%) have invalid picklist values'
+          : mv.blank_count + ' of ' + mv.total_rows + ' rows (' + pct + '%) are blank or missing';
+        var item = {
+          request_id: 'mv_' + condition.toLowerCase() + '_' + mv.section + '_' + mv.field_key + '_' + mv.reason,
+          type: 'preflight_blocker',
+          signal_type: condition,
+          record_id: contractKey || mv.section,
+          contract_id: contractKey,
+          contract_key: contractKey,
+          field_name: mv.field_key,
+          field_key: mv.field_key,
+          sheet_name: mv.section,
+          severity: mv.reason === 'invalid_picklist' ? 'warning' : 'blocker',
+          message: msg,
+          status: 'open',
+          status_label: 'Open',
+          status_color: '#f57c00',
+          updated_at: new Date().toISOString(),
+          source: 'preflight',
+          blocker_type: condition,
+          can_create_patch: false,
+          _missing_value: true
+        };
+        enrichPreflightItem(item);
+        _missingValuePreflightItems.push(item);
+      }
+    }
+
+    function _mergeMissingValuePreflightItems() {
+      if (!_missingValuePreflightItems || _missingValuePreflightItems.length === 0) return;
+      var _existKeys = {};
+      analystTriageState.manualItems.forEach(function(m) {
+        var k = (m.signal_type || '') + ':' + (m.contract_key || m.record_id || '') + ':' + (m.sheet_name || '') + ':' + (m.field_name || '') + ':' + (m.blocker_type || '');
+        _existKeys[k] = true;
+      });
+      var added = 0;
+      _missingValuePreflightItems.forEach(function(item) {
+        var k = item.signal_type + ':' + (item.contract_key || item.record_id || '') + ':' + (item.sheet_name || '') + ':' + (item.field_name || '') + ':' + (item.blocker_type || '');
+        if (!_existKeys[k]) {
+          analystTriageState.manualItems.push(item);
+          _existKeys[k] = true;
+          added++;
+        }
+      });
+      if (added > 0) console.log('[PREFLIGHT-MV] merged ' + added + ' missing-value items into Pre-Flight');
+    }
+
     var _p1f2CleanItems = [];
     var _p1f2RunId = '';
 
@@ -27357,6 +27432,11 @@
             : 'all sections';
           el('ta-schema-matched-scope').textContent = _scopeLabel;
         }
+        if (el('ta-schema-matched-subtext')) {
+          var _secCount = (typeof workbook !== 'undefined' && workbook && workbook.order) ? workbook.order.length : 0;
+          el('ta-schema-matched-subtext').textContent = cache.schema.batch_headers_mapped + ' of ' + cache.schema.batch_headers_total + ' uploaded columns recognized';
+          if (_secCount > 0 && el('ta-schema-matched-scope')) el('ta-schema-matched-scope').textContent = 'Across ' + _secCount + ' contract section' + (_secCount !== 1 ? 's' : '');
+        }
         if (el('ta-schema-glossary-secondary')) {
           var gPct = cache.schema.standard_total > 0 ? Math.round((cache.schema.standard_matched / cache.schema.standard_total) * 100) : 0;
           el('ta-schema-glossary-secondary').textContent = 'Glossary: ' + cache.schema.standard_matched + '/' + cache.schema.standard_total + ' (' + gPct + '%)';
@@ -27547,8 +27627,8 @@
             html += '<div style="padding:8px;color:#4caf50;font-size:0.85em;">No blank required values detected.</div>';
           }
         } else if (type === 'drift') {
-          title = 'Total Gaps (' + cache.schema.schema_drift + ')';
-          html += '<div style="margin-bottom:12px;padding:10px 14px;background:#f0f4f8;border-radius:6px;font-size:0.85em;color:#555;">Drift = Unknown Columns (' + cache.schema.unknown_columns + ') + Missing Required Headers (' + cache.schema.schema_missing_required_headers + ')</div>';
+          title = 'Schema Structure Issues (' + cache.schema.schema_drift + ')';
+          html += '<div style="margin-bottom:12px;padding:10px 14px;background:#f0f4f8;border-radius:6px;font-size:0.85em;color:#555;">Unknown columns (' + cache.schema.unknown_columns + ') + Missing required headers (' + cache.schema.schema_missing_required_headers + '). Missing values are tracked separately.</div>';
           if (cache.schema.unknown_columns > 0) {
             html += '<div style="margin-bottom:8px;cursor:pointer;color:#1565c0;font-size:0.85em;text-decoration:underline;" onclick="document.getElementById(\x27schema-detail-modal\x27).remove();TriageAnalytics.handleSchemaClick(\x27unknown\x27);">View ' + cache.schema.unknown_columns + ' unknown column(s)</div>';
           }
@@ -28963,6 +29043,8 @@
       if (typeof TriageAnalytics !== 'undefined') {
         try { TriageAnalytics.refresh(); TriageAnalytics.renderHeader(); } catch(e) { console.warn('[V2.3] Analytics render error:', e); }
       }
+      if (typeof _buildMissingValuePreflightItems === 'function') _buildMissingValuePreflightItems();
+      if (typeof _mergeMissingValuePreflightItems === 'function') _mergeMissingValuePreflightItems();
 
       
       // Update queue counts
