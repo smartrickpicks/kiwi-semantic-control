@@ -2231,10 +2231,10 @@
 
           <!-- QUEUE 1: Pre-Flight -->
           <div class="triage-queue-section" style="margin-bottom: 24px;">
-            <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+            <div class="queue-header" style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;">
               <h3 style="margin: 0; font-size: 1.05em; color: #333;">Pre-Flight <span id="manual-queue-count" style="font-weight: 400; color: #666;">(0)</span></h3>
+              <div id="p1a-preflight-issue-filters" style="display: flex; gap: 6px; align-items: center; margin-left: 4px;"></div>
             </div>
-            <div id="p1a-preflight-issue-filters" style="display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; font-size: 0.82em; align-items: center;"></div>
             <div id="p1a-preflight-sheet-tabs" style="display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; font-size: 0.82em;"></div>
             <div id="p1f1-live-intake-wrapper" style="display:none;">
               <div id="p1f1-summary-bar" class="p1f1-summary-bar"></div>
@@ -29221,32 +29221,51 @@
         else sevCounts.warning++;
       }
       var typeKeys = Object.keys(typeCounts).sort(function(a, b) { return typeCounts[b] - typeCounts[a]; });
-      var totalCount = items.length;
-      var _q = String.fromCharCode(39);
 
-      var html = '<span style="font-size:0.85em;color:#888;margin-right:4px;font-weight:500;">Issue:</span>';
-      var allActive = _p1aActiveIssueType === 'All';
-      html += '<button onclick="_p1aSelectIssueType(' + _q + 'All' + _q + ')" style="padding:3px 9px;border:1px solid ' + (allActive ? '#1565c0' : '#ccc') + ';background:' + (allActive ? '#e3f2fd' : '#fff') + ';color:' + (allActive ? '#1565c0' : '#555') + ';border-radius:12px;cursor:pointer;font-size:0.88em;font-weight:' + (allActive ? '600' : '400') + ';">All <span style="font-weight:400;">(' + totalCount + ')</span></button>';
+      var activeIssueLabel = _p1aActiveIssueType === 'All' ? 'All Issues' : (_ISSUE_TYPE_LABELS[_p1aActiveIssueType] || _p1aActiveIssueType.replace(/_/g, ' '));
+      var issueColors = _p1aActiveIssueType !== 'All' && _ISSUE_TYPE_COLORS[_p1aActiveIssueType] ? _ISSUE_TYPE_COLORS[_p1aActiveIssueType] : { border: '#999', bg: '#f5f5f5', text: '#555' };
+      if (_p1aActiveIssueType !== 'All') {
+        activeIssueLabel += ' (' + (typeCounts[_p1aActiveIssueType] || 0) + ')';
+      }
 
+      var activeSevLabel = _p1aActiveSeverity === 'All' ? 'All Severity' : (_p1aActiveSeverity === 'blocker' ? 'Blockers (' + sevCounts.blocker + ')' : 'Warnings (' + sevCounts.warning + ')');
+      var sevColors = _p1aActiveSeverity === 'blocker' ? { border: '#c62828', bg: '#ffebee', text: '#c62828' } : (_p1aActiveSeverity === 'warning' ? { border: '#e65100', bg: '#fff3e0', text: '#e65100' } : { border: '#999', bg: '#f5f5f5', text: '#555' });
+
+      var dropStyle = 'position:relative;display:inline-block;';
+      var chipBase = 'padding:4px 10px;border-radius:14px;cursor:pointer;font-size:0.82em;display:inline-flex;align-items:center;gap:3px;user-select:none;';
+      var menuBase = 'position:absolute;top:100%;left:0;margin-top:4px;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:1000;min-width:180px;padding:4px 0;max-height:280px;overflow-y:auto;';
+      var menuItem = 'padding:6px 12px;cursor:pointer;font-size:0.88em;display:flex;justify-content:space-between;align-items:center;';
+      var arrow = ' <span style="font-size:0.7em;margin-left:2px;">\u25BC</span>';
+
+      var html = '';
+      html += '<div style="' + dropStyle + '" id="p1a-issue-dropdown">';
+      html += '<div onclick="_p1aToggleDropdown(\x27issue\x27)" style="' + chipBase + 'border:1px solid ' + issueColors.border + ';background:' + issueColors.bg + ';color:' + issueColors.text + ';font-weight:500;">' + escapeHtml(activeIssueLabel) + arrow + '</div>';
+      html += '<div id="p1a-issue-menu" style="' + menuBase + 'display:none;">';
+      var allIssueActive = _p1aActiveIssueType === 'All';
+      html += '<div onclick="_p1aSelectIssueType(\x27All\x27)" style="' + menuItem + (allIssueActive ? 'background:#e3f2fd;font-weight:600;color:#1565c0;' : '') + '" onmouseover="this.style.background=\x27#f0f0f0\x27" onmouseout="this.style.background=\x27' + (allIssueActive ? '#e3f2fd' : '') + '\x27"><span>All Issues</span><span style=\"color:#999;font-size:0.9em;\">' + items.length + '</span></div>';
       for (var t = 0; t < typeKeys.length; t++) {
         var tk = typeKeys[t];
-        var tLabel = _ISSUE_TYPE_LABELS[tk] || tk.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
-        var isActive = _p1aActiveIssueType === tk;
-        var colors = _ISSUE_TYPE_COLORS[tk] || { border: '#888', bg: '#f5f5f5', text: '#555' };
-        html += '<button onclick="_p1aSelectIssueType(' + _q + tk.replace(/'/g, '\\' + _q) + _q + ')" style="padding:3px 9px;border:1px solid ' + (isActive ? colors.border : '#ddd') + ';background:' + (isActive ? colors.bg : '#fff') + ';color:' + (isActive ? colors.text : '#666') + ';border-radius:12px;cursor:pointer;font-size:0.88em;font-weight:' + (isActive ? '600' : '400') + ';">' + escapeHtml(tLabel) + ' <span style="font-weight:400;">(' + typeCounts[tk] + ')</span></button>';
+        var tLabel = _ISSUE_TYPE_LABELS[tk] || tk.replace(/_/g, ' ');
+        var tActive = _p1aActiveIssueType === tk;
+        var tColor = _ISSUE_TYPE_COLORS[tk] || { text: '#555' };
+        html += '<div onclick="_p1aSelectIssueType(\x27' + tk.replace(/'/g, "\\'") + '\x27)" style="' + menuItem + (tActive ? 'background:' + (tColor.bg || '#e3f2fd') + ';font-weight:600;color:' + tColor.text + ';' : '') + '" onmouseover="this.style.background=\x27#f0f0f0\x27" onmouseout="if(!this._a)this.style.background=\x27' + (tActive ? (tColor.bg || '#e3f2fd') : '') + '\x27"><span style="color:' + tColor.text + ';">\u25CF ' + escapeHtml(tLabel) + '</span><span style=\"color:#999;font-size:0.9em;\">' + typeCounts[tk] + '</span></div>';
       }
+      html += '</div></div>';
 
-      html += '<span style="margin-left:10px;border-left:1px solid #ddd;padding-left:10px;font-size:0.85em;color:#888;margin-right:4px;font-weight:500;">Severity:</span>';
+      html += '<div style="' + dropStyle + '" id="p1a-sev-dropdown">';
+      html += '<div onclick="_p1aToggleDropdown(\x27sev\x27)" style="' + chipBase + 'border:1px solid ' + sevColors.border + ';background:' + sevColors.bg + ';color:' + sevColors.text + ';font-weight:500;">' + escapeHtml(activeSevLabel) + arrow + '</div>';
+      html += '<div id="p1a-sev-menu" style="' + menuBase + 'display:none;">';
       var sevAllActive = _p1aActiveSeverity === 'All';
-      html += '<button onclick="_p1aSelectSeverity(' + _q + 'All' + _q + ')" style="padding:3px 9px;border:1px solid ' + (sevAllActive ? '#1565c0' : '#ccc') + ';background:' + (sevAllActive ? '#e3f2fd' : '#fff') + ';color:' + (sevAllActive ? '#1565c0' : '#555') + ';border-radius:12px;cursor:pointer;font-size:0.88em;font-weight:' + (sevAllActive ? '600' : '400') + ';">All</button>';
+      html += '<div onclick="_p1aSelectSeverity(\x27All\x27)" style="' + menuItem + (sevAllActive ? 'background:#e3f2fd;font-weight:600;color:#1565c0;' : '') + '" onmouseover="this.style.background=\x27#f0f0f0\x27" onmouseout="this.style.background=\x27' + (sevAllActive ? '#e3f2fd' : '') + '\x27"><span>All Severity</span></div>';
       if (sevCounts.blocker > 0) {
-        var bActive = _p1aActiveSeverity === 'blocker';
-        html += '<button onclick="_p1aSelectSeverity(' + _q + 'blocker' + _q + ')" style="padding:3px 9px;border:1px solid ' + (bActive ? '#c62828' : '#ddd') + ';background:' + (bActive ? '#ffebee' : '#fff') + ';color:' + (bActive ? '#c62828' : '#666') + ';border-radius:12px;cursor:pointer;font-size:0.88em;font-weight:' + (bActive ? '600' : '400') + ';">Blockers <span style="font-weight:400;">(' + sevCounts.blocker + ')</span></button>';
+        var bAct = _p1aActiveSeverity === 'blocker';
+        html += '<div onclick="_p1aSelectSeverity(\x27blocker\x27)" style="' + menuItem + (bAct ? 'background:#ffebee;font-weight:600;color:#c62828;' : '') + '" onmouseover="this.style.background=\x27#f0f0f0\x27" onmouseout="this.style.background=\x27' + (bAct ? '#ffebee' : '') + '\x27"><span style=\"color:#c62828;\">\u25CF Blockers</span><span style=\"color:#999;font-size:0.9em;\">' + sevCounts.blocker + '</span></div>';
       }
       if (sevCounts.warning > 0) {
-        var wActive = _p1aActiveSeverity === 'warning';
-        html += '<button onclick="_p1aSelectSeverity(' + _q + 'warning' + _q + ')" style="padding:3px 9px;border:1px solid ' + (wActive ? '#e65100' : '#ddd') + ';background:' + (wActive ? '#fff3e0' : '#fff') + ';color:' + (wActive ? '#e65100' : '#666') + ';border-radius:12px;cursor:pointer;font-size:0.88em;font-weight:' + (wActive ? '600' : '400') + ';">Warnings <span style="font-weight:400;">(' + sevCounts.warning + ')</span></button>';
+        var wAct = _p1aActiveSeverity === 'warning';
+        html += '<div onclick="_p1aSelectSeverity(\x27warning\x27)" style="' + menuItem + (wAct ? 'background:#fff3e0;font-weight:600;color:#e65100;' : '') + '" onmouseover="this.style.background=\x27#f0f0f0\x27" onmouseout="this.style.background=\x27' + (wAct ? '#fff3e0' : '') + '\x27"><span style=\"color:#e65100;\">\u25CF Warnings</span><span style=\"color:#999;font-size:0.9em;\">' + sevCounts.warning + '</span></div>';
       }
+      html += '</div></div>';
 
       container.innerHTML = html;
     }
@@ -29273,15 +29292,44 @@
 
     function _p1aSelectIssueType(issueType) {
       _p1aActiveIssueType = issueType;
+      _p1aCloseDropdowns();
       console.log('[P1A] preflight_issue_filter: type=' + issueType);
       renderAnalystTriage();
     }
 
     function _p1aSelectSeverity(severity) {
       _p1aActiveSeverity = severity;
+      _p1aCloseDropdowns();
       console.log('[P1A] preflight_severity_filter: severity=' + severity);
       renderAnalystTriage();
     }
+
+    function _p1aToggleDropdown(which) {
+      var issueMenu = document.getElementById('p1a-issue-menu');
+      var sevMenu = document.getElementById('p1a-sev-menu');
+      if (which === 'issue') {
+        if (sevMenu) sevMenu.style.display = 'none';
+        if (issueMenu) issueMenu.style.display = issueMenu.style.display === 'none' ? 'block' : 'none';
+      } else {
+        if (issueMenu) issueMenu.style.display = 'none';
+        if (sevMenu) sevMenu.style.display = sevMenu.style.display === 'none' ? 'block' : 'none';
+      }
+    }
+
+    function _p1aCloseDropdowns() {
+      var im = document.getElementById('p1a-issue-menu');
+      var sm = document.getElementById('p1a-sev-menu');
+      if (im) im.style.display = 'none';
+      if (sm) sm.style.display = 'none';
+    }
+
+    document.addEventListener('click', function(e) {
+      var id = document.getElementById('p1a-issue-dropdown');
+      var sd = document.getElementById('p1a-sev-dropdown');
+      if (id && !id.contains(e.target) && sd && !sd.contains(e.target)) {
+        _p1aCloseDropdowns();
+      }
+    });
 
     function _p1aBuildSheetTabs(items) {
       var container = document.getElementById('p1a-preflight-sheet-tabs');
