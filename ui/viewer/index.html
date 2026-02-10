@@ -17907,13 +17907,17 @@
         }
         var domainHint = _p1dGetDomainHint(gItems);
 
+        var _contractWideTypes = { 'OCR_UNREADABLE': true, 'OCR_MOJIBAKE': true, 'TEXT_NOT_SEARCHABLE': true, 'PDF_VERIFIED_CLEAN': true };
         var _childDedupeMap = {};
         var _childDedupeOrder = [];
         var _dedupedBlockers = 0;
         var _dedupedWarnings = 0;
         for (var _cdi = 0; _cdi < gItems.length; _cdi++) {
           var _cdItem = gItems[_cdi];
-          var _cdKey = (_cdItem._contract_group_id || _cdItem.contract_id || _cdItem.contract_key || '') + '|' + (_cdItem.contract_section_key || _cdItem.sheet_name || '') + '|' + (_cdItem.reason_code || _cdItem.blocker_type || _cdItem.signal_type || '') + '|' + (_cdItem.field_key || _cdItem.field_name || '') + '|' + (_cdItem.severity || '');
+          var _cdRc = _cdItem.reason_code || _cdItem.blocker_type || _cdItem.signal_type || '';
+          var _cdSection = _contractWideTypes[_cdRc] ? '_all_' : (_cdItem.contract_section_key || _cdItem.sheet_name || '');
+          var _cdField = _contractWideTypes[_cdRc] ? '' : (_cdItem.field_key || _cdItem.field_name || '');
+          var _cdKey = (_cdItem._contract_group_id || _cdItem.contract_id || _cdItem.contract_key || '') + '|' + _cdSection + '|' + _cdRc + '|' + _cdField + '|' + (_cdItem.severity || '');
           if (_childDedupeMap[_cdKey]) {
             _childDedupeMap[_cdKey].count++;
           } else {
@@ -17927,6 +17931,8 @@
 
         var sheetCounts = {};
         for (var _sci = 0; _sci < _childDedupeOrder.length; _sci++) {
+          var _scKeyParts = _childDedupeOrder[_sci].split('|');
+          if (_scKeyParts[1] === '_all_') continue;
           var _scItem = _childDedupeMap[_childDedupeOrder[_sci]].item;
           var sn = _scItem.contract_section_label || _scItem.sheet_name || 'Unknown';
           sheetCounts[sn] = (sheetCounts[sn] || 0) + 1;
@@ -18003,7 +18009,8 @@
           var _cdEntry = _childDedupeMap[_childDedupeOrder[di]];
           var item = _cdEntry.item;
           var _dupCount = _cdEntry.count;
-          var sName = escapeHtml(item.contract_section_label || item.sheet_name || 'Unknown');
+          var _cdKeyParts = _childDedupeOrder[di].split('|');
+          var sName = (_cdKeyParts[1] === '_all_' && _dupCount > 1) ? 'All Sections' : escapeHtml(item.contract_section_label || item.sheet_name || 'Unknown');
           var fLabel;
           if (item._batch_scan && item.file_name) {
             fLabel = item.file_name;
