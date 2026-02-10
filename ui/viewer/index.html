@@ -27193,6 +27193,8 @@
                 if (!matchedHeader) return;
                 var blankCount = 0;
                 var invalidPicklistCount = 0;
+                var blankRows = [];
+                var invalidRows = [];
                 var isPicklist = f.picklist === true && f.options && f.options.length > 0;
                 var optionsLower = [];
                 if (isPicklist) { f.options.forEach(function(o) { optionsLower.push(String(o).toLowerCase().trim()); }); }
@@ -27200,16 +27202,17 @@
                   var val = sh.rows[_ri] ? sh.rows[_ri][matchedHeader] : undefined;
                   if (typeof isBlankValue === 'function' && isBlankValue(val)) {
                     blankCount++;
+                    blankRows.push(_ri);
                   } else if (isPicklist && val !== null && val !== undefined) {
                     var valLower = String(val).toLowerCase().trim();
-                    if (optionsLower.indexOf(valLower) === -1) invalidPicklistCount++;
+                    if (optionsLower.indexOf(valLower) === -1) { invalidPicklistCount++; invalidRows.push(_ri); }
                   }
                 }
                 if (blankCount > 0) {
-                  _missingValueItems.push({ field_key: f.field_key, label: f.field_label || f.field_key, section: sn, header: matchedHeader, blank_count: blankCount, total_rows: sh.rows.length, reason: 'blank_like' });
+                  _missingValueItems.push({ field_key: f.field_key, label: f.field_label || f.field_key, section: sn, header: matchedHeader, blank_count: blankCount, total_rows: sh.rows.length, reason: 'blank_like', affected_rows: blankRows });
                 }
                 if (invalidPicklistCount > 0) {
-                  _missingValueItems.push({ field_key: f.field_key, label: f.field_label || f.field_key, section: sn, header: matchedHeader, blank_count: invalidPicklistCount, total_rows: sh.rows.length, reason: 'invalid_picklist' });
+                  _missingValueItems.push({ field_key: f.field_key, label: f.field_label || f.field_key, section: sn, header: matchedHeader, blank_count: invalidPicklistCount, total_rows: sh.rows.length, reason: 'invalid_picklist', affected_rows: invalidRows });
                 }
               });
             }
