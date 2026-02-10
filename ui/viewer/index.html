@@ -19732,7 +19732,47 @@
     }
     
     // v1.5.7: Normalize field key for comparison (lowercase, no underscores/special chars)
-    function normalizeFieldKey(fieldKey) {
+    var _SHEET_EQUIV_MAP = {
+      'opportunity': 'opportunities',
+      'opportunities': 'opportunities',
+      'add_ons': 'add_ons',
+      'v2_add_ons': 'add_ons',
+      'schedule_catalog': 'schedule_catalog',
+      'accounts': 'accounts',
+      'catalog': 'catalog',
+      'contacts': 'contacts',
+      'financials': 'financials',
+      'schedule': 'schedule'
+    };
+
+    function _normSheetName(s) {
+      var n = String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+      n = n.replace(/^v\d+_/, '');
+      if (n.length > 1 && n.charAt(n.length - 1) === 's') {
+        var singular = n.replace(/ies$/, 'y').replace(/ses$/, 'se').replace(/s$/, '');
+        if (_SHEET_EQUIV_MAP[singular]) return _SHEET_EQUIV_MAP[singular];
+      }
+      return _SHEET_EQUIV_MAP[n] || n;
+    }
+
+    function _sheetsEquivalent(a, b) {
+      return _normSheetName(a) === _normSheetName(b);
+    }
+
+    function _stripSfSuffix(token) {
+      return token.replace(/_{1,2}[cr]$/, '');
+    }
+
+    function _normFieldToken(s) {
+      var n = String(s).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+      return _stripSfSuffix(n);
+    }
+
+    function _fieldTokensEquivalent(a, b) {
+      return _normFieldToken(a) === _normFieldToken(b);
+    }
+
+        function normalizeFieldKey(fieldKey) {
       return fieldKey.toLowerCase().replace(/[^a-z0-9]/g, '');
     }
     
@@ -27000,18 +27040,29 @@
                 _activeSheetsNorm[norm] = true;
                 _activeSectionCount++;
               }
+              if (typeof _normSheetName === 'function') {
+                var equiv = _normSheetName(sn);
+                if (!_activeSheetsNorm[equiv]) _activeSheetsNorm[equiv] = true;
+              }
             });
           }
           var _hasActiveSheets = _activeSectionCount > 0;
           var allFields = _hasActiveSheets ? _allGlossaryFields.filter(function(f) {
             var fs = _normKey(f.sheet || '');
-            return !!_activeSheetsNorm[fs];
+            if (_activeSheetsNorm[fs]) return true;
+            var fsEquiv = (typeof _normSheetName === 'function') ? _normSheetName(f.sheet || '') : fs;
+            var activeKeys = Object.keys(_activeSheetsNorm);
+            for (var _ak = 0; _ak < activeKeys.length; _ak++) {
+              if ((typeof _sheetsEquivalent === 'function') && _sheetsEquivalent(activeKeys[_ak], fs)) return true;
+            }
+            return false;
           }) : _allGlossaryFields;
           cache.schema.standard_total = allFields.length;
           cache.schema._glossary_total = _allGlossaryFields.length;
           cache.schema._active_sections = _activeSectionCount;
           var wbCols = {};
           var wbCanonicals = {};
+          var wbColTokens = {};
           if (typeof workbook !== 'undefined' && workbook.order) {
             workbook.order.forEach(function(sn) {
               var sh = workbook.sheets[sn];
@@ -27086,16 +27137,24 @@
               }
             });
           }
+          if (typeof _normFieldToken === 'function') {
+            var _wck = Object.keys(wbCols);
+            for (var _ti = 0; _ti < _wck.length; _ti++) { wbColTokens[_normFieldToken(_wck[_ti])] = true; }
+          }
           var _fieldMatches = function(fk, fl) {
             var fkl = fk.toLowerCase();
             var fkn = _normKey(fk);
+            var fkt = (typeof _normFieldToken === 'function') ? _normFieldToken(fk) : fkn;
             if (wbCols[fkl] || wbCols[fkl + '_c'] || wbCols[fkn] || wbCols[fkn + '_c']) return true;
             if (wbCanonicals[fkl] || wbCanonicals[fkn]) return true;
+            if (wbColTokens[fkt]) return true;
             if (fl) {
               var fll = fl.toLowerCase();
               var fln = _normKey(fl);
+              var flt = (typeof _normFieldToken === 'function') ? _normFieldToken(fl) : fln;
               if (wbCols[fll] || wbCols[fln] || wbCols[fln + '_c']) return true;
               if (wbCanonicals[fll] || wbCanonicals[fln]) return true;
+              if (wbColTokens[flt]) return true;
             }
             return false;
           };
@@ -27183,23 +27242,35 @@
                 var canonicalMatch = '';
                 
                 var resolved = typeof normalizeColumnName === 'function' ? normalizeColumnName(h, sn) : norm;
+                var normToken = (typeof _normFieldToken === 'function') ? _normFieldToken(h) : norm;
+                var resolvedToken = (typeof _normFieldToken === 'function') ? _normFieldToken(resolved) : resolved;
                 if (!mapped) {
                   for (var _gi = 0; _gi < allFields.length; _gi++) {
-                    var gfk = _normKey(allFields[_gi].field_key);
-                    var gfl = allFields[_gi].field_label ? _normKey(allFields[_gi].field_label) : '';
+                    var gf = allFields[_gi];
+                    var gfk = _normKey(gf.field_key);
+                    var gfl = gf.field_label ? _normKey(gf.field_label) : '';
+                    var gfkt = (typeof _normFieldToken === 'function') ? _normFieldToken(gf.field_key) : gfk;
+                    var gflt = gf.field_label ? ((typeof _normFieldToken === 'function') ? _normFieldToken(gf.field_label) : gfl) : '';
                     if (norm === gfk || norm === gfl || resolved === gfk || resolved === gfl) {
-                      mapped = true;
-                      canonicalMatch = allFields[_gi].field_key;
-                      break;
+                      mapped = true; canonicalMatch = gf.field_key; break;
+                    }
+                    if (normToken === gfkt || normToken === gflt || resolvedToken === gfkt || resolvedToken === gflt) {
+                      mapped = true; canonicalMatch = gf.field_key; break;
                     }
                   }
                 }
-                if (!mapped && typeof COLUMN_ALIAS_MAP !== 'undefined' && COLUMN_ALIAS_MAP[norm]) {
-                  mapped = true;
-                  canonicalMatch = COLUMN_ALIAS_MAP[norm][0] ? COLUMN_ALIAS_MAP[norm][0].canonical_key : norm;
+                if (!mapped && typeof COLUMN_ALIAS_MAP !== 'undefined') {
+                  if (COLUMN_ALIAS_MAP[norm]) {
+                    mapped = true;
+                    canonicalMatch = COLUMN_ALIAS_MAP[norm][0] ? COLUMN_ALIAS_MAP[norm][0].canonical_key : norm;
+                  } else if (COLUMN_ALIAS_MAP[normToken]) {
+                    mapped = true;
+                    canonicalMatch = COLUMN_ALIAS_MAP[normToken][0] ? COLUMN_ALIAS_MAP[normToken][0].canonical_key : normToken;
+                  }
                 }
                 var sysFields = { contract_key:1, file_name:1, file_url:1, status:1, sheet:1, record_id:1, dataset_id:1, group_id:1, document_type:1 };
-                if (!mapped && sysFields[norm]) { mapped = true; canonicalMatch = norm + ' (system)'; }
+                var sysToken = (typeof _normFieldToken === 'function') ? _normFieldToken(h) : norm;
+                if (!mapped && (sysFields[norm] || sysFields[sysToken])) { mapped = true; canonicalMatch = (sysFields[norm] ? norm : sysToken) + ' (system)'; }
                 if (mapped) {
                   _batchMappedItems.push({ section: sn, header: h, canonical: canonicalMatch });
                 } else {
@@ -31030,20 +31101,25 @@
       known['contract_key'] = true; known['file_name'] = true; known['file_url'] = true;
       known['status'] = true; known['sheet'] = true; known['record_id'] = true;
       known['dataset_id'] = true; known['group_id'] = true; known['document_type'] = true;
+      var _normToken = (typeof _normFieldToken === 'function') ? _normFieldToken : _norm;
       if (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.fields) {
         rulesBundleCache.fieldMeta.fields.forEach(function(f) {
-          if (f.canonical_key) known[_norm(f.canonical_key)] = true;
-          if (f.label) known[_norm(f.label)] = true;
-          if (f.key) known[_norm(f.key)] = true;
+          if (f.canonical_key) { known[_norm(f.canonical_key)] = true; known[_normToken(f.canonical_key)] = true; }
+          if (f.label) { known[_norm(f.label)] = true; known[_normToken(f.label)] = true; }
+          if (f.key) { known[_norm(f.key)] = true; known[_normToken(f.key)] = true; }
+          if (f.field_key) { known[_norm(f.field_key)] = true; known[_normToken(f.field_key)] = true; }
+          if (f.field_label) { known[_norm(f.field_label)] = true; known[_normToken(f.field_label)] = true; }
         });
       }
       if (typeof COLUMN_ALIAS_MAP !== 'undefined') {
         var aliasKeys = Object.keys(COLUMN_ALIAS_MAP);
         for (var i = 0; i < aliasKeys.length; i++) {
           known[aliasKeys[i]] = true;
+          known[_normToken(aliasKeys[i])] = true;
           var entries = COLUMN_ALIAS_MAP[aliasKeys[i]];
           for (var j = 0; j < entries.length; j++) {
             known[_norm(entries[j].canonical_key)] = true;
+            known[_normToken(entries[j].canonical_key)] = true;
           }
         }
       }
@@ -31072,7 +31148,9 @@
           var norm = _norm(hdr);
           if (!norm) continue;
           var resolved = normalizeColumnName(hdr, sn);
-          if (knownSet[norm] || knownSet[resolved]) continue;
+          var normToken = (typeof _normFieldToken === 'function') ? _normFieldToken(hdr) : norm;
+          var resolvedToken = (typeof _normFieldToken === 'function') ? _normFieldToken(resolved) : resolved;
+          if (knownSet[norm] || knownSet[resolved] || knownSet[normToken] || knownSet[resolvedToken]) continue;
 
           var sampleValues = [];
           var nonEmptyCount = 0;
@@ -31108,11 +31186,16 @@
 
     function normalizeColumnName(name, sheetHint) {
       var normalized = String(name).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-      var entries = COLUMN_ALIAS_MAP[normalized];
+      var strippedToken = (typeof _normFieldToken === 'function') ? _normFieldToken(name) : normalized;
+      var entries = COLUMN_ALIAS_MAP[normalized] || COLUMN_ALIAS_MAP[strippedToken] || null;
       if (entries && entries.length > 0) {
         if (sheetHint) {
           var sheetMatch = entries.find(function(e) { return e.sheet === sheetHint; });
           if (sheetMatch) return sheetMatch.canonical_key;
+          if (typeof _sheetsEquivalent === 'function') {
+            var equivMatch = entries.find(function(e) { return _sheetsEquivalent(e.sheet, sheetHint); });
+            if (equivMatch) return equivMatch.canonical_key;
+          }
         }
         return entries[0].canonical_key;
       }
