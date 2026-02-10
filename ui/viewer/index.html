@@ -138,8 +138,7 @@
     .nav-subitem .nav-icon { font-size: 0.85em; }
     .nav-subparent { position: relative; }
     .nav-subparent.expanded .nav-expand-arrow { transform: rotate(90deg); color: #ccc; }
-    .nav-level3 { display: none; }
-    .nav-level3.expanded { display: block; }
+    .nav-level3 { display: block; }
     .nav-level3 .nav-section-link { display: block; padding: 5px 16px 5px 56px; color: #999; font-size: 0.82em; cursor: pointer; transition: all 0.15s; text-decoration: none; border-left: 3px solid transparent; }
     .nav-level3 .nav-section-link:hover { color: #fff; background: #2d2d4a; }
     .nav-level3 .nav-section-link.active { color: #fff; background: #0f3460; border-left-color: #42a5f5; }
@@ -1700,12 +1699,20 @@
             <span class="nav-expand-arrow" id="triage-expand-arrow">&#9656;</span>
           </a>
           <div class="nav-subitems" id="triage-subnav">
-            <a class="nav-item nav-subitem nav-subparent" data-page="grid" href="#/grid">
+            <a class="nav-item nav-subitem nav-subparent" data-page="grid" href="#/grid" onclick="gridState.sheet = null;">
               <span class="nav-icon">📊</span>
               <span class="nav-label">All Data Grid</span>
               <span class="nav-expand-arrow" id="grid-expand-arrow">&#9656;</span>
             </a>
             <div class="nav-subitems nav-level3" id="grid-sections-nav">
+              <a class="nav-section-link" data-section="accounts" href="#" onclick="_selectGridSection('Accounts'); return false;">Accounts</a>
+              <a class="nav-section-link" data-section="catalog" href="#" onclick="_selectGridSection('Catalog'); return false;">Catalog</a>
+              <a class="nav-section-link" data-section="contacts" href="#" onclick="_selectGridSection('Contacts'); return false;">Contacts</a>
+              <a class="nav-section-link" data-section="financials" href="#" onclick="_selectGridSection('Financials'); return false;">Financials</a>
+              <a class="nav-section-link" data-section="opportunities" href="#" onclick="_selectGridSection('Opportunities'); return false;">Opportunities</a>
+              <a class="nav-section-link" data-section="schedule" href="#" onclick="_selectGridSection('Schedule'); return false;">Schedule</a>
+              <a class="nav-section-link" data-section="schedule_catalog" href="#" onclick="_selectGridSection('Schedule Catalog'); return false;">Schedule Catalog</a>
+              <a class="nav-section-link" data-section="v2_add_ons" href="#" onclick="_selectGridSection('V2 Add Ons'); return false;">V2 Add Ons</a>
             </div>
             <a class="nav-item nav-subitem" id="nav-record-inspection" href="#" onclick="openRecordInspectionFromNav(); return false;">
               <span class="nav-icon">🔎</span>
@@ -15122,9 +15129,9 @@
       }
       if (page === 'grid') {
         _populateGridSections();
-        _expandGridSections();
-      } else {
-        _collapseGridSections();
+        if (!gridState.sheet) {
+          document.querySelectorAll('#grid-sections-nav .nav-section-link').forEach(function(el) { el.classList.remove('active'); });
+        }
       }
       
       // Show empty queue message on triage if no data loaded
