@@ -134,12 +134,13 @@
     .nav-parent.expanded .nav-expand-arrow { transform: rotate(90deg); color: #ccc; }
     .nav-subitems { display: none; overflow: hidden; }
     .nav-subitems.expanded { display: block; }
-    .nav-subitem { padding-left: 40px !important; font-size: 0.92em; }
+    .nav-subitem { padding-left: 40px !important; font-size: 0.95em; }
     .nav-subitem .nav-icon { font-size: 0.85em; }
     .nav-subparent { position: relative; }
     .nav-subparent.expanded .nav-expand-arrow { transform: rotate(90deg); color: #ccc; }
-    .nav-level3 { display: block; }
-    .nav-level3 .nav-section-link { display: block; padding: 5px 16px 5px 56px; color: #999; font-size: 0.82em; cursor: pointer; transition: all 0.15s; text-decoration: none; border-left: 3px solid transparent; }
+    .nav-level3 { display: none; }
+    .nav-level3.expanded { display: block; }
+    .nav-level3 .nav-section-link { display: block; padding: 6px 16px 6px 56px; color: #bbb; font-size: 0.88em; cursor: pointer; transition: all 0.15s; text-decoration: none; border-left: 3px solid transparent; }
     .nav-level3 .nav-section-link:hover { color: #fff; background: #2d2d4a; }
     .nav-level3 .nav-section-link.active { color: #fff; background: #0f3460; border-left-color: #42a5f5; }
     .nav-item.queue-item { padding: 8px 20px; }
@@ -1693,7 +1694,7 @@
           <div class="nav-section-header">Navigation</div>
 
           <!-- View Mode: Triage (top-level) with nested sub-items -->
-          <a class="nav-item nav-parent" data-page="triage" href="#/triage">
+          <a class="nav-item nav-parent" data-page="triage" href="#/triage" onclick="_toggleTriageSubnav();">
             <span class="nav-icon">📋</span>
             <span class="nav-label">Triage</span>
             <span class="nav-expand-arrow" id="triage-expand-arrow">&#9656;</span>
@@ -14111,6 +14112,19 @@
       if (ri) ri.classList.add('active');
     }
 
+    function _toggleTriageSubnav() {
+      var sn = document.getElementById('triage-subnav');
+      var tp = document.querySelector('.nav-parent[data-page="triage"]');
+      if (!sn || !tp) return;
+      if (sn.classList.contains('expanded')) {
+        sn.classList.remove('expanded');
+        tp.classList.remove('expanded');
+      } else {
+        sn.classList.add('expanded');
+        tp.classList.add('expanded');
+      }
+    }
+
     function _populateGridSections() {
       var container = document.getElementById('grid-sections-nav');
       if (!container) return;
@@ -14170,15 +14184,35 @@
     }
 
     function openRecordInspectionFromNav() {
-      var firstRow = gridState.filteredData && gridState.filteredData[0];
-      if (firstRow && firstRow._row_id) {
-        openRowReviewDrawer(firstRow._row_id);
+      if (typeof srrState !== 'undefined' && srrState.currentRowId !== null && srrState.currentSheetName) {
+        openRowReviewDrawer(srrState.currentSheetName, srrState.currentRowId);
         _expandTriageSubnav();
-      } else if (dataLoaded) {
-        showToast('Select a row from the grid to inspect', 'info');
-        navigateTo('grid');
-      } else {
+        return;
+      }
+      var firstRow = null;
+      if (gridState.filteredData && gridState.filteredData.length > 0) {
+        firstRow = gridState.filteredData[0];
+      } else if (typeof workbook !== 'undefined' && workbook && workbook.order) {
+        var ds = typeof getDataSheets === 'function' ? getDataSheets() : workbook.order;
+        for (var si = 0; si < ds.length; si++) {
+          var sh = workbook.sheets[ds[si]];
+          if (sh && sh.rows && sh.rows.length > 0) {
+            firstRow = { _sheet_name: ds[si], _row_index: 0 };
+            break;
+          }
+        }
+      }
+      if (firstRow) {
+        if (firstRow._sheet_name && typeof firstRow._row_index !== 'undefined') {
+          openRowReviewDrawer(firstRow._sheet_name, firstRow._row_index);
+        } else if (firstRow._row_id) {
+          openRowReviewDrawer(firstRow._row_id);
+        }
+        _expandTriageSubnav();
+      } else if (!dataLoaded) {
         showToast('Load a dataset first', 'warning');
+      } else {
+        showToast('No records available to inspect', 'info');
       }
     }
 
@@ -15116,22 +15150,24 @@
 
       var triageSubnav = document.getElementById('triage-subnav');
       var triageParent = document.querySelector('.nav-parent[data-page="triage"]');
-      var isTriageFamily = (page === 'triage' || page === 'grid');
       if (triageSubnav && triageParent) {
-        if (isTriageFamily) {
+        if (page === 'grid') {
           triageSubnav.classList.add('expanded');
           triageParent.classList.add('expanded');
-          if (page === 'grid') triageParent.classList.add('active');
-        } else {
+          triageParent.classList.add('active');
+        } else if (page !== 'triage') {
           triageSubnav.classList.remove('expanded');
           triageParent.classList.remove('expanded');
         }
       }
       if (page === 'grid') {
         _populateGridSections();
+        _expandGridSections();
         if (!gridState.sheet) {
           document.querySelectorAll('#grid-sections-nav .nav-section-link').forEach(function(el) { el.classList.remove('active'); });
         }
+      } else {
+        _collapseGridSections();
       }
       
       // Show empty queue message on triage if no data loaded
