@@ -27585,10 +27585,10 @@
       if (typeof _p1fBatchScanItems !== 'undefined' && _p1fBatchScanItems.length > 0) {
         var _existKeys = {};
         analystTriageState.manualItems.forEach(function(m) {
-          if (m.contract_key && m.field_name) _existKeys[m.signal_type + ':' + m.contract_key + ':' + m.field_name] = true;
+          if (m.contract_key && m.field_name) _existKeys[m.signal_type + ':' + m.contract_key + ':' + (m.sheet_name || '') + ':' + m.field_name] = true;
         });
         _p1fBatchScanItems.forEach(function(item) {
-          var key = item.signal_type + ':' + item.contract_key + ':' + item.field_name;
+          var key = item.signal_type + ':' + item.contract_key + ':' + (item.sheet_name || '') + ':' + item.field_name;
           if (!_existKeys[key]) {
             analystTriageState.manualItems.push(item);
             _existKeys[key] = true;
