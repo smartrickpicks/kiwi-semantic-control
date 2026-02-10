@@ -17858,6 +17858,50 @@
       html += '<th>Health</th>';
       html += '</tr></thead><tbody>';
 
+      var _preDisplayNames = {};
+      var _preDisplayDupes = {};
+      for (var _pdi = 0; _pdi < groupOrder.length; _pdi++) {
+        var _pdGk = groupOrder[_pdi];
+        var _pdItems = groups[_pdGk].items;
+        var _pdName = _p1dGetDisplayName(_pdGk, _pdItems);
+        _preDisplayNames[_pdGk] = _pdName;
+        if (!_preDisplayDupes[_pdName]) _preDisplayDupes[_pdName] = [];
+        _preDisplayDupes[_pdName].push(_pdGk);
+      }
+      for (var _ddName in _preDisplayDupes) {
+        if (_preDisplayDupes[_ddName].length < 2) continue;
+        var _ddKeys = _preDisplayDupes[_ddName];
+        for (var _ddi = 0; _ddi < _ddKeys.length; _ddi++) {
+          var _ddGk = _ddKeys[_ddi];
+          var _ddItems = groups[_ddGk].items;
+          var _ddFn = '';
+          for (var _dfi = 0; _dfi < _ddItems.length; _dfi++) {
+            if (_ddItems[_dfi].file_name) { _ddFn = _ddItems[_dfi].file_name; break; }
+          }
+          if (_ddFn) {
+            var _ddClean = _ddFn.replace(/\.pdf$/i, '').replace(/_/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+            var _ddParts = _ddClean.split(' ');
+            var _ddBase = _preDisplayNames[_ddGk].split(' : ')[0] || '';
+            var _ddBaseLower = _ddBase.toLowerCase();
+            var _ddExtra = [];
+            for (var _dpi = 0; _dpi < _ddParts.length; _dpi++) {
+              if (_ddBaseLower.indexOf(_ddParts[_dpi].toLowerCase()) === -1 && _ddParts[_dpi].length > 1) {
+                _ddExtra.push(_ddParts[_dpi]);
+              }
+            }
+            if (_ddExtra.length > 0) {
+              var _ddSuffix = _ddExtra.slice(0, 4).join(' ');
+              if (_ddSuffix.length > 30) _ddSuffix = _ddSuffix.substring(0, 28) + '…';
+              _preDisplayNames[_ddGk] = _preDisplayNames[_ddGk] + ' (' + _ddSuffix + ')';
+            } else {
+              _preDisplayNames[_ddGk] = _preDisplayNames[_ddGk] + ' (#' + (_ddi + 1) + ')';
+            }
+          } else {
+            _preDisplayNames[_ddGk] = _preDisplayNames[_ddGk] + ' (#' + (_ddi + 1) + ')';
+          }
+        }
+      }
+
       var childrenRendered = 0;
       for (var gi = 0; gi < groupOrder.length; gi++) {
         var gk = groupOrder[gi];
@@ -17867,7 +17911,7 @@
         var defaultCollapsed = true;
         var isCollapsed = _p1dGroupState[groupId] !== undefined ? _p1dGroupState[groupId] : defaultCollapsed;
 
-        var displayName = _p1dGetDisplayName(gk, gItems);
+        var displayName = _preDisplayNames[gk] || _p1dGetDisplayName(gk, gItems);
         var _rawFn = ""; for (var _fni = 0; _fni < gItems.length; _fni++) { if (gItems[_fni].file_name) { _rawFn = gItems[_fni].file_name; break; } } var tooltipText = _rawFn ? _rawFn : gk;
         var compactId = 'batch';
         if (gk !== '_batch_level') {
