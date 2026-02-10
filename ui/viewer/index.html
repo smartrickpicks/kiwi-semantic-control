@@ -27271,7 +27271,9 @@
                     canonicalMatch = COLUMN_ALIAS_MAP[normToken][0] ? COLUMN_ALIAS_MAP[normToken][0].canonical_key : normToken;
                   }
                 }
-                var sysFields = { contract_key:1, file_name:1, file_url:1, status:1, sheet:1, record_id:1, dataset_id:1, group_id:1, document_type:1 };
+                var _canonicalOverrides = { totalamount: 'Amount__c', thresholdnumberofdays: 'Threshold_of_days__c' };
+                if (!mapped && _canonicalOverrides[normToken]) { mapped = true; canonicalMatch = _canonicalOverrides[normToken]; }
+                var sysFields = { contract_key:1, file_name:1, file_url:1, status:1, sheet:1, record_id:1, dataset_id:1, group_id:1, document_type:1, artists:1, amountbreakdown:1, amount_breakdown:1, addons:1, add_ons:1 };
                 var sysToken = (typeof _normFieldToken === 'function') ? _normFieldToken(h) : norm;
                 if (!mapped && (sysFields[norm] || sysFields[sysToken])) { mapped = true; canonicalMatch = (sysFields[norm] ? norm : sysToken) + ' (system)'; }
                 if (mapped) {
@@ -31140,6 +31142,9 @@
       known['contract_key'] = true; known['file_name'] = true; known['file_url'] = true;
       known['status'] = true; known['sheet'] = true; known['record_id'] = true;
       known['dataset_id'] = true; known['group_id'] = true; known['document_type'] = true;
+      known['artists'] = true; known['amountbreakdown'] = true; known['amount_breakdown'] = true;
+      known['addons'] = true; known['add_ons'] = true;
+      known['totalamount'] = true; known['thresholdnumberofdays'] = true;
       var _normToken = (typeof _normFieldToken === 'function') ? _normFieldToken : _norm;
       if (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.fields) {
         rulesBundleCache.fieldMeta.fields.forEach(function(f) {
