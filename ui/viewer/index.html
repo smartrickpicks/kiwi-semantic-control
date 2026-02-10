@@ -2535,7 +2535,7 @@
               <div style="display: flex; align-items: center; gap: 6px; width: 100%;">
                 <span id="srr-inspector-title" style="font-size: 0.95em;">Field Inspector</span>
                 <div class="inspector-action-chips" id="inspector-action-chips" style="margin-left: auto;"></div>
-                <button class="inspector-action-trigger" id="inspector-action-trigger" onclick="openBatchAddModal()" title="Add Catalog Items" style="display:none;">+</button>
+                <button class="inspector-action-trigger" id="inspector-action-trigger" onclick="openBatchAddModal()" title="Add Catalog Item" style="display:none;">+</button>
               </div>
               <div id="srr-context-bar" style="display:none; width:100%; padding: 4px 0; border-bottom: 1px solid #eee; margin-bottom: 2px;">
                 <div style="display:flex; align-items:center; gap:4px; margin-bottom:3px;">
@@ -2548,15 +2548,7 @@
                 </div>
               </div>
               <span id="srr-field-count" style="font-weight: normal; color: #666; font-size: 0.8em;">0 fields</span>
-              <div class="inspector-actions-menu" id="inspector-actions-menu" style="display:none;">
-                <div class="inspector-actions-menu-item" id="action-catalog-items" onclick="toggleCatalogItemsGroup()" style="cursor:pointer;">
-                  <span class="action-icon" style="background: #e3f2fd; color: #1565c0;">&#9776;</span>
-                  <span class="action-label">
-                    <span class="action-title">Set Catalog Item Anchor</span>
-                    <span class="action-desc">Mark as anchor and add catalog items</span>
-                  </span>
-                </div>
-              </div>
+              <div class="inspector-actions-menu" id="inspector-actions-menu" style="display:none;"></div>
             </div>
             <!-- v1.4.18: Search input -->
             <div class="srr-search-bar">
@@ -9063,29 +9055,11 @@
     }
 
     function updateInspectorActionsState() {
-      var record = srrState.currentRecord;
       var isAnalystOrAdmin = (currentMode === 'analyst' || currentMode === 'admin');
       var triggerBtn = document.getElementById('inspector-action-trigger');
       if (triggerBtn) triggerBtn.style.display = isAnalystOrAdmin ? 'inline-flex' : 'none';
-      var isAnchor = record && record._group && record._group.is_anchor;
-      var statusEl = document.getElementById('action-catalog-status');
-      if (statusEl) {
-        statusEl.textContent = isAnchor ? 'Active' : 'Off';
-        statusEl.className = 'action-status ' + (isAnchor ? 'active-status' : 'off-status');
-      }
-      var trigger = document.getElementById('inspector-action-trigger');
-      if (trigger) trigger.classList.toggle('has-active', !!isAnchor);
       var chipsEl = document.getElementById('inspector-action-chips');
-      if (chipsEl) {
-        var chips = '';
-        if (isAnchor) {
-          chips += '<span class="inspector-action-chip" onclick="toggleCatalogItemsGroup()" title="Click to remove">' +
-            '&#9776; Catalog Item Anchor <span class="chip-x">&times;</span></span>';
-          chips += '<span class="inspector-action-chip" onclick="openBatchAddModal()" title="Add missing items" style="background: #fff; border-color: #1565c0; color: #1565c0; cursor: pointer;">' +
-            '+ Add Items</span>';
-        }
-        chipsEl.innerHTML = chips;
-      }
+      if (chipsEl) chipsEl.innerHTML = '';
     }
 
         function toggleCatalogItemsGroup() {
@@ -35712,11 +35686,14 @@ Add any additional notes here.
     batchAddState.categorizedItems = [];
     batchAddState.rawText = '';
 
-    if (!record || !record._group || !record._group.is_anchor) {
-      batchAddState.step = 0;
-    } else {
-      batchAddState.step = 1;
+    if (!record._group || !record._group.is_anchor) {
+      if (typeof markAsGroupAnchor === 'function') markAsGroupAnchor(sheetName, rowIndex);
+      if (!record._capabilities) record._capabilities = {};
+      record._capabilities.catalog_items = true;
+      if (typeof updateSrrGroupBadge === 'function') updateSrrGroupBadge();
+      if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
     }
+    batchAddState.step = 1;
 
     document.getElementById('batch-add-modal').style.display = 'flex';
     renderBatchAddStep();
