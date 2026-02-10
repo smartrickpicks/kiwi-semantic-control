@@ -18467,8 +18467,12 @@
               if (derived) cid = derived;
             }
             if (cid) {
-              if (!perContract[cid]) perContract[cid] = 0;
-              perContract[cid]++;
+              if (!perContract[cid]) perContract[cid] = { count: 0, file_name: '' };
+              perContract[cid].count++;
+              if (!perContract[cid].file_name) {
+                var _fn = row.file_name || row.File_Name_c || row.File_Name || row.contract_key || '';
+                if (_fn) perContract[cid].file_name = _fn;
+              }
             } else {
               batchCount++;
             }
@@ -18480,7 +18484,8 @@
         var contractKeys = Object.keys(perContract);
         for (var ci = 0; ci < contractKeys.length; ci++) {
           var ck = contractKeys[ci];
-          var cnt = perContract[ck];
+          var cnt = perContract[ck].count;
+          var _ckFileName = perContract[ck].file_name || '';
           var pct = totalRows > 0 ? Math.round((cnt / totalRows) * 100) : 0;
           var msg = isPicklist
             ? cnt + ' of ' + totalRows + ' rows (' + pct + '%) have invalid picklist values'
@@ -18504,7 +18509,8 @@
             source: 'preflight',
             blocker_type: condition,
             can_create_patch: false,
-            _missing_value: true
+            _missing_value: true,
+            file_name: _ckFileName
           };
           enrichPreflightItem(item);
           _missingValuePreflightItems.push(item);
@@ -29230,10 +29236,13 @@
       if (typeof _p1fCheckSessionDiff === 'function' && !_p1fCheckSessionDiff._ran) { _p1fCheckSessionDiff._ran = true; _p1fCheckSessionDiff(); }
       // V2.3: Refresh and render analytics header
       if (typeof TriageAnalytics !== 'undefined') {
-        try { TriageAnalytics.refresh(); TriageAnalytics.renderHeader(); } catch(e) { console.warn('[V2.3] Analytics render error:', e); }
+        try { TriageAnalytics.refresh(); } catch(e) { console.warn('[V2.3] Analytics refresh error:', e); }
       }
       if (typeof _buildMissingValuePreflightItems === 'function') _buildMissingValuePreflightItems();
       if (typeof _mergeMissingValuePreflightItems === 'function') _mergeMissingValuePreflightItems();
+      if (typeof TriageAnalytics !== 'undefined') {
+        try { TriageAnalytics.renderHeader(); } catch(e) { console.warn('[V2.3] Analytics render error:', e); }
+      }
 
       
       // Update queue counts
