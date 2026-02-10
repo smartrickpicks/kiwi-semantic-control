@@ -3934,39 +3934,46 @@
           </div>
         </div>
 
-        <!-- Duplicate Account Resolution Modal -->
-        <div id="duplicate-account-modal" class="modal-overlay" style="display: none;">
-          <div class="modal-content" style="max-width: 520px;">
+        <!-- Account Check Interstitial Modal -->
+        <div id="account-check-modal" class="modal-overlay" style="display: none;">
+          <div class="modal-content" style="max-width: 900px;">
             <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center;">
-              <h3 style="margin:0; color:#f57c00;">&#128101; Possible Duplicate Account</h3>
-              <button class="modal-close" onclick="_closeDuplicateAccountModal()">&times;</button>
+              <h3 style="margin:0; color:#1565c0;">&#128101; Account Check</h3>
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span id="acct-check-progress" style="font-size:0.85em; color:#888;"></span>
+                <button class="modal-close" onclick="_acctCheckClose()">&times;</button>
+              </div>
             </div>
             <div class="modal-body" style="padding:16px;">
-              <p style="font-size:0.9em; color:#666; margin-bottom:16px;">These two account names appear similar and may refer to the same entity.</p>
+              <p style="font-size:0.9em; color:#666; margin-bottom:16px;">These two account names appear similar. Compare their contract structures to determine if they are the same entity.</p>
               <div style="display:flex; gap:16px; margin-bottom:16px;">
-                <div style="flex:1; background:#fff3e0; padding:12px; border-radius:8px; text-align:center;">
-                  <div style="font-weight:700; font-size:1.05em; color:#e65100;" id="dup-acct-name1"></div>
-                  <div style="font-size:0.82em; color:#999; margin-top:4px;" id="dup-acct-count1"></div>
+                <div style="flex:1; border:1px solid #e0e0e0; border-radius:8px; overflow:hidden;">
+                  <div style="background:#e3f2fd; padding:10px 14px; border-bottom:1px solid #bbdefb;">
+                    <div style="font-weight:700; font-size:1.05em; color:#1565c0;" id="acct-check-name1"></div>
+                  </div>
+                  <div id="acct-check-tree1" style="padding:12px; max-height:300px; overflow-y:auto; background:#fafafa;"></div>
                 </div>
-                <div style="flex:1; background:#fff3e0; padding:12px; border-radius:8px; text-align:center;">
-                  <div style="font-weight:700; font-size:1.05em; color:#e65100;" id="dup-acct-name2"></div>
-                  <div style="font-size:0.82em; color:#999; margin-top:4px;" id="dup-acct-count2"></div>
+                <div style="flex:1; border:1px solid #e0e0e0; border-radius:8px; overflow:hidden;">
+                  <div style="background:#fff3e0; padding:10px 14px; border-bottom:1px solid #ffe0b2;">
+                    <div style="font-weight:700; font-size:1.05em; color:#e65100;" id="acct-check-name2"></div>
+                  </div>
+                  <div id="acct-check-tree2" style="padding:12px; max-height:300px; overflow-y:auto; background:#fafafa;"></div>
                 </div>
               </div>
-              <div id="dup-acct-picker" style="display:none; background:#f5f5f5; padding:12px; border-radius:8px; margin-bottom:12px;">
+              <div id="acct-check-picker" style="display:none; background:#f5f5f5; padding:12px; border-radius:8px; margin-bottom:12px;">
                 <p style="font-size:0.88em; font-weight:600; margin:0 0 8px;">Keep which name?</p>
-                <label style="display:block; padding:6px 0; cursor:pointer; font-size:0.9em;"><input type="radio" name="dup-canonical" id="dup-radio-name1" value="" checked> <span id="dup-radio-label1"></span></label>
-                <label style="display:block; padding:6px 0; cursor:pointer; font-size:0.9em;"><input type="radio" name="dup-canonical" id="dup-radio-name2" value=""> <span id="dup-radio-label2"></span></label>
+                <label style="display:block; padding:6px 0; cursor:pointer; font-size:0.9em;"><input type="radio" name="acct-check-canonical" id="acct-check-radio1" value="" checked> <span id="acct-check-radio-label1"></span></label>
+                <label style="display:block; padding:6px 0; cursor:pointer; font-size:0.9em;"><input type="radio" name="acct-check-canonical" id="acct-check-radio2" value=""> <span id="acct-check-radio-label2"></span></label>
               </div>
             </div>
             <div class="modal-footer" style="display:flex; gap:8px; justify-content:flex-end; margin-top:12px; flex-wrap:wrap;">
-              <div id="dup-acct-initial-actions" style="display:flex; gap:8px;">
-                <button class="toolbar-btn" style="background:#2e7d32; color:#fff; font-weight:600;" onclick="_dupAcctShowPicker()">Same Person &mdash; Merge</button>
-                <button class="toolbar-btn" style="background:#757575; color:#fff;" onclick="_dupAcctConfirmDismiss()">Different People &mdash; Dismiss</button>
+              <div id="acct-check-initial-actions" style="display:flex; gap:8px;">
+                <button class="toolbar-btn" style="background:#2e7d32; color:#fff; font-weight:600;" onclick="_acctCheckShowPicker()">Same Person &mdash; Merge</button>
+                <button class="toolbar-btn" style="background:#757575; color:#fff;" onclick="_acctCheckConfirmDismiss()">Different People &mdash; Dismiss</button>
               </div>
-              <div id="dup-acct-merge-actions" style="display:none; gap:8px;">
-                <button class="toolbar-btn" style="background:#2e7d32; color:#fff; font-weight:600;" onclick="_dupAcctConfirmMerge()">Confirm Merge</button>
-                <button class="toolbar-btn" style="background:#757575; color:#fff;" onclick="_closeDuplicateAccountModal()">Cancel</button>
+              <div id="acct-check-merge-actions" style="display:none; gap:8px;">
+                <button class="toolbar-btn" style="background:#2e7d32; color:#fff; font-weight:600;" onclick="_acctCheckConfirmMerge()">Confirm Merge</button>
+                <button class="toolbar-btn" style="background:#757575; color:#fff;" onclick="_acctCheckClose()">Cancel</button>
               </div>
             </div>
           </div>
@@ -9970,7 +9977,7 @@
         // v2.3.5-P1F: Batch PDF scan on saved session load
         if (typeof _p1fBatchPdfScan === 'function') _p1fBatchPdfScan();
         stagedLoader.setStage('indexing');
-        try { ContractIndex.build(); populateContractSelector(); console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on session-load path'); } catch(e) { console.warn('[ContractIndex] Session restore build failed:', e); }
+        try { ContractIndex.build(); populateContractSelector(); console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on session-load path'); if (typeof _acctCheckRun === 'function') _acctCheckRun(); } catch(e) { console.warn('[ContractIndex] Session restore build failed:', e); }
         stagedLoader.setStage('changemap');
         saveWorkbookToCache();
         dataLoaded = true;
@@ -10614,6 +10621,7 @@
             ContractIndex.build();
             console.log('[RESTORE] ContractIndex rebuilt from workbook');
             console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on restore path');
+            if (typeof _acctCheckRun === 'function') _acctCheckRun();
           }
           populateContractSelector();
         } catch(e) { console.warn('[ContractIndex] Rebuild failed:', e); }
@@ -18171,9 +18179,6 @@
             var _q = String.fromCharCode(39);
             var _esc = function(v) { return (v || '').replace(/'/g, String.fromCharCode(92) + String.fromCharCode(39)); };
             var viewHandler = 'openPreflightItem(' + _q + _esc(item.request_id) + _q + ', ' + _q + _esc(item.record_id) + _q + ', ' + _q + _esc(item.contract_id || item.contract_key) + _q + ', ' + _q + _esc(item.field_name || item.field_key) + _q + ')';
-            if (item.blocker_type === 'DUPLICATE_ACCOUNT_NAME') {
-              viewHandler = '(function(){ var _items = _duplicateAccountItems || []; var _it = null; for(var _di=0;_di<_items.length;_di++){if(_items[_di].request_id==="' + _esc(item.request_id) + '"){_it=_items[_di];break;}} if(!_it){for(var _mi2=0;_mi2<analystTriageState.manualItems.length;_mi2++){if(analystTriageState.manualItems[_mi2].request_id==="' + _esc(item.request_id) + '"){_it=analystTriageState.manualItems[_mi2];break;}}} if(_it){_openDuplicateAccountModal(_it);}})()';
-            }
             var patchBtn = '';
             if (item.can_create_patch && item.status === 'open') {
               patchBtn = ' <button class="p1d1-patch-btn" onclick="event.stopPropagation(); createPatchFromBlocker(' + _q + _esc(item.request_id) + _q + ', ' + _q + _esc(item.record_id) + _q + ', ' + _q + _esc(item.field_name) + _q + ', ' + _q + _esc(item.blocker_type) + _q + ')">Patch</button>';
@@ -18771,86 +18776,144 @@
       if (_duplicateAccountItems.length > 0) console.log('[PREFLIGHT-DUP] built ' + _duplicateAccountItems.length + ' duplicate account items');
     }
 
-    function _mergeDuplicateAccountPreflightItems() {
-      if (!_duplicateAccountItems || _duplicateAccountItems.length === 0) return;
-      var _existKeys = {};
-      analystTriageState.manualItems.forEach(function(m) {
-        var k = (m.signal_type || '') + ':' + (m.request_id || '');
-        _existKeys[k] = true;
-      });
-      var added = 0;
-      _duplicateAccountItems.forEach(function(item) {
-        var k = item.signal_type + ':' + item.request_id;
-        if (!_existKeys[k]) {
-          analystTriageState.manualItems.push(item);
-          _existKeys[k] = true;
-          added++;
-        }
-      });
-      if (added > 0) console.log('[PREFLIGHT-DUP] merged ' + added + ' duplicate account items into Pre-Flight');
+    var _acctCheckQueue = [];
+    var _acctCheckIndex = 0;
+
+    function _escHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    function _openDuplicateAccountModal(item) {
-      var modal = document.getElementById('duplicate-account-modal');
+    function _acctCheckBuildSchemaTree(accountName, contractKeys) {
+      var html = '';
+      if (!contractKeys || contractKeys.length === 0) {
+        html += '<div style="color:#999; font-size:0.85em; padding:8px;">No contracts found</div>';
+        return html;
+      }
+      for (var ci = 0; ci < contractKeys.length; ci++) {
+        var ck = contractKeys[ci];
+        var contract = (ContractIndex._index && ContractIndex._index.contracts) ? ContractIndex._index.contracts[ck] : null;
+        if (!contract) continue;
+        var fname = contract.file_name || ck;
+        var sheetNames = Object.keys(contract.sheets || {});
+        var totalRows = contract.row_count || 0;
+        html += '<div style="margin-bottom:10px;">';
+        html += '<div style="font-weight:600; font-size:0.9em; color:#333; padding:4px 0; border-bottom:1px solid #e0e0e0;">';
+        html += '<span style="color:#1565c0;">&#128196;</span> ' + _escHtml(fname);
+        html += ' <span style="color:#999; font-size:0.8em;">(' + totalRows + ' rows)</span>';
+        html += '</div>';
+        for (var si = 0; si < sheetNames.length; si++) {
+          var sn = sheetNames[si];
+          var rowCount = contract.sheets[sn] ? contract.sheets[sn].length : 0;
+          var fieldCount = 0;
+          if (typeof workbook !== 'undefined' && workbook.sheets && workbook.sheets[sn]) {
+            var rows = workbook.sheets[sn].rows || [];
+            for (var ri = 0; ri < rows.length; ri++) {
+              var rck = rows[ri].contract_key || '';
+              var derivedId = ContractIndex.deriveContractId(rows[ri]);
+              if (derivedId === ck || rck === ck) {
+                var keys = Object.keys(rows[ri]);
+                for (var ki = 0; ki < keys.length; ki++) {
+                  var v = rows[ri][keys[ki]];
+                  if (v && typeof v === 'string' && v.trim() && v !== 'N/A' && v !== '-') fieldCount++;
+                }
+                break;
+              }
+            }
+          }
+          html += '<div style="padding:3px 0 3px 20px; font-size:0.85em; color:#555;">';
+          html += '<span style="color:#888;">&#9656;</span> ' + _escHtml(sn);
+          html += ' <span style="color:#999;">(' + rowCount + ' rows';
+          if (fieldCount > 0) html += ', ~' + fieldCount + ' fields';
+          html += ')</span>';
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+      return html;
+    }
+
+    function _acctCheckRun() {
+      _buildDuplicateAccountPreflightItems();
+      if (_duplicateAccountItems.length === 0) return;
+      _acctCheckQueue = _duplicateAccountItems.slice();
+      _acctCheckIndex = 0;
+      _acctCheckShowCurrent();
+    }
+
+    function _acctCheckShowCurrent() {
+      if (_acctCheckIndex >= _acctCheckQueue.length) {
+        _acctCheckClose();
+        return;
+      }
+      var item = _acctCheckQueue[_acctCheckIndex];
+      var modal = document.getElementById('account-check-modal');
       if (!modal) return;
       var names = item._duplicate_names || [];
       var keys = item._duplicate_contract_keys || {};
       var n1 = names[0] || '';
       var n2 = names[1] || '';
-      var c1 = (keys[n1] || []).length;
-      var c2 = (keys[n2] || []).length;
-      document.getElementById('dup-acct-name1').textContent = n1;
-      document.getElementById('dup-acct-name2').textContent = n2;
-      document.getElementById('dup-acct-count1').textContent = c1 + ' contract' + (c1 !== 1 ? 's' : '');
-      document.getElementById('dup-acct-count2').textContent = c2 + ' contract' + (c2 !== 1 ? 's' : '');
-      document.getElementById('dup-acct-picker').style.display = 'none';
-      document.getElementById('dup-acct-merge-actions').style.display = 'none';
-      document.getElementById('dup-acct-initial-actions').style.display = 'flex';
-      var radio1 = document.getElementById('dup-radio-name1');
-      var radio2 = document.getElementById('dup-radio-name2');
-      var lbl1 = document.getElementById('dup-radio-label1');
-      var lbl2 = document.getElementById('dup-radio-label2');
-      if (radio1) radio1.value = n1;
+
+      document.getElementById('acct-check-progress').textContent = 'Pair ' + (_acctCheckIndex + 1) + ' of ' + _acctCheckQueue.length;
+
+      document.getElementById('acct-check-name1').textContent = n1;
+      document.getElementById('acct-check-name2').textContent = n2;
+
+      document.getElementById('acct-check-tree1').innerHTML = _acctCheckBuildSchemaTree(n1, keys[n1] || []);
+      document.getElementById('acct-check-tree2').innerHTML = _acctCheckBuildSchemaTree(n2, keys[n2] || []);
+
+      var radio1 = document.getElementById('acct-check-radio1');
+      var radio2 = document.getElementById('acct-check-radio2');
+      var lbl1 = document.getElementById('acct-check-radio-label1');
+      var lbl2 = document.getElementById('acct-check-radio-label2');
+      if (radio1) { radio1.value = n1; radio1.checked = true; }
       if (radio2) radio2.value = n2;
       if (lbl1) lbl1.textContent = n1;
       if (lbl2) lbl2.textContent = n2;
-      if (radio1) radio1.checked = true;
-      modal.setAttribute('data-dup-item-id', item.request_id || '');
-      modal.setAttribute('data-dup-n1', n1);
-      modal.setAttribute('data-dup-n2', n2);
+
+      document.getElementById('acct-check-picker').style.display = 'none';
+      document.getElementById('acct-check-merge-actions').style.display = 'none';
+      document.getElementById('acct-check-initial-actions').style.display = 'flex';
+
+      modal.setAttribute('data-n1', n1);
+      modal.setAttribute('data-n2', n2);
+
       modal.style.display = 'flex';
     }
 
-    function _closeDuplicateAccountModal() {
-      var modal = document.getElementById('duplicate-account-modal');
+    function _acctCheckClose() {
+      var modal = document.getElementById('account-check-modal');
       if (modal) modal.style.display = 'none';
+      if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
     }
 
-    function _dupAcctShowPicker() {
-      document.getElementById('dup-acct-picker').style.display = 'block';
-      document.getElementById('dup-acct-merge-actions').style.display = 'flex';
-      document.getElementById('dup-acct-initial-actions').style.display = 'none';
+    function _acctCheckShowPicker() {
+      document.getElementById('acct-check-picker').style.display = 'block';
+      document.getElementById('acct-check-merge-actions').style.display = 'flex';
+      document.getElementById('acct-check-initial-actions').style.display = 'none';
     }
 
-    function _dupAcctConfirmMerge() {
-      var modal = document.getElementById('duplicate-account-modal');
+    function _acctCheckConfirmMerge() {
+      var modal = document.getElementById('account-check-modal');
       if (!modal) return;
-      var n1 = modal.getAttribute('data-dup-n1') || '';
-      var n2 = modal.getAttribute('data-dup-n2') || '';
-      var radio1 = document.getElementById('dup-radio-name1');
+      var n1 = modal.getAttribute('data-n1') || '';
+      var n2 = modal.getAttribute('data-n2') || '';
+      var radio1 = document.getElementById('acct-check-radio1');
       var canonicalName = (radio1 && radio1.checked) ? n1 : n2;
       var otherName = (canonicalName === n1) ? n2 : n1;
       _resolveDuplicateAccountSame(canonicalName, otherName);
-      _closeDuplicateAccountModal();
+      _acctCheckIndex++;
+      _acctCheckShowCurrent();
     }
 
-    function _dupAcctConfirmDismiss() {
-      var modal = document.getElementById('duplicate-account-modal');
+    function _acctCheckConfirmDismiss() {
+      var modal = document.getElementById('account-check-modal');
       if (!modal) return;
-      var n1 = modal.getAttribute('data-dup-n1') || '';
-      var n2 = modal.getAttribute('data-dup-n2') || '';
+      var n1 = modal.getAttribute('data-n1') || '';
+      var n2 = modal.getAttribute('data-n2') || '';
       _resolveDuplicateAccountDifferent(n1, n2);
-      _closeDuplicateAccountModal();
+      _acctCheckIndex++;
+      _acctCheckShowCurrent();
     }
 
     function _resolveDuplicateAccountSame(canonicalName, otherName) {
@@ -18895,7 +18958,6 @@
           break;
         }
       }
-      if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
       if (typeof showToast === 'function') showToast('Merged: ' + otherName + ' \u2192 ' + canonicalName, 'success');
       if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
         AuditTimeline.emit('duplicate_account_resolved', { action: 'merge', canonical: canonicalName, other: otherName });
@@ -18919,7 +18981,6 @@
           break;
         }
       }
-      if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
       if (typeof showToast === 'function') showToast('Dismissed \u2014 accounts kept separate', 'info');
     }
 
@@ -28709,8 +28770,7 @@
         LOW_CONFIDENCE: { label: 'Low Confidence', badge: 'warn', icon: '\u26a0', desc: 'Extraction confidence below 60%. Values may be unreliable.' },
         DOCUMENT_TYPE_MISSING: { label: 'Document Type Missing', badge: 'warn', icon: '\ud83d\udcc4', desc: 'Document type not assigned or not recognized. Assign a valid document type before proceeding.' },
         MISSING_REQUIRED: { label: 'Missing Required', badge: 'fail', icon: '\u2757', desc: 'A required field defined in field_meta.json is missing or empty in this record.' },
-        PICKLIST_INVALID: { label: 'Invalid Picklist', badge: 'warn', icon: '\ud83d\udcdd', desc: 'Field value does not match any allowed option in the picklist.' },
-        DUPLICATE_ACCOUNT_NAME: { label: 'Possible Duplicate', badge: 'warn', icon: '\ud83d\udc65', desc: 'Two or more account names appear similar and may refer to the same entity. Confirm or dismiss.' }
+        PICKLIST_INVALID: { label: 'Invalid Picklist', badge: 'warn', icon: '\ud83d\udcdd', desc: 'Field value does not match any allowed option in the picklist.' }
     };
 
     function loadAnalystTriageFromStore() {
@@ -29833,8 +29893,6 @@
       // Build and merge missing-value Pre-Flight items before analytics refresh
       if (typeof _buildMissingValuePreflightItems === 'function') _buildMissingValuePreflightItems();
       if (typeof _mergeMissingValuePreflightItems === 'function') _mergeMissingValuePreflightItems();
-      if (typeof _buildDuplicateAccountPreflightItems === 'function') _buildDuplicateAccountPreflightItems();
-      if (typeof _mergeDuplicateAccountPreflightItems === 'function') _mergeDuplicateAccountPreflightItems();
       // V2.3: Refresh and render analytics header (after missing-value merge so pfAlerts includes all sources)
       if (typeof TriageAnalytics !== 'undefined') {
         try { TriageAnalytics.refresh(); TriageAnalytics.renderHeader(); } catch(e) { console.warn('[V2.3] Analytics refresh error:', e); }
@@ -32205,7 +32263,7 @@
           if (typeof detectUnknownColumns === 'function') detectUnknownColumns();
 
           // v2.2: Build contract index after signals
-          try { ContractIndex.build(); populateContractSelector(); console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on upload path'); } catch(e) { console.error('[ContractIndex] Post-import build failed:', e); }
+          try { ContractIndex.build(); populateContractSelector(); console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on upload path'); if (typeof _acctCheckRun === 'function') _acctCheckRun(); } catch(e) { console.error('[ContractIndex] Post-import build failed:', e); }
 
           // v1.6.33: Seed patch requests from RFI meta sheet (if present in uploaded file)
           seedPatchRequestsFromMetaSheet();
@@ -36601,6 +36659,7 @@ Add any additional notes here.
         try {
           ContractIndex.build();
           populateContractSelector();
+          if (typeof _acctCheckRun === 'function') _acctCheckRun();
           console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on demo/sandbox path');
         } catch(e) { console.warn('[ContractIndex] Demo/sandbox build failed:', e); }
 
