@@ -26719,26 +26719,46 @@
             });
 
             var stage = 'loaded';
-            var _scanResult = (typeof _p1fScanState !== 'undefined' && _p1fScanState.results) ? _p1fScanState.results[cid] : null;
-            if (_scanResult) {
-              if (_scanResult === 'clean') {
-                stage = 'preflight_complete';
-                var _isRoutedToSP = (typeof _p1f2CleanItems !== 'undefined') && _p1f2CleanItems.some(function(ci) { return ci.contract_key === cid; });
-                if (_isRoutedToSP) stage = 'system_pass_ready';
-              }
-            } else {
-              var hasBlockers = false;
-              (analystTriageState.manualItems || []).forEach(function(item) {
+            var _hasScanResults = (typeof _p1fScanState !== 'undefined' && _p1fScanState.results);
+            var _scanResult = _hasScanResults ? _p1fScanState.results[cid] : null;
+            var _scanHasRun = _hasScanResults && (_p1fScanState.scanned > 0 || Object.keys(_p1fScanState.results).length > 0);
+
+            var hasBlockers = false;
+            (analystTriageState.manualItems || []).forEach(function(item) {
+              if (item.contract_id === cid || item.contract_key === cid) hasBlockers = true;
+            });
+            if (typeof _p1fBatchScanItems !== 'undefined') {
+              _p1fBatchScanItems.forEach(function(item) {
                 if (item.contract_id === cid || item.contract_key === cid) hasBlockers = true;
               });
-              if (!hasBlockers) stage = 'preflight_complete';
             }
 
-            if (typeof SystemPass !== 'undefined' && SystemPass._lastRunTimestamp) {
-              stage = 'system_pass_complete';
+            if (_scanResult) {
+              if (_scanResult === 'clean') {
+                if (hasBlockers) {
+                  stage = 'preflight_complete';
+                } else {
+                  stage = 'preflight_complete';
+                  var _isRoutedToSP = (typeof _p1f2CleanItems !== 'undefined') && _p1f2CleanItems.some(function(ci) { return ci.contract_key === cid; });
+                  if (_isRoutedToSP) stage = 'system_pass_complete';
+                }
+              } else {
+                stage = 'preflight_complete';
+              }
+            } else if (_scanHasRun && !hasBlockers) {
+              stage = 'preflight_complete';
+            }
+
+            if (!hasBlockers && typeof SystemPass !== 'undefined' && SystemPass._lastRunTimestamp) {
               var cProposals = (SystemPass._proposals || []).filter(function(p) { return p.contract_id === cid; });
-              var allReviewed = cProposals.length === 0 || cProposals.every(function(p) { return p.status !== 'pending'; });
-              if (allReviewed) stage = 'system_changes_reviewed';
+              if (cProposals.length > 0) {
+                stage = 'system_pass_complete';
+                var allReviewed = cProposals.every(function(p) { return p.status !== 'pending'; });
+                if (allReviewed) stage = 'system_changes_reviewed';
+              } else if (stage === 'preflight_complete') {
+                var _isRoutedToSP2 = (typeof _p1f2CleanItems !== 'undefined') && _p1f2CleanItems.some(function(ci) { return ci.contract_key === cid; });
+                if (_isRoutedToSP2) stage = 'system_pass_complete';
+              }
             }
 
             if (contractPatches.length > 0) {
@@ -26748,6 +26768,9 @@
               if (contractPatches.every(function(p) { var s = (p.status||'').toLowerCase(); return s === 'admin_approved' || s === 'applied' || s === 'closed'; })) stage = 'admin_promoted';
               if (contractPatches.every(function(p) { var s = (p.status||'').toLowerCase(); return s === 'applied' || s === 'closed'; })) stage = 'applied';
             }
+
+            if (typeof window._lifecycleAudit === 'undefined') window._lifecycleAudit = {};
+            window._lifecycleAudit[cid] = stage;
 
             cache.lifecycle[stage] = cache.lifecycle[stage] || { count: 0, pct: 0 };
             cache.lifecycle[stage].count++;
@@ -26795,6 +26818,17 @@
         Object.keys(cache.lifecycle).forEach(function(stage) {
           cache.lifecycle[stage].pct = totalContracts > 0 ? Math.round((cache.lifecycle[stage].count / totalContracts) * 100) : 0;
         });
+
+        var _lcSum = 0;
+        var _lcDetail = [];
+        Object.keys(cache.lifecycle).forEach(function(stage) {
+          _lcSum += cache.lifecycle[stage].count;
+          if (cache.lifecycle[stage].count > 0) _lcDetail.push(stage + '=' + cache.lifecycle[stage].count);
+        });
+        console.log('[TRIAGE-ANALYTICS][LIFECYCLE-AUDIT] total_contracts=' + totalContracts + ' sum_of_stages=' + _lcSum + ' breakdown: ' + _lcDetail.join(', '));
+        if (_lcSum !== totalContracts) {
+          console.warn('[TRIAGE-ANALYTICS][LIFECYCLE-AUDIT] MISMATCH: sum_of_stages(' + _lcSum + ') != total_contracts(' + totalContracts + ')');
+        }
 
         if (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.fields) {
           var allFields = rulesBundleCache.fieldMeta.fields;
