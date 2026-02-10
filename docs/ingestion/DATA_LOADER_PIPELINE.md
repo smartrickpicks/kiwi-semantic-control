@@ -377,7 +377,7 @@ When fields are added, renamed, or removed:
 1. Update `rules/rules_bundle/field_meta.json` — add/modify field definitions, types, required flags, picklist options
 2. Update `rules/rules_bundle/hinge_groups.json` — if hinge fields change
 3. Update `rules/rules_bundle/sheet_order.json` — if sheets are added/renamed/reordered
-4. Regenerate via `python scripts/build_rules_bundle.py`
+4. Regenerate rules bundle (NOTE: `scripts/build_rules_bundle.py` not found in repo — edit JSON files directly or use Schema Tree Editor in Admin panel)
 5. Validate against schemas in `rules/rules_bundle/schemas/`
 
 ### Column Mapping Updates

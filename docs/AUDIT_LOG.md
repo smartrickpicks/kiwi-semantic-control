@@ -59,7 +59,7 @@ All audit events are persisted in an IndexedDB database (`orchestrate_audit`) wi
 | FIELD_BLACKLISTED | srrBlacklistField | Field flagged for blacklist |
 | FIELD_CORRECTED | verifierRejectField | Verifier rejects a field |
 | MANUAL_ROW_ADD | batchAddRows | Rows added via batch add |
-| CATALOG_GROUP_SET | markAsGroupAnchor | Record set as group anchor |
+| CATALOG_GROUP_SET | markAsGroupAnchor | Record set as Catalog Item Anchor (enum key preserved for backward compatibility; UI label is "Catalog Item Anchor") |
 | SESSION_RESTORED | session restore | Session restored from IndexedDB cache |
 | SYSTEM_CHANGE_APPLIED | aaShowReplayAuditLog | Replay evaluation result |
 | ADMIN_HOLD_SET | updatePatchRequestStatus | Admin places hold |

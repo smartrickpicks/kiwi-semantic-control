@@ -2535,7 +2535,7 @@
               <div style="display: flex; align-items: center; gap: 6px; width: 100%;">
                 <span id="srr-inspector-title" style="font-size: 0.95em;">Field Inspector</span>
                 <div class="inspector-action-chips" id="inspector-action-chips" style="margin-left: auto;"></div>
-                <button class="inspector-action-trigger" id="inspector-action-trigger" onclick="toggleInspectorActionsMenu(event)" title="Record actions" style="display:none;">+</button>
+                <button class="inspector-action-trigger" id="inspector-action-trigger" onclick="openBatchAddModal()" title="Add Catalog Items" style="display:none;">+</button>
               </div>
               <div id="srr-context-bar" style="display:none; width:100%; padding: 4px 0; border-bottom: 1px solid #eee; margin-bottom: 2px;">
                 <div style="display:flex; align-items:center; gap:4px; margin-bottom:3px;">
@@ -2552,8 +2552,8 @@
                 <div class="inspector-actions-menu-item" id="action-catalog-items" onclick="toggleCatalogItemsGroup()" style="cursor:pointer;">
                   <span class="action-icon" style="background: #e3f2fd; color: #1565c0;">&#9776;</span>
                   <span class="action-label">
-                    <span class="action-title">Set Catalog Group</span>
-                    <span class="action-desc">Mark as group anchor and add items</span>
+                    <span class="action-title">Set Catalog Item Anchor</span>
+                    <span class="action-desc">Mark as anchor and add catalog items</span>
                   </span>
                 </div>
               </div>
@@ -3531,8 +3531,8 @@
         </div>
           <!-- v1.6.48: Batch Add Settings -->
           <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Catalog Items Grouping <span class="info-icon" title="Catalog Items Grouping allows Analysts to mark records as group anchors and batch-add catalog items. The feature is per-record (off by default).">&#9432;</span></h3>
-            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Catalog Items Grouping is enabled per-record. Analysts use the + menu in the Field Inspector. Per-sheet overrides below are optional.</p>
+            <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Catalog Item Wizard <span class="info-icon" title="Catalog Item Wizard allows Analysts to mark records as catalog item anchors and batch-add catalog items. The feature is per-record.">&#9432;</span></h3>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Catalog Item Wizard is enabled per-record. Analysts use the + button in the Field Inspector to open the wizard directly. Per-sheet overrides below are optional.</p>
             <div id="admin-batch-add-toggles" style="display: flex; flex-direction: column; gap: 8px;">
               <div style="color: #999; font-size: 0.85em; font-style: italic;">Load a dataset to see available sheets.</div>
             </div>
@@ -8960,10 +8960,75 @@
       });
     }
 
+
+    // ========== CATALOG METADATA RESOLVER (CAT-04) ==========
+    function resolveCatalogMetadata(sheetName) {
+      var result = { fields: [], byKey: {} };
+      if (typeof rulesBundleCache === 'undefined' || !rulesBundleCache.fieldMeta || !rulesBundleCache.fieldMeta.fields) return result;
+      var allFields = rulesBundleCache.fieldMeta.fields;
+      var meta = rulesBundleCache.fieldMeta.meta || {};
+      var sheetMapping = meta.sheet_mapping || {};
+      var defSheet = '';
+      var sn = (sheetName || '').toLowerCase();
+      for (var mk in sheetMapping) {
+        if (sheetMapping.hasOwnProperty(mk) && mk.toLowerCase() === sn) {
+          defSheet = sheetMapping[mk];
+          break;
+        }
+      }
+      if (!defSheet && sn.indexOf('catalog') >= 0) defSheet = 'Catalog Fields Definitions';
+      for (var fi = 0; fi < allFields.length; fi++) {
+        var f = allFields[fi];
+        var fSource = (f.source_sheet || f.sheet || '').toLowerCase();
+        var matchesDef = defSheet && fSource === defSheet.toLowerCase();
+        var matchesSheet = fSource.indexOf(sn) >= 0 || sn.indexOf(fSource.replace(/ fields defini.*$/i, '').trim().toLowerCase()) >= 0;
+        if (!matchesDef && !matchesSheet) continue;
+        var hasConstraint = false;
+        var req = f.requiredness || '';
+        var rf = f.return_format || '';
+        var opts = f.options || f.picklist || [];
+        var maxLen = 0;
+        var lenMatch = rf.match(/\((\d+)/);
+        if (lenMatch) maxLen = parseInt(lenMatch[1], 10);
+        var isPicklist = rf.toLowerCase().indexOf('picklist') >= 0 || rf.toLowerCase().indexOf('dropdown') >= 0;
+        if (isPicklist && opts.length === 0 && f.picklist && f.picklist.length > 0) opts = f.picklist;
+        var isRequired = req === 'required';
+        var isOptional = req === 'optional';
+        var isFormula = rf.toLowerCase().indexOf('formula') >= 0;
+        var isAutoNumber = rf.toLowerCase().indexOf('auto number') >= 0;
+        var isLookup = rf.toLowerCase().indexOf('lookup') >= 0;
+        if (isFormula || isAutoNumber) continue;
+        if (isRequired || isOptional || (isPicklist && opts.length > 0) || maxLen > 0) hasConstraint = true;
+        if (!hasConstraint) continue;
+        var entry = {
+          field_key: f.field_key,
+          field_label: f.field_label || f.field_key.replace(/__c$/i, '').replace(/_/g, ' '),
+          requiredness: req,
+          return_format: rf,
+          options: opts,
+          max_length: maxLen,
+          is_picklist: isPicklist,
+          is_lookup: isLookup,
+          definition: f.definition || ''
+        };
+        if (!result.byKey[f.field_key]) {
+          result.fields.push(entry);
+          result.byKey[f.field_key] = entry;
+        }
+      }
+      result.fields.sort(function(a, b) {
+        var ra = a.requiredness === 'required' ? 0 : (a.requiredness === 'optional' ? 1 : 2);
+        var rb = b.requiredness === 'required' ? 0 : (b.requiredness === 'optional' ? 1 : 2);
+        return ra - rb;
+      });
+      console.log('[CAT-04] resolveCatalogMetadata: sheet=' + sheetName + ', fields_with_constraints=' + result.fields.length);
+      return result;
+    }
+
     function guessTargetField(sheetName) {
       var sheet = workbook.sheets[sheetName];
       if (!sheet || !sheet.headers) return null;
-      var candidates = ['Title', 'Item Name', 'Name', 'Item_Name', 'Description', 'Subject', 'Label'];
+      var candidates = ['Name', 'Title', 'Item Name', 'Item_Name', 'Description', 'Subject', 'Label'];
       for (var i = 0; i < candidates.length; i++) {
         if (sheet.headers.indexOf(candidates[i]) >= 0) return candidates[i];
       }
@@ -9015,7 +9080,7 @@
         var chips = '';
         if (isAnchor) {
           chips += '<span class="inspector-action-chip" onclick="toggleCatalogItemsGroup()" title="Click to remove">' +
-            '&#9776; Catalog Group <span class="chip-x">&times;</span></span>';
+            '&#9776; Catalog Item Anchor <span class="chip-x">&times;</span></span>';
           chips += '<span class="inspector-action-chip" onclick="openBatchAddModal()" title="Add missing items" style="background: #fff; border-color: #1565c0; color: #1565c0; cursor: pointer;">' +
             '+ Add Items</span>';
         }
@@ -9037,12 +9102,12 @@
         }
         delete record._group;
         if (record._capabilities) delete record._capabilities.catalog_items;
-        showToast('Record removed as Catalog Items group.', 'info');
+        showToast('Record removed as Catalog Item Anchor.', 'info');
       } else {
         markAsGroupAnchor(sheetName, rowIndex);
         if (!record._capabilities) record._capabilities = {};
         record._capabilities.catalog_items = true;
-        showToast('Record set as Catalog Items group anchor.', 'success');
+        showToast('Record set as Catalog Item Anchor.', 'success');
       }
 
       var isAnchor = record._group && record._group.is_anchor;
@@ -9184,6 +9249,17 @@
         });
         newRow[targetField] = ci.text;
 
+        if (batchAddState && batchAddState.metadata) {
+          var metaKeys = Object.keys(batchAddState.metadata);
+          for (var mki = 0; mki < metaKeys.length; mki++) {
+            var mk = metaKeys[mki];
+            var mv = batchAddState.metadata[mk];
+            if (mv && mk !== targetField) {
+              newRow[mk] = mv;
+            }
+          }
+        }
+
         var globalIdx = sheet.rows.length + idx;
         enhanceRowWithIdentity(newRow, sheetName, globalIdx, sourceFileName, datasetId);
 
@@ -9226,7 +9302,7 @@
           record_id: row.record_id || '',
           dataset_id: datasetId || '',
           file_id: sheetName || '',
-          metadata: { group_id: groupId, target_field: targetField, actor: actor, source: 'batch_add' }
+          metadata: { group_id: groupId, target_field: targetField, actor: actor, source: 'batch_add', applied_metadata: (batchAddState && batchAddState.metadata) ? Object.keys(batchAddState.metadata) : [] }
         });
       });
 
@@ -35592,18 +35668,19 @@ Add any additional notes here.
       showToast('Select a record first.', 'warning');
       return;
     }
-    if (!record || !record._group || !record._group.is_anchor) {
-      showToast('Set this record as a Catalog Items Group first.', 'warning');
-      return;
-    }
 
-    batchAddState.step = 1;
     batchAddState.sheetName = sheetName;
     batchAddState.anchorRowIndex = rowIndex;
     batchAddState.targetField = guessTargetField(sheetName);
     batchAddState.items = [];
     batchAddState.categorizedItems = [];
     batchAddState.rawText = '';
+
+    if (!record || !record._group || !record._group.is_anchor) {
+      batchAddState.step = 0;
+    } else {
+      batchAddState.step = 1;
+    }
 
     document.getElementById('batch-add-modal').style.display = 'flex';
     renderBatchAddStep();
@@ -35627,6 +35704,24 @@ Add any additional notes here.
     var anchor = sheet ? sheet.rows[batchAddState.anchorRowIndex] : null;
     var anchorLabel = anchor ? (anchor[sheet.headers[0]] || 'Row ' + (batchAddState.anchorRowIndex + 1)) : 'Unknown';
 
+    if (batchAddState.step === 0) {
+      var recordLabel = anchor ? (anchor[sheet.headers[0]] || 'Row ' + (batchAddState.anchorRowIndex + 1)) : 'Unknown';
+      body.innerHTML =
+        '<div style="text-align: center; padding: 20px 10px;">' +
+          '<div style="font-size: 2em; margin-bottom: 12px;">&#9875;</div>' +
+          '<div style="font-size: 1em; font-weight: 600; color: #333; margin-bottom: 8px;">Set as Catalog Item Anchor?</div>' +
+          '<div style="font-size: 0.85em; color: #666; margin-bottom: 16px;">This record needs to be marked as a Catalog Item Anchor before adding items. This is required to group new items under this record.</div>' +
+          '<div style="background: #e3f2fd; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px;">' +
+            '<div style="font-size: 0.78em; color: #888; margin-bottom: 2px;">Record</div>' +
+            '<div style="font-weight: 600; font-size: 0.95em; color: #1565c0;">' + escapeHtml(recordLabel) + '</div>' +
+          '</div>' +
+          '<button onclick="window._batchAddSetAnchorAndContinue()" style="background: linear-gradient(135deg, #1565c0, #1976d2); color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 0.9em; font-weight: 600; cursor: pointer;">Set as Catalog Item Anchor and Continue</button>' +
+        '</div>';
+      footer.innerHTML =
+        '<button class="batch-add-btn-cancel" onclick="closeBatchAddModal()">Cancel</button>';
+      return;
+    }
+
     if (batchAddState.step === 1) {
       var targetOptions = '';
       if (sheet && sheet.headers) {
@@ -35639,7 +35734,7 @@ Add any additional notes here.
       }
       body.innerHTML =
         '<div style="margin-bottom: 12px;">' +
-          '<div style="font-size: 0.85em; color: #666; margin-bottom: 4px;">Group Anchor</div>' +
+          '<div style="font-size: 0.85em; color: #666; margin-bottom: 4px;">Catalog Item Anchor</div>' +
           '<div style="background: #e3f2fd; padding: 8px 12px; border-radius: 6px; font-weight: 600; font-size: 0.9em;">' + escapeHtml(anchorLabel) + '</div>' +
         '</div>' +
         '<div style="margin-bottom: 12px;">' +
@@ -35648,8 +35743,46 @@ Add any additional notes here.
         '</div>' +
         '<div>' +
           '<label style="font-size: 0.85em; color: #666; display: block; margin-bottom: 4px;">Paste items (one per line)</label>' +
-          '<textarea id="batch-add-textarea" class="batch-add-textarea" rows="10" placeholder="Item 1\nItem 2\nItem 3\n...">' + escapeHtml(batchAddState.rawText) + '</textarea>' +
-        '</div>';
+          '<textarea id="batch-add-textarea" class="batch-add-textarea" rows="8" placeholder="Item 1\nItem 2\nItem 3\n...">' + escapeHtml(batchAddState.rawText) + '</textarea>' +
+        '</div>' +
+        (function() {
+          var catMeta = resolveCatalogMetadata(batchAddState.sheetName);
+          if (catMeta.fields.length === 0) return '';
+          if (!batchAddState.metadata) batchAddState.metadata = {};
+          var metaHtml = '<div style="margin-top: 14px; border-top: 1px solid #e0e0e0; padding-top: 12px;">' +
+            '<div style="font-size: 0.85em; font-weight: 600; color: #333; margin-bottom: 8px;">Catalog Item Metadata</div>' +
+            '<div style="font-size: 0.75em; color: #888; margin-bottom: 10px;">Only fields with rules or constraints are shown. Empty fields are skipped.</div>';
+          for (var mi = 0; mi < catMeta.fields.length; mi++) {
+            var mf = catMeta.fields[mi];
+            if (mf.field_key === batchAddState.targetField) continue;
+            var reqBadge = mf.requiredness === 'required' ? ' <span style="color:#c62828;font-weight:600;">*</span>' : '';
+            var storedVal = batchAddState.metadata[mf.field_key] || '';
+            var fmtHint = '';
+            if (mf.max_length > 0) fmtHint = ' (max ' + mf.max_length + ' chars)';
+            if (mf.is_picklist && mf.options.length > 0) {
+              metaHtml += '<div style="margin-bottom: 8px;">' +
+                '<label style="font-size: 0.8em; color: #555; display: block; margin-bottom: 2px;">' + escapeHtml(mf.field_label) + reqBadge + '</label>' +
+                '<select data-meta-key="' + escapeHtml(mf.field_key) + '" onchange="window._batchAddSetMeta(this)" style="width:100%;padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:0.85em;">' +
+                '<option value="">— Select —</option>';
+              for (var oi = 0; oi < mf.options.length; oi++) {
+                var optVal = typeof mf.options[oi] === 'object' ? (mf.options[oi].value || mf.options[oi].label || '') : String(mf.options[oi]);
+                var optSel = storedVal === optVal ? ' selected' : '';
+                metaHtml += '<option value="' + escapeHtml(optVal) + '"' + optSel + '>' + escapeHtml(optVal) + '</option>';
+              }
+              metaHtml += '</select></div>';
+            } else if (!mf.is_lookup) {
+              metaHtml += '<div style="margin-bottom: 8px;">' +
+                '<label style="font-size: 0.8em; color: #555; display: block; margin-bottom: 2px;">' + escapeHtml(mf.field_label) + reqBadge + fmtHint + '</label>' +
+                '<input type="text" data-meta-key="' + escapeHtml(mf.field_key) + '" value="' + escapeHtml(storedVal) + '" ' +
+                (mf.max_length > 0 ? 'maxlength="' + mf.max_length + '" ' : '') +
+                'onchange="window._batchAddSetMeta(this)" ' +
+                'style="width:100%;padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:0.85em;box-sizing:border-box;" />' +
+                '</div>';
+            }
+          }
+          metaHtml += '</div>';
+          return metaHtml;
+        })();
       footer.innerHTML =
         '<button class="batch-add-btn-cancel" onclick="closeBatchAddModal()">Cancel</button>' +
         '<button class="batch-add-btn-next" onclick="window._batchAddNext()">Next: Preview</button>';
@@ -35715,9 +35848,75 @@ Add any additional notes here.
       footer.innerHTML =
         '<button class="batch-add-btn-cancel" onclick="closeBatchAddModal()">Cancel</button>' +
         '<button class="batch-add-btn-back" onclick="window._batchAddBack()">Back</button>' +
+        (function() {
+          var catMeta = resolveCatalogMetadata(batchAddState.sheetName);
+          var issues = [];
+          if (catMeta.fields.length > 0 && batchAddState.metadata) {
+            for (var vi = 0; vi < catMeta.fields.length; vi++) {
+              var vf = catMeta.fields[vi];
+              if (vf.field_key === batchAddState.targetField) continue;
+              var val = batchAddState.metadata[vf.field_key] || '';
+              if (vf.requiredness === 'required' && !val.trim()) {
+                issues.push({ field: vf.field_label, msg: 'Required field is empty' });
+              }
+              if (val && vf.is_picklist && vf.options.length > 0) {
+                var validOpts = vf.options.map(function(o) { return typeof o === 'object' ? (o.value || o.label || '') : String(o); });
+                if (validOpts.indexOf(val) === -1) {
+                  issues.push({ field: vf.field_label, msg: 'Value "' + val + '" is not a valid option' });
+                }
+              }
+              if (val && vf.max_length > 0 && val.length > vf.max_length) {
+                issues.push({ field: vf.field_label, msg: 'Exceeds max length of ' + vf.max_length + ' (' + val.length + ' chars)' });
+              }
+            }
+          }
+          if (issues.length > 0) {
+            var issueHtml = '<div style="margin-top:8px;padding:8px 12px;background:#ffebee;border-radius:6px;font-size:0.8em;">' +
+              '<div style="font-weight:600;color:#c62828;margin-bottom:4px;">Validation Issues (' + issues.length + ')</div>';
+            for (var ii = 0; ii < issues.length; ii++) {
+              issueHtml += '<div style="color:#b71c1c;margin-bottom:2px;">&bull; <strong>' + escapeHtml(issues[ii].field) + ':</strong> ' + escapeHtml(issues[ii].msg) + '</div>';
+            }
+            issueHtml += '</div>';
+            document.getElementById('batch-add-body').innerHTML += issueHtml;
+          }
+          return issues.length > 0;
+        })() ?
+        '<button class="batch-add-btn-cancel" onclick="closeBatchAddModal()">Cancel</button>' +
+        '<button class="batch-add-btn-confirm" disabled style="opacity:0.5;cursor:not-allowed;" title="Fix validation issues first">Confirm &amp; Add Rows</button>' :
+        '<button class="batch-add-btn-cancel" onclick="closeBatchAddModal()">Cancel</button>' +
         '<button class="batch-add-btn-confirm" onclick="window._batchAddConfirm()">Confirm &amp; Add Rows</button>';
     }
   }
+
+  window._batchAddSetMeta = function(el) {
+    var key = el.getAttribute('data-meta-key');
+    if (!key) return;
+    if (!batchAddState.metadata) batchAddState.metadata = {};
+    var val = el.value || '';
+    if (val) {
+      batchAddState.metadata[key] = val;
+    } else {
+      delete batchAddState.metadata[key];
+    }
+  };
+
+    window._batchAddSetAnchorAndContinue = function() {
+    var sheetName = batchAddState.sheetName;
+    var rowIndex = batchAddState.anchorRowIndex;
+    if (typeof markAsGroupAnchor === 'function') {
+      markAsGroupAnchor(sheetName, rowIndex);
+    }
+    var record = srrState.currentRecord;
+    if (record) {
+      if (!record._capabilities) record._capabilities = {};
+      record._capabilities.catalog_items = true;
+    }
+    if (typeof updateInspectorActionsState === 'function') updateInspectorActionsState();
+    if (typeof updateSrrGroupBadge === 'function') updateSrrGroupBadge();
+    if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
+    batchAddState.step = 1;
+    renderBatchAddStep();
+  };
 
   window._batchAddSetTarget = function(val) {
     batchAddState.targetField = val;

@@ -42,10 +42,13 @@ All bundle files must conform to their respective schemas for the application to
 
 ## How to Regenerate
 
-The rules bundle is generated from source configuration files using the build script:
+The rules bundle is generated from source configuration files. The original build script (`scripts/build_rules_bundle.py`) is not present in the current repo. Rules bundle JSON files are maintained directly via the Schema Tree Editor in the Admin panel or by manual editing.
+
+> **TODO**: `scripts/build_rules_bundle.py` — Not found. If automated regeneration from the Master Glossary XLSX is needed, this script must be recreated. The `glossary_source` path in each rules bundle JSON meta block is historical provenance pointing to the original local source file.
 
 ```bash
-python scripts/build_rules_bundle.py
+# Historical reference (script not found):
+# python scripts/build_rules_bundle.py
 ```
 
 ### Source Files
