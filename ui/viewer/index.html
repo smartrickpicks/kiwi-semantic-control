@@ -17618,8 +17618,7 @@
         }
         var gridSelector = document.getElementById('contract-filter-selector') || document.getElementById('sidebar-sheet-selector');
         if (gridSelector) gridSelector.value = contractKey;
-        window.location.hash = '#/grid';
-        if (typeof renderGrid === 'function') renderGrid();
+        console.log('[P1D.1] view_contract_fallback: stayed on current view for ' + contractKey);
       }
     }
 
@@ -29069,8 +29068,7 @@
           }
           if (!_openedRecord) {
             _activeContractFilter = _cid;
-            navigateTo('grid');
-            setTimeout(function() { if (typeof renderGrid === 'function') renderGrid(); }, 100);
+            console.log('[P0.8-LINK] contract_filter_set: ' + _cid + ' (stayed on current view)');
           }
         } else if (resolution.target) {
           if (resolution.target.sheetName && resolution.target.sheetName !== 'canonical') {
