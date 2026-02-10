@@ -18488,14 +18488,23 @@
           var url = row.file_url || row.File_URL_c || '';
           var fn = row.file_name || row.File_Name_c || row.File_Name || '';
           if (!url || !fn) continue;
-          var groupKey = fn.trim().toLowerCase();
-          if (contracts[groupKey]) continue;
-          var ck = row.contract_key || row.contract_id || fn;
+          var canonicalId = (typeof ContractIndex !== 'undefined' && typeof ContractIndex.deriveContractId === 'function')
+            ? ContractIndex.deriveContractId(row)
+            : null;
+          var groupKey = canonicalId || fn.trim().toLowerCase();
+          if (contracts[groupKey]) {
+            if (contracts[groupKey].sheet_names.indexOf(sheetName) === -1) {
+              contracts[groupKey].sheet_names.push(sheetName);
+            }
+            continue;
+          }
+          var ck = canonicalId || row.contract_key || row.contract_id || fn;
           contracts[groupKey] = {
             contract_key: ck,
             file_url: url,
             file_name: fn,
             sheet_name: sheetName,
+            sheet_names: [sheetName],
             record: row
           };
         }
@@ -18504,7 +18513,7 @@
       for (var k in contracts) {
         if (contracts.hasOwnProperty(k)) list.push(contracts[k]);
       }
-      console.log('[P1F] _p1fExtractUniqueContracts: ' + list.length + ' unique contracts by file_name');
+      console.log('[P1F][P0-A] _p1fExtractUniqueContracts: ' + list.length + ' unique contracts (canonical), sheets collected per contract');
       return list;
     }
 
@@ -18540,8 +18549,11 @@
               file_url: contract.file_url,
               file_name: contract.file_name
             };
-            _p1fRouteToPreFlight(mockRecord, contract.sheet_name, 'TEXT_NOT_SEARCHABLE',
-              'PDF has no searchable text: ' + nonSearch.reason);
+            var _sheetsToRoute = contract.sheet_names || [contract.sheet_name];
+            for (var _si = 0; _si < _sheetsToRoute.length; _si++) {
+              _p1fRouteToPreFlight(mockRecord, _sheetsToRoute[_si], 'TEXT_NOT_SEARCHABLE',
+                'PDF has no searchable text: ' + nonSearch.reason);
+            }
             _p1fScanState.results[contract.contract_key] = 'non_searchable';
             _p1f1Flagged(contract.contract_key, ['TEXT_NOT_SEARCHABLE']);
             try { if (preflightLiveState.active) { _p1fRenderContractHealth(); } } catch(e) {}
@@ -18567,9 +18579,12 @@
               file_url: contract.file_url,
               file_name: contract.file_name
             };
-            _p1fRouteToPreFlight(mockRec, contract.sheet_name, signalType,
-              (impactLabels[impact] || 'Mojibake') + ': ' + mojibake.reason + ' (' + Math.round(mojibake.ratio * 100) + '%)',
-              severity, impact);
+            var _sheetsToRouteMoji = contract.sheet_names || [contract.sheet_name];
+            for (var _msi = 0; _msi < _sheetsToRouteMoji.length; _msi++) {
+              _p1fRouteToPreFlight(mockRec, _sheetsToRouteMoji[_msi], signalType,
+                (impactLabels[impact] || 'Mojibake') + ': ' + mojibake.reason + ' (' + Math.round(mojibake.ratio * 100) + '%)',
+                severity, impact);
+            }
             _p1fScanState.results[contract.contract_key] = 'mojibake_' + impact;
             _p1f1Flagged(contract.contract_key, [signalType, 'MOJIBAKE_ENCODING']);
             try { if (preflightLiveState.active) { _p1fRenderContractHealth(); } } catch(e) {}
@@ -18620,7 +18635,7 @@
       };
       enrichPreflightItem(item);
       var isDup = _p1fBatchScanItems.some(function(m) {
-        return m.signal_type === condition && m.contract_key === contractKey && m.field_name === 'file_url';
+        return m.signal_type === condition && m.contract_key === contractKey && m.sheet_name === (sheetName || '') && m.field_name === 'file_url';
       });
       if (!isDup) {
         item.preflight_pdf_status = item.severity === 'blocker' ? 'blocker' : 'warning';
@@ -19512,7 +19527,8 @@
     // Signal storage: dataset.signals_by_cell[record_id][field_key] = [signals]
     var signalStore = {
       signals_by_cell: {},
-      stats: { total: 0, by_type: {} }
+      stats: { total: 0, by_type: {} },
+      _recordToSheet: {}
     };
     
     // Mojibake detection regex (replacement characters, common encoding issues)
@@ -20732,6 +20748,7 @@
       // Reset signal store
       signalStore.signals_by_cell = {};
       signalStore.stats = { total: 0, by_type: {} };
+      signalStore._recordToSheet = {};
       
       var recordCount = 0;
       var signalCount = 0;
@@ -20758,6 +20775,7 @@
           if (!signalStore.signals_by_cell[recordId]) {
             signalStore.signals_by_cell[recordId] = {};
           }
+          signalStore._recordToSheet[recordId] = sheetName;
           // Backfill document_type and capabilities
           if (!row._document_type) row._document_type = 'Unknown';
           if (!row._document_role) row._document_role = 'Unknown';
@@ -26432,7 +26450,7 @@
             if (_fieldMatches(f.field_key, f.field_label)) cache.schema.standard_matched++;
           });
           cache.schema.missing_required = allFields.filter(function(f) {
-            return f.required && !_fieldMatches(f.field_key, f.field_label);
+            return f.requiredness === 'required' && !_fieldMatches(f.field_key, f.field_label);
           }).length;
         }
         if (typeof ContractIndex !== 'undefined' && ContractIndex.isAvailable() && ContractIndex._index && ContractIndex._index.unknown_columns) {
@@ -26478,12 +26496,28 @@
         });
         var _affectedCk = {};
         var _impactedRecords = 0;
+        var _normalizeContractKey = function(item) {
+          var raw = item.contract_key || item.contract_id || '';
+          if (raw.indexOf('ctr_') === 0) return raw;
+          if (item.record && typeof ContractIndex !== 'undefined' && typeof ContractIndex.deriveContractId === 'function') {
+            var derived = ContractIndex.deriveContractId(item.record);
+            if (derived) return derived;
+          }
+          if (typeof ContractIndex !== 'undefined' && ContractIndex._index && ContractIndex._index.contracts) {
+            var cKeys = Object.keys(ContractIndex._index.contracts);
+            for (var ci = 0; ci < cKeys.length; ci++) {
+              var c = ContractIndex._index.contracts[cKeys[ci]];
+              if (c && (c.file_name === raw || c.contract_id === raw)) return cKeys[ci];
+            }
+          }
+          return raw;
+        };
         (analystTriageState.manualItems || []).forEach(function(item) {
-          if (item.contract_key || item.contract_id) _affectedCk[item.contract_key || item.contract_id] = true;
+          if (item.contract_key || item.contract_id) _affectedCk[_normalizeContractKey(item)] = true;
           if (item.record_id) _impactedRecords++;
         });
         (typeof _p1fBatchScanItems !== 'undefined' ? _p1fBatchScanItems : []).forEach(function(item) {
-          if (item.contract_key || item.contract_id) _affectedCk[item.contract_key || item.contract_id] = true;
+          if (item.contract_key || item.contract_id) _affectedCk[_normalizeContractKey(item)] = true;
         });
         cache.batch_summary.affected_contracts = Object.keys(_affectedCk).length;
         cache.batch_summary.records_impacted = _impactedRecords;
@@ -27628,9 +27662,11 @@
         fieldKeys.forEach(function(fieldKey) {
           var signals = fieldSignals[fieldKey];
           signals.forEach(function(signal) {
-            var _sheetFromRid = '';
-            var _colonIdx = recordId.lastIndexOf(':');
-            if (_colonIdx > 0) _sheetFromRid = recordId.substring(0, _colonIdx);
+            var _sheetFromRid = signalStore._recordToSheet[recordId] || '';
+            if (!_sheetFromRid) {
+              var _colonIdx = recordId.lastIndexOf(':');
+              if (_colonIdx > 0) _sheetFromRid = recordId.substring(0, _colonIdx);
+            }
             items.push({
               id: recordId + '|' + fieldKey + '|' + signal.signal_type,
               signal_type: signal.signal_type,
