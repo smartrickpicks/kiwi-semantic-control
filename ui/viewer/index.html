@@ -17238,6 +17238,132 @@
       return sn || '-';
     }
 
+    // ═══ PREFLIGHT-TERMS: Contract Section + Glossary Term Mapping ═══
+    var _SECTION_CANON = {
+      'accounts': 'Accounts',
+      'account': 'Accounts',
+      'opportunity': 'Opportunity',
+      'opportunities': 'Opportunity',
+      'financials': 'Financials',
+      'financial': 'Financials',
+      'catalog': 'Catalog',
+      'schedule': 'Schedule',
+      'schedule_catalog': 'Schedule Catalog',
+      'schedule catalog': 'Schedule Catalog',
+      'schedulecatalog': 'Schedule Catalog',
+      'v2_add_ons': 'V2 Add Ons',
+      'v2 add ons': 'V2 Add Ons',
+      'v2addons': 'V2 Add Ons',
+      'add_ons': 'V2 Add Ons',
+      'add ons': 'V2 Add Ons',
+      'contacts': 'Contacts',
+      'contact': 'Contacts'
+    };
+
+    function canonicalContractSection(rawName) {
+      if (!rawName) return { contract_section_key: 'unknown', contract_section_label: 'Unknown' };
+      var trimmed = rawName.trim();
+      var lower = trimmed.toLowerCase().replace(/[\s_]+/g, '_');
+      if (_SECTION_CANON[lower]) {
+        var label = _SECTION_CANON[lower];
+        return { contract_section_key: label.toLowerCase().replace(/\s+/g, '_'), contract_section_label: label };
+      }
+      var lowerSpace = trimmed.toLowerCase().replace(/[_]+/g, ' ').trim();
+      if (_SECTION_CANON[lowerSpace]) {
+        var label2 = _SECTION_CANON[lowerSpace];
+        return { contract_section_key: label2.toLowerCase().replace(/\s+/g, '_'), contract_section_label: label2 };
+      }
+      if (_SECTION_CANON[trimmed.toLowerCase()]) {
+        var label3 = _SECTION_CANON[trimmed.toLowerCase()];
+        return { contract_section_key: label3.toLowerCase().replace(/\s+/g, '_'), contract_section_label: label3 };
+      }
+      var titleCase = trimmed.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+      return { contract_section_key: trimmed.toLowerCase().replace(/\s+/g, '_'), contract_section_label: titleCase };
+    }
+
+    var _pfTermCache = null;
+    function _buildPfTermCache() {
+      if (_pfTermCache) return _pfTermCache;
+      _pfTermCache = { bySection: {}, global: {} };
+      if (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.fields) {
+        var fields = rulesBundleCache.fieldMeta.fields;
+        for (var i = 0; i < fields.length; i++) {
+          var f = fields[i];
+          var fk = (f.field_key || '').toLowerCase();
+          var sheet = (f.sheet || '').toLowerCase().replace(/\s+/g, '_');
+          if (!fk) continue;
+          var entry = { field_label: f.field_label || '', field_key: f.field_key || '', definition: f.definition || '' };
+          if (sheet) {
+            if (!_pfTermCache.bySection[sheet]) _pfTermCache.bySection[sheet] = {};
+            _pfTermCache.bySection[sheet][fk] = entry;
+          }
+          if (!_pfTermCache.global[fk]) _pfTermCache.global[fk] = entry;
+        }
+      }
+      return _pfTermCache;
+    }
+
+    function resolvePreflightFieldTerm(item) {
+      var cache = _buildPfTermCache();
+      var sectionKey = (item.contract_section_key || '').toLowerCase();
+      var rawFieldKey = item.field_key || item.field_name || '';
+      var fkLower = rawFieldKey.toLowerCase();
+      if (sectionKey && cache.bySection[sectionKey] && cache.bySection[sectionKey][fkLower]) {
+        var exact = cache.bySection[sectionKey][fkLower];
+        return { field_label: exact.field_label, field_key: rawFieldKey, field_definition: exact.definition, _resolution: 'exact' };
+      }
+      if (cache.global[fkLower]) {
+        var glob = cache.global[fkLower];
+        return { field_label: glob.field_label, field_key: rawFieldKey, field_definition: glob.definition, _resolution: 'global' };
+      }
+      var humanized = rawFieldKey.replace(/_c$/i, '').replace(/__c$/i, '').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); }).trim();
+      if (humanized && humanized !== rawFieldKey) {
+        return { field_label: humanized, field_key: rawFieldKey, field_definition: '', _resolution: 'humanized' };
+      }
+      return { field_label: rawFieldKey || 'Unknown Term', field_key: rawFieldKey, field_definition: '', _resolution: 'unknown' };
+    }
+
+    var _REASON_LABELS = {
+      'OCR_UNREADABLE': 'Unreadable Content (OCR)',
+      'OCR_MOJIBAKE': 'Encoding Artifacts (Mojibake)',
+      'MISSING_REQUIRED': 'Missing Required Field',
+      'PICKLIST_INVALID': 'Invalid Picklist Value',
+      'UNKNOWN_COLUMN': 'Unknown Column',
+      'HEADER_ECHO': 'Header Echo Row',
+      'LOW_CONFIDENCE': 'Low Confidence Extraction',
+      'UNATTACHED_SCHEDULE': 'Unattached Schedule',
+      'TEXT_NOT_SEARCHABLE': 'Non-Searchable PDF',
+      'PDF_VERIFIED_CLEAN': 'PDF Verified Clean',
+      'MANUAL_REVIEW': 'Manual Review Required',
+      'QA_FLAG': 'QA Validation Flag',
+      'SYSTEM_CHANGE': 'System Change Applied'
+    };
+
+    var _pfTermStats = { exact: 0, global: 0, humanized: 0, unknown: 0 };
+
+    function enrichPreflightItem(item) {
+      var rawSheet = item.sheet_name || item.sheet || '';
+      var section = canonicalContractSection(rawSheet);
+      item.contract_section_key = section.contract_section_key;
+      item.contract_section_label = section.contract_section_label;
+      if (!item.sheet_name) item.sheet_name = section.contract_section_label;
+      var term = resolvePreflightFieldTerm(item);
+      item.field_label = term.field_label;
+      if (!item.field_key) item.field_key = term.field_key;
+      if (term.field_definition) item.field_definition = term.field_definition;
+      _pfTermStats[term._resolution] = (_pfTermStats[term._resolution] || 0) + 1;
+      var rc = item.blocker_type || item.signal_type || item.reason_code || '';
+      item.reason_code = rc;
+      item.reason_label = _REASON_LABELS[rc] || rc.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+      return item;
+    }
+
+    function _logPfTermStats(context) {
+      console.log('[PREFLIGHT-TERMS][MAP] ' + context + ': exact=' + _pfTermStats.exact + ', global=' + _pfTermStats.global + ', humanized=' + _pfTermStats.humanized + ', unknown=' + _pfTermStats.unknown);
+      _pfTermStats = { exact: 0, global: 0, humanized: 0, unknown: 0 };
+    }
+    // ═══ END PREFLIGHT-TERMS ═══
+
     function _p1dRenderGrouped(items, containerId) {
       var container = document.getElementById(containerId);
       if (!container) return;
@@ -17326,13 +17452,13 @@
 
         var sheetCounts = {};
         for (var si = 0; si < gItems.length; si++) {
-          var sn = gItems[si].sheet_name || 'Unknown';
+          var sn = gItems[si].contract_section_label || gItems[si].sheet_name || 'Unknown';
           sheetCounts[sn] = (sheetCounts[sn] || 0) + 1;
         }
         var sectionChips = '';
         var sheetNames = Object.keys(sheetCounts).sort();
         for (var sc = 0; sc < sheetNames.length; sc++) {
-          sectionChips += '<span class="p1d1-section-chip">' + escapeHtml(sheetNames[sc]) + '(' + sheetCounts[sheetNames[sc]] + ')</span>';
+          sectionChips += '<span class="p1d1-section-chip">' + escapeHtml(sheetNames[sc]) + ' (' + sheetCounts[sheetNames[sc]] + ')</span>';
         }
 
         var sevSummary = '';
@@ -17410,8 +17536,15 @@
           var _cdEntry = _childDedupeMap[_childDedupeOrder[di]];
           var item = _cdEntry.item;
           var _dupCount = _cdEntry.count;
-          var sName = escapeHtml(item.sheet_name || 'Unknown');
-          var fName = escapeHtml(_p1xGetReference(item));
+          var sName = escapeHtml(item.contract_section_label || item.sheet_name || 'Unknown');
+          var fLabel = item.field_label || _p1xGetReference(item);
+          var fName = escapeHtml(fLabel);
+          if (item.field_key && item.field_key !== fLabel) {
+            fName += ' <span style="color:#999;font-size:0.82em;">' + escapeHtml(item.field_key) + '</span>';
+          }
+          if (item.field_definition) {
+            fName = '<span title="' + escapeHtml(item.field_definition) + '">' + fName + '</span>';
+          }
 
           var reasonHtml = '-';
           if (item.blocker_type && typeof _preflightBlockerTypes !== 'undefined') {
@@ -27476,7 +27609,7 @@
         }
       }
       for (var i = 0; i < items.length; i++) {
-        var sn = items[i].sheet_name || 'Unknown';
+        var sn = items[i].contract_section_label || items[i].sheet_name || 'Unknown';
         sheetCounts[sn] = (sheetCounts[sn] || 0) + 1;
       }
       var sheets = Object.keys(sheetCounts).sort();
@@ -27496,7 +27629,7 @@
       if (_p1aActiveSheet === 'All') return items;
       var filtered = [];
       for (var i = 0; i < items.length; i++) {
-        var sn = items[i].sheet_name || 'Unknown';
+        var sn = items[i].contract_section_label || items[i].sheet_name || 'Unknown';
         if (sn === _p1aActiveSheet) filtered.push(items[i]);
       }
       return filtered;
@@ -27539,7 +27672,12 @@
       if (patchCountEl) patchCountEl.textContent = '(' + patchCount + ')';
       if (systemCountEl) systemCountEl.textContent = '(' + systemCount + ')';
       
-      // Render each queue table
+      // Render each queue table — enrich Pre-Flight items with glossary terms
+      _pfTermCache = null;
+      for (var _ei = 0; _ei < analystTriageState.manualItems.length; _ei++) {
+        enrichPreflightItem(analystTriageState.manualItems[_ei]);
+      }
+      _logPfTermStats('renderAnalystTriage');
       _p1aBuildSheetTabs(analystTriageState.manualItems);
       var _p1aFiltered = _p1aFilterBySheet(analystTriageState.manualItems);
       _p1dRenderGrouped(_p1aFiltered, 'p1d-preflight-container');
