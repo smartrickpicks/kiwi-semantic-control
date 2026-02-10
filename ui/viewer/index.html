@@ -533,11 +533,11 @@
     .srr-panel-right.collapsed { flex-basis: 0px; min-width: 0; overflow: hidden; opacity: 0; padding: 0; border: none; }
     .srr-patch-expand-strip { display: none; writing-mode: vertical-rl; text-orientation: mixed; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 4px 0 0 4px; padding: 12px 6px; cursor: pointer; font-size: 0.75em; font-weight: 600; color: #1976d2; position: relative; order: 0; flex-shrink: 0; letter-spacing: 1px; }
     .srr-patch-expand-strip:hover { background: #bbdefb; }
-    .srr-left-tabs { display: flex; gap: 0; border-bottom: 2px solid #e0e0e0; background: #fafafa; flex-shrink: 0; }
-    .srr-left-tab { padding: 8px 14px; font-size: 0.8em; font-weight: 600; color: #888; cursor: pointer; border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: color 0.15s, border-color 0.15s; white-space: nowrap; }
-    .srr-left-tab:hover { color: #555; background: #f0f0f0; }
-    .srr-left-tab.active { color: #1565c0; border-bottom-color: #1565c0; }
-    .srr-left-tab-body { display: none; flex: 1; overflow-y: auto; flex-direction: column; }
+    .srr-left-tabs { display: flex; flex-direction: column; gap: 2px; background: #f0f0f0; flex-shrink: 0; padding: 6px 3px; width: 36px; min-width: 36px; border-left: 1px solid #e0e0e0; }
+    .srr-left-tab { padding: 7px 0; font-size: 0.6em; font-weight: 700; color: #888; cursor: pointer; border: none; background: none; border-radius: 4px; transition: color 0.15s, background 0.15s; white-space: nowrap; text-align: center; line-height: 1.2; letter-spacing: 0.02em; }
+    .srr-left-tab:hover { color: #555; background: #e4e4e4; }
+    .srr-left-tab.active { color: #1565c0; background: #e3f2fd; }
+    .srr-left-tab-body { display: none; flex: 1; overflow-y: auto; flex-direction: column; min-width: 0; }
     .srr-left-tab-body.active { display: flex; }
     .srr-glossary-list { padding: 0; }
     .srr-glossary-entry { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.1s; }
@@ -2573,19 +2573,14 @@
         <!-- Three-Panel Layout -->
         <div class="srr-layout">
           <!-- Left Panel: Field Inspector with Search, Filters, Field Cards -->
-          <div class="srr-panel srr-panel-left">
-            <div class="srr-panel-header" style="flex-direction: column; align-items: flex-start; gap: 0; position: relative; padding-bottom: 0;">
-              <div style="display: flex; align-items: center; gap: 6px; width: 100%; padding-bottom: 6px;">
-                <span id="srr-inspector-title" style="font-size: 0.95em;">Field Inspector</span>
-                <div class="inspector-action-chips" id="inspector-action-chips" style="margin-left: auto;"></div>
-                <button class="inspector-action-trigger" id="inspector-action-trigger" onclick="openBatchAddModal()" title="Add Catalog Item" style="display:none;">+</button>
-              </div>
-              <div class="srr-left-tabs" id="srr-left-tabs">
-                <button class="srr-left-tab active" data-tab="editor" onclick="srrSwitchLeftTab('editor')">Editor</button>
-                <button class="srr-left-tab" data-tab="patch" onclick="srrSwitchLeftTab('patch')">Patch Studio</button>
-                <button class="srr-left-tab" data-tab="glossary" onclick="srrSwitchLeftTab('glossary')">Glossary</button>
-              </div>
+          <div class="srr-panel srr-panel-left" style="display: flex; flex-direction: column;">
+            <div class="srr-panel-header" style="align-items: center; gap: 6px; padding: 8px 12px;">
+              <span id="srr-inspector-title" style="font-size: 0.95em;">Field Inspector</span>
+              <div class="inspector-action-chips" id="inspector-action-chips" style="margin-left: auto;"></div>
+              <button class="inspector-action-trigger" id="inspector-action-trigger" onclick="openBatchAddModal()" title="Add Catalog Item" style="display:none;">+</button>
             </div>
+            <div style="display: flex; flex: 1; overflow: hidden;">
+              <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0;">
             <div class="srr-left-tab-body active" id="srr-tab-editor" data-tab="editor">
               <div id="srr-context-bar" style="display:none; width:100%; padding: 4px 0; border-bottom: 1px solid #eee; margin-bottom: 2px;">
                 <div style="display:flex; align-items:center; gap:4px; margin-bottom:3px;">
@@ -2635,6 +2630,13 @@
               <div id="srr-glossary-sheet-filter" style="padding: 4px 12px 8px; display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid #eee;"></div>
               <div class="srr-glossary-list" id="srr-glossary-list" style="flex: 1; overflow-y: auto;">
                 <div class="srr-glossary-empty">Loading glossary...</div>
+              </div>
+            </div>
+              </div>
+              <div class="srr-left-tabs" id="srr-left-tabs">
+                <button class="srr-left-tab active" data-tab="editor" onclick="srrSwitchLeftTab('editor')" title="Editor">Edit</button>
+                <button class="srr-left-tab" data-tab="patch" onclick="srrSwitchLeftTab('patch')" title="Patch Studio">Patch</button>
+                <button class="srr-left-tab" data-tab="glossary" onclick="srrSwitchLeftTab('glossary')" title="Glossary">Info</button>
               </div>
             </div>
           </div>
