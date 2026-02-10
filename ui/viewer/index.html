@@ -512,7 +512,7 @@
     .srr-footer { background: #f5f5f5; border-top: 1px solid #e0e0e0; padding: 8px 16px; text-align: center; }
     .srr-footer-filename { font-size: 0.85em; color: #666; font-weight: 500; }
     .srr-panel { background: white; border: 1px solid #e0e0e0; overflow-y: auto; }
-    .srr-panel-left { flex: 0 0 380px; flex-shrink: 0; border-right: none; order: 3; transition: flex-basis 0.3s ease, opacity 0.3s ease; }
+    .srr-panel-left { flex: 0 0 418px; flex-shrink: 0; border-right: none; order: 3; transition: flex-basis 0.3s ease, opacity 0.3s ease; }
     .srr-panel-left.collapsed { flex-basis: 0px; min-width: 0; overflow: hidden; opacity: 0; padding: 0; border: none; }
     .srr-panel-center { flex: 1; min-width: 300px; order: 2; }
     .srr-panel-right { flex: 0 0 320px; flex-shrink: 0; border-left: none; order: 1; transition: flex-basis 0.3s ease, opacity 0.3s ease; }
@@ -22368,7 +22368,6 @@
     }
 
     function srrSelectField(fieldKey) {
-      _srrExpandPatchPanel();
       // Highlight selected field
       document.querySelectorAll('.srr-field-item').forEach(function(el) {
         el.classList.remove('active');
