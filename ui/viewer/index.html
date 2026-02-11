@@ -28404,12 +28404,65 @@
             html += '</tbody></table>';
           }
           if (cache.schema._batch_unmapped_items && cache.schema._batch_unmapped_items.length > 0) {
-            html += '<h4 style="margin:16px 0 8px;font-size:0.9em;color:#e65100;">Unmapped Headers (' + cache.schema._batch_unmapped_items.length + ')</h4>';
-            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;"><thead><tr style="background:#fff3e0;"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Section</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Header</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Normalized</th></tr></thead><tbody>';
+            var _umNormMap = {};
+            var _umNormOrder = [];
+            var _umSectionSet = {};
             cache.schema._batch_unmapped_items.forEach(function(item) {
-              html += '<tr><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.section + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;">' + item.header + '</td><td style="padding:4px 8px;border-bottom:1px solid #eee;color:#e65100;">' + item.normalized + '</td></tr>';
+              var nk = item.normalized;
+              _umSectionSet[item.section] = true;
+              if (!_umNormMap[nk]) { _umNormMap[nk] = { normalized: nk, header: item.header, sections: [], sectionSet: {} }; _umNormOrder.push(nk); }
+              if (!_umNormMap[nk].sectionSet[item.section]) {
+                _umNormMap[nk].sections.push(item.section);
+                _umNormMap[nk].sectionSet[item.section] = true;
+              }
             });
-            html += '</tbody></table>';
+            var _umAllSections = Object.keys(_umSectionSet);
+            var _umThreshold = Math.max(2, Math.floor(_umAllSections.length * 0.5));
+            var _umBatchWide = [];
+            var _umSectionOnly = [];
+            for (var _umi = 0; _umi < _umNormOrder.length; _umi++) {
+              var _umEntry = _umNormMap[_umNormOrder[_umi]];
+              if (_umEntry.sections.length >= _umThreshold) { _umBatchWide.push(_umEntry); } else { _umSectionOnly.push(_umEntry); }
+            }
+            var _umUniqueCount = _umNormOrder.length;
+            var _umTotalRaw = cache.schema._batch_unmapped_items.length;
+            html += '<h4 style="margin:16px 0 8px;font-size:0.9em;color:#e65100;">Unmapped Headers (' + _umUniqueCount + ' unique, ' + _umTotalRaw + ' total)</h4>';
+            var _umThStyle = 'padding:8px 10px;text-align:left;border-bottom:2px solid #e2e8f0;font-weight:600;font-size:0.82em;color:#475569;';
+            var _umTdStyle = 'padding:6px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle;';
+            if (_umBatchWide.length > 0) {
+              html += '<div style="margin-bottom:16px;">';
+              html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="background:#1565c0;color:#fff;font-size:0.72em;font-weight:700;padding:3px 10px;border-radius:12px;">BATCH-WIDE</div><span style="font-size:0.8em;color:#64748b;">Headers found across most or all sections</span></div>';
+              html += '<table style="width:100%;border-collapse:collapse;font-size:0.85em;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);"><thead><tr style="background:#f8fafc;"><th style="' + _umThStyle + '">Header</th><th style="' + _umThStyle + '">Normalized</th><th style="' + _umThStyle + '">Found In</th><th style="' + _umThStyle + '">Action</th></tr></thead><tbody>';
+              for (var _umbwi = 0; _umbwi < _umBatchWide.length; _umbwi++) {
+                var _umbw = _umBatchWide[_umbwi];
+                var _umbwLabel = _umbw.sections.length === _umAllSections.length ? 'All sections (' + _umbw.sections.length + ')' : _umbw.sections.length + ' of ' + _umAllSections.length + ' sections';
+                html += '<tr>';
+                html += '<td style="' + _umTdStyle + 'font-weight:600;">' + _escHtml(_umbw.header) + '</td>';
+                html += '<td style="' + _umTdStyle + 'color:#64748b;font-family:monospace;font-size:0.9em;">' + _escHtml(_umbw.normalized) + '</td>';
+                html += '<td style="' + _umTdStyle + '"><span style="background:#e0f2fe;color:#0369a1;font-size:0.78em;padding:2px 8px;border-radius:10px;font-weight:600;white-space:nowrap;">' + _umbwLabel + '</span></td>';
+                html += '<td style="' + _umTdStyle + '"><button onclick="_glossaryLinkOpen(\'' + _escHtml(_umbw.normalized).replace(/'/g, "\\'") + '\', \'' + _escHtml(_umbw.header).replace(/'/g, "\\'") + '\', \'__batch__\')" style="font-size:0.78em;padding:3px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#334155;cursor:pointer;">Link</button></td>';
+                html += '</tr>';
+              }
+              html += '</tbody></table></div>';
+            }
+            if (_umSectionOnly.length > 0) {
+              html += '<div>';
+              html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="background:#e65100;color:#fff;font-size:0.72em;font-weight:700;padding:3px 10px;border-radius:12px;">SECTION-SPECIFIC</div><span style="font-size:0.8em;color:#64748b;">Headers unique to specific sections</span></div>';
+              html += '<table style="width:100%;border-collapse:collapse;font-size:0.85em;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);"><thead><tr style="background:#f8fafc;"><th style="' + _umThStyle + '">Section</th><th style="' + _umThStyle + '">Header</th><th style="' + _umThStyle + '">Normalized</th><th style="' + _umThStyle + '">Action</th></tr></thead><tbody>';
+              for (var _umsoi = 0; _umsoi < _umSectionOnly.length; _umsoi++) {
+                var _umso = _umSectionOnly[_umsoi];
+                for (var _umsoSi = 0; _umsoSi < _umso.sections.length; _umsoSi++) {
+                  var _umsoSn = _umso.sections[_umsoSi];
+                  html += '<tr>';
+                  html += '<td style="' + _umTdStyle + '"><span style="background:#fff7ed;color:#c2410c;font-size:0.78em;padding:2px 8px;border-radius:10px;font-weight:600;">' + _escHtml(_umsoSn) + '</span></td>';
+                  html += '<td style="' + _umTdStyle + 'font-weight:600;">' + _escHtml(_umso.header) + '</td>';
+                  html += '<td style="' + _umTdStyle + 'color:#64748b;font-family:monospace;font-size:0.9em;">' + _escHtml(_umso.normalized) + '</td>';
+                  html += '<td style="' + _umTdStyle + '"><button onclick="_glossaryLinkOpen(\'' + _escHtml(_umso.normalized).replace(/'/g, "\\'") + '\', \'' + _escHtml(_umso.header).replace(/'/g, "\\'") + '\', \'' + _escHtml(_umsoSn).replace(/'/g, "\\'") + '\')" style="font-size:0.78em;padding:3px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#334155;cursor:pointer;">Link</button></td>';
+                  html += '</tr>';
+                }
+              }
+              html += '</tbody></table></div>';
+            }
           }
         } else if (type === 'unknown') {
           var unknownStored = getCurrentUnknownColumnsSnapshot();
@@ -28448,7 +28501,7 @@
             if (_ucBatchWide.length > 0) {
               html += '<div style="margin-bottom:16px;">';
               html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="background:#1565c0;color:#fff;font-size:0.72em;font-weight:700;padding:3px 10px;border-radius:12px;">BATCH-WIDE</div><span style="font-size:0.8em;color:#64748b;">Columns found across most or all contract sections</span></div>';
-              html += '<table style="width:100%;border-collapse:collapse;font-size:0.85em;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);"><thead><tr style="background:#f8fafc;"><th style="' + _thStyle + '">Header</th><th style="' + _thStyle + '">Normalized</th><th style="' + _thStyle + '">Found In</th><th style="' + _thStyle + '">Suggested</th><th style="' + _thStyle + '">Decision</th></tr></thead><tbody>';
+              html += '<table style="width:100%;border-collapse:collapse;font-size:0.85em;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);"><thead><tr style="background:#f8fafc;"><th style="' + _thStyle + '">Header</th><th style="' + _thStyle + '">Normalized</th><th style="' + _thStyle + '">Found In</th><th style="' + _thStyle + '">Suggested</th><th style="' + _thStyle + '">Decision</th><th style="' + _thStyle + '">Action</th></tr></thead><tbody>';
               for (var _bwi = 0; _bwi < _ucBatchWide.length; _bwi++) {
                 var _bw = _ucBatchWide[_bwi];
                 var _bwDecKey = '__batch__||' + _bw.normalized;
@@ -28467,14 +28520,16 @@
                 html += '<option value="add_global"' + (_bwCurDec === 'add_global' ? ' selected' : '') + '>Add to glossary</option>';
                 html += '<option value="source_specific"' + (_bwCurDec === 'source_specific' ? ' selected' : '') + '>Source-specific</option>';
                 html += '<option value="ignore"' + (_bwCurDec === 'ignore' ? ' selected' : '') + '>Ignore</option>';
-                html += '</select></td></tr>';
+                html += '</select></td>';
+                html += '<td style="' + _tdStyle + '"><button onclick="_glossaryLinkOpen(\'' + _escHtml(_bw.normalized).replace(/'/g, "\\\'") + '\', \'' + _escHtml(_bw.original).replace(/'/g, "\\\'") + '\', \'__batch__\')" style="font-size:0.78em;padding:3px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#334155;cursor:pointer;">Link</button></td>';
+                html += '</tr>';
               }
               html += '</tbody></table></div>';
             }
             if (_ucSectionOnly.length > 0) {
               html += '<div>';
               html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="background:#e65100;color:#fff;font-size:0.72em;font-weight:700;padding:3px 10px;border-radius:12px;">SECTION-SPECIFIC</div><span style="font-size:0.8em;color:#64748b;">Columns unique to specific contract sections</span></div>';
-              html += '<table style="width:100%;border-collapse:collapse;font-size:0.85em;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);"><thead><tr style="background:#f8fafc;"><th style="' + _thStyle + '">Section</th><th style="' + _thStyle + '">Header</th><th style="' + _thStyle + '">Normalized</th><th style="' + _thStyle + '">Suggested</th><th style="' + _thStyle + '">Decision</th></tr></thead><tbody>';
+              html += '<table style="width:100%;border-collapse:collapse;font-size:0.85em;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);"><thead><tr style="background:#f8fafc;"><th style="' + _thStyle + '">Section</th><th style="' + _thStyle + '">Header</th><th style="' + _thStyle + '">Normalized</th><th style="' + _thStyle + '">Suggested</th><th style="' + _thStyle + '">Decision</th><th style="' + _thStyle + '">Action</th></tr></thead><tbody>';
               for (var _soi = 0; _soi < _ucSectionOnly.length; _soi++) {
                 var _so = _ucSectionOnly[_soi];
                 for (var _soSi = 0; _soSi < _so.sections.length; _soSi++) {
@@ -28494,7 +28549,9 @@
                   html += '<option value="add_global"' + (_soCurDec === 'add_global' ? ' selected' : '') + '>Add to glossary</option>';
                   html += '<option value="source_specific"' + (_soCurDec === 'source_specific' ? ' selected' : '') + '>Source-specific</option>';
                   html += '<option value="ignore"' + (_soCurDec === 'ignore' ? ' selected' : '') + '>Ignore</option>';
-                  html += '</select></td></tr>';
+                  html += '</select></td>';
+                  html += '<td style="' + _tdStyle + '"><button onclick="_glossaryLinkOpen(\'' + _escHtml(_so.normalized).replace(/'/g, "\\\'") + '\', \'' + _escHtml(_soCol.original_name).replace(/'/g, "\\\'") + '\', \'' + _escHtml(_soSn).replace(/'/g, "\\\'") + '\')" style="font-size:0.78em;padding:3px 10px;border:1px solid #cbd5e1;border-radius:6px;background:#f8fafc;color:#334155;cursor:pointer;">Link</button></td>';
+                  html += '</tr>';
                 }
               }
               html += '</tbody></table></div>';
@@ -28641,6 +28698,252 @@
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
       },
+
+
+    // ============================================================
+    // Glossary Link Modal - Link unknown columns to glossary fields
+    // ============================================================
+    var _glossaryLinkState = { normalizedName: '', originalHeader: '', section: '', selectedField: null };
+
+    function _glossaryLinkOpen(normalizedName, originalHeader, section) {
+      _glossaryLinkState.normalizedName = normalizedName;
+      _glossaryLinkState.originalHeader = originalHeader;
+      _glossaryLinkState.section = section;
+      _glossaryLinkState.selectedField = null;
+
+      var existing = document.getElementById('glossary-link-modal');
+      if (existing) existing.remove();
+
+      var allFields = [];
+      if (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.fields) {
+        allFields = rulesBundleCache.fieldMeta.fields;
+      }
+      if (allFields.length === 0) {
+        if (typeof showToast === 'function') showToast('Glossary not loaded yet. Import data first.');
+        console.warn('[GlossaryLink] No glossary fields available');
+        return;
+      }
+
+      var overlay = document.createElement('div');
+      overlay.id = 'glossary-link-modal';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);z-index:100000;display:flex;align-items:center;justify-content:center;';
+      overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+
+      var modal = document.createElement('div');
+      modal.style.cssText = 'background:#fff;border-radius:16px;width:640px;max-width:90vw;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 25px 50px rgba(0,0,0,0.25);overflow:hidden;';
+
+      var headerHtml = '<div style="background:linear-gradient(135deg,#1565c0,#0d47a1);padding:20px 24px;color:#fff;">';
+      headerHtml += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+      headerHtml += '<div><div style="font-size:1.1em;font-weight:700;">Link Column to Glossary</div>';
+      headerHtml += '<div style="font-size:0.85em;opacity:0.85;margin-top:4px;">Linking: <strong>' + _escHtml(originalHeader) + '</strong></div></div>';
+      headerHtml += '<button onclick="document.getElementById(\'glossary-link-modal\').remove()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:1.2em;cursor:pointer;padding:4px 10px;border-radius:8px;">&times;</button>';
+      headerHtml += '</div></div>';
+
+      var searchHtml = '<div style="padding:12px 24px;border-bottom:1px solid #e2e8f0;">';
+      searchHtml += '<input id="glossary-link-search" type="text" placeholder="Search glossary fields by name, key, or definition..." oninput="_glossaryLinkFilter()" style="width:100%;padding:10px 14px;border:1px solid #cbd5e1;border-radius:8px;font-size:0.9em;outline:none;box-sizing:border-box;" />';
+      searchHtml += '</div>';
+
+      var listHtml = '<div id="glossary-link-list" style="flex:1;overflow-y:auto;padding:8px 24px;max-height:400px;">';
+      listHtml += _glossaryLinkBuildList(allFields, '');
+      listHtml += '</div>';
+
+      var footerHtml = '<div style="padding:16px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:12px;">';
+      footerHtml += '<button onclick="document.getElementById(\'glossary-link-modal\').remove()" style="padding:8px 20px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#334155;cursor:pointer;font-size:0.9em;">Cancel</button>';
+      footerHtml += '<button id="glossary-link-save-btn" onclick="_glossaryLinkSave()" disabled style="padding:8px 20px;border:none;border-radius:8px;background:#94a3b8;color:#fff;cursor:not-allowed;font-size:0.9em;font-weight:600;">Link &amp; Save</button>';
+      footerHtml += '</div>';
+
+      modal.innerHTML = headerHtml + searchHtml + listHtml + footerHtml;
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+    }
+
+    function _glossaryLinkBuildList(fields, query) {
+      var q = (query || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+      var qRaw = (query || '').toLowerCase();
+      var html = '';
+      var count = 0;
+      for (var i = 0; i < fields.length; i++) {
+        if (count >= 50) break;
+        var f = fields[i];
+        var fk = f.field_key || '';
+        var fl = f.field_label || '';
+        var fd = f.definition || '';
+        var fs = f.sheet || '';
+        if (qRaw) {
+          var fkNorm = fk.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+          var match = fkNorm.indexOf(q) >= 0 || fl.toLowerCase().indexOf(qRaw) >= 0 || fd.toLowerCase().indexOf(qRaw) >= 0;
+          if (!match) continue;
+        }
+        var truncDef = fd.length > 80 ? fd.substring(0, 80) + '...' : fd;
+        html += '<div class="glossary-link-item" data-gl-key="' + _escHtml(fk) + '" data-gl-sheet="' + _escHtml(fs) + '" data-gl-label="' + _escHtml(fl) + '" onclick="_glossaryLinkSelect(this)" style="padding:10px 12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:6px;cursor:pointer;transition:all 0.15s;">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;">';
+        html += '<div style="flex:1;"><div style="font-weight:600;font-size:0.9em;color:#1e293b;">' + _escHtml(fl) + '</div>';
+        html += '<div style="font-family:monospace;font-size:0.8em;color:#64748b;margin-top:2px;">' + _escHtml(fk) + '</div></div>';
+        html += '<span style="background:#e0f2fe;color:#0369a1;font-size:0.72em;padding:2px 8px;border-radius:10px;font-weight:600;white-space:nowrap;">' + _escHtml(fs) + '</span>';
+        html += '</div>';
+        if (truncDef) {
+          html += '<div style="font-size:0.78em;color:#94a3b8;margin-top:4px;">' + _escHtml(truncDef) + '</div>';
+        }
+        html += '</div>';
+        count++;
+      }
+      if (count === 0) {
+        html += '<div style="padding:24px;text-align:center;color:#94a3b8;font-size:0.9em;">No matching glossary fields found.</div>';
+      }
+      if (count >= 50) {
+        html += '<div style="padding:8px;text-align:center;color:#94a3b8;font-size:0.8em;">Showing first 50 results. Refine your search for more.</div>';
+      }
+      return html;
+    }
+
+    function _glossaryLinkFilter() {
+      var input = document.getElementById('glossary-link-search');
+      if (!input) return;
+      var query = input.value;
+      var allFields = [];
+      if (typeof rulesBundleCache !== 'undefined' && rulesBundleCache.fieldMeta && rulesBundleCache.fieldMeta.fields) {
+        allFields = rulesBundleCache.fieldMeta.fields;
+      }
+      var listEl = document.getElementById('glossary-link-list');
+      if (listEl) {
+        listEl.innerHTML = _glossaryLinkBuildList(allFields, query);
+      }
+      _glossaryLinkState.selectedField = null;
+      var saveBtn = document.getElementById('glossary-link-save-btn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.style.background = '#94a3b8';
+        saveBtn.style.cursor = 'not-allowed';
+      }
+    }
+
+    function _glossaryLinkSelect(el) {
+      var items = document.querySelectorAll('.glossary-link-item');
+      for (var i = 0; i < items.length; i++) {
+        items[i].style.border = '1px solid #e2e8f0';
+        items[i].style.background = '#fff';
+      }
+      el.style.border = '2px solid #1565c0';
+      el.style.background = '#eff6ff';
+      _glossaryLinkState.selectedField = {
+        field_key: el.getAttribute('data-gl-key'),
+        sheet: el.getAttribute('data-gl-sheet'),
+        field_label: el.getAttribute('data-gl-label')
+      };
+      var saveBtn = document.getElementById('glossary-link-save-btn');
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.style.background = '#1565c0';
+        saveBtn.style.cursor = 'pointer';
+      }
+    }
+
+    function _glossaryLinkSave() {
+      var sel = _glossaryLinkState.selectedField;
+      if (!sel) return;
+      var canonicalKey = sel.field_key;
+      var sheet = sel.sheet;
+      var alias = _glossaryLinkState.normalizedName;
+      var originalHeader = _glossaryLinkState.originalHeader;
+      var section = _glossaryLinkState.section;
+
+      var userAliases = [];
+      try { userAliases = JSON.parse(localStorage.getItem('user_column_aliases') || '[]'); } catch(e) { userAliases = []; }
+      var alreadyExists = false;
+      for (var i = 0; i < userAliases.length; i++) {
+        if (userAliases[i].alias === alias && userAliases[i].canonical_key === canonicalKey) {
+          alreadyExists = true;
+          break;
+        }
+      }
+      if (!alreadyExists) {
+        userAliases.push({ canonical_key: canonicalKey, sheet: sheet, alias: alias, added_at: new Date().toISOString() });
+        localStorage.setItem('user_column_aliases', JSON.stringify(userAliases));
+      }
+
+      if (typeof COLUMN_ALIAS_MAP !== 'undefined') {
+        if (!COLUMN_ALIAS_MAP[alias]) {
+          COLUMN_ALIAS_MAP[alias] = [];
+        }
+        var exists = false;
+        for (var j = 0; j < COLUMN_ALIAS_MAP[alias].length; j++) {
+          if (COLUMN_ALIAS_MAP[alias][j].canonical_key === canonicalKey && COLUMN_ALIAS_MAP[alias][j].sheet === sheet) {
+            exists = true;
+            break;
+          }
+        }
+        if (!exists) {
+          COLUMN_ALIAS_MAP[alias].push({ canonical_key: canonicalKey, sheet: sheet });
+        }
+      }
+
+      if (typeof workbook !== 'undefined' && workbook && workbook.sheets) {
+        var _glSections = [];
+        if (section === '__batch__') {
+          _glSections = Object.keys(workbook.sheets);
+        } else {
+          _glSections = [section];
+        }
+        var _glRenamed = 0;
+        for (var _gsi = 0; _gsi < _glSections.length; _gsi++) {
+          var _gsn = _glSections[_gsi];
+          var _gsSheet = workbook.sheets[_gsn];
+          if (!_gsSheet || !_gsSheet.rows) continue;
+          for (var _gri = 0; _gri < _gsSheet.rows.length; _gri++) {
+            var _grow = _gsSheet.rows[_gri];
+            if (_grow.hasOwnProperty(originalHeader) && !_grow.hasOwnProperty(canonicalKey)) {
+              _grow[canonicalKey] = _grow[originalHeader];
+              delete _grow[originalHeader];
+              _glRenamed++;
+            }
+          }
+        }
+        if (_glRenamed > 0) console.log('[GlossaryLink] Renamed ' + _glRenamed + ' rows: ' + originalHeader + ' -> ' + canonicalKey);
+      }
+
+      try {
+        var unknownCols = JSON.parse(localStorage.getItem('unknown_columns') || '{}');
+        if (section === '__batch__') {
+          var secs = Object.keys(unknownCols);
+          for (var si = 0; si < secs.length; si++) {
+            var secName = secs[si];
+            unknownCols[secName] = (unknownCols[secName] || []).filter(function(c) {
+              return c.normalized_name !== alias;
+            });
+            if (unknownCols[secName].length === 0) delete unknownCols[secName];
+          }
+        } else {
+          if (unknownCols[section]) {
+            unknownCols[section] = unknownCols[section].filter(function(c) {
+              return c.normalized_name !== alias;
+            });
+            if (unknownCols[section].length === 0) delete unknownCols[section];
+          }
+        }
+        localStorage.setItem('unknown_columns', JSON.stringify(unknownCols));
+      } catch(e) {
+        console.warn('[GlossaryLink] Error cleaning unknown_columns:', e);
+      }
+
+      var modal = document.getElementById('glossary-link-modal');
+      if (modal) modal.remove();
+
+      var toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1565c0;color:#fff;padding:12px 20px;border-radius:10px;font-size:0.9em;z-index:100001;box-shadow:0 4px 12px rgba(0,0,0,0.2);max-width:400px;';
+      toast.innerHTML = 'Linked "' + _escHtml(originalHeader) + '" &rarr; "' + _escHtml(canonicalKey) + '" (alias saved)';
+      document.body.appendChild(toast);
+      setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 4000);
+
+      try {
+        if (typeof TriageAnalytics !== 'undefined' && typeof TriageAnalytics.refresh === 'function') {
+          TriageAnalytics.refresh();
+          if (typeof TriageAnalytics.renderHeader === 'function') TriageAnalytics.renderHeader();
+        }
+      } catch(e) { console.warn('[GlossaryLink] Analytics refresh error:', e); }
+      try {
+        if (typeof refreshUnknownColumnsTable === 'function') refreshUnknownColumnsTable();
+      } catch(e) {}
+    }
 
       _saveUnknownDecision: function(selectEl) {
         var section = selectEl.getAttribute('data-uc-section');
