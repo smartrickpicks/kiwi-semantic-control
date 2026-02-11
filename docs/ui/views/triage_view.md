@@ -43,7 +43,7 @@
 - **Patch queue sanitization**: Meta sections, reference/glossary sections, and system columns (`__meta*`, `_glossary*`, `_system`, `_internal`) filtered from actionable patch items.
 - **System Pass Engine**: Standalone block removed; folded into compact inline control above the System Pass queue.
 - **Contract Summary chips**: Collapsed state now shows done/review/pending counts alongside total contracts.
-- **Schema snapshot click-through**: Unknown Columns → preflight filter, Missing Required → blocked filter, Schema Drift → needs-review filter.
+- **Schema snapshot click-through**: Unknown Columns → preflight filter, Missing Values → blocked filter, Data Quality → data quality modal.
 - **Toast repositioning**: Toasts moved from bottom-right to top-center to avoid Feedback FAB overlap.
 - **Search bar vs audit**: Search bar given opaque background; audit dropdown z-index layered below search bar.
 - **Logging**: All operations prefixed `[TRIAGE-ANALYTICS][P0.1]`.
@@ -53,7 +53,7 @@
 - **Triage Analytics Header**: Analytics block above existing triage grid with three lane cards (Pre-Flight, Semantic, Patch Review), lifecycle progression tracker, contract summary table, and schema snapshot.
 - **Lifecycle Tracker**: 9-stage horizontal strip (Loaded → Applied) with contract-level counts and percentages.
 - **Contract Summary Table**: Collapsible table with per-contract stage, alert counts, and "View in Grid" action.
-- **Schema Snapshot**: Field match %, unknown columns, missing required, schema drift.
+- **Schema Snapshot**: Columns Mapped %, Unknown Columns, Missing Values, Data Quality.
 
 ## Recent Changes (v1.5.0)
 
@@ -99,7 +99,7 @@ The analytics header renders above the existing triage grid after data load. It 
 | 2 | Contract Summary | Collapsible table (collapsed by default) with per-contract detail + state chips (P1) |
 | 3 | Lane Cards | Pre-Flight, Semantic, Patch Review health cards (with drill-down filter P1) |
 | 4 | Lifecycle Progression | 9-stage horizontal tracker with deltas and percentages (P1) |
-| 5 | Schema Snapshot | Field matching, unknown columns, drift |
+| 5 | Schema Snapshot | Columns Mapped, Unknown Columns, Missing Values, Data Quality |
 
 ### Batch Summary (P0.2)
 
@@ -209,10 +209,10 @@ Clickable mini-panel (P0.1 + P0.2):
 
 | Metric | Click Action | Description |
 |--------|--------------|-------------|
-| Field Match % | (none) | Percentage of canonical fields found in workbook |
-| Unknown Columns | → preflight filter | Columns in workbook but not in field_meta.json |
-| Missing Required | → blocked filter | Required canonical fields not found in workbook |
-| Schema Drift | → needs-review filter | Sum of unknown + missing required |
+| Columns Mapped | (none) | Percentage of uploaded columns recognized against the governed glossary |
+| Unknown Columns | → preflight filter | Columns in workbook not recognized in the governed glossary. Supports decision classification: add to glossary (global), mark as source-specific, or ignore. Glossary link opens searchable picker. |
+| Missing Values | → blocked filter | Required fields that are missing or empty. Includes blank-like values and invalid picklist entries with per-reason breakdown. |
+| Data Quality | → data quality modal | Combined count of duplicate account candidates and incomplete address candidates. Opens the Data Quality Check modal. |
 
 If a click-through yields zero results, an empty-state helper message is shown inline (P0.2).
 
