@@ -1161,13 +1161,15 @@
     .grid-table.grid-mode-active thead th.grid-rail { z-index: 12; background: #e3f2fd; }
     .grid-rail-btn { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75em; margin: 0 1px; background: #e3f2fd; color: #1565c0; }
     .grid-rail-btn:hover { background: #bbdefb; }
+    .grid-row-verified { background: #e8f5e9 !important; }
+    .grid-row-verified td { background: inherit !important; }
     /* Grid Mode: alternating row striping */
     .grid-table.grid-mode-active tbody tr:nth-child(even) { background: #fafbfc; }
     .grid-table.grid-mode-active tbody tr:nth-child(odd) { background: #fff; }
     .grid-table.grid-mode-active tbody tr:hover { background: #e3f2fd; }
     /* Mode toggle pill */
-    .grid-mode-toggle { display: inline-flex; border: 1px solid #1565c0; border-radius: 16px; overflow: hidden; font-size: 0.8em; margin-left: 12px; }
-    .grid-mode-toggle button { border: none; padding: 4px 14px; cursor: pointer; font-weight: 600; background: #fff; color: #1565c0; transition: background 0.15s, color 0.15s; }
+    .grid-mode-toggle { display: inline-flex; border: 1px solid #1565c0; border-radius: 8px; overflow: hidden; font-size: 0.82em; }
+    .grid-mode-toggle button { border: none; padding: 5px 16px; cursor: pointer; font-weight: 600; background: #fff; color: #1565c0; transition: background 0.15s, color 0.15s; }
     .grid-mode-toggle button.active { background: #1565c0; color: #fff; }
     /* Inline editing cell */
     .grid-cell-editing { outline: 2px solid #1976d2; outline-offset: -1px; background: #fff !important; min-width: 80px; cursor: text; }
@@ -2548,15 +2550,14 @@
         <!-- Dense Grid Table -->
         
           <!-- P1C: Composite Grid Controls -->
-          <div id="grid-view-controls" style="display: flex; align-items: center; gap: 12px; padding: 4px 8px;">
+          <div id="grid-view-controls" style="display: flex; align-items: center; gap: 12px; padding: 8px 12px; position: sticky; top: 0; z-index: 20; background: #fff; border-bottom: 1px solid #e0e0e0; border-radius: 8px 8px 0 0;">
             <div class="grid-mode-toggle" id="grid-mode-toggle">
               <button id="grid-mode-review-btn" class="active" onclick="setGridViewMode('review')">Review</button>
               <button id="grid-mode-grid-btn" onclick="setGridViewMode('grid')">Grid</button>
             </div>
             <div id="p1c-composite-controls" class="p1c-composite-controls" style="display: none;">
-              <span style="font-size: 0.8em; color: #1565c0; font-weight: 600;">Composite View</span>
-              <button onclick="_p1cExpandAll()">Expand All</button>
-              <button onclick="_p1cCollapseAll()">Collapse All</button>
+              <button onclick="_p1cExpandAll()" style="padding:5px 14px;font-size:0.82em;border:1px solid #ccc;border-radius:6px;background:#f8f9fa;cursor:pointer;font-weight:500;">Expand All</button>
+              <button onclick="_p1cCollapseAll()" style="padding:5px 14px;font-size:0.82em;border:1px solid #ccc;border-radius:6px;background:#f8f9fa;cursor:pointer;font-weight:500;">Collapse All</button>
             </div>
           </div>
 
@@ -12632,44 +12633,147 @@
       if (!window.localState) window.localState = {};
       if (!window.localState.recordStatus) window.localState.recordStatus = {};
       var current = window.localState.recordStatus[recordId];
-      if (current === 'verified' || current === 'finalized') {
-        showToast('Record already verified', 'info');
-        return;
+      if (current === 'verified') {
+        delete window.localState.recordStatus[recordId];
+        if (trEl) {
+          trEl.style.background = '';
+          trEl.classList.remove('grid-row-verified');
+        }
+        AuditTimeline.emit('RECORD_UNVERIFIED_GRID', {
+          record_id: recordId,
+          file_id: sheetName,
+          metadata: { sheet: sheetName, row_index: rowIdx, mode: 'grid' }
+        });
+        showToast('Record un-verified', 'info');
+      } else {
+        window.localState.recordStatus[recordId] = 'verified';
+        if (trEl) {
+          trEl.style.background = '#e8f5e9';
+          trEl.classList.add('grid-row-verified');
+        }
+        AuditTimeline.emit('RECORD_VERIFIED_GRID', {
+          record_id: recordId,
+          file_id: sheetName,
+          metadata: { sheet: sheetName, row_index: rowIdx, mode: 'grid' }
+        });
+        var label = recordId.length > 30 ? recordId.substring(0, 28) + '..' : recordId;
+        showToast('Record verified: ' + label, 'success');
       }
-      window.localState.recordStatus[recordId] = 'verified';
-      if (trEl) {
-        trEl.style.background = '#e8f5e9';
-        trEl.style.transition = 'background 0.3s';
-        setTimeout(function() { trEl.style.background = ''; }, 1500);
-      }
-      AuditTimeline.emit('RECORD_VERIFIED_GRID', {
-        record_id: recordId,
-        file_id: sheetName,
-        metadata: { sheet: sheetName, row_index: rowIdx, mode: 'grid' }
-      });
-      var label = recordId.length > 30 ? recordId.substring(0, 28) + '..' : recordId;
-      showToast('Record verified: ' + label, 'success');
       if (typeof updateTriageCounts === 'function') updateTriageCounts();
     }
 
     function _gridOpenPatchEditor(recordId, sheetName, rowIdx) {
-      openRowReviewDrawer(sheetName, rowIdx);
-      setTimeout(function() {
-        if (typeof srrState !== 'undefined') {
-          srrState.patchType = 'correction';
-          var typeSelect = document.getElementById('srr-patch-type');
-          if (typeSelect) { typeSelect.value = 'correction'; typeSelect.dispatchEvent(new Event('change')); }
-          var todoFields = Object.keys(srrState.originalValues || {}).filter(function(k) {
-            return !k.startsWith('_') && (!srrState.fieldStates[k] || srrState.fieldStates[k] === 'todo');
-          });
-          if (todoFields.length > 0) {
-            var firstField = todoFields[0];
-            var label = firstField.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
-            if (typeof srrPeSelectField === 'function') srrPeSelectField(firstField, label);
-          }
+      var allData = window._workbookData || {};
+      var rows = allData[sheetName];
+      if (!rows || !rows[rowIdx]) { showToast('Record not found', 'error'); return; }
+      var record = rows[rowIdx];
+      var fieldKeys = Object.keys(record).filter(function(k) {
+        return !k.startsWith('_') && k !== 'sheet' && k !== '_row_index' && k !== '_originalIdx' && k !== '_sheetRowIndex';
+      });
+      var html = '';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">';
+      html += '<div><div style="font-weight:700;font-size:1em;color:#1e3a5f;">Quick Patch Editor</div>';
+      html += '<div style="font-size:0.8em;color:#64748b;">' + escapeHtml(sheetName) + ' — Row ' + (rowIdx + 1) + '</div></div>';
+      html += '<div style="display:flex;gap:8px;align-items:center;">';
+      html += '<select id="grid-patch-type" style="padding:5px 10px;border:1px solid #ccc;border-radius:6px;font-size:0.85em;"><option value="correction">Correction</option><option value="rfi">RFI</option></select>';
+      html += '</div></div>';
+      html += '<div style="max-height:400px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:8px;">';
+      html += '<table style="width:100%;border-collapse:collapse;font-size:0.85em;">';
+      html += '<thead><tr style="background:#f5f5f5;position:sticky;top:0;"><th style="text-align:left;padding:8px 12px;border-bottom:1px solid #e0e0e0;font-weight:600;color:#555;">Field</th><th style="text-align:left;padding:8px 12px;border-bottom:1px solid #e0e0e0;font-weight:600;color:#555;">Current Value</th><th style="text-align:left;padding:8px 12px;border-bottom:1px solid #e0e0e0;font-weight:600;color:#555;">New Value</th></tr></thead><tbody>';
+      var _gridPatchOldValues = {};
+      for (var fi = 0; fi < fieldKeys.length; fi++) {
+        var fk = fieldKeys[fi];
+        var cv = record[fk];
+        if (cv === null || cv === undefined) cv = '';
+        if (typeof cv === 'object') cv = JSON.stringify(cv);
+        _gridPatchOldValues[fk] = String(cv);
+        var label = fk.replace(/_/g, ' ').replace(/__c$/i, '');
+        html += '<tr style="border-bottom:1px solid #f0f0f0;">';
+        html += '<td style="padding:6px 12px;font-weight:500;color:#333;white-space:nowrap;font-size:0.88em;">' + escapeHtml(label) + '</td>';
+        html += '<td style="padding:6px 12px;color:#666;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escapeHtml(String(cv)) + '">' + escapeHtml(String(cv).substring(0, 60)) + '</td>';
+        html += '<td style="padding:4px 8px;"><input type="text" data-field="' + escapeHtml(fk) + '" placeholder="Leave blank to skip" style="width:100%;padding:5px 8px;border:1px solid #ddd;border-radius:4px;font-size:0.9em;" /></td>';
+        html += '</tr>';
+      }
+      window._gridPatchOldValues = _gridPatchOldValues;
+      html += '</tbody></table></div>';
+      html += '<div style="margin-top:12px;"><textarea id="grid-patch-justification" placeholder="Justification / notes (optional)" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.85em;resize:vertical;min-height:50px;box-sizing:border-box;"></textarea></div>';
+      html += '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">';
+      html += '<button onclick="_gridPatchModalClose()" style="padding:8px 20px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-size:0.88em;font-weight:600;cursor:pointer;">Cancel</button>';
+      html += '<button onclick="_gridPatchModalSubmit()" style="padding:8px 20px;border-radius:8px;border:none;background:linear-gradient(135deg,#1e3a5f,#1565c0);color:#fff;font-size:0.88em;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(21,101,192,0.3);">Submit Patch</button>';
+      html += '</div>';
+      var overlay = document.getElementById('grid-patch-modal');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'grid-patch-modal';
+        overlay.style.cssText = 'display:flex;align-items:center;justify-content:center;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.6);backdrop-filter:blur(4px);z-index:10000;';
+        overlay.onclick = function(e) { if (e.target === overlay) _gridPatchModalClose(); };
+        document.body.appendChild(overlay);
+      }
+      var box = document.createElement('div');
+      box.style.cssText = 'background:#fff;border-radius:16px;width:94%;max-width:780px;max-height:90vh;padding:24px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);overflow:hidden;display:flex;flex-direction:column;';
+      box.innerHTML = html;
+      overlay.innerHTML = '';
+      overlay.appendChild(box);
+      overlay.style.display = 'flex';
+      overlay.setAttribute('data-record-id', recordId);
+      overlay.setAttribute('data-sheet-name', sheetName);
+      overlay.setAttribute('data-row-idx', rowIdx);
+    }
+
+    function _gridPatchModalClose() {
+      var overlay = document.getElementById('grid-patch-modal');
+      if (overlay) overlay.style.display = 'none';
+    }
+
+    function _gridPatchModalSubmit() {
+      var overlay = document.getElementById('grid-patch-modal');
+      if (!overlay) return;
+      var recordId = overlay.getAttribute('data-record-id') || '';
+      var sheetName = overlay.getAttribute('data-sheet-name') || '';
+      var rowIdx = parseInt(overlay.getAttribute('data-row-idx') || '0', 10);
+      var patchType = document.getElementById('grid-patch-type').value || 'correction';
+      var justification = document.getElementById('grid-patch-justification').value || '';
+      var inputs = overlay.querySelectorAll('input[data-field]');
+      var oldVals = window._gridPatchOldValues || {};
+      var changes = [];
+      for (var i = 0; i < inputs.length; i++) {
+        var inp = inputs[i];
+        var fieldKey = inp.getAttribute('data-field');
+        var newVal = inp.value.trim();
+        var oldVal = oldVals[fieldKey] || '';
+        if (newVal && newVal !== oldVal) {
+          changes.push({ field: fieldKey, from: oldVal, to: newVal });
         }
-        showToast('Patch editor opened — edit fields and submit', 'info');
-      }, 500);
+      }
+      if (changes.length === 0) { showToast('No changes entered', 'warning'); return; }
+      var author = currentMode ? currentMode.charAt(0).toUpperCase() + currentMode.slice(1) : 'Analyst';
+      var request = createPatchRequest({
+        type: patchType,
+        category: 'grid_quick_patch',
+        author: author,
+        author_role: currentMode || 'analyst',
+        record_id: recordId,
+        dataset_id: sheetName,
+        contract_section: sheetName,
+        changes: changes,
+        justification: justification || 'Quick patch from Grid Mode',
+        summary: changes.length + ' field(s) patched via Grid Mode',
+        when: 'Grid Mode quick patch',
+        then: changes.map(function(c) { return c.field + ': ' + c.from + ' -> ' + c.to; }).join('; ')
+      });
+      if (request) {
+        var submitted = submitPatchRequest(request.request_id, author, currentMode || 'analyst');
+        if (submitted) {
+          showToast('Patch submitted: ' + request.request_id, 'success');
+          if (typeof renderPatchConsoleTable === 'function') renderPatchConsoleTable();
+          if (typeof updatePatchQueueCounts === 'function') updatePatchQueueCounts();
+        } else {
+          showToast('Patch created but could not be submitted', 'warning');
+        }
+      } else {
+        showToast('Failed to create patch', 'error');
+      }
+      _gridPatchModalClose();
     }
 
     function initPatchConsole() {
@@ -21152,6 +21256,10 @@
           tr.setAttribute('data-sheet-name', rSheetName);
           tr.setAttribute('data-record-index', '' + sheetRowIdx);
           tr.setAttribute('data-record-id', escapeHtml(recordId));
+          if (window.localState && window.localState.recordStatus && window.localState.recordStatus[recordId] === 'verified') {
+            tr.style.background = '#e8f5e9';
+            tr.classList.add('grid-row-verified');
+          }
           if (_gridViewMode === 'review') {
             tr.onclick = (function(sn, sri) { return function() { openRowReviewDrawer(sn, sri); }; })(r.sheet || sheetName, sheetRowIdx);
             tr.style.cursor = 'pointer';
@@ -33641,6 +33749,10 @@
         tr.dataset.sheetName = sheetName;
         tr.dataset.recordIndex = sheetRowIdx;
         tr.dataset.recordId = recordId;
+        if (window.localState && window.localState.recordStatus && window.localState.recordStatus[recordId] === 'verified') {
+          tr.style.background = '#e8f5e9';
+          tr.classList.add('grid-row-verified');
+        }
         if (_gridViewMode === 'review') {
           tr.onclick = (function(sn, sri) { return function() { openRowReviewDrawer(sn, sri); }; })(sheetName, sheetRowIdx);
           tr.style.cursor = 'pointer';
