@@ -18756,7 +18756,19 @@
       if (!container) return;
 
       if (items.length === 0) {
-        container.innerHTML = '<div class="p1d-empty-state">No pre-flight items</div>';
+        container.innerHTML = '<table class="p1d1-health-table"><thead><tr>' +
+          '<th style="width:30px;"></th>' +
+          '<th>Contract</th>' +
+          '<th>ID</th>' +
+          '<th>Source</th>' +
+          '<th>Issues</th>' +
+          '<th>Severity</th>' +
+          '<th>Contract Sections</th>' +
+          '<th>Actions</th>' +
+          '<th>Health</th>' +
+          '</tr></thead><tbody>' +
+          '<tr><td colspan="9" style="padding:24px; text-align:center; color:#999; font-style:italic;">No pre-flight items</td></tr>' +
+          '</tbody></table>';
         return;
       }
 
@@ -30369,10 +30381,42 @@
         tbody.innerHTML = html;
       },
 
+
+      _animateCounter: function(elementId, targetValue, duration) {
+        var el = document.getElementById(elementId);
+        if (!el) return;
+        var suffix = '';
+        var targetStr = String(targetValue);
+        if (targetStr.indexOf('%') >= 0) {
+          suffix = '%';
+          targetValue = parseInt(targetStr.replace('%', ''), 10) || 0;
+        }
+        var startValue = parseInt(el.textContent, 10) || 0;
+        if (isNaN(targetValue)) { el.textContent = targetStr; return; }
+        if (startValue === targetValue) { el.textContent = targetValue + suffix; return; }
+        var diff = targetValue - startValue;
+        var steps = Math.min(Math.abs(diff), 30);
+        if (steps === 0) { el.textContent = targetValue + suffix; return; }
+        var stepDuration = Math.max((duration || 600) / steps, 20);
+        var current = startValue;
+        var increment = diff / steps;
+        var step = 0;
+        var timer = setInterval(function() {
+          step++;
+          if (step >= steps) {
+            el.textContent = targetValue + suffix;
+            clearInterval(timer);
+          } else {
+            current += increment;
+            el.textContent = Math.round(current) + suffix;
+          }
+        }, stepDuration);
+      },
+
       _renderSchemaSnapshot: function(cache) {
         var el = function(id) { return document.getElementById(id); };
         var batchPct = cache.schema.batch_headers_total > 0 ? Math.round((cache.schema.batch_headers_mapped / cache.schema.batch_headers_total) * 100) : 0;
-        if (el('ta-schema-matched-pct')) el('ta-schema-matched-pct').textContent = batchPct + '%';
+        if (el('ta-schema-matched-pct')) this._animateCounter('ta-schema-matched-pct', batchPct + '%', 600);
         if (el('ta-schema-matched-count')) el('ta-schema-matched-count').textContent = cache.schema.batch_headers_mapped + ' / ' + cache.schema.batch_headers_total + ' batch headers';
         if (el('ta-schema-matched-scope')) {
           var _scopeLabel = cache.schema._active_sections > 0
@@ -30389,9 +30433,9 @@
           var gPct = cache.schema.standard_total > 0 ? Math.round((cache.schema.standard_matched / cache.schema.standard_total) * 100) : 0;
           el('ta-schema-glossary-secondary').textContent = 'Glossary: ' + cache.schema.standard_matched + '/' + cache.schema.standard_total + ' (' + gPct + '%)';
         }
-        if (el('ta-schema-unknown')) el('ta-schema-unknown').textContent = cache.schema.unknown_columns;
+        if (el('ta-schema-unknown')) this._animateCounter('ta-schema-unknown', cache.schema.unknown_columns, 500);
         var missingTotal = cache.schema.data_missing_required_values;
-        if (el('ta-schema-missing')) el('ta-schema-missing').textContent = missingTotal;
+        if (el('ta-schema-missing')) this._animateCounter('ta-schema-missing', missingTotal, 700);
         if (el('ta-schema-missing-split')) el('ta-schema-missing-split').textContent = missingTotal + ' errors across ' + (cache.schema._data_missing_values_field_count || 0) + ' fields';
         var _mvBlankTotal = 0, _mvPlTotal = 0;
         var _mvI = cache.schema._missing_values_items || [];
@@ -30413,7 +30457,7 @@
           var _acDismissed = 0;
           if (typeof _dismissedDuplicatePairs !== 'undefined') _acDismissed = Object.keys(_dismissedDuplicatePairs).length;
           var _acTotal = _acPending + _acDismissed;
-          el('ta-schema-acctcheck').textContent = _acTotal;
+          this._animateCounter('ta-schema-acctcheck', _acTotal, 500);
           el('ta-schema-acctcheck').style.color = _acTotal > 0 ? '#f57c00' : '#4caf50';
         }
         if (el('ta-schema-acctcheck-detail')) {
