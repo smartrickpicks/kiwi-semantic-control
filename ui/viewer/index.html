@@ -21341,9 +21341,7 @@
       }
       console.log('[PDF-RELIABILITY][P1E-FOLLOWUP] scan_complete: total=' + s.total + ', clean=' + s.clean + ', flagged=' + badCount);
       try { localStorage.setItem('_p1f_scan_fingerprint', (typeof _p1fComputeFingerprint === 'function') ? _p1fComputeFingerprint() : ''); } catch(e) {}
-      if (typeof showToast === 'function') {
-        showToast('PDF text quality scan complete: ' + s.clean + ' clean, ' + badCount + ' flagged', badCount > 0 ? 'warning' : 'success');
-      }
+      // Scan status shown in top-left banner only; no toast needed
       var _bannerHovered = false;
       var _fadeTimer = null;
       var _startFade = function() {
