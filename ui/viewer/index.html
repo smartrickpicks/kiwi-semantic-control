@@ -13440,22 +13440,21 @@
         var isPicklist = fieldMeta && fieldMeta.picklist === true && fieldMeta.options && fieldMeta.options.length > 0;
         var picklistOpts = isPicklist ? fieldMeta.options : [];
 
-        var cardBorder = isEdited ? 'border-left:3px solid #1976d2;' : (isFocus ? 'border-left:3px solid #ff9800;' : '');
-        var cardBg = isEdited ? 'background:#f3f8ff;' : (isFocus ? 'background:#fffbf0;' : 'background:#fff;');
+        var cardClass = 'srr-field-card' + (isEdited ? ' state-modified' : '') + (isFocus ? ' active' : '');
 
-        html += '<div class="grid-drawer-field-card" style="border:1px solid #e8e8e8;border-radius:8px;margin-bottom:6px;overflow:hidden;' + cardBorder + cardBg + '">';
+        html += '<div class="' + cardClass + '" data-field="' + escapeHtml(fk) + '">';
 
-        html += '<div style="padding:7px 12px 4px;display:flex;align-items:center;justify-content:space-between;">';
+        html += '<div class="srr-field-card-header">';
         html += '<div style="flex:1;min-width:0;">';
-        html += '<div style="font-weight:600;font-size:0.85em;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + escapeHtml(fk) + '">' + escapeHtml(label) + '</div>';
-        html += '<div style="font-size:0.68em;color:#aaa;font-family:monospace;">' + escapeHtml(fk) + '</div>';
+        html += '<div class="srr-field-card-label">' + escapeHtml(label) + '</div>';
+        html += '<div class="srr-field-card-api">' + escapeHtml(fk) + '</div>';
         html += '</div>';
         if (isEdited) {
           html += '<span style="font-size:0.68em;padding:2px 8px;border-radius:10px;background:#e3f2fd;color:#1565c0;font-weight:600;">Modified</span>';
         }
         html += '</div>';
 
-        html += '<div style="padding:4px 12px 8px;">';
+        html += '<div class="srr-field-card-body" style="padding:6px 10px 8px;">';
         if (isPicklist) {
           html += '<select data-field="' + escapeHtml(fk) + '" onchange="_gridDrawerFieldChanged(this)" style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:5px;font-size:0.85em;background:#fff;">';
           html += '<option value="">-- Select --</option>';
@@ -13558,16 +13557,14 @@
       } else {
         var node = el.parentElement;
         while (node && node !== document) {
-          if (node.className && node.className.indexOf('grid-drawer-field-card') >= 0) break;
+          if (node.className && node.className.indexOf('srr-field-card') >= 0) break;
           node = node.parentElement;
         }
-        if (node && node.className && node.className.indexOf('grid-drawer-field-card') >= 0) {
+        if (node && node.className && node.className.indexOf('srr-field-card') >= 0) {
           if (ctx._pendingEdits.hasOwnProperty(fk)) {
-            node.style.borderLeft = '3px solid #1976d2';
-            node.style.background = '#f3f8ff';
+            if (node.className.indexOf('state-modified') < 0) node.className += ' state-modified';
           } else {
-            node.style.borderLeft = '';
-            node.style.background = '#fff';
+            node.className = node.className.replace(/\s*state-modified/g, '');
           }
         }
         var countEl = document.getElementById('grid-drawer-patch-bar');
