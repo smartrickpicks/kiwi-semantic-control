@@ -1151,6 +1151,30 @@
     .folder-sync-time { font-size: 0.8em; color: #558b2f; margin-top: 6px; }
 
     /* Grid Table Styles */
+
+    /* Grid Mode: frozen first-rail column */
+    .grid-table.grid-mode-active td.grid-rail,
+    .grid-table.grid-mode-active th.grid-rail {
+      position: sticky; left: 0; z-index: 5; background: #f5f5f5; border-right: 2px solid #bbdefb;
+      min-width: 120px; max-width: 140px; white-space: nowrap;
+    }
+    .grid-table.grid-mode-active thead th.grid-rail { z-index: 12; background: #e3f2fd; }
+    .grid-rail-btn { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75em; margin: 0 1px; background: #e3f2fd; color: #1565c0; }
+    .grid-rail-btn:hover { background: #bbdefb; }
+    /* Grid Mode: alternating row striping */
+    .grid-table.grid-mode-active tbody tr:nth-child(even) { background: #fafbfc; }
+    .grid-table.grid-mode-active tbody tr:nth-child(odd) { background: #fff; }
+    .grid-table.grid-mode-active tbody tr:hover { background: #e3f2fd; }
+    /* Mode toggle pill */
+    .grid-mode-toggle { display: inline-flex; border: 1px solid #1565c0; border-radius: 16px; overflow: hidden; font-size: 0.8em; margin-left: 12px; }
+    .grid-mode-toggle button { border: none; padding: 4px 14px; cursor: pointer; font-weight: 600; background: #fff; color: #1565c0; transition: background 0.15s, color 0.15s; }
+    .grid-mode-toggle button.active { background: #1565c0; color: #fff; }
+    /* Inline editing cell */
+    .grid-cell-editing { outline: 2px solid #1976d2; outline-offset: -1px; background: #fff !important; min-width: 80px; cursor: text; }
+    .grid-cell-editing input { border: none; outline: none; width: 100%; font-size: inherit; font-family: inherit; background: transparent; padding: 0; }
+    /* Grid mode row: no pointer cursor */
+    .grid-table.grid-mode-active tbody tr { cursor: default; }
+
     .grid-table { min-width: 800px; }
     .grid-table th, .grid-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #e0e0e0; white-space: nowrap; }
     .grid-table th { font-weight: 600; color: #333; background: #f5f5f5; border-bottom: 2px solid #ddd; }
@@ -2459,6 +2483,10 @@
           <div style="flex: 1; min-width: 200px;">
             <input type="text" id="grid-search" class="filter-search" placeholder="Search all fields..." style="width: 100%;">
           </div>
+          <div class="grid-mode-toggle" id="grid-mode-toggle">
+            <button id="grid-mode-review-btn" class="active" onclick="setGridViewMode('review')">Review</button>
+            <button id="grid-mode-grid-btn" onclick="setGridViewMode('grid')">Grid</button>
+          </div>
           <div class="filter-chips" id="grid-status-chips" style="display: flex; gap: 6px; flex-wrap: wrap;">
             <span class="filter-chip active" data-filter="all" onclick="setGridFilter('all')">All</span>
             <span class="filter-chip status-ready" data-filter="ready" onclick="setGridFilter('ready')">Ready</span>
@@ -2588,7 +2616,7 @@
             <div class="srr-panel-header" style="align-items: center; gap: 6px; padding: 8px 12px;">
               <span id="srr-inspector-title" style="font-size: 0.95em;">Field Inspector</span>
               <div class="inspector-action-chips" id="inspector-action-chips" style="margin-left: auto;"></div>
-              <button class="inspector-action-trigger" id="inspector-action-trigger" onclick="openBatchAddModal()" title="Add Catalog Item" style="display:none;">+</button>
+              <button class="inspector-action-trigger" id="inspector-action-trigger" onclick="openBatchAddModal()" title="Add Contract Line Item" style="display:none;">+</button>
             </div>
             <div style="display: flex; flex: 1; overflow: hidden;">
               <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0;">
@@ -3607,8 +3635,8 @@
         </div>
           <!-- v1.6.48: Batch Add Settings -->
           <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Catalog Item Wizard <span class="info-icon" title="Catalog Item Wizard allows Analysts to mark records as catalog item anchors and batch-add catalog items. The feature is per-record.">&#9432;</span></h3>
-            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Catalog Item Wizard is enabled per-record. Analysts use the + button in the Field Inspector to open the wizard directly. Per-section overrides below are optional.</p>
+            <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Contract Line Item Wizard <span class="info-icon" title="Contract Line Item Wizard allows Analysts to mark records as catalog item anchors and batch-add catalog items. The feature is per-record.">&#9432;</span></h3>
+            <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Contract Line Item Wizard is enabled per-record. Analysts use the + button in the Field Inspector to open the wizard directly. Per-section overrides below are optional.</p>
             <div id="admin-batch-add-toggles" style="display: flex; flex-direction: column; gap: 8px;">
               <div style="color: #999; font-size: 0.85em; font-style: italic;">Load a dataset to see available contract sections.</div>
             </div>
@@ -12214,7 +12242,11 @@
     
     function submitPatchForReview(requestId) {
       var author = currentMode.charAt(0).toUpperCase() + currentMode.slice(1);
-      submitForReview(requestId, author, author);
+      var result = submitPatchRequest(requestId, author, currentMode);
+      if (!result) {
+        showToast('Unable to submit patch request — check status and permissions', 'error');
+        return;
+      }
       closePatchDetailDrawer();
       renderPatchConsoleTable();
       showToast('Patch request submitted for review', 'success');
@@ -12409,6 +12441,189 @@
     }
     
     // Initialize patch console when admin view loads
+
+    // ========== GRID VIEW MODE (Review / Grid) ==========
+    var _gridViewMode = 'review';
+    function getGridViewMode() { return _gridViewMode; }
+    function setGridViewMode(mode) {
+      _gridViewMode = mode;
+      var reviewBtn = document.getElementById('grid-mode-review-btn');
+      var gridBtn = document.getElementById('grid-mode-grid-btn');
+      if (reviewBtn && gridBtn) {
+        reviewBtn.className = mode === 'review' ? 'active' : '';
+        gridBtn.className = mode === 'grid' ? 'active' : '';
+      }
+      var tbl = document.getElementById('grid-table');
+      if (tbl) {
+        if (mode === 'grid') {
+          tbl.classList.add('grid-mode-active');
+        } else {
+          tbl.classList.remove('grid-mode-active');
+        }
+      }
+      console.log('[GRID-MODE] switched to:', mode);
+      renderGrid();
+    }
+
+
+    function _gridDownloadPdf(url) {
+      if (!url) return;
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = '';
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+
+    var _gridEditState = { active: false, td: null, originalValue: '', recordId: '', fieldKey: '', sheetName: '' };
+
+    function _gridStartCellEdit(td, recordId, fieldKey, sheetName) {
+      if (_gridEditState.active) _gridCommitCellEdit();
+      _gridEditState.active = true;
+      _gridEditState.td = td;
+      _gridEditState.originalValue = td.textContent;
+      _gridEditState.recordId = recordId;
+      _gridEditState.fieldKey = fieldKey;
+      _gridEditState.sheetName = sheetName;
+      td.classList.add('grid-cell-editing');
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.value = td.textContent;
+      td.textContent = '';
+      td.appendChild(input);
+      input.focus();
+      input.select();
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); _gridCommitCellEdit(); }
+        else if (e.key === 'Escape') { e.preventDefault(); _gridCancelCellEdit(); }
+        else if (e.key === 'Tab') { e.preventDefault(); _gridCommitCellEdit(); _gridTabToNextCell(td); }
+      });
+      input.addEventListener('blur', function() {
+        setTimeout(function() { if (_gridEditState.active && _gridEditState.td === td) _gridCommitCellEdit(); }, 150);
+      });
+    }
+
+    function _gridCommitCellEdit() {
+      if (!_gridEditState.active || !_gridEditState.td) return;
+      var td = _gridEditState.td;
+      var input = td.querySelector('input');
+      var newValue = input ? input.value : td.textContent;
+      td.classList.remove('grid-cell-editing');
+      td.textContent = newValue;
+      _gridEditState.active = false;
+      if (newValue !== _gridEditState.originalValue) {
+        _gridRecordEdit(_gridEditState.recordId, _gridEditState.fieldKey, _gridEditState.originalValue, newValue, _gridEditState.sheetName);
+        td.style.background = '#e3f2fd';
+        td.title = 'Edited: ' + _gridEditState.originalValue + ' → ' + newValue;
+      }
+      _gridEditState.td = null;
+    }
+
+    function _gridCancelCellEdit() {
+      if (!_gridEditState.active || !_gridEditState.td) return;
+      var td = _gridEditState.td;
+      td.classList.remove('grid-cell-editing');
+      td.textContent = _gridEditState.originalValue;
+      _gridEditState.active = false;
+      _gridEditState.td = null;
+    }
+
+    function _gridTabToNextCell(td) {
+      var next = td.nextElementSibling;
+      if (next && next.classList.contains('truncated')) {
+        next.click();
+      }
+    }
+
+    var _gridPendingEdits = [];
+
+    function _gridRecordEdit(recordId, fieldKey, oldValue, newValue, sheetName) {
+      _gridPendingEdits.push({
+        record_id: recordId,
+        field_key: fieldKey,
+        old_value: oldValue,
+        new_value: newValue,
+        contract_section: sheetName,
+        timestamp: new Date().toISOString()
+      });
+      console.log('[GRID-EDIT] recorded:', fieldKey, oldValue, '->', newValue, 'record:', recordId);
+      if (_gridPendingEdits.length === 1) {
+        _gridAutoOpenPatchPanel();
+      }
+      _gridUpdatePatchBadge();
+    }
+
+    function _gridAutoOpenPatchPanel() {
+      showToast('Grid edit recorded — ' + _gridPendingEdits.length + ' pending edit(s)', 'info');
+    }
+
+    function _gridSubmitPendingEdits() {
+      if (_gridPendingEdits.length === 0) {
+        showToast('No pending edits to submit', 'warning');
+        return;
+      }
+      var author = currentMode ? currentMode.charAt(0).toUpperCase() + currentMode.slice(1) : 'Analyst';
+      var edits = _gridPendingEdits.slice();
+      var changes = [];
+      for (var i = 0; i < edits.length; i++) {
+        changes.push({
+          field: edits[i].field_key,
+          from: edits[i].old_value,
+          to: edits[i].new_value
+        });
+      }
+      var firstEdit = edits[0];
+      var recordId = firstEdit.record_id || '';
+      var sheetName = firstEdit.contract_section || '';
+      var changeSummary = edits.length + ' field(s) edited via Grid Mode';
+      var request = createPatchRequest({
+        type: 'correction',
+        category: 'grid_inline_edit',
+        author: author,
+        author_role: currentMode || 'analyst',
+        record_id: recordId,
+        dataset_id: sheetName,
+        contract_section: sheetName,
+        changes: changes,
+        justification: 'Inline grid edits: ' + changeSummary,
+        summary: changeSummary,
+        when: 'Grid Mode inline edit',
+        then: changes.map(function(c) { return c.field + ': ' + c.from + ' → ' + c.to; }).join('; ')
+      });
+      if (request) {
+        var submitted = submitPatchRequest(request.request_id, author, currentMode || 'analyst');
+        if (submitted) {
+          showToast('Grid edits submitted as patch: ' + request.request_id, 'success');
+          _gridClearPendingEdits();
+          if (typeof renderPatchConsoleTable === 'function') renderPatchConsoleTable();
+          if (typeof updatePatchQueueCounts === 'function') updatePatchQueueCounts();
+        } else {
+          showToast('Patch created but could not be submitted — check permissions', 'warning');
+        }
+      } else {
+        showToast('Failed to create patch request', 'error');
+      }
+    }
+
+    function _gridUpdatePatchBadge() {
+      var badge = document.getElementById('grid-edit-badge');
+      var submitBtn = document.getElementById('grid-edit-submit-btn');
+      var clearBtn = document.getElementById('grid-edit-clear-btn');
+      var hasEdits = _gridPendingEdits.length > 0;
+      if (badge) {
+        badge.textContent = _gridPendingEdits.length + ' edit' + (_gridPendingEdits.length !== 1 ? 's' : '');
+        badge.style.display = hasEdits ? 'inline' : 'none';
+      }
+      if (submitBtn) submitBtn.style.display = hasEdits ? 'inline' : 'none';
+      if (clearBtn) clearBtn.style.display = hasEdits ? 'inline' : 'none';
+    }
+
+    function _gridGetPendingEdits() { return _gridPendingEdits.slice(); }
+    function _gridClearPendingEdits() { _gridPendingEdits = []; _gridUpdatePatchBadge(); }
+
     function initPatchConsole() {
       renderPatchConsoleTable();
       updatePatchQueueCounts();
@@ -17186,7 +17401,8 @@
       
       // Render header with Excel-style column letters (A, B, C...)
       var headerRow = document.getElementById('grid-header-row');
-      var headerHtml = '<th class="row-index" style="background: #f0f0f0; font-weight: 600;">#</th>';
+      var flatRailHeader = (_gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:100px;">Actions</th>' : '';
+      var headerHtml = flatRailHeader + '<th class="row-index" style="background: #f0f0f0; font-weight: 600;">#</th>';
       gridState.visibleColumns.forEach(function(col, idx) {
         var colLetter = getColumnLetter(idx);
         var displayName = col.replace(/_c$/i, '').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
@@ -20525,7 +20741,8 @@
         // Thead
         var thead = document.createElement('thead');
         var headTr = document.createElement('tr');
-        headTr.innerHTML = '<th style="background: #fafafa; font-weight: 600;">#</th>';
+        var railHeaderHtml = (_gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:100px;">Actions</th>' : '';
+        headTr.innerHTML = railHeaderHtml + '<th style="background: #fafafa; font-weight: 600;">#</th>';
         for (var ci = 0; ci < columns.length; ci++) {
           var col = columns[ci];
           var colLetter = getColumnLetter(ci);
@@ -20568,9 +20785,27 @@
           tr.setAttribute('data-sheet-name', rSheetName);
           tr.setAttribute('data-record-index', '' + sheetRowIdx);
           tr.setAttribute('data-record-id', escapeHtml(recordId));
-          tr.onclick = (function(sn, sri) { return function() { openRowReviewDrawer(sn, sri); }; })(r.sheet || sheetName, sheetRowIdx);
+          if (_gridViewMode === 'review') {
+            tr.onclick = (function(sn, sri) { return function() { openRowReviewDrawer(sn, sri); }; })(r.sheet || sheetName, sheetRowIdx);
+            tr.style.cursor = 'pointer';
+          }
 
-          var rowHtml = '<td class="row-index">' + (ri2 + 1) + rowBadgesHtml + '</td>';
+          var railHtml = '';
+          if (_gridViewMode === 'grid') {
+            var acctLabel = '';
+            if (rSheetName && rSheetName.toLowerCase().indexOf('opportunit') >= 0) {
+              acctLabel = r['Account_Name__c'] || r['account_name'] || r['Account'] || '';
+              if (acctLabel.length > 14) acctLabel = acctLabel.substring(0, 12) + '..';
+            }
+            var pdfUrl = r.file_url || r.File_URL_c || '';
+            railHtml = '<td class="grid-rail">' +
+              '<button class="grid-rail-btn" title="Record Inspector" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + (r.sheet || sheetName).replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');">&#128269;</button>' +
+              (pdfUrl ? '<a class="grid-rail-btn" href="' + pdfUrl + '" target="_blank" onclick="event.stopPropagation();" title="Open PDF">&#128196;</a>' : '') +
+              (pdfUrl ? '<button class="grid-rail-btn" title="Download PDF" onclick="event.stopPropagation(); _gridDownloadPdf(\'' + pdfUrl.replace(/'/g, "\\'") + '\');">&#11015;</button>' : '') +
+              (acctLabel ? '<span style="font-size:0.75em;color:#666;margin-left:2px;" title="' + acctLabel + '">' + acctLabel + '</span>' : '') +
+              '</td>';
+          }
+          var rowHtml = railHtml + '<td class="row-index">' + (ri2 + 1) + rowBadgesHtml + '</td>';
           for (var ci2 = 0; ci2 < columns.length; ci2++) {
             var col2 = columns[ci2];
             var val = r[col2];
@@ -20590,7 +20825,13 @@
             var cStyle = typeof getGridCellStyle === 'function' ? getGridCellStyle(recordId, col2, r) : '';
             var changeInfo = typeof getCellChangeInfo === 'function' ? getCellChangeInfo(recordId, col2, r) : null;
             var titlePfx = changeInfo && typeof CHANGE_TYPE_STYLES !== 'undefined' && CHANGE_TYPE_STYLES[changeInfo.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo.type].label + '] ' : '';
-            rowHtml += '<td class="' + cellCls + ' truncated" style="' + cStyle + '" title="' + titlePfx + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+            var editAttrs = '';
+            if (_gridViewMode === 'grid') {
+              editAttrs = ' onclick="event.stopPropagation(); _gridStartCellEdit(this, \'' + escapeHtml(recordId).replace(/'/g, "\\'") + '\', \'' + col2.replace(/'/g, "\\'") + '\', \'' + (rSheetName || '').replace(/'/g, "\\'") + '\');" style="cursor: cell; ' + cStyle + '"';
+              rowHtml += '<td class="' + cellCls + ' truncated"' + editAttrs + ' title="' + titlePfx + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+            } else {
+              rowHtml += '<td class="' + cellCls + ' truncated" style="' + cStyle + '" title="' + titlePfx + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+            }
           }
           tr.innerHTML = rowHtml;
           tbody.appendChild(tr);
@@ -20606,6 +20847,29 @@
 
       // Update footer
       document.getElementById('grid-row-count').textContent = filtered.length + ' of ' + allRecords.length + ' records (composite: ' + sheetOrder.length + ' sheets)';
+      var existingBadge = document.getElementById('grid-edit-badge');
+      if (!existingBadge) {
+        var footer = document.getElementById('grid-row-count');
+        if (footer) {
+          var badge = document.createElement('span');
+          badge.id = 'grid-edit-badge';
+          badge.style.cssText = 'display:none;margin-left:12px;padding:2px 10px;border-radius:10px;background:#e3f2fd;color:#1565c0;font-size:0.85em;font-weight:600;';
+          footer.parentNode.insertBefore(badge, footer.nextSibling);
+          var submitBtn = document.createElement('button');
+          submitBtn.id = 'grid-edit-submit-btn';
+          submitBtn.textContent = 'Submit Edits';
+          submitBtn.style.cssText = 'display:none;margin-left:8px;padding:4px 12px;border-radius:10px;background:#1565c0;color:#fff;border:none;font-size:0.8em;font-weight:600;cursor:pointer;';
+          submitBtn.onclick = function() { _gridSubmitPendingEdits(); };
+          badge.parentNode.insertBefore(submitBtn, badge.nextSibling);
+          var clearBtn = document.createElement('button');
+          clearBtn.id = 'grid-edit-clear-btn';
+          clearBtn.textContent = 'Clear';
+          clearBtn.style.cssText = 'display:none;margin-left:4px;padding:4px 10px;border-radius:10px;background:#fff;color:#c62828;border:1px solid #c62828;font-size:0.8em;font-weight:600;cursor:pointer;';
+          clearBtn.onclick = function() { _gridClearPendingEdits(); showToast('Pending edits cleared', 'info'); };
+          submitBtn.parentNode.insertBefore(clearBtn, submitBtn.nextSibling);
+        }
+      }
+      _gridUpdatePatchBadge();
       gridState.filteredData = filtered;
 
       var filterInfo = [];
@@ -26413,20 +26677,24 @@
       var draft = srrState.patchDraft;
       var justification = draft.justification;
 
-      // v1.6.46: Evidence Pack gate
-      var evidenceGaps = srrCheckEvidenceGate(patchType, draft, changeCount, srrState.overrideEnabled);
-      if (evidenceGaps.length > 0) {
-        showToast('Missing requirements: ' + evidenceGaps.join(', '), 'warning');
-        console.log('[SRR] Submit blocked — evidence gaps:', evidenceGaps);
-        return;
+      // v1.6.46: Evidence Pack gate (sandbox mode bypasses)
+      if (!isDemoMode()) {
+        var evidenceGaps = srrCheckEvidenceGate(patchType, draft, changeCount, srrState.overrideEnabled);
+        if (evidenceGaps.length > 0) {
+          showToast('Missing requirements: ' + evidenceGaps.join(', '), 'warning');
+          console.log('[SRR] Submit blocked — evidence gaps:', evidenceGaps);
+          return;
+        }
       }
 
-      // v1.6.46: Preflight gate
-      var preflightGaps = srrCheckPreflightGate();
-      if (preflightGaps.length > 0) {
-        showToast('Missing requirements: ' + preflightGaps.join(', '), 'warning');
-        console.log('[SRR] Submit blocked — preflight gaps:', preflightGaps);
-        return;
+      // v1.6.46: Preflight gate (sandbox mode bypasses)
+      if (!isDemoMode()) {
+        var preflightGaps = srrCheckPreflightGate();
+        if (preflightGaps.length > 0) {
+          showToast('Missing requirements: ' + preflightGaps.join(', '), 'warning');
+          console.log('[SRR] Submit blocked — preflight gaps:', preflightGaps);
+          return;
+        }
       }
 
       var contractBlockers = srrCheckContractPreflightGate();
@@ -32996,7 +33264,10 @@
         tr.dataset.sheetName = sheetName;
         tr.dataset.recordIndex = sheetRowIdx;
         tr.dataset.recordId = recordId;
-        tr.onclick = (function(sn, sri) { return function() { openRowReviewDrawer(sn, sri); }; })(sheetName, sheetRowIdx);
+        if (_gridViewMode === 'review') {
+          tr.onclick = (function(sn, sri) { return function() { openRowReviewDrawer(sn, sri); }; })(sheetName, sheetRowIdx);
+          tr.style.cursor = 'pointer';
+        }
         
         // v1.6.18: Normalize status field lookup - try multiple header variants
         var statusVal = '';
@@ -33022,7 +33293,22 @@
             childIndent = '<span class="grid-child-indent"></span>';
           }
         }
-        tr.innerHTML = '<td class="row-index">' + groupCaret + childIndent + (idx + 1) + rowBadgesHtml + '</td>' +
+        var flatRailHtml = '';
+        if (_gridViewMode === 'grid') {
+          var flatAcctLabel = '';
+          if (sheetName && sheetName.toLowerCase().indexOf('opportunit') >= 0) {
+            flatAcctLabel = r['Account_Name__c'] || r['account_name'] || r['Account'] || '';
+            if (flatAcctLabel.length > 14) flatAcctLabel = flatAcctLabel.substring(0, 12) + '..';
+          }
+          var flatPdfUrl = r.file_url || r.File_URL_c || '';
+          flatRailHtml = '<td class="grid-rail">' +
+            '<button class="grid-rail-btn" title="Record Inspector" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + sheetName.replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');">&#128269;</button>' +
+            (flatPdfUrl ? '<a class="grid-rail-btn" href="' + flatPdfUrl + '" target="_blank" onclick="event.stopPropagation();" title="Open PDF">&#128196;</a>' : '') +
+            (flatPdfUrl ? '<button class="grid-rail-btn" title="Download PDF" onclick="event.stopPropagation(); _gridDownloadPdf(\'' + flatPdfUrl.replace(/'/g, "\\'") + '\');">&#11015;</button>' : '') +
+            (flatAcctLabel ? '<span style="font-size:0.75em;color:#666;margin-left:2px;">' + flatAcctLabel + '</span>' : '') +
+            '</td>';
+        }
+        tr.innerHTML = flatRailHtml + '<td class="row-index">' + groupCaret + childIndent + (idx + 1) + rowBadgesHtml + '</td>' +
           columns.map(function(col) {
             var val = r[col];
             if (val === null || val === undefined) val = '';
@@ -33046,7 +33332,11 @@
             var cellClass = isStatusCol ? statusClass : '';
             // v1.6.2: Apply signal-based cell coloring (v1.6.18: pass record for fallback)
             var cellStyle = getGridCellStyle(recordId, col, r);
-            var changeInfo2 = getCellChangeInfo(recordId, col, r); var titlePrefix2 = changeInfo2 && CHANGE_TYPE_STYLES[changeInfo2.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo2.type].label + '] ' : ''; return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + titlePrefix2 + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+            var changeInfo2 = getCellChangeInfo(recordId, col, r); var titlePrefix2 = changeInfo2 && CHANGE_TYPE_STYLES[changeInfo2.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo2.type].label + '] ' : '';
+            if (_gridViewMode === 'grid') {
+              return '<td class="' + cellClass + ' truncated" onclick="event.stopPropagation(); _gridStartCellEdit(this, \'' + (recordId || '').replace(/'/g, "\\'") + '\', \'' + col.replace(/'/g, "\\'") + '\', \'' + (sheetName || '').replace(/'/g, "\\'") + '\');" style="cursor:cell;' + cellStyle + '" title="' + titlePrefix2 + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+            }
+            return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + titlePrefix2 + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
           }).join('');
         
         fragment.appendChild(tr);
@@ -38699,7 +38989,7 @@ Add any additional notes here.
 <div id="batch-add-modal" class="batch-add-modal" style="display:none;">
   <div class="batch-add-content">
     <div class="batch-add-header">
-      <h3 id="batch-add-title">Add Catalog Items</h3>
+      <h3 id="batch-add-title">Add Contract Line Items</h3>
       <button class="batch-add-close" onclick="closeBatchAddModal()">&times;</button>
     </div>
     <div class="batch-add-steps">
@@ -38801,7 +39091,7 @@ Add any additional notes here.
           if (catMeta.fields.length === 0) return '';
           if (!batchAddState.metadata) batchAddState.metadata = {};
           var metaHtml = '<div style="margin-top: 14px; border-top: 1px solid #e0e0e0; padding-top: 12px;">' +
-            '<div style="font-size: 0.85em; font-weight: 600; color: #333; margin-bottom: 8px;">Catalog Item Metadata</div>' +
+            '<div style="font-size: 0.85em; font-weight: 600; color: #333; margin-bottom: 8px;">Contract Line Item Metadata</div>' +
             '<div style="font-size: 0.75em; color: #888; margin-bottom: 10px;">Only fields with rules or constraints are shown. Empty fields are skipped.</div>';
           for (var mi = 0; mi < catMeta.fields.length; mi++) {
             var mf = catMeta.fields[mi];
@@ -38887,7 +39177,7 @@ Add any additional notes here.
       body.innerHTML =
         '<div style="text-align: center; padding: 20px 0;">' +
           '<div style="font-size: 2em; margin-bottom: 12px;">&#9888;</div>' +
-          '<div style="font-size: 1em; font-weight: 600; margin-bottom: 12px;">Confirm Catalog Items Update</div>' +
+          '<div style="font-size: 1em; font-weight: 600; margin-bottom: 12px;">Confirm Contract Line Items Update</div>' +
           '<div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 16px;">' +
             '<div style="text-align: center; padding: 12px 16px; border-radius: 8px; background: #e8f5e9;"><div style="font-size: 1.5em; font-weight: 700; color: #2e7d32;">' + exact.length + '</div><div style="font-size: 0.75em; color: #666;">Attach Existing</div></div>' +
             (near.length > 0 ? '<div style="text-align: center; padding: 12px 16px; border-radius: 8px; background: #fff8e1;"><div style="font-size: 1.5em; font-weight: 700; color: #f57f17;">' + near.length + '</div><div style="font-size: 0.75em; color: #666;">Possible Dupes</div></div>' : '') +
@@ -38997,7 +39287,7 @@ Add any additional notes here.
     if (result.created.length > 0) parts.push(result.created.length + ' created');
     if (result.nearDupes.length > 0) parts.push(result.nearDupes.length + ' flagged as possible dupes');
     if (parts.length > 0) {
-      showToast('Catalog Items updated: ' + parts.join(', ') + '.', 'success');
+      showToast('Contract Line Items updated: ' + parts.join(', ') + '.', 'success');
       renderGrid();
       if (typeof updateSrrGroupBadge === 'function') updateSrrGroupBadge();
     } else {
@@ -39012,7 +39302,7 @@ Add any additional notes here.
     if (rec && rec._group) {
       var childCount = getGroupChildren(srrState.currentSheetName, rec._group.group_id).length;
       if (rec._group.is_anchor) {
-        badge.innerHTML = '<span class="group-anchor-badge">&#128218; Catalog Item &middot; ' + childCount + ' item' + (childCount !== 1 ? 's' : '') + '</span>';
+        badge.innerHTML = '<span class="group-anchor-badge">&#128218; Contract Line Item &middot; ' + childCount + ' item' + (childCount !== 1 ? 's' : '') + '</span>';
         badge.style.display = 'inline-block';
       } else {
         badge.innerHTML = '<span class="group-anchor-badge" style="background:#e0e0e0;color:#555;">&#9656; Linked catalog item</span>';
