@@ -2217,7 +2217,7 @@
                   <div id="ta-schema-missing-split" style="font-size: 0.6em; color: #aaa;"></div>
                   <div style="font-size: 0.55em; color: #bbb;">Fields needing analyst completion</div>
                 </div>
-                <div onclick="_acctCheckReopen()" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Duplicate account name pairs detected during import. Click to review or revisit dismissed pairs." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
+                <div id="acct-check-card" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Duplicate account name pairs detected during import. Click to review or revisit dismissed pairs." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-acctcheck" style="font-size: 1.4em; font-weight: 700; color: #555;">0</div>
                   <div style="font-size: 0.75em; color: #666;">Account Check</div>
                   <div id="ta-schema-acctcheck-detail" style="font-size: 0.6em; color: #aaa;"></div>
@@ -18763,7 +18763,11 @@
 
     function _buildDuplicateAccountPreflightItems() {
       _duplicateAccountItems = [];
-      if (typeof ContractIndex === 'undefined' || !ContractIndex._index || !ContractIndex._index.contracts) return;
+      if (typeof ContractIndex === 'undefined' || !ContractIndex._index || !ContractIndex._index.contracts) {
+        console.log('[ACCT-CHECK] _buildDup: ContractIndex not available, skipping');
+        return;
+      }
+      console.log('[ACCT-CHECK] _buildDup: ContractIndex has ' + Object.keys(ContractIndex._index.contracts).length + ' contracts');
       var acctMap = {};
       var contractKeys = Object.keys(ContractIndex._index.contracts);
       for (var ci = 0; ci < contractKeys.length; ci++) {
@@ -18897,6 +18901,21 @@
       }
     }
 
+    (function() {
+      var _acctCard = document.getElementById('acct-check-card');
+      if (_acctCard) {
+        _acctCard.addEventListener('click', function(e) {
+          e.stopPropagation();
+          e.preventDefault();
+          console.log('[ACCT-CHECK] card click via addEventListener');
+          _acctCheckReopen();
+        });
+        console.log('[ACCT-CHECK] card listener attached');
+      } else {
+        console.warn('[ACCT-CHECK] card element not found for listener');
+      }
+    })();
+
     function _acctCheckRun() {
       _buildDuplicateAccountPreflightItems();
       _acctCheckUpdateCard();
@@ -18959,29 +18978,35 @@
     }
 
     function _acctCheckReopen() {
-      var savedDismissals = {};
-      var dKeys = Object.keys(_dismissedDuplicatePairs);
-      for (var di = 0; di < dKeys.length; di++) savedDismissals[dKeys[di]] = true;
-      _dismissedDuplicatePairs = {};
-      _buildDuplicateAccountPreflightItems();
-      _dismissedDuplicatePairs = savedDismissals;
-      if (_duplicateAccountItems.length === 0) {
-        var overlay = document.createElement('div');
-        overlay.className = 'modal-overlay';
-        overlay.id = 'acct-check-empty-modal';
-        overlay.style.cssText = 'display:flex;align-items:center;justify-content:center;';
-        overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
-        var box = document.createElement('div');
-        box.className = 'modal-content';
-        box.style.cssText = 'max-width:400px;text-align:center;padding:24px;';
-        box.innerHTML = '<h3 style="margin:0 0 12px; color:#4caf50;">&#10003; Account Check</h3><p style="color:#666; font-size:0.9em;">No duplicate account names detected in this batch.</p><button class="toolbar-btn" style="margin-top:12px; background:#1565c0; color:#fff;" onclick="document.getElementById(\'acct-check-empty-modal\').remove()">Close</button>';
-        overlay.appendChild(box);
-        document.body.appendChild(overlay);
-        return;
+      console.log('[ACCT-CHECK] _acctCheckReopen called');
+      try {
+        var savedDismissals = {};
+        var dKeys = Object.keys(_dismissedDuplicatePairs || {});
+        for (var di = 0; di < dKeys.length; di++) savedDismissals[dKeys[di]] = true;
+        _dismissedDuplicatePairs = {};
+        _buildDuplicateAccountPreflightItems();
+        _dismissedDuplicatePairs = savedDismissals;
+        console.log('[ACCT-CHECK] reopen: found ' + _duplicateAccountItems.length + ' items');
+        if (_duplicateAccountItems.length === 0) {
+          var overlay = document.createElement('div');
+          overlay.className = 'modal-overlay';
+          overlay.id = 'acct-check-empty-modal';
+          overlay.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+          overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+          var box = document.createElement('div');
+          box.className = 'modal-content';
+          box.style.cssText = 'max-width:400px;text-align:center;padding:24px;';
+          box.innerHTML = '<h3 style="margin:0 0 12px; color:#4caf50;">&#10003; Account Check</h3><p style="color:#666; font-size:0.9em;">No duplicate account names detected in this batch.</p><button class="toolbar-btn" style="margin-top:12px; background:#1565c0; color:#fff;" onclick="document.getElementById(\'acct-check-empty-modal\').remove()">Close</button>';
+          overlay.appendChild(box);
+          document.body.appendChild(overlay);
+          return;
+        }
+        _acctCheckQueue = _duplicateAccountItems.slice();
+        _acctCheckIndex = 0;
+        _acctCheckShowCurrent();
+      } catch (e) {
+        console.error('[ACCT-CHECK] reopen error:', e);
       }
-      _acctCheckQueue = _duplicateAccountItems.slice();
-      _acctCheckIndex = 0;
-      _acctCheckShowCurrent();
     }
 
     function _acctCheckShowPicker() {
