@@ -15631,11 +15631,11 @@
       var triageSubnav = document.getElementById('triage-subnav');
       var triageParent = document.querySelector('.nav-parent[data-page="triage"]');
       if (triageSubnav && triageParent) {
-        if (page === 'grid') {
+        if (page === 'grid' || page === 'triage') {
           triageSubnav.classList.add('expanded');
           triageParent.classList.add('expanded');
           triageParent.classList.add('active');
-        } else if (page !== 'triage') {
+        } else {
           triageSubnav.classList.remove('expanded');
           triageParent.classList.remove('expanded');
         }
