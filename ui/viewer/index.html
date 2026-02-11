@@ -13211,11 +13211,12 @@
         if (!td) return;
         var tr = td.parentElement;
         if (!tr) return;
-        var recordId = tr.dataset.recordId || '';
         var sheetName = tr.dataset.sheetName || '';
         var rowIdx = parseInt(tr.dataset.recordIndex || '0', 10);
         if (td._gridCellClickTimer) { clearTimeout(td._gridCellClickTimer); td._gridCellClickTimer = null; }
-        _gridOpenPatchEditor(recordId, sheetName, rowIdx);
+        srrState._gridDblClickPatchType = 'rfi';
+        openRowReviewDrawer(sheetName, rowIdx);
+
       });
     })();
 
@@ -24764,6 +24765,15 @@
       navigateTo('row');
       _srrUpdateBackButton();
       renderSingleRowReview(record, rowId);
+
+      if (srrState._gridDblClickPatchType) {
+        var _dblPatchType = srrState._gridDblClickPatchType;
+        delete srrState._gridDblClickPatchType;
+        setTimeout(function() {
+          srrSetPatchType(_dblPatchType);
+          srrOpenPatchOverlay(_dblPatchType);
+        }, 100);
+      }
       
       // Update URL without triggering hashchange loop
       var hashTarget = '#/row/' + rowId;
