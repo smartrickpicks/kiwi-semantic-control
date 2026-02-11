@@ -3684,24 +3684,22 @@
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Admin Panel</h2>
           </div>
-          <p class="page-desc">Centralized admin tools for governance, config, standardization, and patch management.</p>
+          <p class="page-desc">Centralized admin tools for governance, schema standards, patch operations, team access, quality assurance, and runtime configuration.</p>
         </div>
 
         <!-- Admin Panel Tabs -->
         <div class="admin-console-tabs" style="display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; padding-bottom: 0; flex-wrap: wrap;">
           <button class="admin-tab active" data-admin-tab="governance" onclick="switchAdminTab('governance')" style="padding: 10px 20px; background: #1976d2; color: white; border: none; border-radius: 6px 6px 0 0; cursor: pointer; font-weight: 600;">Governance</button>
+          <button class="admin-tab" data-admin-tab="standardizer" onclick="switchAdminTab('standardizer')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Schema &amp; Standards</button>
           <button class="admin-tab" data-admin-tab="patch-ops" onclick="switchAdminTab('patch-ops')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Patch Ops <span id="patch-queue-count" style="display:none; background:#e91e63; color:white; padding:1px 6px; border-radius:10px; font-size:0.8em; margin-left:4px;">0</span></button>
-          <button class="admin-tab" data-admin-tab="gov-controls" onclick="switchAdminTab('gov-controls')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Governance Controls</button>
-          <button class="admin-tab" data-admin-tab="runtime-config" onclick="switchAdminTab('runtime-config')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Runtime Config</button>
-          <button class="admin-tab" data-admin-tab="standardizer" onclick="switchAdminTab('standardizer')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Schema</button>
-          <button class="admin-tab" data-admin-tab="unknown-cols" onclick="switchAdminTab('unknown-cols')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Unknown Columns</button>
-          <button class="admin-tab" data-admin-tab="people" onclick="switchAdminTab('people')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">People</button>
+          <button class="admin-tab" data-admin-tab="people" onclick="switchAdminTab('people')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">People &amp; Access</button>
           <button class="admin-tab" data-admin-tab="qa-runner" onclick="switchAdminTab('qa-runner')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">QA Runner</button>
+          <button class="admin-tab" data-admin-tab="runtime-config" onclick="switchAdminTab('runtime-config')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Runtime Config</button>
         </div>
 
         <!-- GOVERNANCE TAB -->
         <div id="admin-tab-governance" class="admin-tab-panel" data-admin-section="true">
-          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Artifact registry, workflow pipeline, and batch management.</span></div>
+          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Artifact registry, workflow pipeline, batch management, version baselines, and evidence gates.</span></div>
         <!-- Masterline / Artifact Registry Section -->
         <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -3795,6 +3793,40 @@
     <div id="merged-batch-list"></div>
   </div>
 </div>
+
+        <!-- Governance Controls (consolidated from former separate tab) -->
+        <div style="margin-top: 24px; border-top: 2px solid #e0e0e0; padding-top: 20px;">
+        <h3 style="margin: 0 0 6px; font-size: 1.05em; color: #6a1b9a;">Governance Controls</h3>
+        <p style="font-size: 0.82em; color: #888; margin: 0 0 16px;">Version baselines, evidence gates, and governance policy settings.</p>
+        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Version & Baseline</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div>
+              <label style="font-size: 0.75em; color: #666; text-transform: uppercase;">Current Base Version</label>
+              <div style="font-family: monospace; font-size: 1em; margin-top: 4px;" id="admin-base-version">--</div>
+            </div>
+            <div>
+              <label style="font-size: 0.75em; color: #666; text-transform: uppercase;">Patch Target Version</label>
+              <div style="font-family: monospace; font-size: 1em; margin-top: 4px;" id="admin-patch-version">--</div>
+            </div>
+            <div>
+              <label style="font-size: 0.75em; color: #666; text-transform: uppercase;">Last Smoke Test</label>
+              <div style="font-size: 0.9em; margin-top: 4px;" id="admin-last-smoke">Not Run</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Evidence Gates</h3>
+          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Status of preflight checks. Evidence is pasted in (UI does not run these).</p>
+          <div id="admin-evidence-gates" style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div class="state-chip pending">Validation: Pending</div>
+            <div class="state-chip pending">Conflicts: Pending</div>
+            <div class="state-chip pending">Smoke Baseline: Pending</div>
+            <div class="state-chip pending">Smoke Edge: Pending</div>
+          </div>
+        </div>
+        </div>
         </div><!-- end admin-tab-governance -->
 
         <!-- P0.6: Architect Controls moved to bottom utility rail -->
@@ -4088,41 +4120,35 @@
         </div><!-- end admin-tab-patch-ops -->
 
         <!-- GOVERNANCE CONTROLS TAB (merged Evidence + gate settings) -->
-        <div id="admin-tab-gov-controls" class="admin-tab-panel" data-admin-section="true" style="display: none;">
-          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Version baselines, evidence gates, and governance policy settings.</span></div>
+        <!-- gov-controls panel removed: content merged into Governance tab -->
+
+        <!-- unknown-cols panel removed: content merged into Schema & Standards tab -->
+
+        <!-- STANDARDIZER TAB (now Schema & Standards) -->
+        <div id="admin-tab-standardizer" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Manage the canonical schema tree, field definitions, column aliases, and review unknown/unmapped columns.</span></div>
         <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Version & Baseline</h3>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-            <div>
-              <label style="font-size: 0.75em; color: #666; text-transform: uppercase;">Current Base Version</label>
-              <div style="font-family: monospace; font-size: 1em; margin-top: 4px;" id="admin-base-version">--</div>
-            </div>
-            <div>
-              <label style="font-size: 0.75em; color: #666; text-transform: uppercase;">Patch Target Version</label>
-              <div style="font-family: monospace; font-size: 1em; margin-top: 4px;" id="admin-patch-version">--</div>
-            </div>
-            <div>
-              <label style="font-size: 0.75em; color: #666; text-transform: uppercase;">Last Smoke Test</label>
-              <div style="font-size: 0.9em; margin-top: 4px;" id="admin-last-smoke">Not Run</div>
-            </div>
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Schema Tree Editor <span class="info-icon" title="Browse and edit the canonical schema tree: contract sections, fields, aliases, QA flags, and document types. Changes are buffered locally and can be exported as a patch.">&#9432;</span></h3>
+          <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+            <button class="toolbar-btn" onclick="schemaTreeExpandAll()">Expand All</button>
+            <button class="toolbar-btn" onclick="schemaTreeCollapseAll()">Collapse All</button>
+            <button class="toolbar-btn" onclick="SchemaTreeEditor.saveDraft()" style="background:#e8f5e9; color:#2e7d32;">Save Draft</button>
+            <button class="toolbar-btn" onclick="schemaTreePreviewDiff()">Preview Diff</button>
+            <button class="toolbar-btn" onclick="SchemaTreeEditor.exportPatch()">Export Patch</button>
+            <button class="toolbar-btn" onclick="SchemaTreeEditor.undo()">Undo Last</button>
+          </div>
+          <div id="schema-tree-container" style="border: 1px solid #e0e0e0; border-radius: 6px; max-height: 500px; overflow-y: auto; padding: 8px; background: #fafafa;"></div>
+          <div id="schema-diff-panel" style="display:none; margin-top: 15px; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; background: #fff;"></div>
+          <div id="schema-status-bar" style="margin-top: 10px; padding: 8px 12px; background: #f5f5f5; border-radius: 4px; font-size: 0.82em; color: #666; display: flex; justify-content: space-between;">
+            <span id="schema-loaded-count">Sources: 0 loaded</span>
+            <span id="schema-pending-count">Pending changes: 0</span>
           </div>
         </div>
 
-        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Evidence Gates</h3>
-          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Status of preflight checks. Evidence is pasted in (UI does not run these).</p>
-          <div id="admin-evidence-gates" style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <div class="state-chip pending">Validation: Pending</div>
-            <div class="state-chip pending">Conflicts: Pending</div>
-            <div class="state-chip pending">Smoke Baseline: Pending</div>
-            <div class="state-chip pending">Smoke Edge: Pending</div>
-          </div>
-        </div>
-        </div><!-- end admin-tab-gov-controls -->
-
-        <!-- UNKNOWN COLUMNS TAB -->
-        <div id="admin-tab-unknown-cols" class="admin-tab-panel" data-admin-section="true" style="display: none;">
-          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Unmapped headers and unknown columns requiring glossary mapping.</span></div>
+        <!-- Unknown Columns (sub-section, consolidated from former separate tab) -->
+        <div id="admin-subsection-unknown-cols" style="margin-top: 24px; border-top: 2px solid #e0e0e0; padding-top: 20px;">
+        <h3 style="margin: 0 0 6px; font-size: 1.05em; color: #e65100;">Unknown Columns &amp; Schema Drift</h3>
+        <p style="font-size: 0.82em; color: #888; margin: 0 0 16px;">Unmapped headers and unknown columns requiring glossary mapping.</p>
         <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Unknown Columns (Schema Drift) <span class="info-icon" title="Columns found in imported data that don't match any canonical field. Decide how to handle each.">&#9432;</span></h3>
           <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Columns detected during standardization that aren't in the canonical schema. Decide how to classify each one.</p>
@@ -4157,29 +4183,8 @@
             <em style="color: #888;">No decisions made yet.</em>
           </div>
         </div>
-        </div><!-- end admin-tab-unknown-cols -->
-
-        <!-- STANDARDIZER TAB -->
-        <div id="admin-tab-standardizer" class="admin-tab-panel" data-admin-section="true" style="display: none;">
-          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Schema tree editor for canonical rules, field definitions, and column aliases.</span></div>
-        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Schema Tree Editor <span class="info-icon" title="Browse and edit the canonical schema tree: contract sections, fields, aliases, QA flags, and document types. Changes are buffered locally and can be exported as a patch.">&#9432;</span></h3>
-          <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
-            <button class="toolbar-btn" onclick="schemaTreeExpandAll()">Expand All</button>
-            <button class="toolbar-btn" onclick="schemaTreeCollapseAll()">Collapse All</button>
-            <button class="toolbar-btn" onclick="SchemaTreeEditor.saveDraft()" style="background:#e8f5e9; color:#2e7d32;">Save Draft</button>
-            <button class="toolbar-btn" onclick="schemaTreePreviewDiff()">Preview Diff</button>
-            <button class="toolbar-btn" onclick="SchemaTreeEditor.exportPatch()">Export Patch</button>
-            <button class="toolbar-btn" onclick="SchemaTreeEditor.undo()">Undo Last</button>
-          </div>
-          <div id="schema-tree-container" style="border: 1px solid #e0e0e0; border-radius: 6px; max-height: 500px; overflow-y: auto; padding: 8px; background: #fafafa;"></div>
-          <div id="schema-diff-panel" style="display:none; margin-top: 15px; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; background: #fff;"></div>
-          <div id="schema-status-bar" style="margin-top: 10px; padding: 8px 12px; background: #f5f5f5; border-radius: 4px; font-size: 0.82em; color: #666; display: flex; justify-content: space-between;">
-            <span id="schema-loaded-count">Sources: 0 loaded</span>
-            <span id="schema-pending-count">Pending changes: 0</span>
-          </div>
         </div>
-        </div><!-- end admin-tab-standardizer -->
+        </div><!-- end admin-tab-standardizer (Schema & Standards) -->
 
         <!-- CONFIG TAB -->
         <div id="admin-tab-runtime-config" class="admin-tab-panel" data-admin-section="true" style="display: none;">
@@ -18018,8 +18023,9 @@
       }
       var tabs = ['governance', 'users', 'patch-ops', 'patch-queue', 'runtime-config', 'config', 'inspector', 'standardizer', 'patch-console', 'gov-controls', 'evidence', 'unknown-cols', 'people', 'qa-runner'];
       if (tabName === 'patch-queue' || tabName === 'patch-console') tabName = 'patch-ops';
-      if (tabName === 'evidence') tabName = 'gov-controls';
+      if (tabName === 'evidence' || tabName === 'gov-controls') tabName = 'governance';
       if (tabName === 'config' || tabName === 'inspector') tabName = 'runtime-config';
+      if (tabName === 'unknown-cols') tabName = 'standardizer';
       if (tabs.indexOf(tabName) === -1) tabName = 'governance';
       
       // Render users table and update env mode UI when switching to users tab
@@ -18073,6 +18079,9 @@
       }
       
       console.log('[Admin] Switched to tab:', tabName);
+      if (tabName === 'standardizer') {
+        if (typeof refreshUnknownColumnsTable === 'function') refreshUnknownColumnsTable();
+      }
       if (tabName === 'qa-runner') {
         QARunner._onTabOpen();
       }
