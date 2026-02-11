@@ -13432,42 +13432,125 @@
     }
     var _gridCtxState = { open: false, context: null };
 
+    var _GRID_CTX_ROLE_MATRIX = {
+      inspect:      { analyst: true,  verifier: true,  admin: true, architect: true },
+      correction:   { analyst: true,  verifier: false, admin: true, architect: true },
+      rfi:          { analyst: true,  verifier: true,  admin: true, architect: true },
+      blacklist:    { analyst: false, verifier: false, admin: true, architect: true },
+      'line-items': { analyst: true,  verifier: false, admin: true, architect: true },
+      glossary:     { analyst: true,  verifier: true,  admin: true, architect: true }
+    };
+
+    function _gridCtxGetCurrentRole() {
+      var mode = (typeof currentMode !== 'undefined') ? currentMode : '';
+      if (!mode && typeof localStorage !== 'undefined') {
+        mode = (localStorage.getItem('viewer_mode_v10') || '').toLowerCase();
+      }
+      if (typeof TruthPack !== 'undefined' && typeof TruthPack.isArchitect === 'function' && TruthPack.isArchitect()) {
+        return 'architect';
+      }
+      if (mode === 'admin' || mode === 'architect' || mode === 'verifier' || mode === 'analyst') return mode;
+      return 'analyst';
+    }
+
+    function _gridCtxIsSystemField(fieldKey) {
+      if (!fieldKey) return false;
+      if (fieldKey.charAt(0) === '_') return true;
+      if (typeof _gridIsMetaField === 'function' && _gridIsMetaField(fieldKey)) return true;
+      return false;
+    }
+
+    function getGridContextActionState(action, ctx, role) {
+      var hasRecord = !!(ctx && ctx.recordId);
+      var hasField = !!(ctx && ctx.fieldKey);
+      var isSystemOnly = hasField && _gridCtxIsSystemField(ctx.fieldKey);
+      var record = _gridCtxResolveRecord(ctx);
+      var hasContractId = !!(record && (record.contract_key || record.contract_id || record.contractKey));
+
+      var matrix = _GRID_CTX_ROLE_MATRIX[action];
+      if (!matrix) return { enabled: false, reason: 'Unknown action' };
+
+      if (!matrix[role]) {
+        return { enabled: false, reason: role.charAt(0).toUpperCase() + role.slice(1) + ' role cannot ' + action.replace('-', ' ') };
+      }
+
+      if (action === 'inspect') {
+        if (!hasRecord) return { enabled: false, reason: 'No record selected' };
+        return { enabled: true, reason: '' };
+      }
+
+      if (action === 'correction') {
+        if (!hasRecord) return { enabled: false, reason: 'No record selected' };
+        if (!hasField) return { enabled: false, reason: 'Select a field first' };
+        if (isSystemOnly) return { enabled: false, reason: 'System field cannot be corrected' };
+        return { enabled: true, reason: '' };
+      }
+
+      if (action === 'rfi') {
+        if (!hasRecord) return { enabled: false, reason: 'No record selected' };
+        return { enabled: true, reason: '' };
+      }
+
+      if (action === 'blacklist') {
+        if (!hasRecord) return { enabled: false, reason: 'No record selected' };
+        if (!hasField) return { enabled: false, reason: 'Select a field first' };
+        return { enabled: true, reason: '' };
+      }
+
+      if (action === 'line-items') {
+        if (!hasRecord) return { enabled: false, reason: 'No record selected' };
+        if (!hasContractId && !(ctx && ctx.sheetName)) return { enabled: false, reason: 'Contract context missing' };
+        return { enabled: true, reason: '' };
+      }
+
+      if (action === 'glossary') {
+        if (!hasField) return { enabled: false, reason: 'Select a field first' };
+        return { enabled: true, reason: '' };
+      }
+
+      return { enabled: false, reason: 'Unknown action' };
+    }
+
     function _gridCtxOpen(x, y, context) {
       var menu = document.getElementById('grid-ctx-menu');
       if (!menu) return;
       _gridCtxState.context = context;
       _gridCtxState.open = true;
 
-      var record = _gridCtxResolveRecord(context);
-      var fieldKey = context.fieldKey || '';
-      var oldValue = (record && fieldKey) ? String(record[fieldKey] || '') : '';
-      var hasField = !!fieldKey;
-      var hasRecord = !!(context.recordId);
+      var role = _gridCtxGetCurrentRole();
 
       console.log('[GRID-CONTEXT][P0] menu_open', {
-        record_id: context.recordId, field_key: fieldKey,
-        contract_section: context.sheetName, row_index: context.rowIdx
+        record_id: context.recordId, field_key: context.fieldKey || '',
+        contract_section: context.sheetName, row_index: context.rowIdx, role: role
       });
 
       if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
         AuditTimeline.emit('grid_context_menu_opened', {
-          record_id: context.recordId, field_key: fieldKey,
+          record_id: context.recordId, field_key: context.fieldKey || '',
           file_id: context.sheetName,
-          metadata: { row_index: context.rowIdx, mode: 'grid' }
+          metadata: { row_index: context.rowIdx, mode: 'grid', role: role }
         });
       }
 
-      var html = '';
-      html += '<div class="grid-ctx-menu-header">Actions</div>';
+      var actions = [
+        { id: 'inspect',    icon: '&#128269;', label: 'Open Record Inspector' },
+        { id: '_sep1' },
+        { id: 'correction', icon: '&#9998;',   label: 'Create Correction' },
+        { id: 'rfi',        icon: '&#128172;', label: 'Create RFI' },
+        { id: 'blacklist',  icon: '&#128683;', label: 'Create Blacklist' },
+        { id: '_sep2' },
+        { id: 'line-items', icon: '&#10133;',  label: 'Add Contract Line Items\u2026' },
+        { id: 'glossary',   icon: '&#128214;', label: 'Open in Glossary' }
+      ];
 
-      html += _gridCtxItem('inspect', '&#128269;', 'Open Record Inspector', hasRecord, hasRecord ? '' : 'No record selected');
-      html += '<div class="grid-ctx-menu-sep"></div>';
-      html += _gridCtxItem('correction', '&#9998;', 'Create Correction', hasRecord && hasField, hasField ? '' : 'Select a field first');
-      html += _gridCtxItem('rfi', '&#128172;', 'Create RFI', hasRecord, hasRecord ? '' : 'No record selected');
-      html += _gridCtxItem('blacklist', '&#128683;', 'Create Blacklist', hasRecord && hasField, hasField ? '' : 'Select a field first');
-      html += '<div class="grid-ctx-menu-sep"></div>';
-      html += _gridCtxItem('line-items', '&#10133;', 'Add Contract Line Items…', hasRecord, hasRecord ? '' : 'No record selected');
-      html += _gridCtxItem('glossary', '&#128214;', 'Open in Glossary', hasField, hasField ? '' : 'Select a field first');
+      var html = '<div class="grid-ctx-menu-header">Actions \u00b7 ' + role.charAt(0).toUpperCase() + role.slice(1) + '</div>';
+      for (var ai = 0; ai < actions.length; ai++) {
+        var act = actions[ai];
+        if (act.id.charAt(0) === '_') { html += '<div class="grid-ctx-menu-sep"></div>'; continue; }
+        var state = getGridContextActionState(act.id, context, role);
+        console.log('[GRID-CONTEXT][P1] action_state:' + act.id + ':' + (state.enabled ? 'enabled' : 'disabled') + ':' + (state.reason || 'ok'));
+        html += _gridCtxItem(act.id, act.icon, act.label, state.enabled, state.reason);
+      }
 
       menu.innerHTML = html;
       menu.style.display = 'block';
@@ -13532,15 +13615,32 @@
       var ctx = _gridCtxState.context;
       if (!ctx) { _gridCtxClose(); return; }
 
+      var role = _gridCtxGetCurrentRole();
+      var guardState = getGridContextActionState(action, ctx, role);
+
+      if (!guardState.enabled) {
+        console.log('[GRID-CONTEXT][P1] action_blocked:' + action + ':' + guardState.reason);
+        if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
+          AuditTimeline.emit('grid_context_action_blocked', {
+            action: action, record_id: ctx.recordId, field_key: ctx.fieldKey,
+            file_id: ctx.sheetName,
+            metadata: { reason: guardState.reason, role: role, mode: 'grid' }
+          });
+        }
+        showToast(guardState.reason, 'warning');
+        _gridCtxClose();
+        return;
+      }
+
       console.log('[GRID-CONTEXT][P0] action_triggered:' + action, {
-        record_id: ctx.recordId, field_key: ctx.fieldKey, contract_section: ctx.sheetName
+        record_id: ctx.recordId, field_key: ctx.fieldKey, contract_section: ctx.sheetName, role: role
       });
 
       if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
         AuditTimeline.emit('grid_context_action_triggered', {
           action: action, record_id: ctx.recordId, field_key: ctx.fieldKey,
           file_id: ctx.sheetName,
-          metadata: { row_index: ctx.rowIdx, mode: 'grid' }
+          metadata: { row_index: ctx.rowIdx, mode: 'grid', role: role }
         });
       }
 
@@ -13595,9 +13695,23 @@
 
       if (action === 'line-items') {
         _gridCtxClose();
+        var contractId = (record && (record.contract_key || record.contract_id || record.contractKey)) || '';
+        if (!contractId && !ctx.sheetName) {
+          console.log('[GRID-CONTEXT][P1] line_items_launch:fail', { reason: 'missing_context' });
+          showToast('Cannot add line items: contract context missing', 'warning');
+          return;
+        }
         if (typeof openBatchAddModal === 'function') {
+          window._gridCtxLineItemScope = {
+            contract_id: contractId || ctx.sheetName,
+            contract_section: ctx.sheetName,
+            record_id: ctx.recordId || '',
+            row_index: ctx.rowIdx
+          };
+          console.log('[GRID-CONTEXT][P1] line_items_launch:success', window._gridCtxLineItemScope);
           openBatchAddModal();
         } else {
+          console.log('[GRID-CONTEXT][P1] line_items_launch:fail', { reason: 'wizard_unavailable' });
           showToast('Contract Line Items wizard not available', 'warning');
         }
         return;
