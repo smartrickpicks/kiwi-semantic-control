@@ -19050,6 +19050,9 @@
     }
     var _duplicateAccountItems = [];
     var _dismissedDuplicatePairs = {};
+    try { var _ldp = localStorage.getItem('dismissed_duplicate_pairs'); if (_ldp) _dismissedDuplicatePairs = JSON.parse(_ldp); } catch(e) {}
+    try { var _llp = localStorage.getItem('linked_account_pairs'); if (_llp) window._linkedAccountPairs = JSON.parse(_llp); } catch(e) {}
+    if (!window._linkedAccountPairs) window._linkedAccountPairs = {};
 
     function _fuzzyAccountNameMatch(name1, name2) {
       if (!name1 || !name2) return false;
@@ -19633,6 +19636,171 @@
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
+
+    function _dqBuildMatchEvidence(n1, keys1, n2, keys2) {
+      var evidence = { matches: [], summary: '' };
+      if (typeof workbook === 'undefined' || !workbook || !workbook.sheets) return evidence;
+      var extract1 = _dqExtractAccountData(keys1);
+      var extract2 = _dqExtractAccountData(keys2);
+      if (extract1.billing_address && extract2.billing_address && _dqNormAddr(extract1.billing_address) === _dqNormAddr(extract2.billing_address)) {
+        evidence.matches.push({ type: 'address', icon: '&#127968;', label: 'Billing Address Match', detail: extract1.billing_address, severity: 'high' });
+      }
+      if (extract1.shipping_address && extract2.shipping_address && _dqNormAddr(extract1.shipping_address) === _dqNormAddr(extract2.shipping_address)) {
+        evidence.matches.push({ type: 'address', icon: '&#128230;', label: 'Shipping Address Match', detail: extract1.shipping_address, severity: 'high' });
+      }
+      if (extract1.email && extract2.email && extract1.email.toLowerCase() === extract2.email.toLowerCase()) {
+        evidence.matches.push({ type: 'email', icon: '&#9993;', label: 'Email Match', detail: extract1.email, severity: 'high' });
+      }
+      if (extract1.phone && extract2.phone && _dqNormPhone(extract1.phone) === _dqNormPhone(extract2.phone)) {
+        evidence.matches.push({ type: 'phone', icon: '&#128222;', label: 'Phone Match', detail: extract1.phone, severity: 'medium' });
+      }
+      var catOverlap = _dqFindCatalogOverlap(extract1.catalog_items, extract2.catalog_items);
+      if (catOverlap.count > 0) {
+        evidence.matches.push({ type: 'catalog', icon: '&#128218;', label: 'Catalog Overlap (' + catOverlap.count + ' items)', detail: catOverlap.samples.join(', '), severity: 'medium' });
+      }
+      var oppOverlap = _dqFindFieldOverlap(extract1.opportunities, extract2.opportunities, 'opportunity');
+      if (oppOverlap > 0) {
+        evidence.matches.push({ type: 'opportunity', icon: '&#128176;', label: 'Opportunity Overlap (' + oppOverlap + ')', detail: '', severity: 'medium' });
+      }
+      var sharedSections = [];
+      for (var sk in extract1.sections) {
+        if (extract2.sections[sk]) sharedSections.push(sk);
+      }
+      if (sharedSections.length > 0 && evidence.matches.length === 0) {
+        evidence.matches.push({ type: 'structure', icon: '&#128196;', label: 'Shared Sections (' + sharedSections.length + ')', detail: sharedSections.join(', '), severity: 'low' });
+      }
+      if (evidence.matches.length === 0) {
+        evidence.matches.push({ type: 'name_only', icon: '&#128100;', label: 'Name Similarity Only', detail: 'No overlapping data found — names are similar but data differs', severity: 'low' });
+      }
+      return evidence;
+    }
+
+    function _dqExtractAccountData(contractKeys) {
+      var result = { billing_address: '', shipping_address: '', email: '', phone: '', catalog_items: [], opportunities: [], sections: {} };
+      if (!contractKeys || !workbook || !workbook.sheets) return result;
+      var addrFields = ['billingstreet', 'billing_street', 'billingcity', 'billing_city', 'billingstate', 'billing_state', 'billingpostalcode', 'billing_postal_code', 'billingcountry', 'billing_country'];
+      var shipFields = ['shippingstreet', 'shipping_street', 'shippingcity', 'shipping_city', 'shippingstate', 'shipping_state', 'shippingpostalcode', 'shipping_postal_code'];
+      var emailFields = ['email', 'email__c', 'contact_email', 'primary_email'];
+      var phoneFields = ['phone', 'phone__c', 'contact_phone', 'primary_phone'];
+      var catNameFields = ['product_name', 'product_name__c', 'catalog_name', 'name', 'title', 'product_title'];
+      for (var ci = 0; ci < contractKeys.length; ci++) {
+        var ck = contractKeys[ci];
+        var contract = null;
+        try { if (typeof ContractIndex !== 'undefined' && ContractIndex && ContractIndex._index && ContractIndex._index.contracts) contract = ContractIndex._index.contracts[ck]; } catch(e) {}
+        if (!contract) continue;
+        var sheetNames = Object.keys(contract.sheets || {});
+        for (var si = 0; si < sheetNames.length; si++) {
+          var sn = sheetNames[si];
+          result.sections[sn] = true;
+          var rows = _dqGetContractRows(sn, ck);
+          var snLower = sn.toLowerCase();
+          for (var ri = 0; ri < rows.length; ri++) {
+            var row = rows[ri];
+            var rowKeys = Object.keys(row);
+            for (var ki = 0; ki < rowKeys.length; ki++) {
+              var k = rowKeys[ki];
+              var kl = k.toLowerCase().replace(/\s+/g, '_');
+              var v = row[k];
+              if (!v || typeof v !== 'string' || !v.trim()) continue;
+              if (!result.billing_address && addrFields.indexOf(kl) >= 0) {
+                result.billing_address = _dqBuildAddrString(row, addrFields);
+              }
+              if (!result.shipping_address && shipFields.indexOf(kl) >= 0) {
+                result.shipping_address = _dqBuildAddrString(row, shipFields);
+              }
+              if (!result.email && emailFields.indexOf(kl) >= 0) result.email = v.trim();
+              if (!result.phone && phoneFields.indexOf(kl) >= 0) result.phone = v.trim();
+            }
+            if (snLower.indexOf('catalog') >= 0 || snLower.indexOf('contract line') >= 0) {
+              for (var cn = 0; cn < catNameFields.length; cn++) {
+                var catVal = _dqFindFieldValue(row, catNameFields[cn]);
+                if (catVal) { result.catalog_items.push(catVal); break; }
+              }
+            }
+            if (snLower.indexOf('opportunit') >= 0) {
+              var oppName = _dqFindFieldValue(row, 'name') || _dqFindFieldValue(row, 'opportunity_name');
+              if (oppName) result.opportunities.push(oppName);
+            }
+          }
+        }
+      }
+      return result;
+    }
+
+    function _dqGetContractRows(sheetName, contractKey) {
+      var results = [];
+      if (typeof workbook === 'undefined' || !workbook || !workbook.sheets || !workbook.sheets[sheetName]) return results;
+      var rows = workbook.sheets[sheetName].rows || [];
+      for (var i = 0; i < rows.length; i++) {
+        var r = rows[i];
+        var rck = r.contract_key || '';
+        var did = '';
+        try { if (typeof ContractIndex !== 'undefined' && ContractIndex && typeof ContractIndex.deriveContractId === 'function') did = ContractIndex.deriveContractId(r); } catch(e) {}
+        if (did === contractKey || rck === contractKey) results.push(r);
+      }
+      return results;
+    }
+
+    function _dqBuildAddrString(row, fieldList) {
+      var parts = [];
+      var keys = Object.keys(row);
+      for (var fi = 0; fi < fieldList.length; fi++) {
+        for (var ki = 0; ki < keys.length; ki++) {
+          if (keys[ki].toLowerCase().replace(/\s+/g, '_') === fieldList[fi]) {
+            var v = row[keys[ki]];
+            if (v && typeof v === 'string' && v.trim()) parts.push(v.trim());
+            break;
+          }
+        }
+      }
+      return parts.join(', ');
+    }
+
+    function _dqFindFieldValue(row, fieldName) {
+      var keys = Object.keys(row);
+      var fl = fieldName.toLowerCase();
+      for (var i = 0; i < keys.length; i++) {
+        if (keys[i].toLowerCase().replace(/\s+/g, '_') === fl || keys[i].toLowerCase() === fl) {
+          var v = row[keys[i]];
+          if (v && typeof v === 'string' && v.trim()) return v.trim();
+        }
+      }
+      return '';
+    }
+
+    function _dqNormAddr(addr) {
+      return (addr || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function _dqNormPhone(ph) {
+      return (ph || '').replace(/[^0-9]/g, '');
+    }
+
+    function _dqFindCatalogOverlap(items1, items2) {
+      var result = { count: 0, samples: [] };
+      if (!items1 || !items2) return result;
+      var set2 = {};
+      for (var i = 0; i < items2.length; i++) set2[items2[i].toLowerCase().trim()] = items2[i];
+      for (var j = 0; j < items1.length; j++) {
+        var k = items1[j].toLowerCase().trim();
+        if (set2[k]) {
+          result.count++;
+          if (result.samples.length < 3) result.samples.push(items1[j]);
+        }
+      }
+      return result;
+    }
+
+    function _dqFindFieldOverlap(arr1, arr2, type) {
+      if (!arr1 || !arr2) return 0;
+      var set2 = {};
+      for (var i = 0; i < arr2.length; i++) set2[arr2[i].toLowerCase().trim()] = true;
+      var count = 0;
+      for (var j = 0; j < arr1.length; j++) {
+        if (set2[arr1[j].toLowerCase().trim()]) count++;
+      }
+      return count;
+    }
     function _acctCheckBuildSchemaTree(accountName, contractKeys) {
       var html = '';
       if (!contractKeys || contractKeys.length === 0) {
@@ -19641,11 +19809,13 @@
       }
       for (var ci = 0; ci < contractKeys.length; ci++) {
         var ck = contractKeys[ci];
-        var contract = (ContractIndex._index && ContractIndex._index.contracts) ? ContractIndex._index.contracts[ck] : null;
+        var contract = null;
+        try { if (typeof ContractIndex !== 'undefined' && ContractIndex && ContractIndex._index && ContractIndex._index.contracts) contract = ContractIndex._index.contracts[ck]; } catch(e) {}
         if (!contract) continue;
         var fname = contract.file_name || ck;
         var sheetNames = Object.keys(contract.sheets || {});
         var totalRows = contract.row_count || 0;
+        var treeId = 'dqtree_' + simpleHash(accountName + '_' + ck);
         html += '<div style="margin-bottom:12px;">';
         html += '<div style="display:flex; align-items:center; gap:6px; padding:6px 0; margin-bottom:4px; border-bottom:1px solid #f1f5f9;">';
         html += '<span style="font-size:0.9em;">&#128196;</span>';
@@ -19655,34 +19825,77 @@
         for (var si = 0; si < sheetNames.length; si++) {
           var sn = sheetNames[si];
           var rowCount = contract.sheets[sn] ? contract.sheets[sn].length : 0;
-          var fieldCount = 0;
-          if (typeof workbook !== 'undefined' && workbook.sheets && workbook.sheets[sn]) {
-            var rows = workbook.sheets[sn].rows || [];
-            for (var ri = 0; ri < rows.length; ri++) {
-              var rck = rows[ri].contract_key || '';
-              var derivedId = ContractIndex.deriveContractId(rows[ri]);
-              if (derivedId === ck || rck === ck) {
-                var keys = Object.keys(rows[ri]);
-                for (var ki = 0; ki < keys.length; ki++) {
-                  var v = rows[ri][keys[ki]];
-                  if (v && typeof v === 'string' && v.trim() && v !== 'N/A' && v !== '-') fieldCount++;
-                }
-                break;
-              }
-            }
-          }
-          html += '<div style="display:flex; align-items:center; gap:6px; padding:5px 8px 5px 12px; font-size:0.82em; color:#475569; border-radius:6px; margin-bottom:2px; transition:background 0.15s;" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'transparent\'">';
-          html += '<span style="color:#94a3b8; font-size:0.75em;">&#9656;</span>';
+          var secId = treeId + '_s' + si;
+          html += '<div style="margin-bottom:2px;">';
+          html += '<div onclick="_dqToggleSection(\'' + secId + '\')" style="display:flex; align-items:center; gap:6px; padding:5px 8px 5px 12px; font-size:0.82em; color:#475569; border-radius:6px; cursor:pointer; transition:background 0.15s;" onmouseover="this.style.background=\'#f0f4f8\'" onmouseout="this.style.background=\'transparent\'">';
+          html += '<span id="' + secId + '_caret" style="font-size:0.7em;transition:transform 0.15s;display:inline-block;color:#94a3b8;">&#9654;</span>';
           html += '<span style="flex:1;">' + _escHtml(sn) + '</span>';
-          html += '<span style="color:#94a3b8; font-size:0.78em; white-space:nowrap;">' + rowCount + 'r';
-          if (fieldCount > 0) html += ' / ~' + fieldCount + 'f';
-          html += '</span>';
+          html += '<span style="color:#94a3b8; font-size:0.78em; white-space:nowrap;">' + rowCount + 'r</span>';
           html += '</div>';
+          html += '<div id="' + secId + '_body" style="display:none;padding:4px 0 4px 20px;max-height:200px;overflow-y:auto;">';
+          html += '<div data-ck="' + _escHtml(ck) + '" data-sn="' + _escHtml(sn) + '" class="dq-lazy-section">Loading...</div>';
+          html += '</div></div>';
         }
         html += '</div>';
       }
       return html;
     }
+
+    function _dqToggleSection(secId) {
+      var body = document.getElementById(secId + '_body');
+      var caret = document.getElementById(secId + '_caret');
+      if (!body) return;
+      var isOpen = body.style.display !== 'none';
+      body.style.display = isOpen ? 'none' : 'block';
+      if (caret) caret.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(90deg)';
+      if (!isOpen) {
+        var lazy = body.querySelector('.dq-lazy-section');
+        if (lazy) {
+          var ck = lazy.getAttribute('data-ck');
+          var sn = lazy.getAttribute('data-sn');
+          lazy.outerHTML = _dqRenderSectionRows(sn, ck);
+        }
+      }
+    }
+
+    function _dqRenderSectionRows(sheetName, contractKey) {
+      var rows = _dqGetContractRows(sheetName, contractKey);
+      if (rows.length === 0) return '<div style="color:#94a3b8;font-size:0.8em;padding:4px;">No rows</div>';
+      var fieldKeys = [];
+      for (var i = 0; i < rows.length && i < 3; i++) {
+        var rk = Object.keys(rows[i]);
+        for (var j = 0; j < rk.length; j++) {
+          if (rk[j].charAt(0) !== '_' && rk[j] !== 'sheet' && rk[j] !== 'contract_key' && fieldKeys.indexOf(rk[j]) < 0) fieldKeys.push(rk[j]);
+        }
+      }
+      if (fieldKeys.length > 8) fieldKeys = fieldKeys.slice(0, 8);
+      var html = '<table style="width:100%;border-collapse:collapse;font-size:0.78em;border:1px solid #e2e8f0;border-radius:4px;">';
+      html += '<thead><tr style="background:#f1f5f9;">';
+      for (var h = 0; h < fieldKeys.length; h++) {
+        var lbl = fieldKeys[h].replace(/_/g, ' ').replace(/__c$/i, '');
+        if (lbl.length > 18) lbl = lbl.substring(0, 16) + '..';
+        html += '<th style="text-align:left;padding:4px 6px;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;white-space:nowrap;" title="' + _escHtml(fieldKeys[h]) + '">' + _escHtml(lbl) + '</th>';
+      }
+      html += '</tr></thead><tbody>';
+      var maxRows = Math.min(rows.length, 10);
+      for (var ri = 0; ri < maxRows; ri++) {
+        html += '<tr style="border-bottom:1px solid #f1f5f9;">';
+        for (var fi = 0; fi < fieldKeys.length; fi++) {
+          var val = rows[ri][fieldKeys[fi]];
+          if (val === null || val === undefined) val = '';
+          val = String(val);
+          var displayVal = val.length > 30 ? val.substring(0, 28) + '..' : val;
+          html += '<td style="padding:3px 6px;color:#475569;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + _escHtml(val) + '">' + _escHtml(displayVal) + '</td>';
+        }
+        html += '</tr>';
+      }
+      if (rows.length > 10) {
+        html += '<tr><td colspan="' + fieldKeys.length + '" style="padding:4px 6px;color:#94a3b8;font-style:italic;text-align:center;">+ ' + (rows.length - 10) + ' more rows</td></tr>';
+      }
+      html += '</tbody></table>';
+      return html;
+    }
+
 
     function _acctCheckUpdateCard() {
       var acEl = document.getElementById('ta-schema-acctcheck');
@@ -20098,14 +20311,29 @@
       var keys = item._duplicate_contract_keys || {};
       var n1 = names[0] || '';
       var n2 = names[1] || '';
-      var html = '<p style="font-size:0.88em; color:#64748b; margin:0 0 16px; line-height:1.5;">These two account names look similar. Compare their contract structures below.</p>';
+      var evidence = _dqBuildMatchEvidence(n1, keys[n1] || [], n2, keys[n2] || []);
+      var html = '<p style="font-size:0.88em; color:#64748b; margin:0 0 12px; line-height:1.5;">These two account names look similar. Review what matches below.</p>';
+      html += '<div style="background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:12px 16px;margin-bottom:14px;">';
+      html += '<div style="font-weight:700;font-size:0.85em;color:#92400e;margin-bottom:8px;">Why These Were Flagged</div>';
+      for (var ei = 0; ei < evidence.matches.length; ei++) {
+        var m = evidence.matches[ei];
+        var sevColor = m.severity === 'high' ? '#dc2626' : (m.severity === 'medium' ? '#d97706' : '#6b7280');
+        var sevBg = m.severity === 'high' ? '#fef2f2' : (m.severity === 'medium' ? '#fffbeb' : '#f9fafb');
+        html += '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 10px;margin-bottom:4px;background:' + sevBg + ';border-radius:6px;border-left:3px solid ' + sevColor + ';">';
+        html += '<span style="font-size:1em;flex-shrink:0;">' + m.icon + '</span>';
+        html += '<div style="flex:1;min-width:0;">';
+        html += '<div style="font-weight:600;font-size:0.84em;color:' + sevColor + ';">' + _escHtml(m.label) + '</div>';
+        if (m.detail) html += '<div style="font-size:0.8em;color:#64748b;margin-top:2px;word-break:break-word;">' + _escHtml(m.detail.length > 120 ? m.detail.substring(0, 118) + '..' : m.detail) + '</div>';
+        html += '</div></div>';
+      }
+      html += '</div>';
       html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">';
       html += '<div style="border:2px solid #dbeafe; border-radius:12px; overflow:hidden;">';
-      html += '<div style="background:linear-gradient(135deg,#eff6ff,#dbeafe); padding:14px 16px; display:flex; align-items:center; gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;"></div><div style="font-weight:700;font-size:0.95em;color:#1e40af;word-break:break-word;">' + _escHtml(n1) + '</div></div>';
-      html += '<div style="padding:12px 16px; max-height:250px; overflow-y:auto;">' + _acctCheckBuildSchemaTree(n1, keys[n1] || []) + '</div></div>';
+      html += '<div style="background:linear-gradient(135deg,#eff6ff,#dbeafe); padding:12px 16px; display:flex; align-items:center; gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;"></div><div style="font-weight:700;font-size:0.92em;color:#1e40af;word-break:break-word;">' + _escHtml(n1) + '</div></div>';
+      html += '<div style="padding:10px 14px; max-height:280px; overflow-y:auto;">' + _acctCheckBuildSchemaTree(n1, keys[n1] || []) + '</div></div>';
       html += '<div style="border:2px solid #fed7aa; border-radius:12px; overflow:hidden;">';
-      html += '<div style="background:linear-gradient(135deg,#fff7ed,#fed7aa); padding:14px 16px; display:flex; align-items:center; gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:#f97316;"></div><div style="font-weight:700;font-size:0.95em;color:#c2410c;word-break:break-word;">' + _escHtml(n2) + '</div></div>';
-      html += '<div style="padding:12px 16px; max-height:250px; overflow-y:auto;">' + _acctCheckBuildSchemaTree(n2, keys[n2] || []) + '</div></div></div>';
+      html += '<div style="background:linear-gradient(135deg,#fff7ed,#fed7aa); padding:12px 16px; display:flex; align-items:center; gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:#f97316;"></div><div style="font-weight:700;font-size:0.92em;color:#c2410c;word-break:break-word;">' + _escHtml(n2) + '</div></div>';
+      html += '<div style="padding:10px 14px; max-height:280px; overflow-y:auto;">' + _acctCheckBuildSchemaTree(n2, keys[n2] || []) + '</div></div></div>';
       html += '<div style="background:#f0fdf4;border:1px solid #bbf7d0;padding:14px 18px;border-radius:12px;margin-bottom:12px;">';
       html += '<div style="font-weight:700;font-size:0.88em;color:#166534;margin-bottom:10px;">Select canonical account name:</div>';
       html += '<label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;"><input type="radio" name="dq-acct-pick" value="' + _escHtml(n1) + '" checked> <span style="font-weight:600;">' + _escHtml(n1) + '</span></label>';
@@ -20113,6 +20341,7 @@
       html += '</div>';
       html += '<div style="display:flex;justify-content:flex-end;gap:10px;padding-top:8px;">';
       html += '<button onclick="_dqAcctDismiss()" style="padding:10px 22px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-size:0.88em;font-weight:600;cursor:pointer;">Different People &mdash; Dismiss</button>';
+      html += '<button onclick="_dqAcctLinkOnly()" style="padding:10px 22px;border-radius:10px;border:1px solid #1565c0;background:#eff6ff;color:#1565c0;font-size:0.88em;font-weight:600;cursor:pointer;">Link Addresses Only</button>';
       html += '<button onclick="_dqAcctMerge()" style="padding:10px 22px;border-radius:10px;border:none;background:linear-gradient(135deg,#1e3a5f,#1565c0);color:#fff;font-size:0.88em;font-weight:600;cursor:pointer;box-shadow:0 1px 3px rgba(21,101,192,0.3);">Same Person &mdash; Merge</button>';
       html += '</div>';
       body.innerHTML = html;
@@ -20219,6 +20448,32 @@
       if (_dqCheckState.acctIndex >= _dqCheckState.acctQueue.length) _dqCheckState.acctIndex = Math.max(0, _dqCheckState.acctQueue.length - 1);
       _dqCheckShowAcctCurrent();
     }
+    function _dqAcctLinkOnly() {
+      var item = _dqCheckState.acctQueue[_dqCheckState.acctIndex];
+      if (!item) return;
+      var names = item._duplicate_names || [];
+      var keys = item._duplicate_contract_keys || {};
+      var n1 = names[0] || '';
+      var n2 = names[1] || '';
+      var pairKey = [n1, n2].sort().join('|');
+      var pairHash = simpleHash(pairKey);
+      if (!window._linkedAccountPairs) window._linkedAccountPairs = {};
+      window._linkedAccountPairs[pairHash] = { names: [n1, n2], linked_at: new Date().toISOString(), type: 'address_link' };
+      try { localStorage.setItem('linked_account_pairs', JSON.stringify(window._linkedAccountPairs)); } catch(e) {}
+      AuditTimeline.emit('ACCOUNTS_LINKED', {
+        record_id: '_batch_level',
+        file_id: '_batch_level',
+        metadata: { name1: n1, name2: n2, link_type: 'address_link' }
+      });
+      _dismissedDuplicatePairs[pairHash] = true;
+      try { localStorage.setItem('dismissed_duplicate_pairs', JSON.stringify(_dismissedDuplicatePairs)); } catch(e) {}
+      _dqCheckState.acctQueue.splice(_dqCheckState.acctIndex, 1);
+      if (_dqCheckState.acctIndex >= _dqCheckState.acctQueue.length) _dqCheckState.acctIndex = Math.max(0, _dqCheckState.acctQueue.length - 1);
+      _dqCheckShowAcctCurrent();
+      _dqCheckUpdateCard();
+      showToast('Accounts linked: ' + n1 + ' & ' + n2, 'success');
+    }
+
 
     function _dqAddrAccept() {
       var item = _dqCheckState.addrQueue[_dqCheckState.addrIndex];
