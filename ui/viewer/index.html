@@ -28412,36 +28412,93 @@
             html += '</tbody></table>';
           }
         } else if (type === 'unknown') {
-          title = 'Unknown Columns (' + cache.schema.unknown_columns + ')';
           var unknownStored = getCurrentUnknownColumnsSnapshot();
           var decisions = {};
           try { decisions = JSON.parse(localStorage.getItem('unknown_columns_decisions') || '{}'); } catch(e) {}
           var sections = Object.keys(unknownStored);
           if (sections.length === 0) {
+            title = 'Unknown Columns (0)';
             html += '<div style="padding:16px;text-align:center;color:#999;">No unknown columns detected. All imported columns match the canonical schema.</div>';
           } else {
-            html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;"><thead><tr style="background:#fff3e0;"><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Section</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Original Header</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Normalized</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Suggested</th><th style="padding:6px 8px;text-align:left;border-bottom:1px solid #ddd;">Decision</th></tr></thead><tbody>';
+            var _ucNormMap = {};
+            var _ucNormOrder = [];
             sections.forEach(function(sn) {
               var cols = unknownStored[sn] || [];
               cols.forEach(function(col) {
-                var decKey = sn + '||' + col.normalized_name;
-                var curDecision = (decisions[decKey] && decisions[decKey].decision) || col.decision || '';
-                var suggested = col.suggested_canonical || '';
-                html += '<tr>';
-                html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;">' + sn + '</td>';
-                html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;font-weight:600;">' + col.original_name + '</td>';
-                html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;color:#888;">' + col.normalized_name + '</td>';
-                html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;color:#1565c0;">' + (suggested || '—') + '</td>';
-                html += '<td style="padding:4px 8px;border-bottom:1px solid #eee;">';
-                html += '<select data-uc-section="' + sn + '" data-uc-norm="' + col.normalized_name + '" onchange="TriageAnalytics._saveUnknownDecision(this)" style="font-size:0.9em;padding:2px 4px;border:1px solid #ccc;border-radius:4px;">';
-                html += '<option value=""' + (curDecision === '' ? ' selected' : '') + '>—</option>';
-                html += '<option value="add_global"' + (curDecision === 'add_global' ? ' selected' : '') + '>Add to glossary</option>';
-                html += '<option value="source_specific"' + (curDecision === 'source_specific' ? ' selected' : '') + '>Source-specific</option>';
-                html += '<option value="ignore"' + (curDecision === 'ignore' ? ' selected' : '') + '>Ignore</option>';
-                html += '</select></td></tr>';
+                var nk = col.normalized_name;
+                if (!_ucNormMap[nk]) { _ucNormMap[nk] = { normalized: nk, original: col.original_name, suggested: col.suggested_canonical || '', sections: [], colsBySection: {} }; _ucNormOrder.push(nk); }
+                _ucNormMap[nk].sections.push(sn);
+                _ucNormMap[nk].colsBySection[sn] = col;
               });
             });
-            html += '</tbody></table>';
+            var _ucBatchWide = [];
+            var _ucSectionOnly = [];
+            var _ucThreshold = Math.max(2, Math.floor(sections.length * 0.5));
+            for (var _uci = 0; _uci < _ucNormOrder.length; _uci++) {
+              var _ucEntry = _ucNormMap[_ucNormOrder[_uci]];
+              if (_ucEntry.sections.length >= _ucThreshold) { _ucBatchWide.push(_ucEntry); } else { _ucSectionOnly.push(_ucEntry); }
+            }
+            var _ucUniqueCount = _ucNormOrder.length;
+            var _ucTotalRaw = 0;
+            sections.forEach(function(sn) { _ucTotalRaw += (unknownStored[sn] || []).length; });
+            title = 'Unknown Columns (' + _ucUniqueCount + ' unique, ' + _ucTotalRaw + ' total)';
+            var _thStyle = 'padding:8px 10px;text-align:left;border-bottom:2px solid #e2e8f0;font-weight:600;font-size:0.82em;color:#475569;';
+            var _tdStyle = 'padding:6px 10px;border-bottom:1px solid #f1f5f9;vertical-align:middle;';
+            var _selStyle = 'font-size:0.85em;padding:4px 8px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#334155;cursor:pointer;';
+            if (_ucBatchWide.length > 0) {
+              html += '<div style="margin-bottom:16px;">';
+              html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="background:#1565c0;color:#fff;font-size:0.72em;font-weight:700;padding:3px 10px;border-radius:12px;">BATCH-WIDE</div><span style="font-size:0.8em;color:#64748b;">Columns found across most or all contract sections</span></div>';
+              html += '<table style="width:100%;border-collapse:collapse;font-size:0.85em;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);"><thead><tr style="background:#f8fafc;"><th style="' + _thStyle + '">Header</th><th style="' + _thStyle + '">Normalized</th><th style="' + _thStyle + '">Found In</th><th style="' + _thStyle + '">Suggested</th><th style="' + _thStyle + '">Decision</th></tr></thead><tbody>';
+              for (var _bwi = 0; _bwi < _ucBatchWide.length; _bwi++) {
+                var _bw = _ucBatchWide[_bwi];
+                var _bwDecKey = '__batch__||' + _bw.normalized;
+                var _bwFirstSec = _bw.sections[0];
+                var _bwSingleKey = _bwFirstSec + '||' + _bw.normalized;
+                var _bwCurDec = (decisions[_bwDecKey] && decisions[_bwDecKey].decision) || (decisions[_bwSingleKey] && decisions[_bwSingleKey].decision) || '';
+                var _bwSectionsLabel = _bw.sections.length === sections.length ? 'All sections (' + _bw.sections.length + ')' : _bw.sections.length + ' of ' + sections.length + ' sections';
+                html += '<tr>';
+                html += '<td style="' + _tdStyle + 'font-weight:600;">' + _bw.original + '</td>';
+                html += '<td style="' + _tdStyle + 'color:#64748b;font-family:monospace;font-size:0.9em;">' + _bw.normalized + '</td>';
+                html += '<td style="' + _tdStyle + '"><span style="background:#e0f2fe;color:#0369a1;font-size:0.78em;padding:2px 8px;border-radius:10px;font-weight:600;white-space:nowrap;">' + _bwSectionsLabel + '</span></td>';
+                html += '<td style="' + _tdStyle + 'color:#1565c0;">' + (_bw.suggested || '—') + '</td>';
+                html += '<td style="' + _tdStyle + '">';
+                html += '<select data-uc-section="__batch__" data-uc-norm="' + _bw.normalized + '" data-uc-all-sections="' + _bw.sections.join(',') + '" onchange="TriageAnalytics._saveUnknownDecision(this)" style="' + _selStyle + '">';
+                html += '<option value=""' + (_bwCurDec === '' ? ' selected' : '') + '>—</option>';
+                html += '<option value="add_global"' + (_bwCurDec === 'add_global' ? ' selected' : '') + '>Add to glossary</option>';
+                html += '<option value="source_specific"' + (_bwCurDec === 'source_specific' ? ' selected' : '') + '>Source-specific</option>';
+                html += '<option value="ignore"' + (_bwCurDec === 'ignore' ? ' selected' : '') + '>Ignore</option>';
+                html += '</select></td></tr>';
+              }
+              html += '</tbody></table></div>';
+            }
+            if (_ucSectionOnly.length > 0) {
+              html += '<div>';
+              html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="background:#e65100;color:#fff;font-size:0.72em;font-weight:700;padding:3px 10px;border-radius:12px;">SECTION-SPECIFIC</div><span style="font-size:0.8em;color:#64748b;">Columns unique to specific contract sections</span></div>';
+              html += '<table style="width:100%;border-collapse:collapse;font-size:0.85em;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);"><thead><tr style="background:#f8fafc;"><th style="' + _thStyle + '">Section</th><th style="' + _thStyle + '">Header</th><th style="' + _thStyle + '">Normalized</th><th style="' + _thStyle + '">Suggested</th><th style="' + _thStyle + '">Decision</th></tr></thead><tbody>';
+              for (var _soi = 0; _soi < _ucSectionOnly.length; _soi++) {
+                var _so = _ucSectionOnly[_soi];
+                for (var _soSi = 0; _soSi < _so.sections.length; _soSi++) {
+                  var _soSn = _so.sections[_soSi];
+                  var _soCol = _so.colsBySection[_soSn];
+                  var _soDecKey = _soSn + '||' + _so.normalized;
+                  var _soCurDec = (decisions[_soDecKey] && decisions[_soDecKey].decision) || _soCol.decision || '';
+                  var _soSuggested = _soCol.suggested_canonical || _so.suggested || '';
+                  html += '<tr>';
+                  html += '<td style="' + _tdStyle + '"><span style="background:#fff7ed;color:#c2410c;font-size:0.78em;padding:2px 8px;border-radius:10px;font-weight:600;">' + _soSn + '</span></td>';
+                  html += '<td style="' + _tdStyle + 'font-weight:600;">' + _soCol.original_name + '</td>';
+                  html += '<td style="' + _tdStyle + 'color:#64748b;font-family:monospace;font-size:0.9em;">' + _so.normalized + '</td>';
+                  html += '<td style="' + _tdStyle + 'color:#1565c0;">' + (_soSuggested || '—') + '</td>';
+                  html += '<td style="' + _tdStyle + '">';
+                  html += '<select data-uc-section="' + _soSn + '" data-uc-norm="' + _so.normalized + '" onchange="TriageAnalytics._saveUnknownDecision(this)" style="' + _selStyle + '">';
+                  html += '<option value=""' + (_soCurDec === '' ? ' selected' : '') + '>—</option>';
+                  html += '<option value="add_global"' + (_soCurDec === 'add_global' ? ' selected' : '') + '>Add to glossary</option>';
+                  html += '<option value="source_specific"' + (_soCurDec === 'source_specific' ? ' selected' : '') + '>Source-specific</option>';
+                  html += '<option value="ignore"' + (_soCurDec === 'ignore' ? ' selected' : '') + '>Ignore</option>';
+                  html += '</select></td></tr>';
+                }
+              }
+              html += '</tbody></table></div>';
+            }
           }
         } else if (type === 'missing') {
           var mvItems = cache.schema._missing_values_items || [];
@@ -28589,12 +28646,25 @@
         var section = selectEl.getAttribute('data-uc-section');
         var norm = selectEl.getAttribute('data-uc-norm');
         var decision = selectEl.value;
+        var allSections = selectEl.getAttribute('data-uc-all-sections');
         var decisions = {};
         try { decisions = JSON.parse(localStorage.getItem('unknown_columns_decisions') || '{}'); } catch(e) {}
-        var key = section + '||' + norm;
-        decisions[key] = { section: section, normalized: norm, decision: decision, timestamp: new Date().toISOString() };
+        var ts = new Date().toISOString();
+        if (section === '__batch__' && allSections) {
+          var secList = allSections.split(',');
+          var batchKey = '__batch__||' + norm;
+          decisions[batchKey] = { section: '__batch__', normalized: norm, decision: decision, timestamp: ts };
+          for (var _si = 0; _si < secList.length; _si++) {
+            var perKey = secList[_si] + '||' + norm;
+            decisions[perKey] = { section: secList[_si], normalized: norm, decision: decision, timestamp: ts };
+          }
+          console.log('[SCHEMA-SNAPSHOT] unknown_decision_saved_batch: ' + norm + ' -> ' + decision + ' (' + secList.length + ' sections)');
+        } else {
+          var key = section + '||' + norm;
+          decisions[key] = { section: section, normalized: norm, decision: decision, timestamp: ts };
+          console.log('[SCHEMA-SNAPSHOT] unknown_decision_saved: ' + key + ' -> ' + decision);
+        }
         localStorage.setItem('unknown_columns_decisions', JSON.stringify(decisions));
-        console.log('[SCHEMA-SNAPSHOT] unknown_decision_saved: ' + key + ' -> ' + decision);
       },
 
       handleContractClick: function(contractId, stage) {
