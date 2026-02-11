@@ -28698,11 +28698,38 @@
         overlay.appendChild(modal);
         document.body.appendChild(overlay);
       },
+      _saveUnknownDecision: function(selectEl) {
+        var section = selectEl.getAttribute('data-uc-section');
+        var norm = selectEl.getAttribute('data-uc-norm');
+        var decision = selectEl.value;
+        var allSections = selectEl.getAttribute('data-uc-all-sections');
+        var decisions = {};
+        try { decisions = JSON.parse(localStorage.getItem('unknown_columns_decisions') || '{}'); } catch(e) {}
+        var ts = new Date().toISOString();
+        if (section === '__batch__' && allSections) {
+          var secList = allSections.split(',');
+          var batchKey = '__batch__||' + norm;
+          decisions[batchKey] = { section: '__batch__', normalized: norm, decision: decision, timestamp: ts };
+          for (var _si = 0; _si < secList.length; _si++) {
+            var perKey = secList[_si] + '||' + norm;
+            decisions[perKey] = { section: secList[_si], normalized: norm, decision: decision, timestamp: ts };
+          }
+          console.log('[SCHEMA-SNAPSHOT] unknown_decision_saved_batch: ' + norm + ' -> ' + decision + ' (' + secList.length + ' sections)');
+        } else {
+          var key = section + '||' + norm;
+          decisions[key] = { section: section, normalized: norm, decision: decision, timestamp: ts };
+          console.log('[SCHEMA-SNAPSHOT] unknown_decision_saved: ' + key + ' -> ' + decision);
+        }
+        localStorage.setItem('unknown_columns_decisions', JSON.stringify(decisions));
+      },
 
+      handleContractClick: function(contractId, stage) {
+        var params = ['contract=' + encodeURIComponent(contractId)];
+        if (stage) params.push('stage=' + encodeURIComponent(stage));
+        navigateTo('grid', { queryParams: params.join('&') });
+      }
+    };
 
-    // ============================================================
-    // Glossary Link Modal - Link unknown columns to glossary fields
-    // ============================================================
     var _glossaryLinkState = { normalizedName: '', originalHeader: '', section: '', selectedField: null };
 
     function _glossaryLinkOpen(normalizedName, originalHeader, section) {
@@ -28944,38 +28971,6 @@
         if (typeof refreshUnknownColumnsTable === 'function') refreshUnknownColumnsTable();
       } catch(e) {}
     }
-
-      _saveUnknownDecision: function(selectEl) {
-        var section = selectEl.getAttribute('data-uc-section');
-        var norm = selectEl.getAttribute('data-uc-norm');
-        var decision = selectEl.value;
-        var allSections = selectEl.getAttribute('data-uc-all-sections');
-        var decisions = {};
-        try { decisions = JSON.parse(localStorage.getItem('unknown_columns_decisions') || '{}'); } catch(e) {}
-        var ts = new Date().toISOString();
-        if (section === '__batch__' && allSections) {
-          var secList = allSections.split(',');
-          var batchKey = '__batch__||' + norm;
-          decisions[batchKey] = { section: '__batch__', normalized: norm, decision: decision, timestamp: ts };
-          for (var _si = 0; _si < secList.length; _si++) {
-            var perKey = secList[_si] + '||' + norm;
-            decisions[perKey] = { section: secList[_si], normalized: norm, decision: decision, timestamp: ts };
-          }
-          console.log('[SCHEMA-SNAPSHOT] unknown_decision_saved_batch: ' + norm + ' -> ' + decision + ' (' + secList.length + ' sections)');
-        } else {
-          var key = section + '||' + norm;
-          decisions[key] = { section: section, normalized: norm, decision: decision, timestamp: ts };
-          console.log('[SCHEMA-SNAPSHOT] unknown_decision_saved: ' + key + ' -> ' + decision);
-        }
-        localStorage.setItem('unknown_columns_decisions', JSON.stringify(decisions));
-      },
-
-      handleContractClick: function(contractId, stage) {
-        var params = ['contract=' + encodeURIComponent(contractId)];
-        if (stage) params.push('stage=' + encodeURIComponent(stage));
-        navigateTo('grid', { queryParams: params.join('&') });
-      }
-    };
 
     
     // ============================================================
