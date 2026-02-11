@@ -9977,7 +9977,7 @@
         // v2.3.5-P1F: Batch PDF scan on saved session load
         if (typeof _p1fBatchPdfScan === 'function') _p1fBatchPdfScan();
         stagedLoader.setStage('indexing');
-        try { ContractIndex.build(); populateContractSelector(); console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on session-load path'); if (typeof _acctCheckRun === 'function') _acctCheckRun(); } catch(e) { console.warn('[ContractIndex] Session restore build failed:', e); }
+        try { ContractIndex.build(); populateContractSelector(); console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on session-load path'); if (typeof _acctCheckDetectOnly === 'function') _acctCheckDetectOnly(); } catch(e) { console.warn('[ContractIndex] Session restore build failed:', e); }
         stagedLoader.setStage('changemap');
         saveWorkbookToCache();
         dataLoaded = true;
@@ -10621,7 +10621,7 @@
             ContractIndex.build();
             console.log('[RESTORE] ContractIndex rebuilt from workbook');
             console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on restore path');
-            if (typeof _acctCheckRun === 'function') _acctCheckRun();
+            if (typeof _acctCheckDetectOnly === 'function') _acctCheckDetectOnly();
           }
           populateContractSelector();
         } catch(e) { console.warn('[ContractIndex] Rebuild failed:', e); }
@@ -18833,12 +18833,40 @@
       return html;
     }
 
+    function _acctCheckUpdateCard() {
+      var acEl = document.getElementById('ta-schema-acctcheck');
+      var acDetail = document.getElementById('ta-schema-acctcheck-detail');
+      var pending = _duplicateAccountItems.length;
+      var dismissed = Object.keys(_dismissedDuplicatePairs).length;
+      var total = pending + dismissed;
+      if (acEl) {
+        acEl.textContent = total;
+        acEl.style.color = total > 0 ? '#f57c00' : '#4caf50';
+      }
+      if (acDetail) {
+        if (total === 0) {
+          acDetail.textContent = 'No duplicates found';
+        } else {
+          var parts = [];
+          if (pending > 0) parts.push(pending + ' pending');
+          if (dismissed > 0) parts.push(dismissed + ' dismissed');
+          acDetail.textContent = parts.join(', ');
+        }
+      }
+    }
+
     function _acctCheckRun() {
       _buildDuplicateAccountPreflightItems();
+      _acctCheckUpdateCard();
       if (_duplicateAccountItems.length === 0) return;
       _acctCheckQueue = _duplicateAccountItems.slice();
       _acctCheckIndex = 0;
       _acctCheckShowCurrent();
+    }
+
+    function _acctCheckDetectOnly() {
+      _buildDuplicateAccountPreflightItems();
+      _acctCheckUpdateCard();
     }
 
     function _acctCheckShowCurrent() {
@@ -18884,6 +18912,7 @@
     function _acctCheckClose() {
       var modal = document.getElementById('account-check-modal');
       if (modal) modal.style.display = 'none';
+      _acctCheckUpdateCard();
       if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
     }
 
@@ -36694,7 +36723,7 @@ Add any additional notes here.
         try {
           ContractIndex.build();
           populateContractSelector();
-          if (typeof _acctCheckRun === 'function') _acctCheckRun();
+          if (typeof _acctCheckDetectOnly === 'function') _acctCheckDetectOnly();
           console.log('[V2.3-GATE][G2] PASS ContractIndex rebuilt from live workbook on demo/sandbox path');
         } catch(e) { console.warn('[ContractIndex] Demo/sandbox build failed:', e); }
 
