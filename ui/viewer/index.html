@@ -2215,7 +2215,10 @@
                   <div id="ta-schema-missing" style="font-size: 1.4em; font-weight: 700; color: #c62828;">0</div>
                   <div style="font-size: 0.75em; color: #666;">Missing Values</div>
                   <div id="ta-schema-missing-split" style="font-size: 0.6em; color: #aaa;"></div>
-                  <div style="font-size: 0.55em; color: #bbb;">Fields needing analyst completion</div>
+                  <div id="ta-schema-missing-breakdown" style="display:flex;gap:4px;justify-content:center;margin-top:3px;">
+                    <span id="ta-schema-missing-blank" style="font-size:0.58em;padding:1px 5px;border-radius:3px;background:#fff3e0;color:#e65100;display:none;"></span>
+                    <span id="ta-schema-missing-pl" style="font-size:0.58em;padding:1px 5px;border-radius:3px;background:#f3e5f5;color:#6a1b9a;display:none;"></span>
+                  </div>
                 </div>
                 <div id="acct-check-card" style="text-align: center; padding: 10px; background: #f5f5f5; border-radius: 8px; cursor: pointer; transition: box-shadow 0.2s;" title="Duplicate account name pairs detected during import. Click to review or revisit dismissed pairs." onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow=''">
                   <div id="ta-schema-acctcheck" style="font-size: 1.4em; font-weight: 700; color: #555;">0</div>
@@ -18977,6 +18980,45 @@
       if (typeof renderAnalystTriage === 'function') renderAnalystTriage();
     }
 
+
+    function _mvFilterFields(btn, filter) {
+      var chips = document.querySelectorAll('#mv-filter-chips .mv-chip');
+      for (var i = 0; i < chips.length; i++) {
+        var c = chips[i];
+        var f = c.getAttribute('data-mv-filter');
+        if (f === filter) {
+          c.style.background = f === 'blank' ? '#e65100' : f === 'invalid_picklist' ? '#6a1b9a' : '#1565c0';
+          c.style.color = '#fff';
+          c.style.borderColor = c.style.background;
+        } else {
+          c.style.background = '#fff';
+          c.style.color = f === 'blank' ? '#e65100' : f === 'invalid_picklist' ? '#6a1b9a' : '#1565c0';
+          c.style.borderColor = c.style.color;
+        }
+      }
+      var rows = document.querySelectorAll('.mv-field-row');
+      for (var j = 0; j < rows.length; j++) {
+        var row = rows[j];
+        var detailId = row.querySelector('td[id$="-arrow"]');
+        var detailRowId = detailId ? detailId.id.replace('-arrow', '') : null;
+        if (filter === 'all') {
+          row.style.display = '';
+        } else if (filter === 'blank') {
+          row.style.display = row.className.indexOf('mv-cat-blank') >= 0 ? '' : 'none';
+          if (row.style.display === 'none' && detailRowId) {
+            var dr = document.getElementById(detailRowId);
+            if (dr) dr.style.display = 'none';
+          }
+        } else if (filter === 'invalid_picklist') {
+          row.style.display = row.className.indexOf('mv-cat-invalid_picklist') >= 0 ? '' : 'none';
+          if (row.style.display === 'none' && detailRowId) {
+            var dr = document.getElementById(detailRowId);
+            if (dr) dr.style.display = 'none';
+          }
+        }
+      }
+    }
+
     function _acctCheckReopen() {
       console.log('[ACCT-CHECK] _acctCheckReopen called');
       try {
@@ -27758,7 +27800,7 @@
                   _missingValueItems.push({ field_key: f.field_key, label: f.field_label || f.field_key, section: sn, header: matchedHeader, blank_count: blankCount, total_rows: sh.rows.length, reason: 'blank_like', affected_rows: blankRows });
                 }
                 if (invalidPicklistCount > 0) {
-                  _missingValueItems.push({ field_key: f.field_key, label: f.field_label || f.field_key, section: sn, header: matchedHeader, blank_count: invalidPicklistCount, total_rows: sh.rows.length, reason: 'invalid_picklist', affected_rows: invalidRows });
+                  _missingValueItems.push({ field_key: f.field_key, label: f.field_label || f.field_key, section: sn, header: matchedHeader, blank_count: invalidPicklistCount, total_rows: sh.rows.length, reason: 'invalid_picklist', affected_rows: invalidRows, expected_options: f.options || [] });
                 }
               });
             }
@@ -27768,6 +27810,16 @@
           for (var _mve = 0; _mve < _missingValueItems.length; _mve++) { _totalMvErrors += _missingValueItems[_mve].blank_count; }
           cache.schema.data_missing_required_values = _totalMvErrors;
           cache.schema._data_missing_values_field_count = _missingValueItems.length;
+          var _mvBlankCacheTotal = 0, _mvPlCacheTotal = 0, _mvBlankFields = 0, _mvPlFields = 0;
+          var _mvBfSet = {}, _mvPfSet = {};
+          for (var _mvs = 0; _mvs < _missingValueItems.length; _mvs++) {
+            if (_missingValueItems[_mvs].reason === 'blank_like') { _mvBlankCacheTotal += _missingValueItems[_mvs].blank_count; _mvBfSet[_missingValueItems[_mvs].field_key] = true; }
+            else if (_missingValueItems[_mvs].reason === 'invalid_picklist') { _mvPlCacheTotal += _missingValueItems[_mvs].blank_count; _mvPfSet[_missingValueItems[_mvs].field_key] = true; }
+          }
+          cache.schema._mv_blank_total = _mvBlankCacheTotal;
+          cache.schema._mv_pl_total = _mvPlCacheTotal;
+          cache.schema._mv_blank_fields = Object.keys(_mvBfSet).length;
+          cache.schema._mv_pl_fields = Object.keys(_mvPfSet).length;
           cache.schema._missing_headers_items = _missingHeaderItems;
           cache.schema._missing_values_items = _missingValueItems;
           cache.schema.missing_required = _missingHeaderItems.length;
@@ -28136,6 +28188,20 @@
         var missingTotal = cache.schema.data_missing_required_values;
         if (el('ta-schema-missing')) el('ta-schema-missing').textContent = missingTotal;
         if (el('ta-schema-missing-split')) el('ta-schema-missing-split').textContent = missingTotal + ' errors across ' + (cache.schema._data_missing_values_field_count || 0) + ' fields';
+        var _mvBlankTotal = 0, _mvPlTotal = 0;
+        var _mvI = cache.schema._missing_values_items || [];
+        for (var _mci = 0; _mci < _mvI.length; _mci++) {
+          if (_mvI[_mci].reason === 'blank_like') _mvBlankTotal += _mvI[_mci].blank_count;
+          else if (_mvI[_mci].reason === 'invalid_picklist') _mvPlTotal += _mvI[_mci].blank_count;
+        }
+        if (el('ta-schema-missing-blank')) {
+          if (_mvBlankTotal > 0) { el('ta-schema-missing-blank').textContent = 'Blank ' + _mvBlankTotal; el('ta-schema-missing-blank').style.display = 'inline-block'; }
+          else el('ta-schema-missing-blank').style.display = 'none';
+        }
+        if (el('ta-schema-missing-pl')) {
+          if (_mvPlTotal > 0) { el('ta-schema-missing-pl').textContent = 'Picklist ' + _mvPlTotal; el('ta-schema-missing-pl').style.display = 'inline-block'; }
+          else el('ta-schema-missing-pl').style.display = 'none';
+        }
         if (el('ta-schema-acctcheck')) {
           var _acPending = 0;
           if (typeof _duplicateAccountItems !== 'undefined') _acPending += _duplicateAccountItems.length;
@@ -28311,19 +28377,48 @@
         } else if (type === 'missing') {
           var mvItems = cache.schema._missing_values_items || [];
           var totalErrors = 0;
-          for (var _mvi = 0; _mvi < mvItems.length; _mvi++) { totalErrors += mvItems[_mvi].blank_count; }
+          var totalBlank = 0;
+          var totalInvalidPl = 0;
+          for (var _mvi = 0; _mvi < mvItems.length; _mvi++) {
+            totalErrors += mvItems[_mvi].blank_count;
+            if (mvItems[_mvi].reason === 'blank_like') totalBlank += mvItems[_mvi].blank_count;
+            else if (mvItems[_mvi].reason === 'invalid_picklist') totalInvalidPl += mvItems[_mvi].blank_count;
+          }
           var fieldGroups = {};
           var fieldOrder = [];
+          var _blankFieldSet = {};
+          var _plFieldSet = {};
           if (mvItems.length > 0) {
             for (var _gi = 0; _gi < mvItems.length; _gi++) {
               var _gItem = mvItems[_gi];
               var _gfk = _gItem.field_key;
-              if (!fieldGroups[_gfk]) { fieldGroups[_gfk] = { label: _gItem.label, items: [], totalErrors: 0 }; fieldOrder.push(_gfk); }
+              if (!fieldGroups[_gfk]) { fieldGroups[_gfk] = { label: _gItem.label, items: [], totalErrors: 0, blankErrors: 0, plErrors: 0, expected_options: [] }; fieldOrder.push(_gfk); }
               fieldGroups[_gfk].items.push(_gItem);
               fieldGroups[_gfk].totalErrors += _gItem.blank_count;
+              if (_gItem.reason === 'blank_like') { fieldGroups[_gfk].blankErrors += _gItem.blank_count; _blankFieldSet[_gfk] = true; }
+              else if (_gItem.reason === 'invalid_picklist') { fieldGroups[_gfk].plErrors += _gItem.blank_count; _plFieldSet[_gfk] = true; if (_gItem.expected_options && _gItem.expected_options.length > 0 && fieldGroups[_gfk].expected_options.length === 0) fieldGroups[_gfk].expected_options = _gItem.expected_options; }
             }
+            var _blankFieldCount = Object.keys(_blankFieldSet).length;
+            var _plFieldCount = Object.keys(_plFieldSet).length;
             title = 'Missing Values (' + totalErrors + ' total errors across ' + fieldOrder.length + ' field' + (fieldOrder.length !== 1 ? 's' : '') + ')';
-            html += '<div style="margin-bottom:6px;font-size:0.75em;color:#888;">Required fields with blank, missing, or invalid picklist values. Expand a field to see affected sections, then individual records.</div>';
+            html += '<div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;">';
+            html += '<div style="flex:1;min-width:140px;padding:10px 14px;background:#fff3e0;border-radius:8px;border-left:4px solid #e65100;text-align:center;">';
+            html += '<div style="font-size:1.5em;font-weight:700;color:#e65100;">' + totalBlank + '</div>';
+            html += '<div style="font-size:0.78em;color:#bf360c;">Blank / Empty</div>';
+            html += '<div style="font-size:0.68em;color:#999;">' + _blankFieldCount + ' field' + (_blankFieldCount !== 1 ? 's' : '') + '</div>';
+            html += '</div>';
+            html += '<div style="flex:1;min-width:140px;padding:10px 14px;background:#f3e5f5;border-radius:8px;border-left:4px solid #6a1b9a;text-align:center;">';
+            html += '<div style="font-size:1.5em;font-weight:700;color:#6a1b9a;">' + totalInvalidPl + '</div>';
+            html += '<div style="font-size:0.78em;color:#4a148c;">Invalid Picklist</div>';
+            html += '<div style="font-size:0.68em;color:#999;">' + _plFieldCount + ' field' + (_plFieldCount !== 1 ? 's' : '') + '</div>';
+            html += '</div>';
+            html += '</div>';
+            html += '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;" id="mv-filter-chips">';
+            html += '<button class="mv-chip mv-chip-active" data-mv-filter="all" onclick="_mvFilterFields(this,\'all\')" style="padding:4px 12px;border-radius:16px;border:1px solid #1565c0;background:#1565c0;color:#fff;font-size:0.78em;cursor:pointer;">All (' + fieldOrder.length + ')</button>';
+            html += '<button class="mv-chip" data-mv-filter="blank" onclick="_mvFilterFields(this,\'blank\')" style="padding:4px 12px;border-radius:16px;border:1px solid #e65100;background:#fff;color:#e65100;font-size:0.78em;cursor:pointer;">Blank (' + totalBlank + ')</button>';
+            html += '<button class="mv-chip" data-mv-filter="invalid_picklist" onclick="_mvFilterFields(this,\'invalid_picklist\')" style="padding:4px 12px;border-radius:16px;border:1px solid #6a1b9a;background:#fff;color:#6a1b9a;font-size:0.78em;cursor:pointer;">Invalid Picklist (' + totalInvalidPl + ')</button>';
+            html += '</div>';
+            html += '<div style="margin-bottom:8px;font-size:0.72em;color:#888;">Required fields with blank, missing, or invalid picklist values. Expand a field to see affected sections, then individual records.</div>';
             html += '<table style="width:100%;border-collapse:collapse;font-size:0.8em;" id="mv-expand-table">';
             for (var _fi = 0; _fi < fieldOrder.length; _fi++) {
               var _fk = fieldOrder[_fi];
@@ -28331,20 +28426,31 @@
               var _fid = 'mv-field-' + _fi;
               var _secCount = _fg.items.length;
               var _reasonSet = {};
+              var _fieldCategories = '';
               for (var _ri2 = 0; _ri2 < _fg.items.length; _ri2++) {
                 _reasonSet[_fg.items[_ri2].reason] = true;
               }
+              if (_reasonSet['blank_like']) _fieldCategories += ' mv-cat-blank';
+              if (_reasonSet['invalid_picklist']) _fieldCategories += ' mv-cat-invalid_picklist';
               var _reasonChips = '';
-              if (_reasonSet['blank_like']) _reasonChips += '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:0.8em;background:#fff3e0;color:#e65100;margin-left:4px;">Blank</span>';
-              if (_reasonSet['invalid_picklist']) _reasonChips += '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:0.8em;background:#f3e5f5;color:#6a1b9a;margin-left:4px;">Invalid picklist</span>';
-              html += '<tr style="cursor:pointer;background:#f9f9f9;border-bottom:2px solid #e0e0e0;" onclick="(function(){var el=document.getElementById(\x27' + _fid + '\x27);el.style.display=el.style.display===\x27none\x27?\x27table-row\x27:\x27none\x27;var a=document.getElementById(\x27' + _fid + '-arrow\x27);if(a)a.textContent=el.style.display===\x27none\x27?\x27\u25B6\x27:\x27\u25BC\x27;})()">';
+              if (_reasonSet['blank_like']) _reasonChips += '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:0.8em;background:#fff3e0;color:#e65100;margin-left:4px;">Blank <strong>' + _fg.blankErrors + '</strong></span>';
+              if (_reasonSet['invalid_picklist']) _reasonChips += '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:0.8em;background:#f3e5f5;color:#6a1b9a;margin-left:4px;">Invalid picklist <strong>' + _fg.plErrors + '</strong></span>';
+              var _expectedHtml = '';
+              if (_fg.expected_options.length > 0) {
+                var _showOpts = _fg.expected_options.slice(0, 8);
+                var _optStr = '';
+                for (var _oi = 0; _oi < _showOpts.length; _oi++) { _optStr += (_oi > 0 ? ', ' : '') + escapeHtml(String(_showOpts[_oi])); }
+                if (_fg.expected_options.length > 8) _optStr += ' +' + (_fg.expected_options.length - 8) + ' more';
+                _expectedHtml = '<div style="font-size:0.72em;color:#888;margin-top:2px;font-style:italic;" title="' + escapeHtml(_fg.expected_options.join(', ')) + '">Expected: ' + _optStr + '</div>';
+              }
+              html += '<tr class="mv-field-row' + _fieldCategories + '" style="cursor:pointer;background:#f9f9f9;border-bottom:2px solid #e0e0e0;" onclick="(function(){var el=document.getElementById(\x27' + _fid + '\x27);el.style.display=el.style.display===\x27none\x27?\x27table-row\x27:\x27none\x27;var a=document.getElementById(\x27' + _fid + '-arrow\x27);if(a)a.textContent=el.style.display===\x27none\x27?\x27\u25B6\x27:\x27\u25BC\x27;})()">';
               html += '<td style="padding:8px 10px;width:20px;color:#888;" id="' + _fid + '-arrow">\u25B6</td>';
-              html += '<td style="padding:8px 10px;font-family:monospace;font-weight:600;font-size:0.95em;" colspan="2">' + escapeHtml(_fk) + ' <span style="color:#999;font-weight:400;font-size:0.85em;">(' + escapeHtml(_fg.label) + ')</span></td>';
+              html += '<td style="padding:8px 10px;font-family:monospace;font-weight:600;font-size:0.95em;">' + escapeHtml(_fk) + ' <span style="color:#999;font-weight:400;font-size:0.85em;">(' + escapeHtml(_fg.label) + ')</span>' + _expectedHtml + '</td>';
               html += '<td style="padding:8px 10px;text-align:right;">' + _reasonChips + '</td>';
               html += '<td style="padding:8px 10px;text-align:right;color:#e65100;font-weight:700;">' + _fg.totalErrors + ' errors</td>';
               html += '<td style="padding:8px 10px;text-align:right;color:#888;font-size:0.85em;">' + _secCount + ' section' + (_secCount > 1 ? 's' : '') + '</td>';
               html += '</tr>';
-              html += '<tr id="' + _fid + '" style="display:none;"><td colspan="6" style="padding:0;">';
+              html += '<tr id="' + _fid + '" style="display:none;"><td colspan="5" style="padding:0;">';
               for (var _si = 0; _si < _fg.items.length; _si++) {
                 var _sItem = _fg.items[_si];
                 var _sid = _fid + '-sec-' + _si;
