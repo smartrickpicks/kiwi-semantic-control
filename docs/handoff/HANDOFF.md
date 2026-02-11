@@ -5,27 +5,30 @@ Purpose: Provide a consistent packet for review and continuation
 Scope: Docs and governance contracts only
 Non-Goals: No code changes, no runtime actions, no PR merges
 Authority Level: Informational, defers to canonical docs
-Owner Agent: Kiwi (documentation architect)
-Update Rules: Reference commits/PRs; otherwise use "Unknown — requires audit"
+Owner Agent: Documentation architect (Orchestrate OS)
+Update Rules: Reference commits/PRs; otherwise use "Open — needs decision" with owner and evidence source
 
-Repository: smartrickpicks/kiwi-semantic-control (branch: main)
-Open PRs: unknown/none
+Repository: Orchestrate OS (formerly smartrickpicks/kiwi-semantic-control), branch: main
+Open PRs: none known
 
 ## Current UI/UX Work In Progress
-- Unknown — requires audit
+- Contract Health Score engine (P1G), Data Quality Check modal, Grid Mode, Pre-Flight intake (P1F.1), ADDRESS_INCOMPLETE_CANDIDATE matching — see replit.md § External Dependencies for full feature inventory
 
 ## Packet Contents
 - STATUS.md — current snapshot
 - TASKS.md — task backlog with evidence links
+- TASKS_UI.md — UI-specific task backlog
 - AUDIT.md — latest audit notes and diffs
 
 ## Known Risks/Regressions (docs-only)
-- Unknown — requires audit
+- "Queue" appears in internal schema (Queue Item Schema, Verifier Queue, Admin Queue) while listed as a forbidden user-facing label — see Constraints below for clarification
+- Some legacy/deprecated docs (load_data_view.md, V1/Flow-Doctrine.md) retain old terminology by design; deprecation headers are in place
 
 ## Constraints / Do-Not-Change List
 - **Canonical terminology only**: Data Source, All Data Grid, Record Inspection, Verifier Review, Admin Approval; Review States; Submit Patch Request; Evidence Pack blocks (Observation, Expected, Justification, Repro)
-- **Forbidden terms**: Queue, Load Data, Apply Patch, Reviewer Hub
-- **Note**: "Record Inspection" is the user-facing label; canonical name remains `single_row_review` in code/specs/audit
+- **Forbidden in user-facing UI labels**: Load Data, Apply Patch, Reviewer Hub
+- **"Queue" clarification**: "Queue" is forbidden as a user-facing navigation/button label (use "Review States" or "Triage" instead). Internal schema terms (Queue Item Schema, Verifier Queue, Admin Queue) are permitted in technical docs and data contracts.
+- **Note**: "Record Inspection" is the user-facing label; canonical internal token remains `single_row_review` in code/specs/audit
 
 ## Files Likely to Touch
 - docs/ui/views/single_row_review_view.md

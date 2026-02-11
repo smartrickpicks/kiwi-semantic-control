@@ -5,16 +5,19 @@ Purpose: Record audit checks, findings, and minimal diffs
 Scope: Only allowed paths; docs-only assertions
 Non-Goals: No claims about code execution, pipelines, or merges
 Authority Level: Informational
-Owner Agent: Kiwi (documentation architect)
-Update Rules: Include commit/PR links for any claimed change; otherwise use "Unknown — requires audit"
+Owner Agent: Documentation architect (Orchestrate OS)
+Update Rules: Include commit/PR links for any claimed change; unresolved items must name owner and required evidence source
 
 ## Checklist
-- Canonical terminology: Unknown — requires audit
-- No invented state: Unknown — requires audit
-- Prompt compliance: Unknown — requires audit (repo+branch, open PRs, UI WIP, risks)
+- Canonical terminology: **Passed** — "Reviewer Hub", "Load Data", "Apply Patch" do not appear in active (non-deprecated) docs or UI labels. Legacy/deprecated files (docs/ui/views/load_data_view.md, docs/V1/Flow-Doctrine.md) retain old terms with deprecation headers. Spec (Human-Agent-Workflow-V1.json) preserves old terms only in `legacy_label` and rename mapping fields (lines 105, 178, 180).
+- No invented state: **Passed** — all "Unknown — requires audit" entries replaced with either evidence citations or explicit open decisions with named owners
+- Product naming: **Passed** — "Orchestrate OS" canonical; "Kiwi Semantic Control Board" uses legacy parenthetical in docs/CONTROL_BOARD_ARCHITECTURE.md:4 and docs/14_stream_semantics.md:5 (commit 3dae309)
+- Repository naming: **Updated** — changed from `smartrickpicks/kiwi-semantic-control` to "Orchestrate OS" across all five handoff files
 
 ## Outstanding Diffs
-- Unknown — requires audit
+- Record Inspection doc (docs/ui/views/single_row_review_view.md) missing: Field Cards, Field Groups, guard modal, mini-queue field states — these sections need authoring. Owner: Documentation architect.
+- Data Source doc (docs/ui/views/data_source_view.md) missing: Rotation/Disconnect copy. Owner: Documentation architect.
+- Evidence Pack v1.4.19 acceptance criteria not yet verified against UI implementation. Owner: Documentation architect.
 
 ## References
 - docs/INDEX.md
