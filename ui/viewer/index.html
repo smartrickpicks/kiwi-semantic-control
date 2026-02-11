@@ -2483,10 +2483,7 @@
           <div style="flex: 1; min-width: 200px;">
             <input type="text" id="grid-search" class="filter-search" placeholder="Search all fields..." style="width: 100%;">
           </div>
-          <div class="grid-mode-toggle" id="grid-mode-toggle">
-            <button id="grid-mode-review-btn" class="active" onclick="setGridViewMode('review')">Review</button>
-            <button id="grid-mode-grid-btn" onclick="setGridViewMode('grid')">Grid</button>
-          </div>
+
           <div class="filter-chips" id="grid-status-chips" style="display: flex; gap: 6px; flex-wrap: wrap;">
             <span class="filter-chip active" data-filter="all" onclick="setGridFilter('all')">All</span>
             <span class="filter-chip status-ready" data-filter="ready" onclick="setGridFilter('ready')">Ready</span>
@@ -2551,10 +2548,16 @@
         <!-- Dense Grid Table -->
         
           <!-- P1C: Composite Grid Controls -->
-          <div id="p1c-composite-controls" class="p1c-composite-controls" style="display: none;">
-            <span style="font-size: 0.8em; color: #1565c0; font-weight: 600;">Composite View</span>
-            <button onclick="_p1cExpandAll()">Expand All</button>
-            <button onclick="_p1cCollapseAll()">Collapse All</button>
+          <div id="grid-view-controls" style="display: flex; align-items: center; gap: 12px; padding: 4px 8px;">
+            <div class="grid-mode-toggle" id="grid-mode-toggle">
+              <button id="grid-mode-review-btn" class="active" onclick="setGridViewMode('review')">Review</button>
+              <button id="grid-mode-grid-btn" onclick="setGridViewMode('grid')">Grid</button>
+            </div>
+            <div id="p1c-composite-controls" class="p1c-composite-controls" style="display: none;">
+              <span style="font-size: 0.8em; color: #1565c0; font-weight: 600;">Composite View</span>
+              <button onclick="_p1cExpandAll()">Expand All</button>
+              <button onclick="_p1cCollapseAll()">Collapse All</button>
+            </div>
           </div>
 
         <div class="grid-table-container" style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px;">
@@ -12624,6 +12627,51 @@
     function _gridGetPendingEdits() { return _gridPendingEdits.slice(); }
     function _gridClearPendingEdits() { _gridPendingEdits = []; _gridUpdatePatchBadge(); }
 
+    function _gridVerifyRecord(recordId, sheetName, rowIdx, trEl) {
+      if (!recordId) return;
+      if (!window.localState) window.localState = {};
+      if (!window.localState.recordStatus) window.localState.recordStatus = {};
+      var current = window.localState.recordStatus[recordId];
+      if (current === 'verified' || current === 'finalized') {
+        showToast('Record already verified', 'info');
+        return;
+      }
+      window.localState.recordStatus[recordId] = 'verified';
+      if (trEl) {
+        trEl.style.background = '#e8f5e9';
+        trEl.style.transition = 'background 0.3s';
+        setTimeout(function() { trEl.style.background = ''; }, 1500);
+      }
+      AuditTimeline.emit('RECORD_VERIFIED_GRID', {
+        record_id: recordId,
+        file_id: sheetName,
+        metadata: { sheet: sheetName, row_index: rowIdx, mode: 'grid' }
+      });
+      var label = recordId.length > 30 ? recordId.substring(0, 28) + '..' : recordId;
+      showToast('Record verified: ' + label, 'success');
+      if (typeof updateTriageCounts === 'function') updateTriageCounts();
+    }
+
+    function _gridOpenPatchEditor(recordId, sheetName, rowIdx) {
+      openRowReviewDrawer(sheetName, rowIdx);
+      setTimeout(function() {
+        if (typeof srrState !== 'undefined') {
+          srrState.patchType = 'correction';
+          var typeSelect = document.getElementById('srr-patch-type');
+          if (typeSelect) { typeSelect.value = 'correction'; typeSelect.dispatchEvent(new Event('change')); }
+          var todoFields = Object.keys(srrState.originalValues || {}).filter(function(k) {
+            return !k.startsWith('_') && (!srrState.fieldStates[k] || srrState.fieldStates[k] === 'todo');
+          });
+          if (todoFields.length > 0) {
+            var firstField = todoFields[0];
+            var label = firstField.replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+            if (typeof srrPeSelectField === 'function') srrPeSelectField(firstField, label);
+          }
+        }
+        showToast('Patch editor opened — edit fields and submit', 'info');
+      }, 500);
+    }
+
     function initPatchConsole() {
       renderPatchConsoleTable();
       updatePatchQueueCounts();
@@ -17401,7 +17449,7 @@
       
       // Render header with Excel-style column letters (A, B, C...)
       var headerRow = document.getElementById('grid-header-row');
-      var flatRailHeader = (_gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:100px;">Actions</th>' : '';
+      var flatRailHeader = (_gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:50px;width:50px;">Actions</th>' : '';
       var headerHtml = flatRailHeader + '<th class="row-index" style="background: #f0f0f0; font-weight: 600;">#</th>';
       gridState.visibleColumns.forEach(function(col, idx) {
         var colLetter = getColumnLetter(idx);
@@ -20741,7 +20789,7 @@
         // Thead
         var thead = document.createElement('thead');
         var headTr = document.createElement('tr');
-        var railHeaderHtml = (_gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:100px;">Actions</th>' : '';
+        var railHeaderHtml = (_gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:50px;width:50px;">Actions</th>' : '';
         headTr.innerHTML = railHeaderHtml + '<th style="background: #fafafa; font-weight: 600;">#</th>';
         for (var ci = 0; ci < columns.length; ci++) {
           var col = columns[ci];
@@ -20788,6 +20836,18 @@
           if (_gridViewMode === 'review') {
             tr.onclick = (function(sn, sri) { return function() { openRowReviewDrawer(sn, sri); }; })(r.sheet || sheetName, sheetRowIdx);
             tr.style.cursor = 'pointer';
+          } else if (_gridViewMode === 'grid') {
+            (function(rowEl, rid, sn, sri) {
+              rowEl.onclick = function() {
+                if (rowEl._gridClickTimer) clearTimeout(rowEl._gridClickTimer);
+                rowEl._gridClickTimer = setTimeout(function() { rowEl._gridClickTimer = null; _gridVerifyRecord(rid, sn, sri, rowEl); }, 250);
+              };
+              rowEl.ondblclick = function() {
+                if (rowEl._gridClickTimer) { clearTimeout(rowEl._gridClickTimer); rowEl._gridClickTimer = null; }
+                _gridOpenPatchEditor(rid, sn, sri);
+              };
+            })(tr, recordId, r.sheet || sheetName, sheetRowIdx);
+            tr.style.cursor = 'pointer';
           }
 
           var railHtml = '';
@@ -20800,8 +20860,6 @@
             var pdfUrl = r.file_url || r.File_URL_c || '';
             railHtml = '<td class="grid-rail">' +
               '<button class="grid-rail-btn" title="Record Inspector" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + (r.sheet || sheetName).replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');">&#128269;</button>' +
-              (pdfUrl ? '<a class="grid-rail-btn" href="' + pdfUrl + '" target="_blank" onclick="event.stopPropagation();" title="Open PDF">&#128196;</a>' : '') +
-              (pdfUrl ? '<button class="grid-rail-btn" title="Download PDF" onclick="event.stopPropagation(); _gridDownloadPdf(\'' + pdfUrl.replace(/'/g, "\\'") + '\');">&#11015;</button>' : '') +
               (acctLabel ? '<span style="font-size:0.75em;color:#666;margin-left:2px;" title="' + acctLabel + '">' + acctLabel + '</span>' : '') +
               '</td>';
           }
@@ -20827,7 +20885,7 @@
             var titlePfx = changeInfo && typeof CHANGE_TYPE_STYLES !== 'undefined' && CHANGE_TYPE_STYLES[changeInfo.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo.type].label + '] ' : '';
             var editAttrs = '';
             if (_gridViewMode === 'grid') {
-              editAttrs = ' onclick="event.stopPropagation(); _gridStartCellEdit(this, \'' + escapeHtml(recordId).replace(/'/g, "\\'") + '\', \'' + col2.replace(/'/g, "\\'") + '\', \'' + (rSheetName || '').replace(/'/g, "\\'") + '\');" style="cursor: cell; ' + cStyle + '"';
+              editAttrs = ' style="' + cStyle + '"';
               rowHtml += '<td class="' + cellCls + ' truncated"' + editAttrs + ' title="' + titlePfx + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
             } else {
               rowHtml += '<td class="' + cellCls + ' truncated" style="' + cStyle + '" title="' + titlePfx + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
@@ -33267,6 +33325,18 @@
         if (_gridViewMode === 'review') {
           tr.onclick = (function(sn, sri) { return function() { openRowReviewDrawer(sn, sri); }; })(sheetName, sheetRowIdx);
           tr.style.cursor = 'pointer';
+        } else if (_gridViewMode === 'grid') {
+          (function(rowEl, rid, sn, sri) {
+            rowEl.onclick = function() {
+              if (rowEl._gridClickTimer) clearTimeout(rowEl._gridClickTimer);
+              rowEl._gridClickTimer = setTimeout(function() { rowEl._gridClickTimer = null; _gridVerifyRecord(rid, sn, sri, rowEl); }, 250);
+            };
+            rowEl.ondblclick = function() {
+              if (rowEl._gridClickTimer) { clearTimeout(rowEl._gridClickTimer); rowEl._gridClickTimer = null; }
+              _gridOpenPatchEditor(rid, sn, sri);
+            };
+          })(tr, recordId, sheetName, sheetRowIdx);
+          tr.style.cursor = 'pointer';
         }
         
         // v1.6.18: Normalize status field lookup - try multiple header variants
@@ -33303,8 +33373,6 @@
           var flatPdfUrl = r.file_url || r.File_URL_c || '';
           flatRailHtml = '<td class="grid-rail">' +
             '<button class="grid-rail-btn" title="Record Inspector" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + sheetName.replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');">&#128269;</button>' +
-            (flatPdfUrl ? '<a class="grid-rail-btn" href="' + flatPdfUrl + '" target="_blank" onclick="event.stopPropagation();" title="Open PDF">&#128196;</a>' : '') +
-            (flatPdfUrl ? '<button class="grid-rail-btn" title="Download PDF" onclick="event.stopPropagation(); _gridDownloadPdf(\'' + flatPdfUrl.replace(/'/g, "\\'") + '\');">&#11015;</button>' : '') +
             (flatAcctLabel ? '<span style="font-size:0.75em;color:#666;margin-left:2px;">' + flatAcctLabel + '</span>' : '') +
             '</td>';
         }
@@ -33333,8 +33401,7 @@
             // v1.6.2: Apply signal-based cell coloring (v1.6.18: pass record for fallback)
             var cellStyle = getGridCellStyle(recordId, col, r);
             var changeInfo2 = getCellChangeInfo(recordId, col, r); var titlePrefix2 = changeInfo2 && CHANGE_TYPE_STYLES[changeInfo2.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo2.type].label + '] ' : '';
-            if (_gridViewMode === 'grid') {
-              return '<td class="' + cellClass + ' truncated" onclick="event.stopPropagation(); _gridStartCellEdit(this, \'' + (recordId || '').replace(/'/g, "\\'") + '\', \'' + col.replace(/'/g, "\\'") + '\', \'' + (sheetName || '').replace(/'/g, "\\'") + '\');" style="cursor:cell;' + cellStyle + '" title="' + titlePrefix2 + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+            if (false) { /* inline edit removed - grid mode uses click-to-verify / dblclick-to-patch */
             }
             return '<td class="' + cellClass + ' truncated" style="' + cellStyle + '" title="' + titlePrefix2 + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
           }).join('');
