@@ -1156,7 +1156,7 @@
     .grid-table.grid-mode-active td.grid-rail,
     .grid-table.grid-mode-active th.grid-rail {
       position: sticky; left: 0; z-index: 5; background: #f5f5f5; border-right: 2px solid #bbdefb;
-      min-width: 120px; max-width: 140px; white-space: nowrap;
+      min-width: 50px; max-width: 60px; white-space: nowrap; box-shadow: 2px 0 4px rgba(0,0,0,0.06);
     }
     .grid-table.grid-mode-active thead th.grid-rail { z-index: 12; background: #e3f2fd; }
     .grid-rail-btn { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75em; margin: 0 1px; background: #e3f2fd; color: #1565c0; }
@@ -12469,12 +12469,12 @@
         reviewBtn.className = mode === 'review' ? 'active' : '';
         gridBtn.className = mode === 'grid' ? 'active' : '';
       }
-      var tbl = document.getElementById('grid-table');
-      if (tbl) {
+      var allTables = document.querySelectorAll('.grid-table');
+      for (var ti = 0; ti < allTables.length; ti++) {
         if (mode === 'grid') {
-          tbl.classList.add('grid-mode-active');
+          allTables[ti].classList.add('grid-mode-active');
         } else {
-          tbl.classList.remove('grid-mode-active');
+          allTables[ti].classList.remove('grid-mode-active');
         }
       }
       console.log('[GRID-MODE] switched to:', mode);
@@ -21524,7 +21524,7 @@
 
         // Table
         var tbl = document.createElement('table');
-        tbl.className = 'grid-table';
+        tbl.className = 'grid-table' + (_gridViewMode === 'grid' ? ' grid-mode-active' : '');
 
         // Thead
         var thead = document.createElement('thead');
@@ -21590,7 +21590,7 @@
             }
             var pdfUrl = r.file_url || r.File_URL_c || '';
             railHtml = '<td class="grid-rail">' +
-              '<button class="grid-rail-btn" title="Record Inspector" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + (r.sheet || sheetName).replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');">&#128269;</button>' +
+              '<button class="grid-rail-btn" title="Record Inspector" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + (r.sheet || sheetName).replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');">&#128270;</button>' +
               (acctLabel ? '<span style="font-size:0.75em;color:#666;margin-left:2px;" title="' + acctLabel + '">' + acctLabel + '</span>' : '') +
               '</td>';
           }
@@ -34141,7 +34141,7 @@
           }
           var flatPdfUrl = r.file_url || r.File_URL_c || '';
           flatRailHtml = '<td class="grid-rail">' +
-            '<button class="grid-rail-btn" title="Record Inspector" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + sheetName.replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');">&#128269;</button>' +
+            '<button class="grid-rail-btn" title="Record Inspector" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + sheetName.replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');">&#128270;</button>' +
             (flatAcctLabel ? '<span style="font-size:0.75em;color:#666;margin-left:2px;">' + flatAcctLabel + '</span>' : '') +
             '</td>';
         }
