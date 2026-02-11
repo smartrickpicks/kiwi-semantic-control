@@ -3643,14 +3643,12 @@
         </div>
 
         <!-- Admin Panel Tabs -->
-        <div class="admin-console-tabs" style="display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; padding-bottom: 0;">
+        <div class="admin-console-tabs" style="display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; padding-bottom: 0; flex-wrap: wrap;">
           <button class="admin-tab active" data-admin-tab="governance" onclick="switchAdminTab('governance')" style="padding: 10px 20px; background: #1976d2; color: white; border: none; border-radius: 6px 6px 0 0; cursor: pointer; font-weight: 600;">Governance</button>
-          <button class="admin-tab" data-admin-tab="patch-queue" onclick="switchAdminTab('patch-queue')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Patch Queue <span id="patch-queue-count" style="display:none; background:#e91e63; color:white; padding:1px 6px; border-radius:10px; font-size:0.8em; margin-left:4px;">0</span></button>
-          <button class="admin-tab" data-admin-tab="config" onclick="switchAdminTab('config')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Config</button>
-          <button class="admin-tab" data-admin-tab="inspector" onclick="switchAdminTab('inspector')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Inspector</button>
+          <button class="admin-tab" data-admin-tab="patch-ops" onclick="switchAdminTab('patch-ops')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Patch Ops <span id="patch-queue-count" style="display:none; background:#e91e63; color:white; padding:1px 6px; border-radius:10px; font-size:0.8em; margin-left:4px;">0</span></button>
+          <button class="admin-tab" data-admin-tab="gov-controls" onclick="switchAdminTab('gov-controls')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Governance Controls</button>
+          <button class="admin-tab" data-admin-tab="runtime-config" onclick="switchAdminTab('runtime-config')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Runtime Config</button>
           <button class="admin-tab" data-admin-tab="standardizer" onclick="switchAdminTab('standardizer')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Schema</button>
-          <button class="admin-tab" data-admin-tab="patch-console" onclick="switchAdminTab('patch-console')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Patch Console</button>
-          <button class="admin-tab" data-admin-tab="evidence" onclick="switchAdminTab('evidence')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Evidence</button>
           <button class="admin-tab" data-admin-tab="unknown-cols" onclick="switchAdminTab('unknown-cols')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Unknown Columns</button>
           <button class="admin-tab" data-admin-tab="people" onclick="switchAdminTab('people')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">People</button>
           <button class="admin-tab" data-admin-tab="qa-runner" onclick="switchAdminTab('qa-runner')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">QA Runner</button>
@@ -3658,6 +3656,7 @@
 
         <!-- GOVERNANCE TAB -->
         <div id="admin-tab-governance" class="admin-tab-panel" data-admin-section="true">
+          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Artifact registry, workflow pipeline, and batch management.</span></div>
         <!-- Masterline / Artifact Registry Section -->
         <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -3716,7 +3715,7 @@
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Quick Actions</h3>
           <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <button class="toolbar-btn" onclick="var _btn = document.getElementById('btn-run'); if (_btn) _btn.click()">Run Commands</button>
-            <button class="toolbar-btn" onclick="switchAdminTab('inspector')">Open Inspector</button>
+            <button class="toolbar-btn" onclick="switchAdminTab('runtime-config')">Open Inspector</button>
           </div>
         </div>
           <!-- v1.6.48: Batch Add Settings -->
@@ -3753,21 +3752,7 @@
 </div>
         </div><!-- end admin-tab-governance -->
 
-        <!-- P0.6: Truth Pack Controls (Architect-only) -->
-        <div id="truth-pack-admin-section" class="admin-section" style="display: none; background: #f3e5f5; padding: 16px 20px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #ce93d8;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h4 style="margin: 0; font-size: 0.95em; color: #6a1b9a;">Architect Controls</h4>
-            <span style="font-size: 0.7em; padding: 2px 8px; background: #7b1fa2; color: white; border-radius: 10px; font-weight: 600;">ARCHITECT ONLY</span>
-          </div>
-          <div style="margin-bottom: 12px;">
-            <label style="font-size: 0.85em; color: #555; display: flex; align-items: center; gap: 8px;">
-              <input type="checkbox" id="architect-mode-toggle" onchange="if(this.checked){TruthPack.enableArchitectMode();}else{TruthPack.disableArchitectMode();}">
-              Enable Architect Mode
-            </label>
-          </div>
-          <div id="truth-pack-admin-controls" style="display: none;"></div>
-          <div id="truth-config-controls" style="margin-top: 12px;"></div>
-        </div>
+        <!-- P0.6: Architect Controls moved to bottom utility rail -->
 
         <!-- USERS TAB (v1.4.21) -->
         <div id="admin-tab-users" class="admin-tab-panel" data-admin-section="true" style="display: none;">
@@ -3876,7 +3861,9 @@
         </div>
 
         <!-- PATCH QUEUE TAB (v1.5.1) -->
-        <div id="admin-tab-patch-queue" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+        <div id="admin-tab-patch-ops" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Review, track, and manage all patch requests through their lifecycle.</span></div>
+        <div id="admin-tab-patch-queue" data-admin-section="true">
           <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Patch Queue <span class="info-icon" title="Patch requests approved by Verifiers awaiting final Admin approval.">&#9432;</span></h3>
             <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Review Correction and Blacklist patch requests approved by Verifiers.</p>
@@ -3900,10 +3887,10 @@
               </table>
             </div>
           </div>
-        </div><!-- end admin-tab-patch-queue -->
+        </div><!-- end admin-tab-patch-queue (now inside patch-ops) -->
 
-        <!-- PATCH CONSOLE TAB -->
-        <div id="admin-tab-patch-console" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+        <!-- PATCH CONSOLE (merged into Patch Ops) -->
+        <div id="admin-tab-patch-console" data-admin-section="true">
         <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Patch Requests Console <span class="info-icon" title="Manage patch requests through their lifecycle. Track requests from creation through Kiwi processing to final application.">&#9432;</span></h3>
           <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Track and manage patch requests. Batch export to Kiwi, import returns, and apply changes.</p>
@@ -4052,10 +4039,12 @@
           </div>
         </div>
 
-</div><!-- end admin-tab-patch-console -->
+</div><!-- end admin-tab-patch-console (inside patch-ops) -->
+        </div><!-- end admin-tab-patch-ops -->
 
-        <!-- EVIDENCE TAB -->
-        <div id="admin-tab-evidence" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+        <!-- GOVERNANCE CONTROLS TAB (merged Evidence + gate settings) -->
+        <div id="admin-tab-gov-controls" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Version baselines, evidence gates, and governance policy settings.</span></div>
         <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Version & Baseline</h3>
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
@@ -4084,10 +4073,11 @@
             <div class="state-chip pending">Smoke Edge: Pending</div>
           </div>
         </div>
-        </div><!-- end admin-tab-evidence -->
+        </div><!-- end admin-tab-gov-controls -->
 
         <!-- UNKNOWN COLUMNS TAB -->
         <div id="admin-tab-unknown-cols" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Unmapped headers and unknown columns requiring glossary mapping.</span></div>
         <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Unknown Columns (Schema Drift) <span class="info-icon" title="Columns found in imported data that don't match any canonical field. Decide how to handle each.">&#9432;</span></h3>
           <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Columns detected during standardization that aren't in the canonical schema. Decide how to classify each one.</p>
@@ -4126,6 +4116,7 @@
 
         <!-- STANDARDIZER TAB -->
         <div id="admin-tab-standardizer" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Schema tree editor for canonical rules, field definitions, and column aliases.</span></div>
         <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Schema Tree Editor <span class="info-icon" title="Browse and edit the canonical schema tree: contract sections, fields, aliases, QA flags, and document types. Changes are buffered locally and can be exported as a patch.">&#9432;</span></h3>
           <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
@@ -4146,7 +4137,8 @@
         </div><!-- end admin-tab-standardizer -->
 
         <!-- CONFIG TAB -->
-        <div id="admin-tab-config" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+        <div id="admin-tab-runtime-config" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Read-only diagnostics: config pack comparison, glossary management, and raw JSON inspection.</span></div>
           <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Config + Patch Inspector</h3>
             <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Load and compare config packs. View ruleset deltas between base and patch.</p>
@@ -4188,10 +4180,8 @@
             <div id="glossary-sheet-map" style="margin-top: 15px;"></div>
           </div>
 
-        </div><!-- end admin-tab-config -->
+        <!-- JSON Inspector (merged from Inspector tab) -->'
 
-        <!-- INSPECTOR TAB -->
-        <div id="admin-tab-inspector" class="admin-tab-panel" data-admin-section="true" style="display: none;">
           <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">JSON Inspector</h3>
             <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">View raw JSON data for current session artifacts.</p>
@@ -4208,10 +4198,11 @@
               <button class="toolbar-btn" onclick="copyInspectorJSON()">Copy JSON</button>
             </div>
           </div>
-        </div><!-- end admin-tab-inspector -->
+        </div><!-- end admin-tab-runtime-config -->
 
         <!-- PEOPLE TAB (P0.7) -->
         <div id="admin-tab-people" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Team members, role assignments, and invite management.</span></div>
           <!-- Environment Mode Toggle (moved from Users tab) -->
           <div class="admin-section" style="background: white; padding: 16px 20px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -4283,6 +4274,7 @@
         </div><!-- end admin-tab-people -->
 
         <div id="admin-tab-qa-runner" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Run and review quality assurance validation checks.</span></div>
           <h3 style="margin: 0 0 16px 0; color: #1a237e;">QA Runner</h3>
           <p style="color: #666; font-size: 0.9em; margin: 0 0 16px 0;">Run in-browser validation suites to verify all governance features are working correctly.</p>
           <div id="p1b-run-controls" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
@@ -4332,6 +4324,22 @@
             <tbody id="p1b-history-tbody"></tbody>
           </table>
         </div><!-- end admin-tab-qa-runner -->
+
+        <!-- ARCHITECT UTILITY RAIL (bottom bar, visible on admin/architect pages) -->
+        <div id="architect-utility-rail" style="display: none; position: fixed; bottom: 0; left: 280px; right: 0; z-index: 900; background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border-top: 2px solid #ce93d8; padding: 10px 20px; box-shadow: 0 -2px 8px rgba(0,0,0,0.1);">
+          <div id="truth-pack-admin-section" style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h4 style="margin: 0; font-size: 0.9em; color: #6a1b9a;">Architect Controls</h4>
+              <span style="font-size: 0.65em; padding: 2px 6px; background: #7b1fa2; color: white; border-radius: 10px; font-weight: 600;">ARCHITECT ONLY</span>
+            </div>
+            <label style="font-size: 0.82em; color: #555; display: flex; align-items: center; gap: 6px;">
+              <input type="checkbox" id="architect-mode-toggle" onchange="if(this.checked){TruthPack.enableArchitectMode();}else{TruthPack.disableArchitectMode();}">
+              Enable Architect Mode
+            </label>
+            <div id="truth-pack-admin-controls" style="display: none; flex: 1;"></div>
+            <div id="truth-config-controls" style="display: flex; gap: 8px;"></div>
+          </div>
+        </div>
 
 
         <div style="margin-top: 12px; text-align: right; font-size: 0.75em; color: #aaa;">PAGE: ADMIN-PANEL | BUILD v1.6.49</div>
@@ -17455,15 +17463,18 @@
     var currentAdminTab = 'governance';
     function switchAdminTab(tabName) {
       // P0.6: Show architect controls if admin/architect
-      var archSection = document.getElementById('truth-pack-admin-section');
-      if (archSection) {
+      var archRail = document.getElementById('architect-utility-rail');
+      if (archRail) {
         var _mode = (localStorage.getItem('viewer_mode_v10') || '').toLowerCase();
-        archSection.style.display = (_mode === 'admin' || _mode === 'architect') ? '' : 'none';
+        archRail.style.display = (_mode === 'admin' || _mode === 'architect') ? '' : 'none';
         var _toggle = document.getElementById('architect-mode-toggle');
         if (_toggle) _toggle.checked = (_mode === 'architect' || localStorage.getItem('truth_pack_architect_enabled') === 'true');
         if (typeof TruthPack !== 'undefined') TruthPack._renderControls();
       }
-      var tabs = ['governance', 'users', 'patch-queue', 'config', 'inspector', 'standardizer', 'patch-console', 'evidence', 'unknown-cols', 'people', 'qa-runner'];
+      var tabs = ['governance', 'users', 'patch-ops', 'patch-queue', 'runtime-config', 'config', 'inspector', 'standardizer', 'patch-console', 'gov-controls', 'evidence', 'unknown-cols', 'people', 'qa-runner'];
+      if (tabName === 'patch-queue' || tabName === 'patch-console') tabName = 'patch-ops';
+      if (tabName === 'evidence') tabName = 'gov-controls';
+      if (tabName === 'config' || tabName === 'inspector') tabName = 'runtime-config';
       if (tabs.indexOf(tabName) === -1) tabName = 'governance';
       
       // Render users table and update env mode UI when switching to users tab
@@ -17505,8 +17516,9 @@
       }
       
       // Render admin queue when tab is shown
-      if (tabName === 'patch-queue') {
+      if (tabName === 'patch-ops' || tabName === 'patch-queue') {
         renderAdminQueue();
+        if (typeof renderPatchConsoleTable === 'function') renderPatchConsoleTable();
       }
       
       // v1.6.48: Render batch add toggles when governance tab is shown
