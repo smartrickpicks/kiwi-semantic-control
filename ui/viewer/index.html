@@ -19793,9 +19793,11 @@
     }
 
     var _ADDRESS_FIELD_GROUPS = [
-      { prefix: 'billing', fields: { street: 'billing_street_c', city: 'billing_city_c', state: 'billing_state_c', postal: 'billing_postal_code_c', country: 'billing_country_c' }, sheet: 'Accounts' },
-      { prefix: 'shipping', fields: { street: 'shipping_street_c', city: 'shipping_city_c', state: 'shipping_state_c', postal: 'shipping_postal_code_c', country: 'shipping_country_c' }, sheet: 'Accounts' },
-      { prefix: 'mailing', fields: { street: 'MailingStreet', city: 'MailingCity', state: 'MailingState', postal: 'MailingPostalCode', country: 'MailingCountry' }, sheet: 'Contacts' }
+      { prefix: 'billing', fields: { street: 'billing_street_c', city: 'billing_city_c', state: 'billing_state_c', postal: 'billing_postal_code_c', country: 'billing_country_c' }, labels: { street: 'Billing Street', city: 'Billing City', state: 'Billing State/Province', postal: 'Billing Zip/Postal Code', country: 'Billing Country' }, sheet: 'Accounts' },
+      { prefix: 'shipping', fields: { street: 'shipping_street_c', city: 'shipping_city_c', state: 'shipping_state_c', postal: 'shipping_postal_code_c', country: 'shipping_country_c' }, labels: { street: 'Shipping Street', city: 'Shipping City', state: 'Shipping State/Province', postal: 'Shipping Zip/Postal Code', country: 'Shipping Country' }, sheet: 'Accounts' },
+      { prefix: 'mailing', fields: { street: 'MailingStreet', city: 'MailingCity', state: 'MailingState', postal: 'MailingPostalCode', country: 'MailingCountry' }, labels: { street: 'Mailing Street', city: 'Mailing City', state: 'Mailing State/Province', postal: 'Mailing Zip/Postal Code', country: 'Mailing Country' }, sheet: 'Contacts' },
+      { prefix: 'other', fields: { street: 'OtherStreet', city: 'OtherCity', state: 'OtherState', postal: 'OtherPostalCode', country: 'OtherCountry' }, labels: { street: 'Other Street', city: 'Other City', state: 'Other State/Province', postal: 'Other Zip/Postal Code', country: 'Other Country' }, sheet: 'Contacts' },
+      { prefix: 'contact', fields: { street: 'Contact_Street__c', city: 'Contact_City__c', state: 'Contact_State__c', postal: 'Contact_ZIP__c', country: 'Contact_Country__c' }, labels: { street: 'Contact Street', city: 'Contact City', state: 'Contact State', postal: 'Contact ZIP', country: 'Contact Country' }, sheet: 'Contacts' }
     ];
 
     function _addrNormalize(val) {
@@ -19807,127 +19809,222 @@
       return [parts.country, parts.street, parts.city, parts.state, parts.postal].join('|');
     }
 
+    function _addrNormKey(s) {
+      return String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function _addrResolveField(row, fieldKey, fieldLabel) {
+      if (row.hasOwnProperty(fieldKey) && row[fieldKey] !== undefined && row[fieldKey] !== null) {
+        var v = String(row[fieldKey]).trim();
+        if (v) return { val: v, resolvedKey: fieldKey };
+      }
+      if (fieldLabel) {
+        if (row.hasOwnProperty(fieldLabel) && row[fieldLabel] !== undefined && row[fieldLabel] !== null) {
+          var v2 = String(row[fieldLabel]).trim();
+          if (v2) return { val: v2, resolvedKey: fieldLabel };
+        }
+      }
+      var fkNorm = _addrNormKey(fieldKey);
+      var flNorm = fieldLabel ? _addrNormKey(fieldLabel) : '';
+      for (var rk in row) {
+        if (!row.hasOwnProperty(rk)) continue;
+        var rkNorm = _addrNormKey(rk);
+        if (rkNorm === fkNorm || (flNorm && rkNorm === flNorm)) {
+          var v3 = (row[rk] !== undefined && row[rk] !== null) ? String(row[rk]).trim() : '';
+          if (v3) return { val: v3, resolvedKey: rk };
+        }
+      }
+      if (typeof COLUMN_ALIAS_MAP !== 'undefined') {
+        for (var rk2 in row) {
+          if (!row.hasOwnProperty(rk2)) continue;
+          var rkn2 = _addrNormKey(rk2);
+          var aliases = COLUMN_ALIAS_MAP[rkn2];
+          if (aliases) {
+            for (var ai = 0; ai < aliases.length; ai++) {
+              if (_addrNormKey(aliases[ai].canonical_key) === fkNorm) {
+                var v4 = (row[rk2] !== undefined && row[rk2] !== null) ? String(row[rk2]).trim() : '';
+                if (v4) return { val: v4, resolvedKey: rk2 };
+              }
+            }
+          }
+        }
+      }
+      if (fieldLabel) {
+        var labelWords = fieldLabel.toLowerCase().split(/[\s\/]+/);
+        var prefix = labelWords.length >= 2 ? labelWords[0] : '';
+        var component = labelWords.length >= 2 ? labelWords[labelWords.length - 1] : labelWords[0] || '';
+        if (prefix && component) {
+          for (var rk3 in row) {
+            if (!row.hasOwnProperty(rk3)) continue;
+            var rkLow = rk3.toLowerCase();
+            if (rkLow.indexOf(prefix) >= 0 && rkLow.indexOf(component) >= 0) {
+              var v5 = (row[rk3] !== undefined && row[rk3] !== null) ? String(row[rk3]).trim() : '';
+              if (v5) return { val: v5, resolvedKey: rk3 };
+            }
+          }
+        }
+      }
+      return { val: '', resolvedKey: fieldKey };
+    }
+
     function _buildAddressCandidateItems() {
       _addressCandidateItems = [];
       if (!window._workbookData) return;
       var sheets = window._workbookData;
       var allRecords = [];
+      var scannedSheets = {};
 
       for (var g = 0; g < _ADDRESS_FIELD_GROUPS.length; g++) {
         var grp = _ADDRESS_FIELD_GROUPS[g];
-        var sheetData = null;
-        var sheetName = '';
+        var matchedSheets = [];
         for (var sn in sheets) {
           if (!sheets.hasOwnProperty(sn)) continue;
-          var snLower = sn.toLowerCase().replace(/[^a-z]/g, '');
-          var grpLower = grp.sheet.toLowerCase().replace(/[^a-z]/g, '');
-          if (snLower === grpLower || snLower.indexOf(grpLower) >= 0) {
-            sheetData = sheets[sn];
-            sheetName = sn;
-            break;
+          var snNorm = _addrNormKey(sn);
+          var grpNorm = _addrNormKey(grp.sheet);
+          if (snNorm === grpNorm || snNorm.indexOf(grpNorm) >= 0 || grpNorm.indexOf(snNorm) >= 0) {
+            matchedSheets.push(sn);
           }
         }
-        if (!sheetData || !Array.isArray(sheetData) || sheetData.length === 0) continue;
-
-        for (var r = 0; r < sheetData.length; r++) {
-          var row = sheetData[r];
-          var parts = {};
-          var filled = 0;
-          var missing = [];
-          var components = ['street', 'city', 'state', 'postal', 'country'];
-          for (var ci = 0; ci < components.length; ci++) {
-            var comp = components[ci];
-            var fieldKey = grp.fields[comp];
-            var val = '';
-            if (row[fieldKey]) {
-              val = String(row[fieldKey]).trim();
-            } else {
-              for (var rk in row) {
-                if (rk.toLowerCase().replace(/[^a-z_]/g, '') === fieldKey.toLowerCase().replace(/[^a-z_]/g, '')) {
-                  val = String(row[rk]).trim();
-                  break;
-                }
+        if (matchedSheets.length === 0) {
+          for (var sn2 in sheets) {
+            if (!sheets.hasOwnProperty(sn2)) continue;
+            if (scannedSheets[sn2 + '::' + grp.prefix]) continue;
+            var sData = sheets[sn2];
+            if (!Array.isArray(sData) || sData.length === 0) continue;
+            var hasAny = false;
+            var components2 = ['street', 'city', 'state', 'postal', 'country'];
+            var samplCount = Math.min(sData.length, 5);
+            for (var si2 = 0; si2 < samplCount && !hasAny; si2++) {
+              var testRow = sData[si2];
+              if (!testRow) continue;
+              for (var ti = 0; ti < components2.length; ti++) {
+                var res = _addrResolveField(testRow, grp.fields[components2[ti]], grp.labels ? grp.labels[components2[ti]] : '');
+                if (res.val) { hasAny = true; break; }
               }
             }
-            parts[comp] = _addrNormalize(val);
-            if (parts[comp]) { filled++; } else { missing.push(comp); }
+            if (!hasAny && sData[0]) {
+              for (var hk in sData[0]) {
+                if (!sData[0].hasOwnProperty(hk)) continue;
+                var hkn = _addrNormKey(hk);
+                for (var ti2 = 0; ti2 < components2.length; ti2++) {
+                  var fkn2 = _addrNormKey(grp.fields[components2[ti2]]);
+                  var fln2 = grp.labels ? _addrNormKey(grp.labels[components2[ti2]]) : '';
+                  if (hkn === fkn2 || (fln2 && hkn === fln2)) { hasAny = true; break; }
+                }
+                if (hasAny) break;
+              }
+            }
+            if (hasAny) matchedSheets.push(sn2);
           }
-          if (filled === 0 || filled === 5) continue;
-          if (missing.length > 1) continue;
-          allRecords.push({
-            group: grp,
-            sheetName: sheetName,
-            rowIndex: r,
-            row: row,
-            parts: parts,
-            missing: missing,
-            filled: filled,
-            fingerprint: _addrFingerprint(parts),
-            recordId: row.record_id || row.Id || row.id || (sheetName + '_r' + r),
-            contractKey: row._contract_key || row.contract_key || ''
-          });
+        }
+
+        for (var ms = 0; ms < matchedSheets.length; ms++) {
+          var sheetName = matchedSheets[ms];
+          var sheetData = sheets[sheetName];
+          scannedSheets[sheetName + '::' + grp.prefix] = true;
+          if (!sheetData || !Array.isArray(sheetData) || sheetData.length === 0) continue;
+
+          for (var r = 0; r < sheetData.length; r++) {
+            var row = sheetData[r];
+            var parts = {};
+            var resolvedKeys = {};
+            var filled = 0;
+            var missing = [];
+            var components = ['street', 'city', 'state', 'postal', 'country'];
+            for (var ci = 0; ci < components.length; ci++) {
+              var comp = components[ci];
+              var fieldKey = grp.fields[comp];
+              var fieldLabel = grp.labels ? grp.labels[comp] : '';
+              var resolved = _addrResolveField(row, fieldKey, fieldLabel);
+              parts[comp] = _addrNormalize(resolved.val);
+              resolvedKeys[comp] = resolved.resolvedKey;
+              if (parts[comp]) { filled++; } else { missing.push(comp); }
+            }
+            if (filled === 0 || filled === 5) continue;
+            if (missing.length > 2) continue;
+            allRecords.push({
+              group: grp,
+              sheetName: sheetName,
+              rowIndex: r,
+              row: row,
+              parts: parts,
+              resolvedKeys: resolvedKeys,
+              missing: missing,
+              filled: filled,
+              fingerprint: _addrFingerprint(parts),
+              recordId: row.record_id || row.Id || row.id || (sheetName + '_r' + r),
+              contractKey: row._contract_key || row.contract_key || ''
+            });
+          }
         }
       }
 
+      console.log('[PREFLIGHT-ADDR] scanned ' + allRecords.length + ' address records across groups');
       if (allRecords.length === 0) return;
 
       for (var i = 0; i < allRecords.length; i++) {
         var rec = allRecords[i];
         if (rec.missing.length === 0) continue;
-        var missingComp = rec.missing[0];
-        if (missingComp === 'country' && !rec.parts.street) continue;
-        var candidates = [];
-        for (var j = 0; j < allRecords.length; j++) {
-          if (i === j) continue;
-          var other = allRecords[j];
-          if (other.group.prefix !== rec.group.prefix) continue;
-          if (rec.parts.country && other.parts.country && rec.parts.country !== other.parts.country) continue;
-          if (!other.parts[missingComp]) continue;
-          var match = true;
-          for (var ci2 = 0; ci2 < 5; ci2++) {
-            var c2 = ['street', 'city', 'state', 'postal', 'country'][ci2];
-            if (c2 === missingComp) continue;
-            if (rec.parts[c2] && other.parts[c2] && rec.parts[c2] !== other.parts[c2]) { match = false; break; }
+
+        for (var mi = 0; mi < rec.missing.length; mi++) {
+          var missingComp = rec.missing[mi];
+          if (missingComp === 'country' && !rec.parts.street) continue;
+          var candidates = [];
+          for (var j = 0; j < allRecords.length; j++) {
+            if (i === j) continue;
+            var other = allRecords[j];
+            if (other.group.prefix !== rec.group.prefix) continue;
+            if (rec.parts.country && other.parts.country && rec.parts.country !== other.parts.country) continue;
+            if (!other.parts[missingComp]) continue;
+            var match = true;
+            for (var ci2 = 0; ci2 < 5; ci2++) {
+              var c2 = ['street', 'city', 'state', 'postal', 'country'][ci2];
+              if (c2 === missingComp) continue;
+              if (rec.parts[c2] && other.parts[c2] && rec.parts[c2] !== other.parts[c2]) { match = false; break; }
+            }
+            if (match) candidates.push(other);
           }
-          if (match) candidates.push(other);
+
+          var itemId = 'addr_' + rec.group.prefix + '_' + rec.sheetName + '_r' + rec.rowIndex + '_' + missingComp;
+          if (_addressCandidateDecisions[itemId]) continue;
+          var _compositeCheck = _addrDecisionKey({ record_id: rec.recordId, field_name: rec.resolvedKeys[missingComp] || rec.group.fields[missingComp], existing_parts: rec.parts });
+          if (_addressCandidateDecisions[_compositeCheck]) continue;
+
+          var severity = 'blocker';
+          var blockerType = 'ADDRESS_INCOMPLETE_AMBIGUOUS';
+          var candidateValue = '';
+          if (candidates.length === 1) {
+            severity = 'warning';
+            blockerType = 'ADDRESS_INCOMPLETE_CANDIDATE';
+            var candKey = candidates[0].resolvedKeys[missingComp] || candidates[0].group.fields[missingComp];
+            candidateValue = candidates[0].row[candKey] || candidates[0].parts[missingComp] || '';
+          }
+
+          var fieldLabel2 = missingComp.charAt(0).toUpperCase() + missingComp.slice(1);
+          if (missingComp === 'postal') fieldLabel2 = 'Zip/Postal Code';
+          if (missingComp === 'state') fieldLabel2 = 'State/Province';
+          var item = {
+            request_id: itemId,
+            signal_type: blockerType,
+            blocker_type: blockerType,
+            severity: severity,
+            sheet_name: rec.sheetName,
+            record_id: rec.recordId,
+            contract_key: rec.contractKey,
+            field_name: rec.resolvedKeys[missingComp] || rec.group.fields[missingComp],
+            field_label: rec.group.prefix.charAt(0).toUpperCase() + rec.group.prefix.slice(1) + ' ' + fieldLabel2,
+            message: 'Missing ' + rec.group.prefix + ' ' + fieldLabel2.toLowerCase() + (candidates.length === 1 ? '. Candidate: ' + candidateValue : candidates.length > 1 ? '. ' + candidates.length + ' ambiguous matches found' : '. No matches found in batch'),
+            reason_code: blockerType,
+            source: 'address_candidate_engine',
+            candidate_count: candidates.length,
+            candidate_value: candidateValue,
+            missing_component: missingComp,
+            address_group: rec.group.prefix,
+            existing_parts: rec.parts,
+            created: new Date().toISOString()
+          };
+          _addressCandidateItems.push(enrichPreflightItem(item));
         }
-
-        var itemId = 'addr_' + rec.group.prefix + '_' + rec.sheetName + '_r' + rec.rowIndex + '_' + missingComp;
-        if (_addressCandidateDecisions[itemId]) continue;
-        var _compositeCheck = _addrDecisionKey({ record_id: rec.recordId, field_name: rec.group.fields[missingComp], existing_parts: rec.parts });
-        if (_addressCandidateDecisions[_compositeCheck]) continue;
-
-        var severity = 'blocker';
-        var blockerType = 'ADDRESS_INCOMPLETE_AMBIGUOUS';
-        var candidateValue = '';
-        if (candidates.length === 1) {
-          severity = 'warning';
-          blockerType = 'ADDRESS_INCOMPLETE_CANDIDATE';
-          candidateValue = candidates[0].row[candidates[0].group.fields[missingComp]] || candidates[0].parts[missingComp] || '';
-        }
-
-        var fieldLabel = missingComp.charAt(0).toUpperCase() + missingComp.slice(1);
-        var item = {
-          request_id: itemId,
-          signal_type: blockerType,
-          blocker_type: blockerType,
-          severity: severity,
-          sheet_name: rec.sheetName,
-          record_id: rec.recordId,
-          contract_key: rec.contractKey,
-          field_name: rec.group.fields[missingComp],
-          field_label: rec.group.prefix.charAt(0).toUpperCase() + rec.group.prefix.slice(1) + ' ' + fieldLabel,
-          message: 'Missing ' + rec.group.prefix + ' ' + missingComp + (candidates.length === 1 ? '. Candidate: ' + candidateValue : candidates.length > 1 ? '. ' + candidates.length + ' ambiguous candidates found' : '. No candidates found'),
-          reason_code: blockerType,
-          source: 'address_candidate_engine',
-          candidate_count: candidates.length,
-          candidate_value: candidateValue,
-          missing_component: missingComp,
-          address_group: rec.group.prefix,
-          existing_parts: rec.parts,
-          created: new Date().toISOString()
-        };
-        _addressCandidateItems.push(enrichPreflightItem(item));
       }
       if (_addressCandidateItems.length > 0) console.log('[PREFLIGHT-ADDR] built ' + _addressCandidateItems.length + ' address candidate items');
     }
