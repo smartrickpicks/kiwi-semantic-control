@@ -31618,14 +31618,14 @@
     var datasetLoadTimestamp = null;
     
     var _preflightBlockerTypes = {
-        UNKNOWN_COLUMN: { label: 'Unknown Column', badge: 'fail', icon: '\u2753', desc: 'Column not found in field_meta.json. Threshold: columns with >0 non-empty values are flagged.' },
+        UNKNOWN_COLUMN: { label: 'Unknown Column', badge: 'fail', icon: '\u2753', desc: 'This column is not recognized in the governed glossary. Columns with data are flagged for review.' },
         OCR_MOJIBAKE: { label: 'Mojibake (Encoding)', badge: 'warn', icon: '\u26a0', desc: 'PDF contains encoding artifacts at low or medium impact level.' },
         OCR_UNREADABLE: { label: 'OCR Unreadable', badge: 'fail', icon: '\ud83d\udeab', desc: 'OCR extraction returned unreadable or garbled text. Manual review required.' },
         LOW_CONFIDENCE: { label: 'Low Confidence', badge: 'warn', icon: '\u26a0', desc: 'Extraction confidence below 60%. Values may be unreliable.' },
         DOCUMENT_TYPE_MISSING: { label: 'Document Type Missing', badge: 'warn', icon: '\ud83d\udcc4', desc: 'Document type not assigned or not recognized. Assign a valid document type before proceeding.' },
-        MISSING_REQUIRED: { label: 'Missing Required', badge: 'fail', icon: '\u2757', desc: 'A required field defined in field_meta.json is missing or empty in this record.' },
+        MISSING_REQUIRED: { label: 'Missing Required', badge: 'fail', icon: '\u2757', desc: 'A required field is missing or empty in this record.' },
         PICKLIST_INVALID: { label: 'Invalid Picklist', badge: 'warn', icon: '\ud83d\udcdd', desc: 'Field value does not match any allowed option in the picklist.' },
-        ADDRESS_INCOMPLETE_CANDIDATE: { label: 'Incomplete Address', badge: 'warn', icon: '\ud83c\udfe0', desc: 'Address has missing components. A candidate match was found within the batch using normalized fingerprints.' },
+        ADDRESS_INCOMPLETE_CANDIDATE: { label: 'Incomplete Address', badge: 'warn', icon: '\ud83c\udfe0', desc: 'This address is missing one or more parts. A possible match was found in another record in the same batch.' },
         ADDRESS_INCOMPLETE_AMBIGUOUS: { label: 'Ambiguous Address', badge: 'fail', icon: '\ud83c\udfe0', desc: 'Address has missing components and multiple or no candidate matches exist. Manual review required.' }
     };
 
@@ -32119,8 +32119,8 @@
     var _p1aLabelMap = {
       'rfi': { label: 'RFI', tip: 'Request for Information — analyst needs clarification' },
       'blacklist': { label: 'Blacklisted', tip: 'Field or value is on the exclusion list' },
-      'qa': { label: 'QA Flag', tip: 'Quality assurance flag from qa_flags.json rules' },
-      'required': { label: 'Missing Required', tip: 'Required field is missing or empty (field_meta.json)' },
+      'qa': { label: 'QA Flag', tip: 'Quality assurance flag from governance rules' },
+      'required': { label: 'Missing Required', tip: 'A required field is missing or empty' },
       'picklist': { label: 'Invalid Picklist', tip: 'Value not in allowed picklist options' },
       'encoding': { label: 'Encoding Issue', tip: 'Character encoding problem detected' },
       'correction': { label: 'Correction', tip: 'Value correction suggested by system rules' },
