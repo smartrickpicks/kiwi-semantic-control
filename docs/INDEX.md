@@ -104,6 +104,11 @@
 - docs/handoff/STATUS.md — General status
 - docs/handoff/HANDOFF.md — Handoff guide
 
+## AppModules Architecture
+- docs/architecture/appmodules-catalog.md — Full module catalog: 47 modules across 13 phases (C, D1–D12) with delegate sites and deterministic logs
+- docs/architecture/appmodules-map.md — Mermaid dependency graph showing Engines, Components, and cross-phase call paths
+- docs/architecture/appmodules-index.md — Developer guide: safe calling patterns, adding new modules, extraction checklist, ES5 compliance
+
 ## Replit Tools (Optional)
 - docs/07_replit_mcp.md — Replit MCP operator guide and install-link format
 - scripts/mcp_link_gen.py — deterministic MCP install-link generator (ENCODED, LINK, BADGE_MARKDOWN)
