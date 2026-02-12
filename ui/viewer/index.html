@@ -14974,6 +14974,78 @@
     })();
     // ========== END PHASE D10 ==========
 
+    // ========== PHASE D11: GRID CONTEXT MENU MODULES ==========
+    (function() {
+      var ns = window.AppModules;
+      if (!ns) return;
+
+      // --- Engines.GridContextState ---
+      ns.Engines.GridContextState = {
+        getState: function() {
+          if (typeof _gridCtxState !== 'undefined') return _gridCtxState;
+          return { open: false, context: null };
+        },
+        getRoleMatrix: function() {
+          if (typeof _GRID_CTX_ROLE_MATRIX !== 'undefined') return _GRID_CTX_ROLE_MATRIX;
+          return {};
+        },
+        getCurrentRole: function() {
+          if (typeof _gridCtxGetCurrentRole === 'function') return _gridCtxGetCurrentRole();
+          return 'analyst';
+        },
+        isSystemField: function(fieldKey) {
+          if (typeof _gridCtxIsSystemField === 'function') return _gridCtxIsSystemField(fieldKey);
+          return false;
+        },
+        getActionState: function(action, ctx, role) {
+          if (typeof getGridContextActionState === 'function') return getGridContextActionState(action, ctx, role);
+          return { enabled: false, reason: 'Action state unavailable' };
+        },
+        resolveRecord: function(ctx) {
+          if (typeof _gridCtxResolveRecord === 'function') return _gridCtxResolveRecord(ctx);
+          return null;
+        },
+        findClosest: function(el, selector) {
+          if (typeof _gridCtxFindClosest === 'function') return _gridCtxFindClosest(el, selector);
+          return null;
+        }
+      };
+      ns._registry.push('Engines.GridContextState');
+
+      // --- Components.GridContextMenu ---
+      ns.Components.GridContextMenu = {
+        open: function(x, y, context) {
+          if (typeof _gridCtxOpen === 'function') _gridCtxOpen(x, y, context);
+        },
+        close: function() {
+          if (typeof _gridCtxClose === 'function') _gridCtxClose();
+        },
+        renderItem: function(action, icon, label, enabled, disabledReason) {
+          if (typeof _gridCtxItem === 'function') return _gridCtxItem(action, icon, label, enabled, disabledReason);
+          return '';
+        },
+        isOpen: function() {
+          var st = ns.Engines.GridContextState.getState();
+          return !!(st && st.open);
+        }
+      };
+      ns._registry.push('Components.GridContextMenu');
+
+      // --- Components.GridContextActions ---
+      ns.Components.GridContextActions = {
+        dispatch: function(action) {
+          if (typeof _gridCtxAction === 'function') _gridCtxAction(action);
+        },
+        getActionState: function(action, ctx, role) {
+          return ns.Engines.GridContextState.getActionState(action, ctx, role);
+        }
+      };
+      ns._registry.push('Components.GridContextActions');
+
+      console.log('[APP-MODULES][P1D11] gridctx_modules_registered: GridContextState, GridContextMenu, GridContextActions');
+    })();
+    // ========== END PHASE D11 ==========
+
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
     var Components = window.Components || {};
@@ -15203,6 +15275,10 @@
         record_id: context.recordId, field_key: context.fieldKey || '',
         contract_section: context.sheetName, row_index: context.rowIdx, role: role
       });
+      console.log('[GRIDCTX-D11] menu_opened', {
+        record_id: context.recordId, field_key: context.fieldKey || '',
+        contract_section: context.sheetName, role: role
+      });
 
       if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
         AuditTimeline.emit('grid_context_menu_opened', {
@@ -15274,10 +15350,14 @@
     function _gridCtxClose() {
       var menu = document.getElementById('grid-ctx-menu');
       if (menu) menu.style.display = 'none';
+      var wasOpen = _gridCtxState.open;
       _gridCtxState.open = false;
       _gridCtxState.context = null;
       document.removeEventListener('click', _gridCtxClickAway);
       document.removeEventListener('keydown', _gridCtxEscHandler);
+      if (wasOpen) {
+        console.log('[GRIDCTX-D11] menu_closed');
+      }
     }
 
     function _gridCtxClickAway(e) {
@@ -15308,6 +15388,9 @@
 
       if (!guardState.enabled) {
         console.log('[GRID-CONTEXT][P1] action_blocked:' + action + ':' + guardState.reason);
+        console.log('[GRIDCTX-D11] action_blocked', {
+          action: action, reason: guardState.reason, role: role, record_id: ctx.recordId
+        });
         if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
           AuditTimeline.emit('grid_context_action_blocked', {
             action: action, record_id: ctx.recordId, field_key: ctx.fieldKey,
@@ -15322,6 +15405,9 @@
 
       console.log('[GRID-CONTEXT][P0] action_triggered:' + action, {
         record_id: ctx.recordId, field_key: ctx.fieldKey, contract_section: ctx.sheetName, role: role
+      });
+      console.log('[GRIDCTX-D11] action_invoked', {
+        action: action, role: role, record_id: ctx.recordId, field_key: ctx.fieldKey || ''
       });
 
       if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
