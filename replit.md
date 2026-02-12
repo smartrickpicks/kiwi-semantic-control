@@ -91,6 +91,13 @@ The system routes to triage by default for all roles. Contract-first navigation 
 | `Components.AuditTimelinePanel` | openFullAuditPanel/close/refresh/export | `audit-full-panel`, `audit-full-table-body`, `audit-header-badge`, `audit-header-dropdown` — panel open/close, badge, dropdown, export |
 | `Components.AuditTimelineFilters` | filter selects + quick chips + presets | `audit-full-filter-scope`, `audit-full-filter-type`, `audit-full-filter-role`, `audit-full-search` — filter get/set, quick chips, presets |
 
+### DataSource/Import Modules (Phase D6)
+| Module | Source | Delegate Target |
+|---|---|---|
+| `Engines.ImportState` | handleFileImport + import flags | Import state tracking, file type detection, parse status |
+| `Engines.WorkbookSessionStore` | saveWorkbookToCache/loadWorkbookFromCache + session ops | Workbook cache save/load/clear, named session save/load/list |
+| `Components.DataSourcePanel` | openDataSourcePanel/closeDataSourceDrawer | `data-source-drawer`, `active-data-source-bar`, `active-data-source-name`, `drawer-excel-file-input` — panel open/close, file input |
+
 ### Deterministic Logs
 - `[APP-MODULES][P1C] registered:` — module registration
 - `[APP-MODULES][P1C] bootstrap_complete` — Phase B engine registration
@@ -105,6 +112,13 @@ The system routes to triage by default for all roles. Contract-first navigation 
 - `[APP-MODULES][P1D4] admin_modules_registered` — Phase D4 all 8 admin modules registered
 - `[APP-MODULES][P1D5] registered:` — Phase D5 audit timeline module registration
 - `[APP-MODULES][P1D5] audit_timeline_modules_registered` — Phase D5 all 3 audit timeline modules registered
+- `[APP-MODULES][P1D6] registered:` — Phase D6 datasource/import module registration
+- `[APP-MODULES][P1D6] datasource_modules_registered` — Phase D6 all 3 datasource modules registered
+- `[IMPORT-D6] source_opened` — data source panel opened
+- `[IMPORT-D6] parse_started` — file import parse begun
+- `[IMPORT-D6] parse_finished` — file import parse completed
+- `[IMPORT-D6] session_saved` — workbook session saved
+- `[IMPORT-D6] session_loaded` — workbook session loaded
 - `[PATCH-COMP][P1B]` — patch panel operations (open, submit, cancel, draft)
 
 ## External Dependencies
