@@ -1,6 +1,6 @@
 # AppModules Dependency Map
 
-> Mermaid graph showing Engines and Components and their main call paths, grouped by phase (C through D14).
+> Mermaid graph showing Engines and Components and their main call paths, grouped by phase (C through D15).
 
 ```mermaid
 graph TD
@@ -150,6 +150,19 @@ graph TD
         D14_EA -->|exportUnknownColumns| exportUnknownColumnsRequest
     end
 
+    subgraph "Phase D15 — Rollback / Undo"
+        D15_RS[Engines.RollbackState]
+        D15_RA[Components.RollbackActions]
+        D15_UA[Components.UndoActions]
+        D15_RS -->|getArtifacts| RollbackEngine.getArtifacts
+        D15_RS -->|canUndo| UndoManager.canUndo
+        D15_RA -->|createFieldRollback| createFieldRollback
+        D15_RA -->|createPatchRollback| createPatchRollback
+        D15_RA -->|applyRollback| applyRollback
+        D15_UA -->|undo| UndoManager.undo
+        D15_UA -->|undoLastEdit| srrUndoLastEdit
+    end
+
     %% Cross-phase relationships
     D4_ATG -->|onActivate| D10_BMP
     D2_RIPR -->|expand| D12_PSP
@@ -159,6 +172,7 @@ graph TD
     D13_CIR -.->|rollup data| D8_CHS
     D13_CIS -.->|build triggers| D13_CIR
     D14_EW -.->|audit sheet| D5_ATS
+    D15_RA -.->|contract scope| D13_CIQ
 ```
 
 ## Reading the Map

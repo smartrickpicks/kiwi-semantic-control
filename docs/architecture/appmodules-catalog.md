@@ -1,6 +1,6 @@
 # AppModules Catalog
 
-> Visual module catalog for `window.AppModules` — 53 modules through Phase D14.
+> Visual module catalog for `window.AppModules` — 56 modules through Phase D15.
 > Source: `ui/viewer/index.html`
 
 ## Summary
@@ -22,7 +22,8 @@
 | D12 (Patch Studio) | 3 | `_registry.push` |
 | D13 (Contract Index) | 3 | `_registry.push` |
 | D14 (Export Engine) | 3 | `_registry.push` |
-| **Total** | **53** | 49 explicit + 4 dynamic |
+| D15 (Rollback/Undo) | 3 | `_registry.push` |
+| **Total** | **56** | 52 explicit + 4 dynamic |
 
 ---
 
@@ -210,3 +211,15 @@
 | `Components.ExportAuditOnly` | Standalone audit log export, unknown columns export | `exportAuditLog` → `exportAuditLogOnly()`, `exportUnknownColumns` → `exportUnknownColumnsRequest()` | `[EXPORT-D14] export_started`, `[EXPORT-D14] export_finished`, `[EXPORT-D14] export_failed` |
 
 **Phase log:** `[APP-MODULES][P1D14] export_modules_registered`
+
+---
+
+## Phase D15 — Rollback / Undo Modules (3)
+
+| Module Path | Responsibility | Delegate Sites | Deterministic Logs |
+|---|---|---|---|
+| `Engines.RollbackState` | Rollback artifact access/filter/reset, undo buffer state/peek/canUndo | `getArtifacts` → `RollbackEngine.getArtifacts()`, `getArtifact` → `RollbackEngine.getArtifacts()` lookup, `reset` → `RollbackEngine.reset()`, `getUndoBuffer` → `UndoManager.getBuffer()`, `canUndo` → `UndoManager.canUndo()`, `peekUndo` → `UndoManager.peek()` | (state-only, no direct logs) |
+| `Components.RollbackActions` | Create rollback at field/patch/contract/batch scope, apply rollback | `createFieldRollback` → `createFieldRollback()`, `createPatchRollback` → `createPatchRollback()`, `createContractRollback` → `createContractRollback()`, `createBatchRollback` → `createBatchRollback()`, `applyRollback` → `applyRollback()` | `[ROLLBACK-D15] rollback_created`, `[ROLLBACK-D15] rollback_applied`, `[ROLLBACK-D15] rollback_blocked` |
+| `Components.UndoActions` | Push undo entry, execute undo, undo last edit, undo specific field change, clear buffer | `push` → `UndoManager.push()`, `undo` → `UndoManager.undo()`, `undoLastEdit` → `srrUndoLastEdit()`, `undoChange` → `srrUndoChange()`, `clear` → `UndoManager.clear()` | `[ROLLBACK-D15] undo_applied`, `[ROLLBACK-D15] undo_blocked` |
+
+**Phase log:** `[APP-MODULES][P1D15] rollback_undo_modules_registered`

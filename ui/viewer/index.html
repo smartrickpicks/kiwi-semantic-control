@@ -15365,6 +15365,122 @@
     })();
     // ========== END PHASE D14 ==========
 
+    // ========== PHASE D15: ROLLBACK / UNDO MODULES ==========
+    (function() {
+      var ns = window.AppModules;
+      if (!ns) return;
+
+      // --- Engines.RollbackState ---
+      ns.Engines.RollbackState = {
+        getArtifacts: function(filter) {
+          if (typeof RollbackEngine !== 'undefined' && typeof RollbackEngine.getArtifacts === 'function') return RollbackEngine.getArtifacts(filter);
+          return [];
+        },
+        getArtifact: function(rollbackId) {
+          if (typeof RollbackEngine === 'undefined' || typeof RollbackEngine.getArtifacts !== 'function') return null;
+          var list = RollbackEngine.getArtifacts();
+          for (var i = 0; i < list.length; i++) {
+            if (list[i].rollback_id === rollbackId) return list[i];
+          }
+          return null;
+        },
+        reset: function() {
+          if (typeof RollbackEngine !== 'undefined' && typeof RollbackEngine.reset === 'function') RollbackEngine.reset();
+        },
+        getUndoBuffer: function() {
+          if (typeof UndoManager !== 'undefined' && typeof UndoManager.getBuffer === 'function') return UndoManager.getBuffer();
+          return [];
+        },
+        canUndo: function() {
+          if (typeof UndoManager !== 'undefined' && typeof UndoManager.canUndo === 'function') return UndoManager.canUndo();
+          return false;
+        },
+        peekUndo: function() {
+          if (typeof UndoManager !== 'undefined' && typeof UndoManager.peek === 'function') return UndoManager.peek();
+          return null;
+        }
+      };
+      ns._registry.push('Engines.RollbackState');
+
+      // --- Components.RollbackActions ---
+      ns.Components.RollbackActions = {
+        createFieldRollback: function(recordId, fieldKey, beforeValue, reason, originalEventId) {
+          if (typeof createFieldRollback !== 'function') { console.log('[ROLLBACK-D15] rollback_blocked', { scope: 'field', reason: 'function_unavailable' }); return null; }
+          var result = createFieldRollback(recordId, fieldKey, beforeValue, reason, originalEventId);
+          if (result) { console.log('[ROLLBACK-D15] rollback_created', { scope: 'field', rollback_id: result.rollback_id, record_id: recordId, field_key: fieldKey }); }
+          else { console.log('[ROLLBACK-D15] rollback_blocked', { scope: 'field', reason: 'create_returned_null' }); }
+          return result;
+        },
+        createPatchRollback: function(patchRequestId, reason) {
+          if (typeof createPatchRollback !== 'function') { console.log('[ROLLBACK-D15] rollback_blocked', { scope: 'patch', reason: 'function_unavailable' }); return null; }
+          var result = createPatchRollback(patchRequestId, reason);
+          if (result) { console.log('[ROLLBACK-D15] rollback_created', { scope: 'patch', rollback_id: result.rollback_id, patch_request_id: patchRequestId }); }
+          else { console.log('[ROLLBACK-D15] rollback_blocked', { scope: 'patch', reason: 'permission_denied_or_not_found' }); }
+          return result;
+        },
+        createContractRollback: function(contractId, reason) {
+          if (typeof createContractRollback !== 'function') { console.log('[ROLLBACK-D15] rollback_blocked', { scope: 'contract', reason: 'function_unavailable' }); return null; }
+          var result = createContractRollback(contractId, reason);
+          if (result) { console.log('[ROLLBACK-D15] rollback_created', { scope: 'contract', rollback_id: result.rollback_id, contract_id: contractId }); }
+          else { console.log('[ROLLBACK-D15] rollback_blocked', { scope: 'contract', reason: 'index_unavailable_or_not_found' }); }
+          return result;
+        },
+        createBatchRollback: function(reason) {
+          if (typeof createBatchRollback !== 'function') { console.log('[ROLLBACK-D15] rollback_blocked', { scope: 'batch', reason: 'function_unavailable' }); return null; }
+          var result = createBatchRollback(reason);
+          if (result) { console.log('[ROLLBACK-D15] rollback_created', { scope: 'batch', rollback_id: result.rollback_id }); }
+          else { console.log('[ROLLBACK-D15] rollback_blocked', { scope: 'batch', reason: 'create_returned_null' }); }
+          return result;
+        },
+        applyRollback: function(rollbackId) {
+          var result = false;
+          if (typeof applyRollback === 'function') {
+            result = applyRollback(rollbackId);
+          }
+          if (result) {
+            console.log('[ROLLBACK-D15] rollback_applied', { rollback_id: rollbackId });
+          } else {
+            console.log('[ROLLBACK-D15] rollback_blocked', { rollback_id: rollbackId, reason: 'apply_failed_or_not_found' });
+          }
+          return result;
+        }
+      };
+      ns._registry.push('Components.RollbackActions');
+
+      // --- Components.UndoActions ---
+      ns.Components.UndoActions = {
+        push: function(entry) {
+          if (typeof UndoManager !== 'undefined' && typeof UndoManager.push === 'function') UndoManager.push(entry);
+        },
+        undo: function() {
+          if (typeof UndoManager === 'undefined' || !UndoManager.canUndo()) {
+            console.log('[ROLLBACK-D15] undo_blocked', { reason: 'nothing_to_undo' });
+            return null;
+          }
+          var entry = UndoManager.undo();
+          if (entry) {
+            console.log('[ROLLBACK-D15] undo_applied', { undo_id: entry.undo_id, field_key: entry.field_key });
+          } else {
+            console.log('[ROLLBACK-D15] undo_blocked', { reason: 'artifact_submitted_or_approved' });
+          }
+          return entry;
+        },
+        undoLastEdit: function() {
+          if (typeof srrUndoLastEdit === 'function') srrUndoLastEdit();
+        },
+        undoChange: function(fieldKey) {
+          if (typeof srrUndoChange === 'function') srrUndoChange(fieldKey);
+        },
+        clear: function() {
+          if (typeof UndoManager !== 'undefined' && typeof UndoManager.clear === 'function') UndoManager.clear();
+        }
+      };
+      ns._registry.push('Components.UndoActions');
+
+      console.log('[APP-MODULES][P1D15] rollback_undo_modules_registered: RollbackState, RollbackActions, UndoActions');
+    })();
+    // ========== END PHASE D15 ==========
+
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
     var Components = window.Components || {};
