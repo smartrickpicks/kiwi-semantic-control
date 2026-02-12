@@ -1,6 +1,6 @@
 # AppModules Catalog
 
-> Visual module catalog for `window.AppModules` — 50 modules through Phase D13.
+> Visual module catalog for `window.AppModules` — 53 modules through Phase D14.
 > Source: `ui/viewer/index.html`
 
 ## Summary
@@ -21,7 +21,8 @@
 | D11 (Grid Context Menu) | 3 | `_registry.push` |
 | D12 (Patch Studio) | 3 | `_registry.push` |
 | D13 (Contract Index) | 3 | `_registry.push` |
-| **Total** | **50** | 46 explicit + 4 dynamic |
+| D14 (Export Engine) | 3 | `_registry.push` |
+| **Total** | **53** | 49 explicit + 4 dynamic |
 
 ---
 
@@ -197,3 +198,15 @@
 | `Components.ContractIndexRollups` | Rollup computation, selector population, detail drawer, filter change, unknown column access | `getRollup` → `ContractIndex.getRollup()`, `populateSelector` → `populateContractSelector()`, `openDetailDrawer` → `openContractDetailDrawer()`, `handleFilterChange` → `handleContractFilterChange()`, `getUnknownColumns` → `ContractIndex._index.unknown_columns` | `[CIDX-D13] rollup_rendered` |
 
 **Phase log:** `[APP-MODULES][P1D13] contractindex_modules_registered`
+
+---
+
+## Phase D14 — Export Engine Modules (3)
+
+| Module Path | Responsibility | Delegate Sites | Deterministic Logs |
+|---|---|---|---|
+| `Engines.ExportState` | XLSX availability, workbook load check, data/meta sheet lists, record count, export context snapshot | `isXlsxAvailable` → `typeof XLSX`, `isWorkbookLoaded` → `workbook.order`, `getDataSheets` → `getDataSheets()`, `getMetaSheets` → `getMetaSheets()`, `getTotalRecordCount` → `getTotalRecordCount()`, `getExportContext` → composite snapshot | (state-only, no direct logs) |
+| `Components.ExportWorkbook` | Full workbook export, individual sheet builders (change log, RFI, signals, metadata, audit log) | `exportFull` → `handleExportSave()`, `buildChangeLogSheet` → `buildChangeLogSheet()`, `buildRFISheet` → `buildRFISheet()`, `buildSignalsSummarySheet` → `buildSignalsSummarySheet()`, `buildMetadataSheet` → `buildMetadataSheet()`, `buildAuditLogSheet` → `buildAuditLogSheet()` | `[EXPORT-D14] export_started`, `[EXPORT-D14] workbook_built`, `[EXPORT-D14] audit_built`, `[EXPORT-D14] export_finished`, `[EXPORT-D14] export_failed` |
+| `Components.ExportAuditOnly` | Standalone audit log export, unknown columns export | `exportAuditLog` → `exportAuditLogOnly()`, `exportUnknownColumns` → `exportUnknownColumnsRequest()` | `[EXPORT-D14] export_started`, `[EXPORT-D14] export_finished`, `[EXPORT-D14] export_failed` |
+
+**Phase log:** `[APP-MODULES][P1D14] export_modules_registered`

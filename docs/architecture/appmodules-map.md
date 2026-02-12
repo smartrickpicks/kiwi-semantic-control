@@ -1,6 +1,6 @@
 # AppModules Dependency Map
 
-> Mermaid graph showing Engines and Components and their main call paths, grouped by phase (C through D13).
+> Mermaid graph showing Engines and Components and their main call paths, grouped by phase (C through D14).
 
 ```mermaid
 graph TD
@@ -137,6 +137,19 @@ graph TD
         D13_CIR -->|populateSelector| populateContractSelector
     end
 
+    subgraph "Phase D14 — Export Engine"
+        D14_ES[Engines.ExportState]
+        D14_EW[Components.ExportWorkbook]
+        D14_EA[Components.ExportAuditOnly]
+        D14_ES -->|isXlsxAvailable| XLSX
+        D14_ES -->|getDataSheets| getDataSheets
+        D14_EW -->|exportFull| handleExportSave
+        D14_EW -->|buildMetadataSheet| buildMetadataSheet
+        D14_EW -->|buildAuditLogSheet| buildAuditLogSheet
+        D14_EA -->|exportAuditLog| exportAuditLogOnly
+        D14_EA -->|exportUnknownColumns| exportUnknownColumnsRequest
+    end
+
     %% Cross-phase relationships
     D4_ATG -->|onActivate| D10_BMP
     D2_RIPR -->|expand| D12_PSP
@@ -145,6 +158,7 @@ graph TD
     D12_PSP -.->|drawer submit| D12_PSE
     D13_CIR -.->|rollup data| D8_CHS
     D13_CIS -.->|build triggers| D13_CIR
+    D14_EW -.->|audit sheet| D5_ATS
 ```
 
 ## Reading the Map

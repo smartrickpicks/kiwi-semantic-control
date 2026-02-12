@@ -15256,6 +15256,115 @@
     })();
     // ========== END PHASE D13 ==========
 
+    // ========== PHASE D14: EXPORT ENGINE MODULES ==========
+    (function() {
+      var ns = window.AppModules;
+      if (!ns) return;
+
+      // --- Engines.ExportState ---
+      ns.Engines.ExportState = {
+        isXlsxAvailable: function() {
+          return typeof XLSX !== 'undefined';
+        },
+        isWorkbookLoaded: function() {
+          return !!(typeof workbook !== 'undefined' && workbook && workbook.order && workbook.order.length > 0);
+        },
+        getDataSheets: function() {
+          if (typeof getDataSheets === 'function') return getDataSheets();
+          return [];
+        },
+        getMetaSheets: function() {
+          if (typeof getMetaSheets === 'function') return getMetaSheets();
+          return [];
+        },
+        getTotalRecordCount: function() {
+          if (typeof getTotalRecordCount === 'function') return getTotalRecordCount();
+          return 0;
+        },
+        getExportContext: function() {
+          return {
+            dataset_id: (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.dataset_id) || '',
+            tenant_id: (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.tenant_id) || '',
+            division_id: (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.division_id) || '',
+            xlsx_available: ns.Engines.ExportState.isXlsxAvailable(),
+            workbook_loaded: ns.Engines.ExportState.isWorkbookLoaded(),
+            data_sheets: ns.Engines.ExportState.getDataSheets().length,
+            meta_sheets: ns.Engines.ExportState.getMetaSheets().length,
+            total_records: ns.Engines.ExportState.getTotalRecordCount()
+          };
+        }
+      };
+      ns._registry.push('Engines.ExportState');
+
+      // --- Components.ExportWorkbook ---
+      ns.Components.ExportWorkbook = {
+        exportFull: function() {
+          console.log('[EXPORT-D14] export_started', { type: 'workbook' });
+          try {
+            if (typeof handleExportSave === 'function') {
+              handleExportSave();
+              console.log('[EXPORT-D14] export_finished', { type: 'workbook' });
+            }
+          } catch (err) {
+            console.error('[EXPORT-D14] export_failed', { type: 'workbook', error: err.message });
+          }
+        },
+        buildChangeLogSheet: function() {
+          if (typeof buildChangeLogSheet === 'function') return buildChangeLogSheet();
+          return null;
+        },
+        buildRFISheet: function() {
+          if (typeof buildRFISheet === 'function') return buildRFISheet();
+          return null;
+        },
+        buildSignalsSummarySheet: function() {
+          if (typeof buildSignalsSummarySheet === 'function') return buildSignalsSummarySheet();
+          return null;
+        },
+        buildMetadataSheet: function() {
+          console.log('[EXPORT-D14] workbook_built', { sheet: '_orchestrate_meta' });
+          if (typeof buildMetadataSheet === 'function') return buildMetadataSheet();
+          return null;
+        },
+        buildAuditLogSheet: function() {
+          console.log('[EXPORT-D14] audit_built', { sheet: 'Audit_Log', context: 'workbook_embed' });
+          if (typeof buildAuditLogSheet === 'function') return buildAuditLogSheet();
+          return null;
+        }
+      };
+      ns._registry.push('Components.ExportWorkbook');
+
+      // --- Components.ExportAuditOnly ---
+      ns.Components.ExportAuditOnly = {
+        exportAuditLog: function() {
+          console.log('[EXPORT-D14] export_started', { type: 'audit_only' });
+          try {
+            if (typeof exportAuditLogOnly === 'function') {
+              exportAuditLogOnly();
+              console.log('[EXPORT-D14] export_finished', { type: 'audit_only' });
+            }
+          } catch (err) {
+            console.error('[EXPORT-D14] export_failed', { type: 'audit_only', error: err.message });
+          }
+        },
+        exportUnknownColumns: function() {
+          console.log('[EXPORT-D14] export_started', { type: 'unknown_columns' });
+          try {
+            if (typeof exportUnknownColumnsRequest === 'function') {
+              exportUnknownColumnsRequest();
+              console.log('[EXPORT-D14] export_finished', { type: 'unknown_columns' });
+            }
+          } catch (err) {
+            console.error('[EXPORT-D14] export_failed', { type: 'unknown_columns', error: err.message });
+          }
+        }
+      };
+      ns._registry.push('Components.ExportAuditOnly');
+
+      console.log('[APP-MODULES][P1D14] export_modules_registered: ExportState, ExportWorkbook, ExportAuditOnly');
+    })();
+    // ========== END PHASE D14 ==========
+
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
     var Components = window.Components || {};
