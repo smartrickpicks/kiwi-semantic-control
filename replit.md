@@ -1,21 +1,21 @@
 # Orchestrate OS — Semantic Control Board
 
 ## Overview
-Orchestrate OS is a governance-only semantic control plane designed for defining, validating, and previewing semantic rules offline. Its primary purpose is to be a single source of semantic truth, streamlining the patch request and review pipeline, improving operator ergonomics, and providing an analyst-first reference for explicit, deterministic, and auditable decisions. The system captures semantic decisions as reviewable configuration artifacts, operates offline-first, and ensures deterministic outputs using only the Python standard library for local previews. The business vision is to improve semantic rule management, reduce errors, and enhance decision-making efficiency.
+Orchestrate OS is a governance-only semantic control plane for defining, validating, and previewing semantic rules offline. It serves as a single source of semantic truth to streamline patch requests, improve operator ergonomics, and provide an analyst-first reference for explicit, deterministic, and auditable decisions. The system captures semantic decisions as reviewable configuration artifacts, operates offline-first, and ensures deterministic outputs using only the Python standard library for local previews. The business vision is to improve semantic rule management, reduce errors, and enhance decision-making efficiency.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
-The system captures semantic decisions as reviewable configuration artifacts. It employs a canonical join strategy for data handling and a Config Pack Model with strict version matching, supporting an 11-status lifecycle for patch requests, including comment systems and role-based access control (Analyst, Verifier, Admin, Architect).
+The system captures semantic decisions as reviewable configuration artifacts and employs a canonical join strategy with a Config Pack Model using strict version matching. It supports an 11-status lifecycle for patch requests, including comment systems and role-based access control (Analyst, Verifier, Admin, Architect).
 
 The UI features a dashboard with a queue-centric sidebar, right-side drawers for data sources and record details, and role-based navigation. Admin configurations are organized into six tabs: Governance, Schema & Standards, Patch Ops, People & Access, QA Runner, and Runtime Config. A Patch Studio facilitates drafting, preflight checks, and evidence packing with live previews and revision tracking. UI elements include color-coded grid highlighting, Excel-style column headers, and a PDF viewer.
 
-Data handling supports CSV/XLSX import, inline editing, and a lock-on-commit mechanism, with a change map engine tracking cell-level changes. Workbook session caching persists uploaded Excel data to IndexedDB. Triage Analytics uses normalized key comparison and `COLUMN_ALIAS_MAP` for schema matching.
+Data handling supports CSV/XLSX import, inline editing, and a lock-on-commit mechanism with a change map engine tracking cell-level changes. Workbook session caching persists uploaded Excel data to IndexedDB. Triage Analytics uses normalized key comparison and `COLUMN_ALIAS_MAP` for schema matching.
 
 Semantic rules generate deterministic cell-level signals on dataset load using `field_meta.json` and `qa_flags.json` for validation, populating Analyst Triage queues and driving grid coloring. Rules follow a WHEN/THEN pattern. Record identity is defined by `tenant_id`, `division_id`, `dataset_id`, `record_id`. The system uses email-based access control with Google sign-in for production OAuth.
 
-Features include a "Contract Line Item Wizard" for batch adding and deduplication. Export functionality generates XLSX files including all data, change logs, signals summaries, and metadata. An Audit Timeline system uses an IndexedDB-backed store for all governance actions.
+Features include a "Contract Line Item Wizard" for batch adding and deduplication, export functionality for XLSX files, and an Audit Timeline system using an IndexedDB-backed store for all governance actions.
 
 A Schema Tree Editor manages the canonical rules bundle, including `field_meta.json`, `hinge_groups.json`, `sheet_order.json`, `qa_flags.json`, `document_types.json`, and `column_aliases.json`. A Batch Merge feature allows combining source batches into a single governance container, with explicit rule promotion for tenant rules.
 
@@ -27,10 +27,11 @@ The Triage Analytics module aggregates metrics. Record Inspector Guidance provid
 
 The system routes to triage by default for all roles. Contract-first navigation is implemented in the All Data Grid. Grid Mode introduces inline cell editing and pending patch context tracking. A combined interstitial Data Quality Check for duplicate accounts and incomplete addresses fires automatically after workbook load. The `ADDRESS_INCOMPLETE_CANDIDATE` Matching System provides deterministic candidate matching for incomplete addresses, routing warnings and blockers to Pre-Flight.
 
-The architecture is modular, with components and engines extracted into namespaces like `window.AppModules.Components.*` and `window.AppModules.Engines.*`. Key modules include those for Grid, Record Inspector, PDF Viewer, Admin Panel, Audit Timeline, DataSource/Import, System Pass, Contract Health Score, and Data Quality Check.
+The architecture is modular, with components and engines extracted into namespaces like `window.AppModules.Components.*` and `window.AppModules.Engines.*`.
 
 ## External Dependencies
-A FastAPI server acts as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF. SheetJS (XLSX) is used for Excel import/export functionality. The application integrates modules for:
+- **FastAPI server**: Acts as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
+- **SheetJS (XLSX)**: Loaded via CDN for Excel import/export functionality.
 - **Contract Composite Grid**: Enhances the All Data Grid with nested, collapsible contract sections.
 - **Batch PDF Scan**: Adds batch-level PDF scanning for mojibake/non-searchable content.
 - **Canonical Contract Triage View**: Adds canonical triage metrics and contract-centric terminology.

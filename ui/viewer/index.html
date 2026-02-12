@@ -14889,6 +14889,91 @@
     })();
     // ========== END PHASE D9 ==========
 
+    // ========== PHASE D10: BATCH MERGE MODULES ==========
+    (function() {
+      var ns = window.AppModules;
+      if (!ns) return;
+
+      // --- Engines.BatchMergeState ---
+      ns.Engines = ns.Engines || {};
+      ns.Engines.BatchMergeState = {
+        getMergedBatches: function() {
+          return typeof BatchMerge !== 'undefined' ? BatchMerge._mergedBatches : {};
+        },
+        getMergedBatch: function(id) {
+          return typeof BatchMerge !== 'undefined' && typeof BatchMerge.getMergedBatch === 'function' ? BatchMerge.getMergedBatch(id) : null;
+        },
+        listMergedBatches: function() {
+          return typeof BatchMerge !== 'undefined' && typeof BatchMerge.listMergedBatches === 'function' ? BatchMerge.listMergedBatches() : [];
+        },
+        getActiveMergedBatchFilter: function() {
+          return typeof _activeMergedBatchFilter !== 'undefined' ? _activeMergedBatchFilter : '';
+        },
+        restoreFromSession: function() {
+          if (typeof BatchMerge !== 'undefined' && typeof BatchMerge.restoreFromSession === 'function') return BatchMerge.restoreFromSession();
+          return Promise.resolve();
+        },
+        reset: function() {
+          if (typeof BatchMerge !== 'undefined' && typeof BatchMerge.reset === 'function') BatchMerge.reset();
+        }
+      };
+      ns._registry.push('Engines.BatchMergeState');
+
+      // --- Components.BatchMergePanel ---
+      ns.Components = ns.Components || {};
+      ns.Components.BatchMergePanel = {
+        refreshSourceList: function() {
+          if (typeof BatchMerge !== 'undefined' && typeof BatchMerge.refreshSourceList === 'function') BatchMerge.refreshSourceList();
+        },
+        renderMergedBatchPanel: function() {
+          console.log('[MERGE-D10] panel_opened');
+          if (typeof BatchMerge !== 'undefined' && typeof BatchMerge.renderMergedBatchPanel === 'function') BatchMerge.renderMergedBatchPanel();
+        },
+        viewContractLineage: function(mergedBatchId) {
+          if (typeof BatchMerge !== 'undefined' && typeof BatchMerge._viewContractLineage === 'function') BatchMerge._viewContractLineage(mergedBatchId);
+        },
+        showStatus: function(msg, type) {
+          if (typeof BatchMerge !== 'undefined' && typeof BatchMerge._showStatus === 'function') BatchMerge._showStatus(msg, type);
+        },
+        populateMergedBatchSelector: function() {
+          if (typeof populateMergedBatchSelector === 'function') populateMergedBatchSelector();
+        },
+        handleMergedBatchFilterChange: function(mergedBatchId) {
+          if (typeof handleMergedBatchFilterChange === 'function') handleMergedBatchFilterChange(mergedBatchId);
+        }
+      };
+      ns._registry.push('Components.BatchMergePanel');
+
+      // --- Components.BatchMergeActions ---
+      ns.Components.BatchMergeActions = {
+        executeMerge: function() {
+          console.log('[MERGE-D10] merge_started');
+          try {
+            if (typeof BatchMerge !== 'undefined' && typeof BatchMerge.executeMerge === 'function') BatchMerge.executeMerge();
+            console.log('[MERGE-D10] merge_finished');
+          } catch(e) {
+            console.error('[MERGE-D10] merge_failed', e);
+          }
+        },
+        deleteMergedBatch: function(mergedBatchId) {
+          console.log('[MERGE-D10] action_taken', { type: 'delete', batch_id: mergedBatchId });
+          if (typeof BatchMerge !== 'undefined' && typeof BatchMerge.deleteMergedBatch === 'function') BatchMerge.deleteMergedBatch(mergedBatchId);
+        },
+        promoteTenantRule: function(mergedBatchId, sheet, fieldKey, rule) {
+          console.log('[MERGE-D10] action_taken', { type: 'promote_tenant_rule', batch_id: mergedBatchId });
+          if (typeof BatchMerge !== 'undefined' && typeof BatchMerge.promoteTenantRule === 'function') BatchMerge.promoteTenantRule(mergedBatchId, sheet, fieldKey, rule);
+        },
+        promptPromoteRule: function(mergedBatchId) {
+          console.log('[MERGE-D10] action_taken', { type: 'prompt_promote_rule', batch_id: mergedBatchId });
+          if (typeof BatchMerge !== 'undefined' && typeof BatchMerge._promptPromoteRule === 'function') BatchMerge._promptPromoteRule(mergedBatchId);
+        }
+      };
+      ns._registry.push('Components.BatchMergeActions');
+
+      console.log('[APP-MODULES][P1D10] merge_modules_registered: BatchMergeState, BatchMergePanel, BatchMergeActions');
+    })();
+    // ========== END PHASE D10 ==========
+
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
     var Components = window.Components || {};
