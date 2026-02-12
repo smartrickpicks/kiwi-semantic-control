@@ -50,9 +50,18 @@ The system routes to triage by default for all roles. Contract-first navigation 
 | `Engines.PatchDraft` | Manages current patch draft lifecycle |
 | `Components.PatchPanel` | Canonical patch panel for all three patch flows |
 
+### Grid Modules (Phase D1)
+| Module | Source | Delegate Target |
+|---|---|---|
+| `Engines.GridState` | gridState object + helpers | Grid state, column ordering, dataset, filters |
+| `Components.GridHeader` | renderGrid header block | `grid-header-row` — Excel-style column headers with drag-and-drop |
+| `Components.GridTable` | renderGrid body + footer | `grid-tbody`, `grid-row-count`, `grid-filter-info` — row rendering and footer |
+
 ### Deterministic Logs
 - `[APP-MODULES][P1C] registered:` — module registration
 - `[APP-MODULES][P1C] bootstrap_complete` — Phase B engine registration
+- `[APP-MODULES][P1D1] grid_modules_registered` — Phase D1 grid module registration
+- `[APP-MODULES][P1D1] GridHeader.render` — grid header delegate render
 - `[PATCH-COMP][P1B]` — patch panel operations (open, submit, cancel, draft)
 
 ## External Dependencies

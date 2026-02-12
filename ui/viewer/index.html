@@ -13676,6 +13676,108 @@
 
     // ========== END PHASE C ==========
 
+    // ========== PHASE D1: GRID MODULE EXTRACTION ==========
+    (function() {
+      var _ns = window.AppModules;
+      if (!_ns) return;
+
+      _ns.Engines.GridState = {
+        _id: 'Engines.GridState',
+        getRef: function() {
+          return (typeof gridState !== 'undefined') ? gridState : null;
+        },
+        getColumnLetter: function(index) {
+          var letter = '';
+          while (index >= 0) {
+            letter = String.fromCharCode(65 + (index % 26)) + letter;
+            index = Math.floor(index / 26) - 1;
+          }
+          return letter;
+        },
+        getPreferredColumnOrder: function(columns) {
+          if (typeof getPreferredColumnOrder === 'function') return getPreferredColumnOrder(columns);
+          return columns;
+        },
+        getDataset: function() {
+          if (typeof getGridDataset === 'function') return getGridDataset();
+          return null;
+        },
+        setFilter: function(filter) {
+          if (typeof setGridFilter === 'function') setGridFilter(filter);
+        },
+        updateFilterChips: function() {
+          if (typeof updateGridFilterChips === 'function') updateGridFilterChips();
+        },
+        updateURL: function() {
+          if (typeof updateGridURL === 'function') updateGridURL();
+        },
+        getFilteredData: function() {
+          var gs = this.getRef();
+          return (gs && gs.filteredData) ? gs.filteredData : [];
+        }
+      };
+      _ns.register('Engines.GridState');
+
+      _ns.Components.GridHeader = {
+        _id: 'Components.GridHeader',
+        _headerRowId: 'grid-header-row',
+        render: function(visibleColumns, gridViewMode) {
+          var headerRow = document.getElementById(this._headerRowId);
+          if (!headerRow) return;
+          var flatRailHeader = (gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:50px;width:50px;">Actions</th>' : '';
+          var headerHtml = flatRailHeader + '<th class="row-index" style="background: #f0f0f0; font-weight: 600;">#</th>';
+          for (var idx = 0; idx < visibleColumns.length; idx++) {
+            var col = visibleColumns[idx];
+            var colLetter = _ns.Engines.GridState.getColumnLetter(idx);
+            var displayName = col.replace(/_c$/i, '').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+            if (displayName.length > 20) displayName = displayName.substring(0, 18) + '...';
+            headerHtml += '<th draggable="true" data-col-idx="' + idx + '" data-col-name="' + col + '" ' +
+              'ondragstart="handleColumnDragStart(event)" ondragover="handleColumnDragOver(event)" ' +
+              'ondrop="handleColumnDrop(event)" ondragend="handleColumnDragEnd(event)" ' +
+              'style="cursor: grab; user-select: none; min-width: 80px;">' +
+              '<div style="font-size: 0.7em; color: #888; margin-bottom: 2px; font-weight: 600;">' + colLetter + '</div>' +
+              '<div title="' + col + '" style="font-size: 0.85em;">' + displayName + '</div></th>';
+          }
+          headerRow.innerHTML = headerHtml;
+          console.log('[APP-MODULES][P1D1] GridHeader.render: cols=' + visibleColumns.length);
+        }
+      };
+      _ns.register('Components.GridHeader');
+
+      _ns.Components.GridTable = {
+        _id: 'Components.GridTable',
+        _tbodyId: 'grid-tbody',
+        _rowCountId: 'grid-row-count',
+        _filterInfoId: 'grid-filter-info',
+        renderEmpty: function(colSpan, message) {
+          var tbody = document.getElementById(this._tbodyId);
+          if (!tbody) return;
+          if (typeof cleanupGridVirtualization === 'function') cleanupGridVirtualization();
+          tbody.innerHTML = '<tr><td colspan="' + colSpan + '" style="text-align: center; padding: 40px; color: #666;">' + (message || 'No records match filters') + '</td></tr>';
+        },
+        updateFooter: function(filteredCount, totalCount, gs) {
+          var rowCountEl = document.getElementById(this._rowCountId);
+          if (rowCountEl) rowCountEl.textContent = filteredCount + ' of ' + totalCount + ' records';
+
+          var filterInfoEl = document.getElementById(this._filterInfoId);
+          if (filterInfoEl && gs) {
+            var filterInfo = [];
+            if (gs.sheet) filterInfo.push('Sheet: ' + gs.sheet);
+            if (gs.filter && gs.filter !== 'all') filterInfo.push('Status: ' + gs.filter);
+            if (gs.search) filterInfo.push('Search: "' + gs.search + '"');
+            filterInfoEl.textContent = filterInfo.join(' | ');
+          }
+        },
+        renderBatch: function(data, startIdx, batchSize, columns, isFirst) {
+          if (typeof renderGridBatch === 'function') renderGridBatch(data, startIdx, batchSize, columns, isFirst);
+        }
+      };
+      _ns.register('Components.GridTable');
+
+      console.log('[APP-MODULES][P1D1] grid_modules_registered: GridState, GridHeader, GridTable');
+    })();
+    // ========== END PHASE D1 ==========
+
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
     var Components = window.Components || {};
@@ -19653,22 +19755,8 @@
       gridState.allColumns = columns.slice();
       gridState.visibleColumns = getPreferredColumnOrder(columns);
       
-      // Render header with Excel-style column letters (A, B, C...)
-      var headerRow = document.getElementById('grid-header-row');
-      var flatRailHeader = (_gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:50px;width:50px;">Actions</th>' : '';
-      var headerHtml = flatRailHeader + '<th class="row-index" style="background: #f0f0f0; font-weight: 600;">#</th>';
-      gridState.visibleColumns.forEach(function(col, idx) {
-        var colLetter = getColumnLetter(idx);
-        var displayName = col.replace(/_c$/i, '').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
-        if (displayName.length > 20) displayName = displayName.substring(0, 18) + '...';
-        headerHtml += '<th draggable="true" data-col-idx="' + idx + '" data-col-name="' + col + '" ' +
-          'ondragstart="handleColumnDragStart(event)" ondragover="handleColumnDragOver(event)" ' +
-          'ondrop="handleColumnDrop(event)" ondragend="handleColumnDragEnd(event)" ' +
-          'style="cursor: grab; user-select: none; min-width: 80px;">' +
-          '<div style="font-size: 0.7em; color: #888; margin-bottom: 2px; font-weight: 600;">' + colLetter + '</div>' +
-          '<div title="' + col + '" style="font-size: 0.85em;">' + displayName + '</div></th>';
-      });
-      headerRow.innerHTML = headerHtml;
+      // Phase D1: Delegate header rendering to GridHeader module
+      AppModules.Components.GridHeader.render(gridState.visibleColumns, _gridViewMode);
       
       // Render body with virtualization for large datasets
       var tbody = document.getElementById('grid-tbody');
@@ -19757,15 +19845,9 @@
         }).join('');
       }
       
-      // Update footer
-      document.getElementById('grid-row-count').textContent = filtered.length + ' of ' + records.length + ' records';
+      // Phase D1: Delegate footer update to GridTable module
       gridState.filteredData = filtered;
-      
-      var filterInfo = [];
-      if (gridState.sheet) filterInfo.push('Sheet: ' + gridState.sheet);
-      if (gridState.filter !== 'all') filterInfo.push('Status: ' + gridState.filter);
-      if (gridState.search) filterInfo.push('Search: "' + gridState.search + '"');
-      document.getElementById('grid-filter-info').textContent = filterInfo.join(' | ');
+      AppModules.Components.GridTable.updateFooter(filtered.length, records.length, gridState);
       
       // Update per-contract-section mini stats
       updateGridSheetStats(records, filtered);
