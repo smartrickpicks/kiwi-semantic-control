@@ -1,0 +1,1042 @@
+openapi: '3.1.0'
+info:
+  title: Orchestrate OS API
+  version: 2.5.0-draft
+  description: >
+    Governance-only semantic control plane API. Resource-style endpoints
+    for multi-user Postgres-backed persistence with append-only audit logging.
+  contact:
+    name: Orchestrate OS Team
+
+servers:
+  - url: /api/v2.5
+    description: Canonical API base
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Health check
+      tags: [System]
+      responses:
+        '200':
+          description: Server healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                  db:
+                    type: string
+                    enum: [connected, disconnected]
+                  version:
+                    type: string
+
+  /workspaces:
+    get:
+      operationId: listWorkspaces
+      summary: List workspaces
+      tags: [Workspaces]
+      parameters:
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Workspace list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceCollection'
+    post:
+      operationId: createWorkspace
+      summary: Create workspace
+      tags: [Workspaces]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceCreate'
+      responses:
+        '201':
+          description: Workspace created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceResponse'
+
+  /workspaces/{workspace_id}:
+    get:
+      operationId: getWorkspace
+      summary: Get workspace
+      tags: [Workspaces]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: Workspace details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceResponse'
+    patch:
+      operationId: updateWorkspace
+      summary: Update workspace
+      tags: [Workspaces]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceUpdate'
+      responses:
+        '200':
+          description: Workspace updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceResponse'
+        '409':
+          $ref: '#/components/responses/StaleVersion'
+
+  /workspaces/{workspace_id}/batches:
+    get:
+      operationId: listBatches
+      summary: List batches in workspace
+      tags: [Batches]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Batch list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchCollection'
+    post:
+      operationId: createBatch
+      summary: Create batch
+      tags: [Batches]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchCreate'
+      responses:
+        '201':
+          description: Batch created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResponse'
+
+  /batches/{batch_id}:
+    get:
+      operationId: getBatch
+      summary: Get batch
+      tags: [Batches]
+      parameters:
+        - $ref: '#/components/parameters/BatchId'
+      responses:
+        '200':
+          description: Batch details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResponse'
+    patch:
+      operationId: updateBatch
+      summary: Update batch
+      tags: [Batches]
+      parameters:
+        - $ref: '#/components/parameters/BatchId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchUpdate'
+      responses:
+        '200':
+          description: Batch updated
+        '409':
+          $ref: '#/components/responses/StaleVersion'
+
+  /workspaces/{workspace_id}/patches:
+    get:
+      operationId: listPatches
+      summary: List patches in workspace
+      tags: [Patches]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: author_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Patch list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatchCollection'
+    post:
+      operationId: createPatch
+      summary: Create patch (Draft status)
+      tags: [Patches]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchCreate'
+      responses:
+        '201':
+          description: Patch created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatchResponse'
+
+  /patches/{patch_id}:
+    get:
+      operationId: getPatch
+      summary: Get patch with history
+      tags: [Patches]
+      parameters:
+        - $ref: '#/components/parameters/PatchId'
+      responses:
+        '200':
+          description: Patch details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatchResponse'
+    patch:
+      operationId: updatePatch
+      summary: Update patch status or fields
+      description: >
+        Status transitions are validated against the transition matrix.
+        Self-approval is blocked for Verifier_Approved and Admin_Approved.
+        Requires version field for optimistic concurrency.
+      tags: [Patches]
+      parameters:
+        - $ref: '#/components/parameters/PatchId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchUpdate'
+      responses:
+        '200':
+          description: Patch updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatchResponse'
+        '403':
+          description: Self-approval blocked or insufficient role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '409':
+          $ref: '#/components/responses/StaleVersion'
+
+  /patches/{patch_id}/evidence-packs:
+    get:
+      operationId: listEvidencePacks
+      summary: List evidence packs for patch
+      tags: [Evidence Packs]
+      parameters:
+        - $ref: '#/components/parameters/PatchId'
+      responses:
+        '200':
+          description: Evidence pack list
+    post:
+      operationId: createEvidencePack
+      summary: Create evidence pack
+      tags: [Evidence Packs]
+      parameters:
+        - $ref: '#/components/parameters/PatchId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvidencePackCreate'
+      responses:
+        '201':
+          description: Evidence pack created
+
+  /workspaces/{workspace_id}/annotations:
+    get:
+      operationId: listAnnotations
+      summary: List annotations
+      tags: [Annotations]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Annotation list
+    post:
+      operationId: createAnnotation
+      summary: Create annotation
+      tags: [Annotations]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnotationCreate'
+      responses:
+        '201':
+          description: Annotation created
+
+  /workspaces/{workspace_id}/rfis:
+    get:
+      operationId: listRfis
+      summary: List RFIs
+      tags: [RFIs]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: RFI list
+    post:
+      operationId: createRfi
+      summary: Create RFI
+      tags: [RFIs]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RfiCreate'
+      responses:
+        '201':
+          description: RFI created
+
+  /batches/{batch_id}/triage-items:
+    get:
+      operationId: listTriageItems
+      summary: List triage items
+      tags: [Triage]
+      parameters:
+        - $ref: '#/components/parameters/BatchId'
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Triage item list
+    post:
+      operationId: createTriageItem
+      summary: Create triage item
+      tags: [Triage]
+      parameters:
+        - $ref: '#/components/parameters/BatchId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriageItemCreate'
+      responses:
+        '201':
+          description: Triage item created
+
+  /batches/{batch_id}/signals:
+    get:
+      operationId: listSignals
+      summary: List signals
+      tags: [Signals]
+      parameters:
+        - $ref: '#/components/parameters/BatchId'
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Signal list
+    post:
+      operationId: createSignal
+      summary: Create signal
+      tags: [Signals]
+      parameters:
+        - $ref: '#/components/parameters/BatchId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignalCreate'
+      responses:
+        '201':
+          description: Signal created
+
+  /documents/{document_id}/selection-captures:
+    get:
+      operationId: listSelectionCaptures
+      summary: List selection captures
+      tags: [Selection Captures]
+      parameters:
+        - name: document_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Selection capture list
+    post:
+      operationId: createSelectionCapture
+      summary: Create selection capture
+      tags: [Selection Captures]
+      parameters:
+        - name: document_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SelectionCaptureCreate'
+      responses:
+        '201':
+          description: Selection capture created
+
+  /workspaces/{workspace_id}/audit-events:
+    get:
+      operationId: listAuditEvents
+      summary: List audit events (read-only)
+      tags: [Audit]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: event_type
+          in: query
+          schema:
+            type: string
+        - name: actor_id
+          in: query
+          schema:
+            type: string
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Audit event list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditEventCollection'
+
+  /workspaces/{workspace_id}/events/stream:
+    get:
+      operationId: streamEvents
+      summary: SSE event stream
+      tags: [Events]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: SSE event stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+
+components:
+  parameters:
+    WorkspaceId:
+      name: workspace_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^ws_[A-Za-z0-9]{26}$'
+    BatchId:
+      name: batch_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^bat_[A-Za-z0-9]{26}$'
+    PatchId:
+      name: patch_id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^pat_[A-Za-z0-9]{26}$'
+    CursorParam:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+    LimitParam:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+
+  schemas:
+    WorkspaceCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        mode:
+          type: string
+          enum: [sandbox, production]
+          default: sandbox
+        metadata:
+          type: object
+
+    WorkspaceUpdate:
+      type: object
+      required: [version]
+      properties:
+        name:
+          type: string
+        mode:
+          type: string
+          enum: [sandbox, production]
+        version:
+          type: integer
+        metadata:
+          type: object
+
+    WorkspaceResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Workspace'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    WorkspaceCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workspace'
+        meta:
+          $ref: '#/components/schemas/CollectionMeta'
+
+    Workspace:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        mode:
+          type: string
+          enum: [sandbox, production]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: integer
+        metadata:
+          type: object
+
+    BatchCreate:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        source:
+          type: string
+          enum: [upload, merge, import]
+          default: upload
+        batch_fingerprint:
+          type: string
+        metadata:
+          type: object
+
+    BatchUpdate:
+      type: object
+      required: [version]
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [active, archived]
+        version:
+          type: integer
+        metadata:
+          type: object
+
+    BatchResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Batch'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    BatchCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Batch'
+        meta:
+          $ref: '#/components/schemas/CollectionMeta'
+
+    Batch:
+      type: object
+      properties:
+        id:
+          type: string
+        workspace_id:
+          type: string
+        name:
+          type: string
+        source:
+          type: string
+        batch_fingerprint:
+          type: string
+        status:
+          type: string
+        record_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: integer
+        metadata:
+          type: object
+
+    PatchCreate:
+      type: object
+      required: [batch_id, record_id, field_key, intent]
+      properties:
+        batch_id:
+          type: string
+        record_id:
+          type: string
+        field_key:
+          type: string
+        intent:
+          type: string
+        when_clause:
+          type: object
+        then_clause:
+          type: array
+        because_clause:
+          type: string
+        file_name:
+          type: string
+        file_url:
+          type: string
+        before_value:
+          type: string
+        after_value:
+          type: string
+        metadata:
+          type: object
+
+    PatchUpdate:
+      type: object
+      required: [version]
+      properties:
+        status:
+          type: string
+          enum:
+            - Draft
+            - Submitted
+            - Needs_Clarification
+            - Verifier_Responded
+            - Verifier_Approved
+            - Admin_Approved
+            - Admin_Hold
+            - Applied
+            - Rejected
+            - Cancelled
+            - Sent_to_Kiwi
+            - Kiwi_Returned
+        notes:
+          type: string
+        version:
+          type: integer
+        metadata:
+          type: object
+
+    PatchResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Patch'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    PatchCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Patch'
+        meta:
+          $ref: '#/components/schemas/CollectionMeta'
+
+    Patch:
+      type: object
+      properties:
+        id:
+          type: string
+        workspace_id:
+          type: string
+        batch_id:
+          type: string
+        record_id:
+          type: string
+        field_key:
+          type: string
+        author_id:
+          type: string
+        status:
+          type: string
+        intent:
+          type: string
+        when_clause:
+          type: object
+        then_clause:
+          type: array
+        because_clause:
+          type: string
+        evidence_pack_id:
+          type: string
+        submitted_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+        file_name:
+          type: string
+        file_url:
+          type: string
+        before_value:
+          type: string
+        after_value:
+          type: string
+        history:
+          type: array
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        version:
+          type: integer
+        metadata:
+          type: object
+
+    EvidencePackCreate:
+      type: object
+      properties:
+        blocks:
+          type: object
+          properties:
+            context:
+              type: object
+            data_reference:
+              type: object
+            pdf_anchor:
+              type: object
+            rationale:
+              type: object
+        metadata:
+          type: object
+
+    AnnotationCreate:
+      type: object
+      required: [target_type, target_id, content]
+      properties:
+        target_type:
+          type: string
+          enum: [field, record, contract, document]
+        target_id:
+          type: string
+        content:
+          type: string
+        annotation_type:
+          type: string
+          enum: [note, flag, question]
+          default: note
+        metadata:
+          type: object
+
+    RfiCreate:
+      type: object
+      required: [target_record_id, question]
+      properties:
+        patch_id:
+          type: string
+        target_record_id:
+          type: string
+        target_field_key:
+          type: string
+        question:
+          type: string
+        metadata:
+          type: object
+
+    TriageItemCreate:
+      type: object
+      required: [record_id, issue_type, severity]
+      properties:
+        record_id:
+          type: string
+        field_key:
+          type: string
+        issue_type:
+          type: string
+        severity:
+          type: string
+          enum: [info, warning, blocker]
+        source:
+          type: string
+          enum: [qa_rule, preflight, system_pass, manual]
+          default: manual
+        metadata:
+          type: object
+
+    SignalCreate:
+      type: object
+      required: [record_id, field_key, signal_type, severity, message]
+      properties:
+        record_id:
+          type: string
+        field_key:
+          type: string
+        signal_type:
+          type: string
+        severity:
+          type: string
+          enum: [info, warning, blocking]
+        rule_id:
+          type: string
+        message:
+          type: string
+        metadata:
+          type: object
+
+    SelectionCaptureCreate:
+      type: object
+      required: [purpose]
+      properties:
+        field_id:
+          type: string
+        rfi_id:
+          type: string
+        page_number:
+          type: integer
+        coordinates:
+          type: object
+        selected_text:
+          type: string
+        purpose:
+          type: string
+          enum: [evidence, annotation, rfi_anchor]
+        metadata:
+          type: object
+
+    AuditEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        workspace_id:
+          type: string
+        event_type:
+          type: string
+        actor_id:
+          type: string
+        actor_role:
+          type: string
+          enum: [analyst, verifier, admin, architect]
+        timestamp_iso:
+          type: string
+          format: date-time
+        dataset_id:
+          type: string
+        batch_id:
+          type: string
+        record_id:
+          type: string
+        field_key:
+          type: string
+        patch_id:
+          type: string
+        before_value:
+          type: string
+        after_value:
+          type: string
+        metadata:
+          type: object
+
+    AuditEventCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEvent'
+        meta:
+          $ref: '#/components/schemas/CollectionMeta'
+
+    ErrorEnvelope:
+      type: object
+      required: [error, meta]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    ResponseMeta:
+      type: object
+      properties:
+        request_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    CollectionMeta:
+      type: object
+      properties:
+        request_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        pagination:
+          type: object
+          properties:
+            cursor:
+              type: string
+            has_more:
+              type: boolean
+            limit:
+              type: integer
+
+  responses:
+    StaleVersion:
+      description: Optimistic concurrency conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            error:
+              code: STALE_VERSION
+              message: Resource has been modified since your last read
+              details:
+                current_version: 5
+                provided_version: 3
+            meta:
+              request_id: req_abc123
+              timestamp: '2026-02-12T00:00:00Z'
+
+  securitySchemes:
+    GoogleOAuth:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://accounts.google.com/o/oauth2/v2/auth
+          tokenUrl: https://oauth2.googleapis.com/token
+          scopes:
+            email: Read user email
+            profile: Read user profile
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Dev/sandbox API key
+
+security:
+  - GoogleOAuth: [email]
+  - ApiKey: []

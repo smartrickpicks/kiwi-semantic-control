@@ -29,6 +29,17 @@ The system routes to triage by default for all roles. Contract-first navigation 
 
 The architecture is modular, with components and engines extracted into namespaces like `window.AppModules.Components.*` and `window.AppModules.Engines.*`. The extraction is through Phase D15 (Rollback/Undo) with 55 total modules (51 explicit + 4 dynamic Phase C).
 
+## API v2.5 Initiative (Gate 1 — Docs Complete)
+The system is undergoing a multi-gate upgrade to add Postgres-backed multi-user persistence:
+- **Gate 1 (Docs):** COMPLETE — Readiness report, DB decision lock, canonical API spec, OpenAPI 3.1, AsyncAPI 2.6, dependency-aware task list
+- **Gate 2 (Clarity):** Pending — Resolve open questions (Q1: auth mechanism, Q2: workspace isolation)
+- **Gate 3 (Alignment):** Pending — Final task plan lock
+- **Gate 4 (Code):** Pending — Implementation (17+ tables, 14 resources, RBAC, SSE, audit)
+- **Gate 5 (Audit):** Pending — Compliance audit and smoke tests
+- **Key docs:** `docs/api/API_SPEC_V2_5_CANONICAL.md`, `docs/api/openapi.yaml`, `docs/api/asyncapi.yaml`, `docs/decisions/DECISION_V25_DB.md`, `docs/handoff/V25_READINESS_REPORT.md`, `docs/handoff/V25_TASK_LIST.md`
+- **Non-negotiables:** Resource-based routes, PATCH for transitions, ULID primaries, optimistic concurrency (409 STALE_VERSION), no-self-approval server-enforced, append-only audit_events, Postgres canonical
+- **NO CODE until Gate 3 approval**
+
 ## External Dependencies
 - **FastAPI server**: Acts as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
 - **SheetJS (XLSX)**: Loaded via CDN for Excel import/export functionality.

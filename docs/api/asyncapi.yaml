@@ -1,0 +1,174 @@
+asyncapi: '2.6.0'
+info:
+  title: Orchestrate OS Event Stream
+  version: 2.5.0-draft
+  description: >
+    Server-Sent Events (SSE) for real-time cross-user event delivery.
+    All events are server-emitted on mutating API operations.
+    Clients connect via GET /api/v2.5/workspaces/{workspace_id}/events/stream.
+
+servers:
+  production:
+    url: /api/v2.5/workspaces/{workspace_id}/events/stream
+    protocol: http
+    description: SSE endpoint (text/event-stream)
+
+channels:
+  workspace_events:
+    description: >
+      Single SSE channel per workspace. All event types are multiplexed
+      on one stream. Clients filter by event_type as needed.
+    subscribe:
+      operationId: onWorkspaceEvent
+      message:
+        oneOf:
+          - $ref: '#/components/messages/PatchStatusChanged'
+          - $ref: '#/components/messages/AuditEventCreated'
+          - $ref: '#/components/messages/ResourceCreated'
+          - $ref: '#/components/messages/ResourceUpdated'
+          - $ref: '#/components/messages/EvidencePackUpdated'
+          - $ref: '#/components/messages/RfiStatusChanged'
+
+components:
+  messages:
+    PatchStatusChanged:
+      name: patch_status_changed
+      title: Patch Status Changed
+      summary: Emitted when a patch transitions between statuses
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/EventEnvelope'
+
+    AuditEventCreated:
+      name: audit_event_created
+      title: Audit Event Created
+      summary: Emitted when any audit event is recorded
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/EventEnvelope'
+
+    ResourceCreated:
+      name: resource_created
+      title: Resource Created
+      summary: Emitted when a new resource is created (batch, contract, etc.)
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/EventEnvelope'
+
+    ResourceUpdated:
+      name: resource_updated
+      title: Resource Updated
+      summary: Emitted when a resource is updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/EventEnvelope'
+
+    EvidencePackUpdated:
+      name: evidence_pack_updated
+      title: Evidence Pack Updated
+      summary: Emitted when evidence pack blocks are updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/EventEnvelope'
+
+    RfiStatusChanged:
+      name: rfi_status_changed
+      title: RFI Status Changed
+      summary: Emitted when an RFI transitions (open, responded, closed)
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/EventEnvelope'
+
+  schemas:
+    EventEnvelope:
+      type: object
+      required:
+        - event_id
+        - event_type
+        - workspace_id
+        - actor_id
+        - actor_role
+        - timestamp_iso
+        - resource_type
+        - resource_id
+      properties:
+        event_id:
+          type: string
+          description: ULID-like ID with aud_ prefix
+          example: aud_01HXY...
+        event_type:
+          type: string
+          description: Event type from the canonical audit event type list
+          enum:
+            - PATCH_SUBMITTED
+            - PATCH_REQUEST_SUBMITTED
+            - VERIFIER_APPROVED
+            - ADMIN_APPROVED
+            - PATCH_ADMIN_PROMOTED
+            - PATCH_REJECTED
+            - PATCH_CANCELLED
+            - CLARIFICATION_REQUESTED
+            - CLARIFICATION_RESPONDED
+            - FIELD_VERIFIED
+            - FIELD_BLACKLISTED
+            - FIELD_CORRECTED
+            - EVIDENCE_PACK_CREATED
+            - EVIDENCE_PACK_UPDATED
+            - RFI_CREATED
+            - RFI_RESPONDED
+            - RFI_CLOSED
+            - ANNOTATION_CREATED
+            - SELECTION_CAPTURED
+            - BATCH_CREATED
+            - WORKSPACE_CREATED
+            - WORKSPACE_MODE_CHANGED
+            - ROLLBACK_CREATED
+            - ROLLBACK_APPLIED
+            - UNKNOWN_COLUMN_DETECTED
+        workspace_id:
+          type: string
+          description: Workspace scope
+          example: ws_01HXY...
+        actor_id:
+          type: string
+          description: User who triggered the event
+          example: usr_01HXY...
+        actor_role:
+          type: string
+          enum: [analyst, verifier, admin, architect]
+        timestamp_iso:
+          type: string
+          format: date-time
+        resource_type:
+          type: string
+          enum:
+            - workspace
+            - batch
+            - account
+            - contract
+            - document
+            - patch
+            - evidence_pack
+            - annotation
+            - rfi
+            - triage_item
+            - signal
+            - selection_capture
+        resource_id:
+          type: string
+          description: ID of the affected resource
+        payload:
+          type: object
+          description: Event-specific data (status transitions, field changes, etc.)
+          additionalProperties: true
+
+    SSEFormat:
+      type: object
+      description: >
+        SSE wire format. Each event is delivered as:
+          event: {event_type}
+          id: {event_id}
+          data: {JSON EventEnvelope}
+        
+        Clients reconnect with Last-Event-ID header for resumption.
+        Server sends heartbeat comments (: keepalive) every 30 seconds.

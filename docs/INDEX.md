@@ -98,6 +98,14 @@
 ## Feature Requests
 - docs/features/STANDARDIZER_SCHEMA_EDITOR.md — Schema Tree Editor for Admin Standardizer tab (V2 proposal)
 
+## API v2.5 (Draft — Gate 1)
+- docs/handoff/V25_READINESS_REPORT.md — V2.5 readiness audit: Done/Partial/Missing matrix with file paths, line refs, risk levels
+- docs/decisions/DECISION_V25_DB.md — PostgreSQL canonical DB decision lock
+- docs/api/API_SPEC_V2_5_CANONICAL.md — Human-readable API contract: 14 resource schemas, transition matrix, RBAC, envelopes, concurrency
+- docs/api/openapi.yaml — OpenAPI 3.1 spec for /api/v2.5/ endpoints
+- docs/api/asyncapi.yaml — SSE event envelope and topic definitions
+- docs/handoff/V25_TASK_LIST.md — Dependency-aware task list across all 5 gates
+
 ## Handoff & Status
 - docs/handoff/srr-handoff-status.md — Record Inspection handoff documentation audit (v1.5.2)
 - docs/handoff/TASKS_UI.md — UI backlog tracker
@@ -105,7 +113,7 @@
 - docs/handoff/HANDOFF.md — Handoff guide
 
 ## AppModules Architecture
-- docs/architecture/appmodules-catalog.md — Full module catalog: 47 modules across 13 phases (C, D1–D12) with delegate sites and deterministic logs
+- docs/architecture/appmodules-catalog.md — Full module catalog: 55 modules across 16 phases (C, D1–D15) with delegate sites and deterministic logs
 - docs/architecture/appmodules-map.md — Mermaid dependency graph showing Engines, Components, and cross-phase call paths
 - docs/architecture/appmodules-index.md — Developer guide: safe calling patterns, adding new modules, extraction checklist, ES5 compliance
 
