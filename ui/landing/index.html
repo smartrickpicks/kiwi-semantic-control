@@ -607,48 +607,59 @@
       });
 
       function handleGoogleSignIn(response) {
-        var payload = JSON.parse(atob(response.credential.split('.')[1]));
+        hideError();
+        var credential = response.credential;
+        var payload = JSON.parse(atob(credential.split('.')[1]));
         var email = payload.email;
-        var name = payload.name || payload.given_name || email.split('@')[0];
-        var emailVerified = payload.email_verified;
-
         var emailDomain = email.split('@')[1];
         if (emailDomain !== allowedDomain) {
           showError('Access denied. Please use your ' + allowedDomain + ' account.');
           return;
         }
 
-        if (!emailVerified) {
-          showError('Email not verified. Please verify your Google account.');
-          return;
-        }
+        var workspaceId = 'ws_SEED0100000000000000000000';
 
-        var user = findUserByEmail(email);
-        if (!user) {
-          showError('User not configured. Contact your administrator to add your email to the user list.');
-          return;
-        }
+        fetch('/api/v2.5/auth/google/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            credential: credential,
+            workspace_id: workspaceId
+          })
+        })
+        .then(function(res) { return res.json().then(function(body) { return { status: res.status, body: body }; }); })
+        .then(function(result) {
+          if (result.status === 200 && result.body.data) {
+            var data = result.body.data;
+            var user = data.user;
+            var token = data.token;
 
-        if (user.status === 'disabled') {
-          showError('Your account is disabled. Contact your administrator.');
-          return;
-        }
+            clearStaleSessionData(user.email, user.role);
+            localStorage.setItem('currentRole', user.role);
+            localStorage.setItem('orchestrate_auth_token', token);
+            localStorage.setItem('demoUser', JSON.stringify({
+              email: user.email,
+              name: user.display_name,
+              folder: user.display_name + ' - Production',
+              role: user.role,
+              userId: user.id,
+              workspaceId: user.workspace_id,
+              avatarUrl: user.avatar_url,
+              signedInAt: new Date().toISOString(),
+              isDemo: false,
+              playgroundEnabled: false
+            }));
 
-        var role = user.role || 'analyst';
-
-        clearStaleSessionData(email, role);
-        localStorage.setItem('currentRole', role);
-        localStorage.setItem('demoUser', JSON.stringify({
-          email: email,
-          name: name,
-          folder: name + ' - Production',
-          role: role,
-          signedInAt: new Date().toISOString(),
-          isDemo: false,
-          playgroundEnabled: false
-        }));
-
-        window.location.href = '/ui/viewer/';
+            window.location.href = '/ui/viewer/';
+          } else {
+            var msg = (result.body.error && result.body.error.message) || 'Authentication failed';
+            showError(msg);
+          }
+        })
+        .catch(function(err) {
+          showError('Login failed. Please try again.');
+          console.error('Google auth error:', err);
+        });
       }
 
       fetch('/api/auth/config')

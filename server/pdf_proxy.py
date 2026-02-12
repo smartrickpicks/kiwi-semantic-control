@@ -53,6 +53,8 @@ from server.routes.signals import router as signals_router
 from server.routes.selection_captures import router as selection_captures_router
 from server.routes.audit_events import router as audit_events_router
 from server.routes.sse_stream import router as sse_router
+from server.routes.auth_google import router as auth_google_router
+from server.routes.members import router as members_router
 import logging as _logging
 
 @app.on_event("startup")
@@ -92,6 +94,8 @@ app.include_router(signals_router)
 app.include_router(selection_captures_router)
 app.include_router(audit_events_router)
 app.include_router(sse_router)
+app.include_router(auth_google_router)
+app.include_router(members_router)
 
 PROJECT_ROOT = Path(__file__).parent.parent
 

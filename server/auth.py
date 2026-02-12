@@ -52,21 +52,35 @@ class AuthResult:
 
 
 def _resolve_bearer(token):
+    from server.jwt_utils import verify_jwt
+    jwt_payload = verify_jwt(token)
+    if jwt_payload:
+        return AuthResult(
+            user_id=jwt_payload.get("sub"),
+            email=jwt_payload.get("email"),
+            display_name=jwt_payload.get("name"),
+            workspace_id=jwt_payload.get("workspace_id"),
+            role=jwt_payload.get("role"),
+            auth_type="bearer",
+        )
+
     conn = get_conn()
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id, email, display_name FROM users WHERE id = %s",
+                "SELECT id, email, display_name, status FROM users WHERE id = %s",
                 (token,),
             )
             row = cur.fetchone()
             if not row:
                 cur.execute(
-                    "SELECT id, email, display_name FROM users WHERE email = %s",
+                    "SELECT id, email, display_name, status FROM users WHERE email = %s",
                     (token,),
                 )
                 row = cur.fetchone()
             if row:
+                if len(row) > 3 and row[3] == "inactive":
+                    return None
                 return AuthResult(
                     user_id=row[0],
                     email=row[1],
