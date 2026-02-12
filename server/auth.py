@@ -55,8 +55,20 @@ def _resolve_bearer(token):
     from server.jwt_utils import verify_jwt
     jwt_payload = verify_jwt(token)
     if jwt_payload:
+        user_id = jwt_payload.get("sub")
+        if user_id:
+            conn = get_conn()
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT status FROM users WHERE id = %s", (user_id,))
+                    row = cur.fetchone()
+                    if row and row[0] == "inactive":
+                        logger.info("JWT user %s is inactive, denying access", user_id)
+                        return None
+            finally:
+                put_conn(conn)
         return AuthResult(
-            user_id=jwt_payload.get("sub"),
+            user_id=user_id,
             email=jwt_payload.get("email"),
             display_name=jwt_payload.get("name"),
             workspace_id=jwt_payload.get("workspace_id"),

@@ -91,7 +91,7 @@ async def create_member(ws_id: str, request: Request, auth=Depends(require_auth(
                     (display_name, status, user_id),
                 )
             else:
-                user_id = generate_id("usr")
+                user_id = generate_id("usr_")
                 cur.execute(
                     "INSERT INTO users (id, email, display_name, status) VALUES (%s, %s, %s, %s)",
                     (user_id, email, display_name, status),

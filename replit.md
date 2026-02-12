@@ -29,23 +29,26 @@ The system routes to triage by default for all roles. Contract-first navigation 
 
 The architecture is modular, with components and engines extracted into namespaces like `window.AppModules.Components.*` and `window.AppModules.Engines.*`. The extraction is through Phase D15 (Rollback/Undo) with 55 total modules (51 explicit + 4 dynamic Phase C).
 
-## API v2.5 Initiative (Gate 4 — Phase 1 Complete)
+## API v2.5 Initiative (Gate 5 COMPLETE + Google OAuth)
 The system is undergoing a multi-gate upgrade to add Postgres-backed multi-user persistence:
 - **Gate 1 (Docs):** COMPLETE — Readiness report, DB decision lock, canonical API spec, OpenAPI 3.1, AsyncAPI 2.6, dependency-aware task list
 - **Gate 2 (Clarity):** COMPLETE — Q1 locked (Google OAuth + scoped API keys), Q2 locked (single DB with workspace_id scoping), 11 decisions frozen
 - **Gate 3 (Alignment):** COMPLETE — Final task plan frozen (30 tasks, 4 phases), contract lock summary, alignment packet
-- **Gate 4 (Code):** IN PROGRESS — Phase 1 (Persistence Foundation) COMPLETE: DB provisioned, 18 tables created, migration framework, ULID generator, health endpoint live
-- **Gate 5 (Audit):** Pending — Compliance audit and smoke tests
-- **Key docs:** `docs/api/API_SPEC_V2_5_CANONICAL.md`, `docs/api/openapi.yaml`, `docs/api/asyncapi.yaml`, `docs/decisions/DECISION_V25_DB.md`, `docs/handoff/V25_READINESS_REPORT.md`, `docs/handoff/V25_TASK_LIST.md`, `docs/handoff/V25_CLARITY_MATRIX.md`, `docs/handoff/V25_LOCKED_DECISIONS.md`, `docs/handoff/V25_FINAL_TASK_PLAN.md`, `docs/handoff/V25_CONTRACT_LOCK.md`, `docs/handoff/V25_GATE3_ALIGNMENT_PACKET.md`, `docs/handoff/V25_GATE4_LOCK_CHECKS.md`
+- **Gate 4 (Code):** COMPLETE — Phase 1 (Persistence Foundation) + Phase 2 (All 15 resources)
+- **Gate 5 (Audit):** COMPLETE — 36/36 smoke tests passing, all 9 non-negotiables met
+- **Key docs:** `docs/api/API_SPEC_V2_5_CANONICAL.md`, `docs/api/openapi.yaml`, `docs/api/asyncapi.yaml`, `docs/decisions/DECISION_V25_DB.md`, `docs/handoff/V25_READINESS_REPORT.md`, `docs/handoff/V25_TASK_LIST.md`, `docs/handoff/V25_CLARITY_MATRIX.md`, `docs/handoff/V25_LOCKED_DECISIONS.md`, `docs/handoff/V25_FINAL_TASK_PLAN.md`, `docs/handoff/V25_CONTRACT_LOCK.md`, `docs/handoff/V25_GATE3_ALIGNMENT_PACKET.md`, `docs/handoff/V25_GATE4_LOCK_CHECKS.md`, `docs/handoff/V25_GATE5_COMPLIANCE_PACKET.md`
 - **Non-negotiables:** Resource-based routes, PATCH for transitions, ULID primaries, optimistic concurrency (409 STALE_VERSION), no-self-approval server-enforced, append-only audit_events, Postgres canonical
 - **Auth policy:** Google OAuth (OIDC) for human users, scoped API keys for service ingestion, dual-accept on reads
 - **Workspace isolation:** Single DB, strict workspace_id FK scoping, composite indexes, optional RLS
-- **Server modules:** `server/db.py` (connection pool), `server/migrate.py` (migration runner), `server/ulid.py` (ID generator), `server/api_v25.py` (API router + health endpoint), `server/auth.py` (RBAC + auth resolution), `server/audit.py` (audit event emission)
-- **Route modules:** `server/routes/workspaces.py` (Workspace CRUD), `server/routes/batches.py` (Batch CRUD), `server/routes/patches.py` (Patch CRUD + 22-transition matrix + self-approval gate)
-- **Phase 2 critical path COMPLETE:** Workspace CRUD, Batch CRUD, RBAC middleware, optimistic concurrency (409 STALE_VERSION), audit emission, Patch CRUD with 12-status transition matrix, self-approval gate (403 SELF_APPROVAL_BLOCKED)
+- **Server modules:** `server/db.py` (connection pool), `server/migrate.py` (migration runner), `server/ulid.py` (ID generator), `server/api_v25.py` (API router + health endpoint), `server/auth.py` (RBAC + auth resolution + JWT decode + inactive user denial), `server/audit.py` (audit event emission), `server/jwt_utils.py` (HS256 JWT sign/verify)
+- **Route modules:** `server/routes/workspaces.py` (Workspace CRUD), `server/routes/batches.py` (Batch CRUD), `server/routes/patches.py` (Patch CRUD + 22-transition matrix + self-approval gate), `server/routes/auth_google.py` (Google OAuth verify + config + /me), `server/routes/members.py` (Member CRUD, admin-only)
 - **Phase 2 COMPLETE:** All 15 resources implemented — Workspace, Batch, Patch, Contract, Document, Account, Annotation, EvidencePack, RFI, TriageItem, Signal, SelectionCapture, AuditEvent (read-only), SSE stream, Health
-- **DB schema fixes applied:** annotation_type defaults to 'note', evidence_packs status CHECK (incomplete/complete), rfis.target_field_key nullable
-- **Gate 5 smoke results:** 29/30 PASS on comprehensive endpoint test (all 15 resources + concurrency guard + self-approval gate + auth enforcement)
+- **Google OAuth COMPLETE:** Full login flow — Google Sign-In → backend ID token verification → email-based user matching → active status check → workspace role resolution → JWT issuance → frontend Bearer auth
+- **JWT session layer:** HS256 signing with 24-hour expiry, inactive user DB check on every JWT auth request
+- **Members CRUD:** Admin-only member management persists to Postgres via API (GET/POST/PATCH/DELETE)
+- **Auth smoke tests:** 10/10 PASS — config, JWT auth, inactive user JWT denial, unlisted user denial, role scoping, member management, secret safety, validation
+- **Seeded users:** 9 Create Music Group employees + 4 demo users in workspace `ws_SEED0100000000000000000000`
+- **Migration 003:** `server/migrations/003_auth_google_oauth.sql` — adds `status` and `google_sub` columns to users table, seeds CMG users
 
 ## External Dependencies
 - **FastAPI server**: Acts as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
