@@ -57,11 +57,22 @@ The system routes to triage by default for all roles. Contract-first navigation 
 | `Components.GridHeader` | renderGrid header block | `grid-header-row` — Excel-style column headers with drag-and-drop |
 | `Components.GridTable` | renderGrid body + footer | `grid-tbody`, `grid-row-count`, `grid-filter-info` — row rendering and footer |
 
+### Record Inspector Modules (Phase D2)
+| Module | Source | Delegate Target |
+|---|---|---|
+| `Engines.RecordInspectorState` | srrState object | Record state, field states, filters, patch draft |
+| `Components.RecordInspectorHeader` | renderSingleRowReview header block | `srr-record-id`, `srr-state-badge`, `srr-title-record-name` — identity, nav, file actions |
+| `Components.RecordInspectorFieldList` | renderSrrFields + filters | `srr-field-list`, `srr-field-count` — field rendering and filtering |
+| `Components.RecordInspectorPatchRail` | patch panel expand/collapse/editor | Patch overlay open/close, editor render, patch list |
+
 ### Deterministic Logs
 - `[APP-MODULES][P1C] registered:` — module registration
 - `[APP-MODULES][P1C] bootstrap_complete` — Phase B engine registration
 - `[APP-MODULES][P1D1] grid_modules_registered` — Phase D1 grid module registration
 - `[APP-MODULES][P1D1] GridHeader.render` — grid header delegate render
+- `[APP-MODULES][P1D2] registered:` — Phase D2 inspector module registration
+- `[APP-MODULES][P1D2] inspector_modules_registered` — Phase D2 all 4 inspector modules registered
+- `[APP-MODULES][P1D2] RecordInspectorHeader.renderIdentity` — header delegate render
 - `[PATCH-COMP][P1B]` — patch panel operations (open, submit, cancel, draft)
 
 ## External Dependencies

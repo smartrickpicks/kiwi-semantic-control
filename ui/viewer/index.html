@@ -13781,6 +13781,158 @@
     })();
     // ========== END PHASE D1 ==========
 
+    // ========== PHASE D2: RECORD INSPECTOR MODULE EXTRACTION ==========
+    (function() {
+      var _ns = window.AppModules;
+      if (!_ns) return;
+
+      _ns.Engines.RecordInspectorState = {
+        _id: 'Engines.RecordInspectorState',
+        getRef: function() {
+          return (typeof srrState !== 'undefined') ? srrState : null;
+        },
+        getCurrentRecord: function() {
+          var s = this.getRef();
+          return s ? s.currentRecord : null;
+        },
+        getCurrentSheetName: function() {
+          var s = this.getRef();
+          return s ? s.currentSheetName : null;
+        },
+        getCurrentRowIndex: function() {
+          var s = this.getRef();
+          return s ? s.currentRowIndex : -1;
+        },
+        getCurrentRecordKey: function() {
+          var s = this.getRef();
+          return s ? s.currentRecordKey : null;
+        },
+        getFieldStates: function() {
+          var s = this.getRef();
+          return s ? s.fieldStates : {};
+        },
+        getActiveFilter: function() {
+          var s = this.getRef();
+          return s ? s.activeFilter : 'all';
+        },
+        getSearchQuery: function() {
+          var s = this.getRef();
+          return s ? s.searchQuery : '';
+        },
+        isReadOnly: function() {
+          var s = this.getRef();
+          return s ? s.isReadOnly : false;
+        },
+        getPatchDraft: function() {
+          var s = this.getRef();
+          return s ? s.patchDraft : null;
+        }
+      };
+      _ns._registry.push('Engines.RecordInspectorState');
+      console.log('[APP-MODULES][P1D2] registered: Engines.RecordInspectorState');
+
+      _ns.Components.RecordInspectorHeader = {
+        _id: 'Components.RecordInspectorHeader',
+        _recordIdEl: 'srr-record-id',
+        _stateBadgeEl: 'srr-state-badge',
+        _titleRecordNameEl: 'srr-title-record-name',
+        _backBtnEl: 'srr-back-btn',
+        _navPrevEl: 'srr-nav-prev',
+        _navNextEl: 'srr-nav-next',
+        _navPosEl: 'srr-nav-pos',
+        renderIdentity: function(record, rowId) {
+          var recName = (typeof _srrResolveRecordName === 'function') ? _srrResolveRecordName(record) : '';
+          var el = document.getElementById(this._recordIdEl);
+          if (el) {
+            el.textContent = recName || '\u2014';
+            el.title = record.contract_key || rowId || '';
+          }
+          var badge = document.getElementById(this._stateBadgeEl);
+          if (badge) {
+            var status = (record.status || 'unknown').toLowerCase().replace(/\s+/g, '_');
+            badge.textContent = record.status || 'Unknown';
+            badge.className = 'srr-state-badge ' + status;
+          }
+          var titleEl = document.getElementById(this._titleRecordNameEl);
+          if (titleEl) {
+            if (recName && recName.length > 0) {
+              var displayName = recName.length > 60 ? recName.substring(0, 57) + '...' : recName;
+              titleEl.textContent = ' \u2014 ' + displayName;
+              titleEl.title = recName;
+            } else {
+              titleEl.textContent = '';
+              titleEl.title = '';
+            }
+          }
+          console.log('[APP-MODULES][P1D2] RecordInspectorHeader.renderIdentity: ' + (recName || 'unknown'));
+        },
+        updateNav: function() {
+          if (typeof srrUpdateNavButtons === 'function') srrUpdateNavButtons();
+        },
+        updateBackButton: function() {
+          if (typeof _srrUpdateBackButton === 'function') _srrUpdateBackButton();
+        },
+        updateFileActionBar: function(fileName, fileUrl) {
+          if (typeof srrUpdateFileActionBar === 'function') srrUpdateFileActionBar(fileName, fileUrl);
+        }
+      };
+      _ns._registry.push('Components.RecordInspectorHeader');
+      console.log('[APP-MODULES][P1D2] registered: Components.RecordInspectorHeader');
+
+      _ns.Components.RecordInspectorFieldList = {
+        _id: 'Components.RecordInspectorFieldList',
+        _containerId: 'srr-field-list',
+        _fieldCountId: 'srr-field-count',
+        _searchInputId: 'srr-field-search',
+        render: function(record) {
+          if (typeof renderSrrFields === 'function') renderSrrFields(record);
+        },
+        setFilter: function(filter) {
+          if (typeof srrSetFilter === 'function') srrSetFilter(filter);
+        },
+        updateFilterCounts: function() {
+          if (typeof srrUpdateFilterCounts === 'function') srrUpdateFilterCounts();
+        },
+        filterByGroup: function(group) {
+          if (typeof srrFilterByGroup === 'function') srrFilterByGroup(group);
+        },
+        getFieldCount: function() {
+          var el = document.getElementById(this._fieldCountId);
+          return el ? el.textContent : '0 fields';
+        }
+      };
+      _ns._registry.push('Components.RecordInspectorFieldList');
+      console.log('[APP-MODULES][P1D2] registered: Components.RecordInspectorFieldList');
+
+      _ns.Components.RecordInspectorPatchRail = {
+        _id: 'Components.RecordInspectorPatchRail',
+        expand: function() {
+          if (typeof _srrExpandPatchPanel === 'function') _srrExpandPatchPanel();
+        },
+        collapse: function() {
+          if (typeof _srrCollapsePatchPanel === 'function') _srrCollapsePatchPanel();
+        },
+        toggle: function() {
+          if (typeof _srrTogglePatchPanel === 'function') _srrTogglePatchPanel();
+        },
+        renderEditor: function() {
+          if (typeof srrRenderPatchEditor === 'function') srrRenderPatchEditor();
+        },
+        renderPatchList: function() {
+          if (typeof renderSrrPatchList === 'function') renderSrrPatchList();
+        },
+        isOpen: function() {
+          if (typeof srrIsPatchOverlayOpen === 'function') return srrIsPatchOverlayOpen();
+          return false;
+        }
+      };
+      _ns._registry.push('Components.RecordInspectorPatchRail');
+      console.log('[APP-MODULES][P1D2] registered: Components.RecordInspectorPatchRail');
+
+      console.log('[APP-MODULES][P1D2] inspector_modules_registered: RecordInspectorState, RecordInspectorHeader, RecordInspectorFieldList, RecordInspectorPatchRail');
+    })();
+    // ========== END PHASE D2 ==========
+
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
     var Components = window.Components || {};
@@ -26502,7 +26654,12 @@
       srrBuildAccountSelector(record);
 
       if (currentMode === 'analyst') {
-        _srrCollapsePatchPanel();
+        // Phase D2 delegate: collapse patch panel
+        if (window.AppModules && window.AppModules.Components.RecordInspectorPatchRail) {
+          window.AppModules.Components.RecordInspectorPatchRail.collapse();
+        } else {
+          _srrCollapsePatchPanel();
+        }
       }
 
       updateInspectorActionsState();
@@ -26528,7 +26685,12 @@
       
       // Navigate to page and render
       navigateTo('row');
-      _srrUpdateBackButton();
+      // Phase D2 delegate: back button label
+      if (window.AppModules && window.AppModules.Components.RecordInspectorHeader) {
+        window.AppModules.Components.RecordInspectorHeader.updateBackButton();
+      } else {
+        _srrUpdateBackButton();
+      }
       renderSingleRowReview(record, rowId);
 
 
@@ -26541,34 +26703,40 @@
     }
     
     function renderSingleRowReview(record, rowId) {
-      // Update top bar
-      var _recName = _srrResolveRecordName(record);
-      document.getElementById('srr-record-id').textContent = _recName || '—';
-      document.getElementById('srr-record-id').title = record.contract_key || rowId || '';
-      var stateBadge = document.getElementById('srr-state-badge');
-      var status = (record.status || 'unknown').toLowerCase().replace(/\s+/g, '_');
-      stateBadge.textContent = record.status || 'Unknown';
-      stateBadge.className = 'srr-state-badge ' + status;
+      // Phase D2 delegate: header identity + badge + title
+      if (window.AppModules && window.AppModules.Components.RecordInspectorHeader) {
+        window.AppModules.Components.RecordInspectorHeader.renderIdentity(record, rowId);
+      } else {
+        var _recName = _srrResolveRecordName(record);
+        document.getElementById('srr-record-id').textContent = _recName || '\u2014';
+        document.getElementById('srr-record-id').title = record.contract_key || rowId || '';
+        var stateBadge = document.getElementById('srr-state-badge');
+        var status = (record.status || 'unknown').toLowerCase().replace(/\s+/g, '_');
+        stateBadge.textContent = record.status || 'Unknown';
+        stateBadge.className = 'srr-state-badge ' + status;
+        var titleRecordNameEl = document.getElementById('srr-title-record-name');
+        if (titleRecordNameEl) {
+          if (_recName && _recName.length > 0) {
+            var displayName = _recName.length > 60 ? _recName.substring(0, 57) + '...' : _recName;
+            titleRecordNameEl.textContent = ' \u2014 ' + displayName;
+            titleRecordNameEl.title = _recName;
+          } else {
+            titleRecordNameEl.textContent = '';
+            titleRecordNameEl.title = '';
+          }
+        }
+      }
       
       // Resolve file info for action bar
       var fileName = srrResolveFieldValue(record, 'file_name');
       var fileUrl = srrResolveFieldValue(record, 'file_url');
       
-      // v1.6.55: Show record name in page title
-      var titleRecordNameEl = document.getElementById('srr-title-record-name');
-      if (titleRecordNameEl) {
-        if (_recName && _recName.length > 0) {
-          var displayName = _recName.length > 60 ? _recName.substring(0, 57) + '...' : _recName;
-          titleRecordNameEl.textContent = ' — ' + displayName;
-          titleRecordNameEl.title = _recName;
-        } else {
-          titleRecordNameEl.textContent = '';
-          titleRecordNameEl.title = '';
-        }
+      // Phase D2 delegate: file action bar
+      if (window.AppModules && window.AppModules.Components.RecordInspectorHeader) {
+        window.AppModules.Components.RecordInspectorHeader.updateFileActionBar(fileName, fileUrl);
+      } else {
+        srrUpdateFileActionBar(fileName, fileUrl);
       }
-      
-      // v1.6.54: Update file action bar
-      srrUpdateFileActionBar(fileName, fileUrl);
       
       // Store original values for edit tracking
       srrState.originalValues = {};
@@ -26584,7 +26752,12 @@
       srrState.lockedFields = {};  // v1.4.18: Reset locked fields
       srrState.editingField = null;
       srrState.activeFilter = 'todo';  // Default to To Do queue
-      srrUpdateNavButtons();
+      // Phase D2 delegate: nav buttons
+      if (window.AppModules && window.AppModules.Components.RecordInspectorHeader) {
+        window.AppModules.Components.RecordInspectorHeader.updateNav();
+      } else {
+        srrUpdateNavButtons();
+      }
       srrPopulateDocTypeDropdown(record);
 
       // V2.3b: Render section guidance card and knowledge rail (deterministic)
@@ -26603,8 +26776,12 @@
       var searchInput = document.getElementById('srr-field-search');
       if (searchInput) searchInput.value = '';
       
-      // Render Field Inspector
-      renderSrrFields(record);
+      // Phase D2 delegate: field list render
+      if (window.AppModules && window.AppModules.Components.RecordInspectorFieldList) {
+        window.AppModules.Components.RecordInspectorFieldList.render(record);
+      } else {
+        renderSrrFields(record);
+      }
       
       // v1.6.6: Auto-scroll to first patch field if any
       setTimeout(function() {
@@ -26633,8 +26810,12 @@
       if (document.getElementById('srr-replay-expected-result')) document.getElementById('srr-replay-expected-result').value = srrState.patchDraft.replay_expected_result || '';
       // RFI target stub - no input to restore (coming soon)
       
-      // v1.4.18: Render Fields panel
-      srrRenderPatchEditor();
+      // Phase D2 delegate: patch editor render
+      if (window.AppModules && window.AppModules.Components.RecordInspectorPatchRail) {
+        window.AppModules.Components.RecordInspectorPatchRail.renderEditor();
+      } else {
+        srrRenderPatchEditor();
+      }
       
       // v1.4.19: Update form sections based on patch type
       srrUpdatePatchFormSections();
