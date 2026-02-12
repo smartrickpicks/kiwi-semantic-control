@@ -2,7 +2,7 @@
 
 **Version:** 2.5.0-draft
 **Date:** 2026-02-12
-**Status:** Gate 1 Draft — Pending Alignment Approval
+**Status:** Gate 2 Complete — Pending Gate 3 Alignment
 
 ---
 
@@ -125,11 +125,39 @@ All primary IDs follow the pattern: `{prefix}_{ulid}`
 
 ## 5. Authentication and RBAC
 
-### Authentication
+### Authentication (Gate 2 Locked)
 
-- **Production:** Google OAuth 2.0 (email-based identity)
-- **Sandbox/Dev:** API key via `X-API-Key` header or `?api_key=` query param
-- User identity resolved to `usr_` ID on every request
+Dual-mode authentication:
+
+- **Production (human users):** Google OAuth 2.0 (OIDC) with email-based identity resolution
+- **Sandbox/service ingestion:** Scoped API keys via `X-API-Key` header
+
+### Endpoint Auth Policy
+
+| Category | Auth Required | Token Type | Examples |
+|----------|--------------|-----------|----------|
+| **Human-governed** | Google OAuth user token | Bearer JWT | PATCH /patches/{id}, POST /patches, POST /annotations |
+| **Service ingestion** | Scoped API key | `X-API-Key` header | POST /signals, POST /triage-items, POST /batches |
+| **Read endpoints** | Either token type | Bearer or API key | GET /patches, GET /audit-events, GET /workspaces |
+| **Health/system** | None | N/A | GET /health |
+
+### API Key Model
+
+- Keys are workspace-scoped: each key is bound to exactly one `workspace_id`
+- Keys carry explicit scopes (e.g., `signals:write`, `batches:write`, `read:all`)
+- Key metadata: `key_id`, `workspace_id`, `scopes[]`, `created_by` (usr_), `created_at`, `expires_at`, `last_used_at`
+- Keys are stored hashed; only the prefix is visible after creation
+- Revocation is immediate and audited
+
+### OAuth Flow
+
+1. Client redirects to Google OAuth consent screen
+2. Google returns authorization code
+3. Server exchanges code for ID token (OIDC)
+4. Server validates ID token, extracts email
+5. Server resolves email to `usr_` ID and workspace roles
+6. Server issues session token (JWT, 1h expiry, refresh via /auth/refresh)
+7. All subsequent requests include `Authorization: Bearer {token}`
 
 ### Role Model
 
@@ -147,11 +175,21 @@ All primary IDs follow the pattern: `{prefix}_{ulid}`
 - No implicit role escalation
 - Workspace-scoped: a user may have different roles in different workspaces
 
+### Workspace Isolation (Gate 2 Locked)
+
+- Single Postgres database for all workspaces
+- `workspace_id` is a mandatory foreign key on all governed resource tables
+- Every query includes `workspace_id` in its WHERE clause — enforced at repository layer
+- Cross-workspace queries are architecturally forbidden
+- Composite indexes use `workspace_id` as leading column
+- Optional RLS hardening via session variable (`app.workspace_id`)
+
 ### No-Self-Approval Rule
 
 - PATCH to `Verifier_Approved`: server rejects if `actor_id === patch.author_id` (403 `SELF_APPROVAL_BLOCKED`)
 - PATCH to `Admin_Approved`: server rejects if `actor_id === patch.author_id` (403 `SELF_APPROVAL_BLOCKED`)
 - This is enforced server-side regardless of client behavior
+- Cannot be overridden by any role including Architect
 
 ---
 

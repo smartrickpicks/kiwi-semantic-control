@@ -1,8 +1,8 @@
 # V2.5 Task List
 
-**Version:** 0.1 (Gate 1 Draft)
+**Version:** 0.2 (Gate 2 Complete)
 **Date:** 2026-02-12
-**Status:** Pending Alignment Approval
+**Status:** Gate 2 Complete — Pending Gate 3 Alignment
 
 ---
 
@@ -65,16 +65,18 @@ Gate 1 (Docs)
 | V25-004 | P0 | Docs | V25-003 | **Done** | OpenAPI 3.1 at `docs/api/openapi.yaml` covering all /api/v2.5/ endpoints |
 | V25-005 | P1 | Docs | V25-003 | **Done** | AsyncAPI at `docs/api/asyncapi.yaml` with SSE event envelope and topic definitions |
 | V25-006 | P0 | Docs | V25-001 | **Done** | This task list at `docs/handoff/V25_TASK_LIST.md` |
-| V25-007 | P1 | Docs | V25-006 | Pending | Update `docs/INDEX.md` with links to all new v2.5 docs |
+| V25-007 | P1 | Docs | V25-006 | **Done** | Update `docs/INDEX.md` with links to all new v2.5 docs |
 
 ---
 
-## Gate 2 Tasks (CLARITY — Pending Gate 1 Approval)
+## Gate 2 Tasks (CLARITY — Complete)
 
 | ID | Priority | Owner | Dependencies | Status | Acceptance Criteria |
 |----|----------|-------|-------------|--------|-------------------|
-| V25-020 | P0 | Docs | Gate 1 approved | Pending | Clarity Matrix listing all ambiguities/contradictions with proposed resolutions, status (resolved-by-user / resolved-by-default / still-blocked) |
-| V25-021 | P0 | Docs | V25-020 | Pending | Locked Decisions document listing all resolved items with canonical text |
+| V25-020 | P0 | Docs | Gate 1 approved | **Done** | Clarity Matrix at `docs/handoff/V25_CLARITY_MATRIX.md` — all blocking questions resolved, contradictions documented |
+| V25-021 | P0 | Docs | V25-020 | **Done** | Locked Decisions at `docs/handoff/V25_LOCKED_DECISIONS.md` — 11 decisions frozen with canonical text |
+| V25-022 | P0 | Docs | V25-020 | **Done** | Canonical API spec updated with Gate 2 auth policy (dual-mode, endpoint classification, API key model, OAuth flow) |
+| V25-023 | P0 | Docs | V25-022 | **Done** | OpenAPI spec security schemes updated (BearerToken, ScopedApiKey, GoogleOAuth) |
 
 ---
 
@@ -143,18 +145,15 @@ Gate 1 (Docs)
 
 ---
 
-## Open Questions (Blocking Gate 2)
+## Open Questions — All Resolved (Gate 2)
 
-| # | Question | Impact |
-|---|----------|--------|
-| Q1 | Authentication mechanism — Google OAuth, API key, or both? | Auth middleware design |
-| Q2 | Multi-workspace isolation — single DB with workspace_id scoping or separate schemas? | Migration design |
+All questions resolved. See `docs/handoff/V25_LOCKED_DECISIONS.md` for canonical text.
 
-## Proposed Defaults (Non-Blocking)
-
-| # | Item | Default |
-|---|------|---------|
-| Q3 | Pagination | Cursor-based, 50 default, 200 max |
-| Q4 | Rate limiting | Deferred, not in v2.5 scope |
-| Q5 | Blob storage | URL references only, no blob store |
-| Q6 | Delete semantics | Soft-delete (deleted_at timestamp) |
+| # | Question | Resolution |
+|---|----------|-----------|
+| Q1 | Authentication | **Locked (D2):** Google OAuth (OIDC) for human users, scoped API keys for service ingestion |
+| Q2 | Workspace isolation | **Locked (D3):** Single DB with workspace_id FK scoping |
+| Q3 | Pagination | **Locked (D9):** Cursor-based, 50 default, 200 max |
+| Q4 | Rate limiting | **Deferred:** Not in v2.5 scope |
+| Q5 | Blob storage | **Accepted:** URL references only, no blob store |
+| Q6 | Delete semantics | **Locked (D10):** Soft-delete (deleted_at timestamp) |

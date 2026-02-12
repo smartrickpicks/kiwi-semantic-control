@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary
 
-Orchestrate OS is a mature frontend-only governance UI (19,241-line monolith in `ui/viewer/index.html`) with well-defined roles, gates, audit events, and an 11-status patch lifecycle — all running entirely in the browser (localStorage + IndexedDB). API v2.5 introduces Postgres-backed multi-user persistence, server-side audit emission, and canonical resource-style endpoints.
+Orchestrate OS is a mature frontend-only governance UI (19,241-line monolith in `ui/viewer/index.html`) with well-defined roles, gates, audit events, and a 13-status patch lifecycle (11 visible + 2 hidden) — all running entirely in the browser (localStorage + IndexedDB). API v2.5 introduces Postgres-backed multi-user persistence, server-side audit emission, and canonical resource-style endpoints.
 
 This report audits the current repo against v2.5 requirements and identifies what exists, what conflicts, and what is missing.
 
@@ -167,23 +167,18 @@ Enforcement points:
 
 ---
 
-## 7. Open Questions
+## 7. Open Questions — All Resolved (Gate 2)
 
-### Blocking
+All blocking questions resolved. See `docs/handoff/V25_CLARITY_MATRIX.md` for full details.
 
-| # | Question | Impact | Proposed Default |
-|---|----------|--------|-----------------|
-| Q1 | Authentication mechanism — Google OAuth (referenced in UI code) or API key-based? | Drives auth middleware design for all endpoints | Google OAuth for production, dev API key for sandbox |
-| Q2 | Multi-workspace isolation — single DB with workspace_id scoping or separate schemas? | Impacts migration design and query patterns | Single DB with `workspace_id` FK scoping |
-
-### Non-Blocking (Proposed Defaults)
-
-| # | Question | Proposed Default |
-|---|----------|-----------------|
-| Q3 | Pagination model | Cursor-based, 50 items default, max 200 |
-| Q4 | Rate limiting | Deferred — not in v2.5 scope |
-| Q5 | File/blob storage for evidence PDFs | URL references only in v2.5; no blob store |
-| Q6 | Soft-delete vs hard-delete for resources | Soft-delete (deleted_at timestamp) for audit trail |
+| # | Question | Resolution |
+|---|----------|-----------|
+| Q1 | Authentication mechanism | **Locked:** Google OAuth (OIDC) for human users, scoped API keys for service ingestion |
+| Q2 | Multi-workspace isolation | **Locked:** Single DB with strict `workspace_id` FK scoping |
+| Q3 | Pagination model | **Accepted:** Cursor-based, 50 default, 200 max |
+| Q4 | Rate limiting | **Deferred:** Not in v2.5 scope |
+| Q5 | File/blob storage | **Accepted:** URL references only, no blob store |
+| Q6 | Delete semantics | **Accepted:** Soft-delete (`deleted_at` timestamp) |
 
 ---
 

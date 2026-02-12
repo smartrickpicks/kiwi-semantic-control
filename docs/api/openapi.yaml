@@ -1024,6 +1024,9 @@ components:
   securitySchemes:
     GoogleOAuth:
       type: oauth2
+      description: >
+        Google OAuth 2.0 (OIDC) for production human users.
+        Required for human-governed endpoints (patch transitions, approvals, annotations).
       flows:
         authorizationCode:
           authorizationUrl: https://accounts.google.com/o/oauth2/v2/auth
@@ -1031,12 +1034,26 @@ components:
           scopes:
             email: Read user email
             profile: Read user profile
-    ApiKey:
+    BearerToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        Server-issued JWT (1h expiry) obtained after Google OAuth code exchange.
+        Used in Authorization header for all authenticated requests.
+    ScopedApiKey:
       type: apiKey
       in: header
       name: X-API-Key
-      description: Dev/sandbox API key
+      description: >
+        Workspace-scoped API key for sandbox and service ingestion endpoints.
+        Keys carry explicit scopes (e.g., signals:write, batches:write, read:all).
+        Required for service ingestion endpoints (POST /signals, POST /triage-items).
+        Accepted as alternative auth on read endpoints.
 
 security:
-  - GoogleOAuth: [email]
-  - ApiKey: []
+  - BearerToken: []
+  - ScopedApiKey: []
+  # Note: GoogleOAuth is the authentication flow that produces the BearerToken.
+  # Clients authenticate via Google OAuth, then use the resulting JWT as BearerToken.
+  # ScopedApiKey is the alternative for service/sandbox endpoints.
