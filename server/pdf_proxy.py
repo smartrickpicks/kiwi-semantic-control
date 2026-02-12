@@ -39,6 +39,9 @@ app = FastAPI(
 from server.db import init_pool, close_pool, check_health
 from server.migrate import run_migrations
 from server.api_v25 import router as api_v25_router
+from server.routes.workspaces import router as workspaces_router
+from server.routes.batches import router as batches_router
+from server.routes.patches import router as patches_router
 import logging as _logging
 
 @app.on_event("startup")
@@ -64,6 +67,9 @@ def _shutdown_v25():
     close_pool()
 
 app.include_router(api_v25_router)
+app.include_router(workspaces_router)
+app.include_router(batches_router)
+app.include_router(patches_router)
 
 PROJECT_ROOT = Path(__file__).parent.parent
 

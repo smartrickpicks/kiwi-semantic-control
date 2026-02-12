@@ -40,8 +40,10 @@ The system is undergoing a multi-gate upgrade to add Postgres-backed multi-user 
 - **Non-negotiables:** Resource-based routes, PATCH for transitions, ULID primaries, optimistic concurrency (409 STALE_VERSION), no-self-approval server-enforced, append-only audit_events, Postgres canonical
 - **Auth policy:** Google OAuth (OIDC) for human users, scoped API keys for service ingestion, dual-accept on reads
 - **Workspace isolation:** Single DB, strict workspace_id FK scoping, composite indexes, optional RLS
-- **Server modules:** `server/db.py` (connection pool), `server/migrate.py` (migration runner), `server/ulid.py` (ID generator), `server/api_v25.py` (API router + health endpoint)
-- **Phase 2 next:** Workspace CRUD, Batch CRUD, Patch CRUD + transition matrix, RBAC middleware
+- **Server modules:** `server/db.py` (connection pool), `server/migrate.py` (migration runner), `server/ulid.py` (ID generator), `server/api_v25.py` (API router + health endpoint), `server/auth.py` (RBAC + auth resolution), `server/audit.py` (audit event emission)
+- **Route modules:** `server/routes/workspaces.py` (Workspace CRUD), `server/routes/batches.py` (Batch CRUD), `server/routes/patches.py` (Patch CRUD + 22-transition matrix + self-approval gate)
+- **Phase 2 critical path COMPLETE:** Workspace CRUD, Batch CRUD, RBAC middleware, optimistic concurrency (409 STALE_VERSION), audit emission, Patch CRUD with 12-status transition matrix, self-approval gate (403 SELF_APPROVAL_BLOCKED)
+- **Phase 2 remaining:** Contract CRUD, Document CRUD, Account CRUD, Annotation CRUD, EvidencePack CRUD, RFI CRUD, TriageItem CRUD, Signal CRUD, SelectionCapture CRUD, AuditEvent read API, SSE event stream
 
 ## External Dependencies
 - **FastAPI server**: Acts as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
