@@ -14778,6 +14778,117 @@
     })();
     // ========== END PHASE D8 ==========
 
+    // ========== PHASE D9: DATA QUALITY CHECK MODULES ==========
+    (function() {
+      var ns = window.AppModules;
+      if (!ns) return;
+
+      // --- Engines.DataQualityState ---
+      ns.Engines = ns.Engines || {};
+      ns.Engines.DataQualityState = {
+        getState: function() {
+          return typeof _dqCheckState !== 'undefined' ? _dqCheckState : null;
+        },
+        getActiveTab: function() {
+          return typeof _dqCheckState !== 'undefined' ? _dqCheckState.activeTab : 'accounts';
+        },
+        getAcctQueue: function() {
+          return typeof _dqCheckState !== 'undefined' ? _dqCheckState.acctQueue : [];
+        },
+        getAcctIndex: function() {
+          return typeof _dqCheckState !== 'undefined' ? _dqCheckState.acctIndex : 0;
+        },
+        getAddrQueue: function() {
+          return typeof _dqCheckState !== 'undefined' ? _dqCheckState.addrQueue : [];
+        },
+        getAddrIndex: function() {
+          return typeof _dqCheckState !== 'undefined' ? _dqCheckState.addrIndex : 0;
+        },
+        getDuplicateAccountItems: function() {
+          return typeof _duplicateAccountItems !== 'undefined' ? _duplicateAccountItems : [];
+        },
+        getAddressCandidateItems: function() {
+          return typeof _addressCandidateItems !== 'undefined' ? _addressCandidateItems : [];
+        },
+        getAddressCandidateDecisions: function() {
+          return typeof _addressCandidateDecisions !== 'undefined' ? _addressCandidateDecisions : {};
+        },
+        run: function() {
+          console.log('[DQ-D9] dq_started');
+          if (typeof _dqCheckRun === 'function') _dqCheckRun();
+          console.log('[DQ-D9] dq_finished');
+        },
+        detectOnly: function() {
+          if (typeof _dqCheckDetectOnly === 'function') _dqCheckDetectOnly();
+        },
+        rerun: function() {
+          console.log('[DQ-D9] dq_started');
+          if (typeof _dqCheckRerun === 'function') _dqCheckRerun();
+          console.log('[DQ-D9] dq_finished');
+        },
+        reopen: function() {
+          if (typeof _dqCheckReopen === 'function') _dqCheckReopen();
+        },
+        updateCard: function() {
+          if (typeof _dqCheckUpdateCard === 'function') _dqCheckUpdateCard();
+        }
+      };
+      ns._registry.push('Engines.DataQualityState');
+
+      // --- Components.DataQualityModal ---
+      ns.Components = ns.Components || {};
+      ns.Components.DataQualityModal = {
+        show: function() {
+          console.log('[DQ-D9] modal_opened');
+          if (typeof _dqCheckShowModal === 'function') _dqCheckShowModal();
+        },
+        close: function() {
+          if (typeof _dqCheckClose === 'function') _dqCheckClose();
+        },
+        switchTab: function(tab) {
+          if (typeof _dqCheckSwitchTab === 'function') _dqCheckSwitchTab(tab);
+        },
+        updateTabs: function() {
+          if (typeof _dqCheckUpdateTabs === 'function') _dqCheckUpdateTabs();
+        },
+        showAcctCurrent: function() {
+          if (typeof _dqCheckShowAcctCurrent === 'function') _dqCheckShowAcctCurrent();
+        },
+        showAddrCurrent: function() {
+          if (typeof _dqCheckShowAddrCurrent === 'function') _dqCheckShowAddrCurrent();
+        }
+      };
+      ns._registry.push('Components.DataQualityModal');
+
+      // --- Components.DataQualityActions ---
+      ns.Components.DataQualityActions = {
+        acctDismiss: function() {
+          console.log('[DQ-D9] action_taken', { type: 'acct_dismiss' });
+          if (typeof _dqAcctDismiss === 'function') _dqAcctDismiss();
+        },
+        acctMerge: function() {
+          console.log('[DQ-D9] action_taken', { type: 'acct_merge' });
+          if (typeof _dqAcctMerge === 'function') _dqAcctMerge();
+        },
+        acctLinkOnly: function() {
+          console.log('[DQ-D9] action_taken', { type: 'acct_link_only' });
+          if (typeof _dqAcctLinkOnly === 'function') _dqAcctLinkOnly();
+        },
+        addrAccept: function() {
+          console.log('[DQ-D9] action_taken', { type: 'addr_accept' });
+          if (typeof _dqAddrAccept === 'function') _dqAddrAccept();
+        },
+        addrReject: function() {
+          console.log('[DQ-D9] action_taken', { type: 'addr_reject' });
+          if (typeof _dqAddrReject === 'function') _dqAddrReject();
+        }
+      };
+      ns._registry.push('Components.DataQualityActions');
+
+      console.log('[APP-MODULES][P1D9] dq_modules_registered: DataQualityState, DataQualityModal, DataQualityActions');
+    })();
+    // ========== END PHASE D9 ==========
+
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
     var Components = window.Components || {};
