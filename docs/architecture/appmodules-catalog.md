@@ -1,6 +1,6 @@
 # AppModules Catalog
 
-> Visual module catalog for `window.AppModules` — 56 modules through Phase D15.
+> Visual module catalog for `window.AppModules` — 55 modules through Phase D15.
 > Source: `ui/viewer/index.html`
 
 ## Summary
@@ -23,7 +23,7 @@
 | D13 (Contract Index) | 3 | `_registry.push` |
 | D14 (Export Engine) | 3 | `_registry.push` |
 | D15 (Rollback/Undo) | 3 | `_registry.push` |
-| **Total** | **56** | 52 explicit + 4 dynamic |
+| **Total** | **55** | 51 explicit + 4 dynamic |
 
 ---
 
