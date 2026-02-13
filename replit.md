@@ -46,7 +46,8 @@ The system is undergoing a multi-gate upgrade to add Postgres-backed multi-user 
 - **Google OAuth COMPLETE:** Full login flow — Google Sign-In → backend ID token verification → email-based user matching → active status check → workspace role resolution → JWT issuance → frontend Bearer auth
 - **JWT session layer:** HS256 signing with 24-hour expiry, inactive user DB check on every JWT auth request
 - **Members CRUD:** Admin-only member management persists to Postgres via API (GET/POST/PATCH/DELETE)
-- **RFI DB persistence:** Frontend RFI submissions POST to `/api/v2.5/workspaces/{ws_id}/rfis` with JWT auth, persisting to Postgres `rfis` table with audit trail. RFIs bypass preflight gates but require justification (evidence gate).
+- **RFI DB persistence:** Frontend RFI submissions POST to `/api/v2.5/workspaces/{ws_id}/rfis` with JWT auth, persisting to Postgres `rfis` table with audit trail. RFIs bypass preflight gates but require justification (evidence gate). Frontend-generated patch IDs are stored in metadata.frontend_patch_id; DB patch_id is NULL unless a matching DB patch exists.
+- **Role Simulation COMPLETE:** Admin/Architect users in sandbox mode can simulate Analyst/Verifier roles. Backend validates `X-Effective-Role` and `X-Sandbox-Mode` headers. AuthResult carries `actual_role`, `effective_role`, `is_role_simulated`. All simulated actions are tagged in audit events with simulation metadata. Frontend sends role simulation headers on API calls and shows visual badges (sandbox mode + effective role).
 - **Auth smoke tests:** 10/10 PASS — config, JWT auth, inactive user JWT denial, unlisted user denial, role scoping, member management, secret safety, validation
 - **Seeded users:** 9 Create Music Group employees + 4 demo users in workspace `ws_SEED0100000000000000000000`
 - **Migration 003:** `server/migrations/003_auth_google_oauth.sql` — adds `status` and `google_sub` columns to users table, seeds CMG users

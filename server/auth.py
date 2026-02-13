@@ -45,6 +45,9 @@ class AuthResult:
         self.role = role
         self.auth_type = auth_type
         self.api_key_scopes = api_key_scopes or []
+        self.actual_role = None
+        self.effective_role = None
+        self.is_role_simulated = False
 
     @property
     def is_api_key(self):
@@ -145,6 +148,32 @@ def _resolve_api_key(key_value):
         put_conn(conn)
 
 
+SANDBOX_SIMULATABLE_ROLES = {"admin", "architect"}
+VALID_EFFECTIVE_ROLES = {"analyst", "verifier", "admin"}
+
+def _apply_role_simulation(request, auth_result):
+    effective_role = request.headers.get("X-Effective-Role", "").strip().lower()
+    sandbox_mode = request.headers.get("X-Sandbox-Mode", "").strip().lower()
+    if not effective_role:
+        return
+    if sandbox_mode != "true":
+        logger.info("Role simulation rejected: X-Sandbox-Mode header must be 'true'")
+        return
+    actual_role = auth_result.role
+    if actual_role not in SANDBOX_SIMULATABLE_ROLES:
+        logger.info("Role simulation rejected: actual role %s cannot simulate", actual_role)
+        return
+    if effective_role not in VALID_EFFECTIVE_ROLES:
+        logger.info("Role simulation rejected: invalid effective role %s", effective_role)
+        return
+    if effective_role == actual_role:
+        return
+    auth_result.actual_role = actual_role
+    auth_result.effective_role = effective_role
+    auth_result.is_role_simulated = True
+    logger.info("Role simulation active: %s -> %s", actual_role, effective_role)
+
+
 def resolve_auth(request: Request):
     bearer = request.headers.get("Authorization", "")
     api_key = request.headers.get("X-API-Key", "")
@@ -152,7 +181,10 @@ def resolve_auth(request: Request):
     if bearer.startswith("Bearer "):
         token = bearer[7:].strip()
         if token:
-            return _resolve_bearer(token), "bearer"
+            result = _resolve_bearer(token)
+            if result:
+                _apply_role_simulation(request, result)
+            return result, "bearer"
 
     if api_key:
         result = _resolve_api_key(api_key)

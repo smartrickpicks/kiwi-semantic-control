@@ -120,6 +120,8 @@ def create_rfi(
             content=error_envelope("VALIDATION_ERROR", "status must be one of: %s" % ", ".join(ALLOWED_STATUSES)),
         )
     metadata = body.get("metadata", {})
+    if patch_id:
+        metadata["frontend_patch_id"] = patch_id
     rfi_id = generate_id("rfi_")
 
     conn = get_conn()
@@ -132,17 +134,28 @@ def create_rfi(
                     content=error_envelope("NOT_FOUND", "Workspace not found: %s" % ws_id),
                 )
 
+            db_patch_id = None
+            if patch_id:
+                cur.execute("SELECT id FROM patches WHERE id = %s AND deleted_at IS NULL", (patch_id,))
+                if cur.fetchone():
+                    db_patch_id = patch_id
+
             cur.execute(
                 """INSERT INTO rfis
                    (id, workspace_id, patch_id, author_id, target_record_id,
                     target_field_key, question, status, metadata)
                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                    RETURNING """ + RFI_SELECT,
-                (rfi_id, ws_id, patch_id, auth.user_id, target_record_id,
+                (rfi_id, ws_id, db_patch_id, auth.user_id, target_record_id,
                  target_field_key, question, status, json.dumps(metadata)),
             )
             row = cur.fetchone()
 
+            audit_detail = {"question": question, "target_record_id": target_record_id}
+            if auth.is_role_simulated:
+                audit_detail["simulated_role"] = True
+                audit_detail["actual_role"] = auth.actual_role
+                audit_detail["effective_role"] = auth.effective_role
             emit_audit_event(
                 cur,
                 workspace_id=ws_id,
@@ -150,7 +163,7 @@ def create_rfi(
                 actor_id=auth.user_id,
                 resource_type="rfi",
                 resource_id=rfi_id,
-                detail={"question": question, "target_record_id": target_record_id},
+                detail=audit_detail,
             )
         conn.commit()
 

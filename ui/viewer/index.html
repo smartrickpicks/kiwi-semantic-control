@@ -1970,6 +1970,7 @@
         <div style="flex: 1; min-width: 0;">
           <div id="sidebar-user-name" style="font-size: 0.82em; font-weight: 600; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
           <div id="sidebar-user-role" style="font-size: 0.7em; color: #888; text-transform: capitalize;"></div>
+          <div id="role-sim-badges" style="display:none;gap:4px;flex-wrap:wrap;margin-top:2px;"></div>
         </div>
         <a href="#" id="sign-out-link" onclick="handleSignOut(event)" title="Sign Out" style="color: #666; font-size: 1em; text-decoration: none; flex-shrink: 0; transition: color 0.2s;">
           <span>←</span>
@@ -19489,7 +19490,11 @@
       }
       if (page === 'patch' && currentMode !== 'analyst') {
         console.log('[Navigate] Patch Studio requires analyst mode');
-        restrictedReason = 'Patch Studio is only available to Analysts. Verifiers and Admins review patches submitted by Analysts.';
+        if (isRoleSimulated() && getEffectiveRole() === 'analyst') {
+          restrictedReason = null;
+        } else {
+          restrictedReason = 'Patch Studio is only available to Analysts. Verifiers and Admins review patches submitted by Analysts.';
+        }
       }
       
       // If restricted, show access restricted page
@@ -19715,7 +19720,86 @@
       return '';
     }
     
-    // v1.6.22: Apply role-based restrictions to mode switcher
+    // ========== ROLE SIMULATION ENGINE ==========
+    // Provides actual vs effective role separation for sandbox lifecycle testing
+    var _roleSimulation = {
+      active: false,
+      actualRole: null,
+      effectiveRole: null
+    };
+
+    function getActualRole() {
+      return getLoggedInUserRole() || 'analyst';
+    }
+
+    function getEffectiveRole() {
+      if (_roleSimulation.active) return _roleSimulation.effectiveRole;
+      return currentMode || getActualRole();
+    }
+
+    function isRoleSimulated() {
+      return _roleSimulation.active && _roleSimulation.actualRole !== _roleSimulation.effectiveRole;
+    }
+
+    function canSimulateRoles() {
+      var actual = getActualRole();
+      return isDemoMode() && (actual === 'admin' || actual === 'architect');
+    }
+
+    function startRoleSimulation(targetRole) {
+      if (!canSimulateRoles()) {
+        console.warn('[ROLE-SIM] Cannot simulate: not in sandbox or not admin/architect');
+        return false;
+      }
+      var actual = getActualRole();
+      _roleSimulation.active = true;
+      _roleSimulation.actualRole = actual;
+      _roleSimulation.effectiveRole = targetRole;
+      console.log('[ROLE-SIM] Started: actual=' + actual + ', effective=' + targetRole);
+      setMode(targetRole);
+      updateRoleSimBadges();
+      return true;
+    }
+
+    function stopRoleSimulation() {
+      if (!_roleSimulation.active) return;
+      var actual = _roleSimulation.actualRole;
+      _roleSimulation.active = false;
+      _roleSimulation.actualRole = null;
+      _roleSimulation.effectiveRole = null;
+      console.log('[ROLE-SIM] Stopped, reverting to actual role: ' + actual);
+      setMode(actual);
+      updateRoleSimBadges();
+    }
+
+    function getRoleSimAuditMeta() {
+      if (!isRoleSimulated()) return {};
+      return {
+        simulated_role: true,
+        actual_role: _roleSimulation.actualRole,
+        effective_role: _roleSimulation.effectiveRole
+      };
+    }
+
+    function updateRoleSimBadges() {
+      var container = document.getElementById('role-sim-badges');
+      if (!container) return;
+      if (isDemoMode()) {
+        var html = '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:0.7em;font-weight:600;background:#ff6f00;color:#fff;">SANDBOX</span>';
+        if (isRoleSimulated()) {
+          var eff = _roleSimulation.effectiveRole;
+          var colors = { analyst: '#1565c0', verifier: '#2e7d32', admin: '#6a1b9a', architect: '#e65100' };
+          html += ' <span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:0.7em;font-weight:600;background:' + (colors[eff] || '#666') + ';color:#fff;">Simulating: ' + eff.charAt(0).toUpperCase() + eff.slice(1) + '</span>';
+        }
+        container.innerHTML = html;
+        container.style.display = 'flex';
+      } else {
+        container.innerHTML = '';
+        container.style.display = 'none';
+      }
+    }
+
+        // v1.6.22: Apply role-based restrictions to mode switcher
     // Analyst/Verifier: locked to their role, cannot switch
     // Admin: full "God mode" - can switch between all roles (when Playground enabled)
     var roleRestrictionsApplied = false;
@@ -19820,7 +19904,11 @@
       var name = getCurrentUserName();
       var role = currentMode || 'analyst';
       nameEl.textContent = name;
-      roleEl.textContent = role;
+      if (isRoleSimulated()) {
+        roleEl.textContent = role + ' (simulated)';
+      } else {
+        roleEl.textContent = role;
+      }
       if (avatarEl) {
         var initials = name.split(' ').map(function(w) { return w.charAt(0); }).join('').toUpperCase().substr(0, 2);
         avatarEl.textContent = initials || '?';
@@ -19901,7 +19989,17 @@
       var modes = ['analyst', 'verifier', 'admin'];
       if (modes.indexOf(mode) === -1) mode = 'analyst';
       currentMode = mode;
+      if (canSimulateRoles() && mode !== getActualRole()) {
+        _roleSimulation.active = true;
+        _roleSimulation.actualRole = getActualRole();
+        _roleSimulation.effectiveRole = mode;
+      } else if (canSimulateRoles() && mode === getActualRole()) {
+        _roleSimulation.active = false;
+        _roleSimulation.actualRole = null;
+        _roleSimulation.effectiveRole = null;
+      }
       updateSidebarUserProfile();
+      updateRoleSimBadges();
       
       // Update triage page titles with role
       var roleLabel = mode === 'analyst' ? 'Analyst' : mode === 'verifier' ? 'Verifier' : 'Admin';
@@ -19956,6 +20054,7 @@
         }
       } else if (mode === 'verifier') {
         srrState.isReadOnly = true;
+        srrState.allowRfiInReadOnly = isRoleSimulated();
         if (srrState.currentRecord) {
           srrState.verifierMode = true;
           initVerifierSRRMode();
@@ -25928,6 +26027,7 @@
       currentArtifactId: null,  // v1.5.1: Artifact ID for Verifier/Admin review context
       currentDatasetId: null,   // v1.5.1: Dataset ID for record lookup
       isReadOnly: false,        // v1.5.1: Read-only mode for Verifier/Admin
+      allowRfiInReadOnly: false, // Allow RFI actions in read-only mode (sandbox simulation)
       originalValues: {},
       editedValues: {},
       proposedChanges: {},
@@ -28266,11 +28366,20 @@
       // Analyst mode: always editable (isReadOnly = false)
       // Verifier/Admin mode WITH artifact context: read-only (isReadOnly = true)
       // Verifier/Admin mode WITHOUT artifact context (direct grid nav): still read-only for field inspector
-      if (currentMode === 'analyst' || currentMode === 'admin') {
+      if (currentMode === 'analyst') {
+        srrState.isReadOnly = false;
+        srrState.verifierMode = false;
+      } else if (currentMode === 'admin') {
         srrState.isReadOnly = false;
         srrState.verifierMode = false;
       } else if (currentMode === 'verifier') {
-        srrState.isReadOnly = true;
+        if (isRoleSimulated()) {
+          srrState.isReadOnly = true;
+          srrState.allowRfiInReadOnly = true;
+        } else {
+          srrState.isReadOnly = true;
+          srrState.allowRfiInReadOnly = false;
+        }
       } else {
         srrState.isReadOnly = false;
       }
@@ -28764,6 +28873,7 @@
         var actionsHtml = '<div class="srr-field-actions">';
         // v1.6.46: Analyst-only actions — Verifier/Admin see no SRR action buttons
         var isFieldActionable = !srrState.isReadOnly;
+        var allowRfiOnly = srrState.isReadOnly && srrState.allowRfiInReadOnly;
         
         if (isFieldActionable) {
           if (fieldState === 'todo') {
@@ -28783,6 +28893,9 @@
             // rfi, blocked, patched, rfi_pending: show reset
             actionsHtml += '<button class="srr-field-action reset" onclick="event.stopPropagation(); srrResetFieldState(\'' + key + '\')" title="Reset to TODO">' + iconReset + '</button>';
           }
+        }
+        if (!isFieldActionable && allowRfiOnly && fieldState === 'todo') {
+          actionsHtml += '<button class="srr-field-action rfi" onclick="event.stopPropagation(); srrRfiField(\'' + key + '\')" title="Request for Info (Sandbox)">' + iconEdit + '</button>';
         }
         actionsHtml += '</div>';
         
@@ -31925,7 +32038,8 @@
         replay_steps: srrState.patchDraft.replay_steps || '',
         replay_expected_result: srrState.patchDraft.replay_expected_result || '',
         rfi_target: patchType === 'rfi' ? srrState.patchDraft.rfi_target : '',
-        rationale: changeSummary
+        rationale: changeSummary,
+        role_simulation: getRoleSimAuditMeta()
       });
       
       // Submit the patch request
@@ -31959,7 +32073,8 @@
             repro_type: srrState.patchDraft.repro_type,
             justification: justification
           },
-          legacy_request_id: request.request_id
+          legacy_request_id: request.request_id,
+          role_simulation: getRoleSimAuditMeta()
         }
       });
       
@@ -31996,15 +32111,20 @@
               sheet: srrState.currentSheetName || '',
               dataset_id: datasetId || '',
               artifact_id: artifact ? artifact.artifact_id : null,
-              source: 'record_inspector'
+              source: 'record_inspector',
+              role_simulation: getRoleSimAuditMeta()
             }
           };
-          fetch('/api/v2.5/workspaces/' + rfiWsId + '/rfis', {
-            method: 'POST',
-            headers: {
+          var rfiHeaders = {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer ' + rfiToken
-            },
+            };
+            if (isRoleSimulated()) {
+              rfiHeaders['X-Effective-Role'] = getEffectiveRole();
+            }
+          fetch('/api/v2.5/workspaces/' + rfiWsId + '/rfis', {
+            method: 'POST',
+            headers: rfiHeaders,
             body: JSON.stringify(rfiBody)
           }).then(function(resp) {
             if (resp.ok) {
@@ -39135,6 +39255,7 @@
       renderUsersTable();
       renderPeopleMembers();
       applyRoleBasedModeRestrictions(); // v1.6.24: Re-apply to update role switching
+      updateRoleSimBadges();
       showToast(isPlayground ? 'Sandbox mode enabled - permissionless access, no Admin role' : 'Production mode - strict role gates active', 'info');
       console.log('[EnvMode] Set to:', mode, 'by', loggedInRole);
       applyDemoControlsVisibility();
