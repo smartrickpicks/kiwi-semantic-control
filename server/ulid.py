@@ -5,7 +5,7 @@ import struct
 VALID_PREFIXES = frozenset([
     "ws_", "bat_", "acc_", "ctr_", "doc_", "pat_",
     "evp_", "sig_", "tri_", "aud_", "rfi_", "ann_",
-    "sel_", "usr_",
+    "sel_", "usr_", "wbs_", "drv_", "drc_",
 ])
 
 CROCKFORD_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"

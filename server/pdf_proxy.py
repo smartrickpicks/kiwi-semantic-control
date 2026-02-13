@@ -55,6 +55,8 @@ from server.routes.audit_events import router as audit_events_router
 from server.routes.sse_stream import router as sse_router
 from server.routes.auth_google import router as auth_google_router
 from server.routes.members import router as members_router
+from server.routes.drive import router as drive_router
+from server.routes.sessions import router as sessions_router
 import logging as _logging
 
 @app.on_event("startup")
@@ -96,6 +98,8 @@ app.include_router(audit_events_router)
 app.include_router(sse_router)
 app.include_router(auth_google_router)
 app.include_router(members_router)
+app.include_router(drive_router)
+app.include_router(sessions_router)
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
