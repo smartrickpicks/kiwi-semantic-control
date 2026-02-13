@@ -1351,17 +1351,46 @@
     .grid-mode-toggle button { border: none; padding: 6px 20px; cursor: pointer; font-weight: 600; background: #fff; color: #1565c0; transition: background 0.15s, color 0.15s; min-width: 70px; text-align: center; font-size: 0.85em; }
     .grid-mode-toggle button.active { background: #1565c0; color: #fff; }
 
-    /* Inline Evidence Viewer PDF Pane (inside page-grid) */
-    .ev-inline-wrapper { display: flex; gap: 0; width: 100%; }
-    .ev-inline-wrapper .ev-grid-column { flex: 1 1 55%; min-width: 0; overflow: auto; }
-    .ev-inline-wrapper .ev-pdf-column { flex: 0 0 42%; max-width: 42%; border-left: 2px solid #e0e0e0; display: flex; flex-direction: column; background: #fafafa; }
-    .ev-pdf-column .ev-pdf-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; font-size: 0.85em; }
-    .ev-pdf-column .ev-pdf-header .ev-pdf-title { font-weight: 600; color: #333; }
-    .ev-pdf-column .ev-pdf-header .ev-pdf-source { color: #888; font-size: 0.9em; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
-    .ev-pdf-column .ev-pdf-body { flex: 1; overflow: auto; position: relative; min-height: 400px; }
-    .ev-pdf-column .ev-pdf-body iframe, .ev-pdf-column .ev-pdf-body object { width: 100%; height: 100%; border: none; display: block; min-height: 500px; }
-    .ev-pdf-column .ev-pdf-empty { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 400px; color: #999; font-size: 0.95em; text-align: center; padding: 20px; }
-    .ev-pdf-column .ev-pdf-record-label { font-size: 0.8em; color: #1565c0; background: #e3f2fd; padding: 2px 8px; border-radius: 4px; }
+    /* Inline Evidence Viewer — Three-Column Layout (inside page-grid) */
+    .ev-inline-wrapper { display: flex; gap: 0; width: 100%; height: calc(100vh - 280px); min-height: 500px; }
+    .ev-inline-wrapper .ev-grid-column { flex: 1 1 auto; min-width: 250px; overflow: auto; }
+    .ev-inline-wrapper .ev-center-column { flex: 0 0 42%; max-width: 50%; border-left: 2px solid #e0e0e0; display: none; flex-direction: column; background: #fafafa; }
+    .ev-inline-wrapper .ev-center-column.ev-visible { display: flex; }
+    .ev-inline-wrapper .ev-right-column { flex: 0 0 260px; max-width: 300px; border-left: 2px solid #e0e0e0; display: none; flex-direction: column; background: #fff; overflow-y: auto; }
+    .ev-inline-wrapper .ev-right-column.ev-visible { display: flex; }
+    .ev-center-column .ev-pdf-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; font-size: 0.85em; flex-shrink: 0; }
+    .ev-center-column .ev-pdf-header .ev-pdf-title { font-weight: 600; color: #333; }
+    .ev-center-column .ev-pdf-header .ev-pdf-source { color: #888; font-size: 0.9em; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+    .ev-center-column .ev-pdf-body { flex: 1; overflow: auto; position: relative; min-height: 400px; }
+    .ev-center-column .ev-pdf-body iframe, .ev-center-column .ev-pdf-body object { width: 100%; height: 100%; border: none; display: block; min-height: 500px; }
+    .ev-center-column .ev-pdf-empty { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 400px; color: #999; font-size: 0.95em; text-align: center; padding: 20px; }
+    .ev-center-column .ev-pdf-record-label { font-size: 0.8em; color: #1565c0; background: #e3f2fd; padding: 2px 8px; border-radius: 4px; }
+    .ev-pdf-reason { display: inline-block; margin-top: 6px; padding: 3px 10px; border-radius: 12px; font-size: 0.78em; font-weight: 600; letter-spacing: 0.3px; }
+    .ev-pdf-reason.no_document_link { background: #fff3e0; color: #e65100; }
+    .ev-pdf-reason.mapping_not_found { background: #fce4ec; color: #c62828; }
+    .ev-pdf-reason.proxy_fetch_failed { background: #ffebee; color: #b71c1c; }
+    .ev-pdf-reason.unsupported_format { background: #f3e5f5; color: #6a1b9a; }
+    .ev-right-column .ev-right-header { padding: 10px 12px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; font-weight: 600; font-size: 0.85em; color: #333; flex-shrink: 0; display: flex; align-items: center; gap: 6px; }
+    .ev-right-column .ev-right-body { flex: 1; overflow-y: auto; padding: 8px; }
+    .ev-right-column .ev-ri-section { border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
+    .ev-right-column .ev-ri-section-header { display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: #f5f5f5; cursor: pointer; user-select: none; font-size: 0.82em; font-weight: 600; color: #333; border-bottom: 1px solid #e0e0e0; }
+    .ev-right-column .ev-ri-section-header:hover { background: #eee; }
+    .ev-right-column .ev-ri-count { background: #e0e0e0; color: #666; padding: 1px 6px; border-radius: 10px; font-size: 0.78em; font-weight: 600; min-width: 16px; text-align: center; }
+    .ev-right-column .ev-ri-arrow { margin-left: auto; font-size: 0.65em; color: #999; transition: transform 0.2s; }
+    .ev-right-column .ev-ri-arrow.collapsed { transform: rotate(-90deg); }
+    .ev-right-column .ev-ri-section-body { padding: 8px 10px; font-size: 0.82em; }
+    .ev-right-column .ev-ri-section-body.collapsed { display: none; }
+    .ev-right-column .ev-ri-empty { color: #aaa; font-size: 0.85em; padding: 6px 0; }
+    .ev-right-column .ev-ri-item { padding: 5px 0; border-bottom: 1px solid #f0f0f0; }
+    .ev-right-column .ev-ri-item:last-child { border-bottom: none; }
+    .ev-ri-anchor-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; cursor: pointer; background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; margin: 2px 0; }
+    .ev-ri-anchor-chip:hover { background: #bbdefb; }
+    .ev-ri-status { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 0.72em; font-weight: 600; }
+    .ev-ri-status.open { background: #e3f2fd; color: #1565c0; }
+    .ev-ri-status.resolved { background: #e8f5e9; color: #2e7d32; }
+    .ev-ri-status.pending { background: #fff3e0; color: #e65100; }
+    .ev-ri-status.approved { background: #e8f5e9; color: #2e7d32; }
+    .ev-ri-status.rejected { background: #ffebee; color: #c62828; }
     #grid-tbody tr.ev-active-row { background: #e3f2fd !important; outline: 2px solid #1565c0; outline-offset: -1px; }
 
     /* Grid Context Menu */
@@ -2820,7 +2849,7 @@
               </table>
             </div>
           </div>
-          <div class="ev-pdf-column" id="ev-pdf-column" style="display: none;">
+          <div class="ev-center-column" id="ev-center-column">
             <div class="ev-pdf-header">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span class="ev-pdf-title">Evidence Viewer</span>
@@ -2833,11 +2862,50 @@
                 <div>
                   <div style="font-size: 2em; margin-bottom: 8px;">📄</div>
                   <div>Click a record row to load its document</div>
+                  <div class="ev-pdf-reason-slot" id="ev-pdf-reason-slot"></div>
                 </div>
               </div>
               <object id="ev-pdf-object" type="application/pdf" data="about:blank" style="display: none; width: 100%; height: 100%; min-height: 500px; border: none;">
                 <p>PDF viewer not available</p>
               </object>
+            </div>
+          </div>
+          <div class="ev-right-column" id="ev-right-column">
+            <div class="ev-right-header">
+              <span>Evidence Details</span>
+              <span class="ev-pdf-record-label" id="ev-right-record-label"></span>
+            </div>
+            <div class="ev-right-body" id="ev-right-body">
+              <div class="ev-ri-section" id="ev-ri-anchors">
+                <div class="ev-ri-section-header" onclick="evRiToggle('anchors')">
+                  <span style="border-left: 3px solid #1565c0; padding-left: 6px;">Anchors</span>
+                  <span class="ev-ri-count" id="ev-ri-anchors-count">0</span>
+                  <span class="ev-ri-arrow" id="ev-ri-anchors-arrow">&#9660;</span>
+                </div>
+                <div class="ev-ri-section-body" id="ev-ri-anchors-body">
+                  <div class="ev-ri-empty">No anchors for this record</div>
+                </div>
+              </div>
+              <div class="ev-ri-section" id="ev-ri-corrections">
+                <div class="ev-ri-section-header" onclick="evRiToggle('corrections')">
+                  <span style="border-left: 3px solid #2e7d32; padding-left: 6px;">Corrections</span>
+                  <span class="ev-ri-count" id="ev-ri-corrections-count">0</span>
+                  <span class="ev-ri-arrow" id="ev-ri-corrections-arrow">&#9660;</span>
+                </div>
+                <div class="ev-ri-section-body" id="ev-ri-corrections-body">
+                  <div class="ev-ri-empty">No corrections for this record</div>
+                </div>
+              </div>
+              <div class="ev-ri-section" id="ev-ri-rfis">
+                <div class="ev-ri-section-header" onclick="evRiToggle('rfis')">
+                  <span style="border-left: 3px solid #7b1fa2; padding-left: 6px;">RFIs</span>
+                  <span class="ev-ri-count" id="ev-ri-rfis-count">0</span>
+                  <span class="ev-ri-arrow" id="ev-ri-rfis-arrow">&#9660;</span>
+                </div>
+                <div class="ev-ri-section-body" id="ev-ri-rfis-body">
+                  <div class="ev-ri-empty">No RFIs for this record</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -13999,15 +14067,112 @@
     }
 
     function _evShowPdfPane() {
-      var pane = document.getElementById('ev-pdf-column');
-      if (pane) pane.style.display = '';
+      var center = document.getElementById('ev-center-column');
+      var right = document.getElementById('ev-right-column');
+      if (center) center.classList.add('ev-visible');
+      if (right) right.classList.add('ev-visible');
       _evState.viewerOpen = true;
     }
 
     function _evHidePdfPane() {
-      var pane = document.getElementById('ev-pdf-column');
-      if (pane) pane.style.display = 'none';
+      var center = document.getElementById('ev-center-column');
+      var right = document.getElementById('ev-right-column');
+      if (center) center.classList.remove('ev-visible');
+      if (right) right.classList.remove('ev-visible');
       _evState.viewerOpen = false;
+    }
+
+    function _evSetPdfReason(reasonCode, detail) {
+      var slot = document.getElementById('ev-pdf-reason-slot');
+      if (!slot) return;
+      if (!reasonCode) { slot.innerHTML = ''; return; }
+      var labels = {
+        'no_document_link': 'No Document Link',
+        'mapping_not_found': 'Document Mapping Not Found',
+        'proxy_fetch_failed': 'Proxy Fetch Failed',
+        'unsupported_format': 'Unsupported Format'
+      };
+      var label = labels[reasonCode] || reasonCode;
+      slot.innerHTML = '<span class="ev-pdf-reason ' + reasonCode + '">' + label + '</span>' +
+        (detail ? '<div style="font-size:0.78em;color:#999;margin-top:4px;">' + detail + '</div>' : '');
+    }
+
+    function _evResolveDocUrl(record, recordId, sheetName) {
+      var result = { pdfUrl: null, sourceLabel: '', reason: null, detail: '' };
+      console.log('[EV-RESOLVE] Step 1: record id =', recordId, ', sheet =', sheetName, ', record exists =', !!record);
+
+      if (!record) {
+        result.reason = 'mapping_not_found';
+        result.detail = 'Record data not found in workbook for row';
+        return result;
+      }
+
+      var fileUrl = (typeof srrResolveFieldValue === 'function') ? srrResolveFieldValue(record, 'file_url') : (record.file_url || record.File_URL_c || '');
+      var fileName = (typeof srrResolveFieldValue === 'function') ? srrResolveFieldValue(record, 'file_name') : (record.file_name || record.File_Name_c || '');
+      console.log('[EV-RESOLVE] Step 2: file_url =', fileUrl ? fileUrl.substring(0, 80) : '(empty)', ', file_name =', fileName);
+
+      var contractRef = null;
+      if (!fileUrl && window.workbook && window.workbook.contracts) {
+        var contractKey = record.contract_key || record.Contract_Key || '';
+        if (contractKey && window.workbook.contracts[contractKey]) {
+          contractRef = window.workbook.contracts[contractKey];
+          fileUrl = contractRef.file_url || '';
+          fileName = fileName || contractRef.file_name || '';
+          console.log('[EV-RESOLVE] Step 2b: resolved via contract ref:', contractKey, '->', fileUrl ? fileUrl.substring(0, 80) : '(empty)');
+        }
+      }
+
+      var hasUrl = fileUrl && typeof fileUrl === 'string' && (fileUrl.indexOf('http://') === 0 || fileUrl.indexOf('https://') === 0);
+      console.log('[EV-RESOLVE] Step 3: hasUrl =', hasUrl);
+
+      var attachments = [];
+      try { attachments = JSON.parse(localStorage.getItem(STORAGE_KEY_PDF_ATTACHMENTS) || '[]'); } catch (e) {}
+
+      if (hasUrl) {
+        var lower = fileUrl.toLowerCase();
+        var pathPart = lower.split('?')[0];
+        var isPdf = pathPart.endsWith('.pdf') || lower.includes('.pdf?') || lower.includes('/pdf') || lower.includes('drive.google.com') || lower.includes('/preview') || lower.includes('/view');
+        if (!isPdf) {
+          var ext = pathPart.split('.').pop();
+          if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].indexOf(ext) >= 0) {
+            result.reason = 'unsupported_format';
+            result.detail = 'File type: .' + ext + ' (only PDF supported)';
+            console.log('[EV-RESOLVE] Step 4: unsupported format:', ext);
+            return result;
+          }
+        }
+        result.pdfUrl = '/proxy/pdf?url=' + encodeURIComponent(fileUrl);
+        result.sourceLabel = fileName || fileUrl.split('/').pop().split('?')[0];
+        console.log('[EV-RESOLVE] Step 4: using proxy URL for:', result.sourceLabel);
+        return result;
+      }
+
+      if (fileName && attachments.length > 0) {
+        var match = attachments.find(function(a) { return a.file_name === fileName; });
+        if (match && match.local_object_url) {
+          result.pdfUrl = match.local_object_url;
+          result.sourceLabel = match.file_name;
+          console.log('[EV-RESOLVE] Step 5: matched local attachment by name:', fileName);
+          return result;
+        }
+      }
+
+      if (!result.pdfUrl && attachments.length > 0 && attachments[0].local_object_url) {
+        result.pdfUrl = attachments[0].local_object_url;
+        result.sourceLabel = attachments[0].file_name;
+        console.log('[EV-RESOLVE] Step 5b: fallback to first attachment:', attachments[0].file_name);
+        return result;
+      }
+
+      if (!fileUrl || !fileUrl.trim()) {
+        result.reason = 'no_document_link';
+        result.detail = 'Record has no file_url or file_name field';
+      } else {
+        result.reason = 'mapping_not_found';
+        result.detail = 'Could not resolve URL: ' + fileUrl.substring(0, 60);
+      }
+      console.log('[EV-RESOLVE] Step 6: no PDF found, reason:', result.reason);
+      return result;
     }
 
     function _evLoadPdfForRecord(record, recordId, sheetName) {
@@ -14015,53 +14180,56 @@
       var emptyEl = document.getElementById('ev-pdf-empty');
       var labelEl = document.getElementById('ev-pdf-record-label');
       var sourceEl = document.getElementById('ev-pdf-source');
+      var rightLabel = document.getElementById('ev-right-record-label');
       if (!pdfObj) return;
 
       if (labelEl) labelEl.textContent = recordId || '';
+      if (rightLabel) rightLabel.textContent = recordId || '';
       if (sourceEl) sourceEl.textContent = sheetName || '';
 
-      if (!record) {
-        if (pdfObj) pdfObj.style.display = 'none';
-        if (emptyEl) { emptyEl.style.display = ''; emptyEl.querySelector('div > div:last-child').textContent = 'No record data available'; }
-        return;
-      }
+      var resolved = _evResolveDocUrl(record, recordId, sheetName);
 
-      var fileUrl = (typeof srrResolveFieldValue === 'function') ? srrResolveFieldValue(record, 'file_url') : (record.file_url || record.File_URL_c || '');
-      var fileName = (typeof srrResolveFieldValue === 'function') ? srrResolveFieldValue(record, 'file_name') : (record.file_name || record.File_Name_c || '');
-      var hasUrl = (typeof srrIsValidPdfUrl === 'function') ? srrIsValidPdfUrl(fileUrl) : (fileUrl && fileUrl.indexOf('http') === 0);
-
-      var attachments = [];
-      try { attachments = JSON.parse(localStorage.getItem(STORAGE_KEY_PDF_ATTACHMENTS) || '[]'); } catch (e) {}
-
-      var pdfUrl = null;
-      var sourceLabel = '';
-
-      if (hasUrl) {
-        pdfUrl = '/proxy/pdf?url=' + encodeURIComponent(fileUrl);
-        sourceLabel = fileName || fileUrl.split('/').pop().split('?')[0];
-      } else if (fileName && attachments.length > 0) {
-        var match = attachments.find(function(a) { return a.file_name === fileName; });
-        if (match && match.local_object_url) { pdfUrl = match.local_object_url; sourceLabel = match.file_name; }
-      }
-      if (!pdfUrl && attachments.length > 0 && attachments[0].local_object_url) {
-        pdfUrl = attachments[0].local_object_url;
-        sourceLabel = attachments[0].file_name;
-      }
-
-      if (pdfUrl) {
+      if (resolved.pdfUrl) {
+        _evSetPdfReason(null);
         if (emptyEl) emptyEl.style.display = 'none';
         pdfObj.style.display = 'block';
-        pdfObj.data = pdfUrl;
-        if (sourceEl) sourceEl.textContent = sourceLabel;
-        console.log('[EV-INLINE] PDF loaded:', sourceLabel, 'for record:', recordId);
+        pdfObj.data = resolved.pdfUrl;
+        if (sourceEl) sourceEl.textContent = resolved.sourceLabel;
+
+        pdfObj.onerror = function() {
+          console.warn('[EV-INLINE] PDF object load error for:', resolved.sourceLabel);
+          pdfObj.style.display = 'none';
+          if (emptyEl) {
+            emptyEl.style.display = '';
+            var msgEl = emptyEl.querySelector('div > div:nth-child(2)');
+            if (msgEl) msgEl.textContent = 'Document failed to load';
+          }
+          _evSetPdfReason('proxy_fetch_failed', 'The proxy could not fetch: ' + resolved.sourceLabel);
+        };
+
+        console.log('[EV-INLINE] PDF loaded:', resolved.sourceLabel, 'for record:', recordId);
       } else {
         pdfObj.style.display = 'none';
-        if (emptyEl) { emptyEl.style.display = ''; emptyEl.querySelector('div > div:last-child').textContent = 'No document attached to this record'; }
-        console.log('[EV-INLINE] No PDF for record:', recordId);
+        if (emptyEl) {
+          emptyEl.style.display = '';
+          var msgEl = emptyEl.querySelector('div > div:nth-child(2)');
+          if (msgEl) {
+            var msgs = {
+              'no_document_link': 'No document link found for this record',
+              'mapping_not_found': 'Could not map record to a document',
+              'unsupported_format': 'Document format not supported for inline viewing',
+              'proxy_fetch_failed': 'Failed to fetch document from source'
+            };
+            msgEl.textContent = msgs[resolved.reason] || 'No document available';
+          }
+        }
+        _evSetPdfReason(resolved.reason, resolved.detail);
+        console.log('[EV-INLINE] No PDF for record:', recordId, 'reason:', resolved.reason);
       }
     }
 
     function _evOpenViewerForRecord(sheetName, rowIdx, recordId) {
+      console.log('[EV-OPEN] openEvidenceViewerForRecord called:', { sheetName: sheetName, rowIdx: rowIdx, recordId: recordId });
       _evState.activeRecordId = recordId;
       _evState.activeSheetName = sheetName;
       _evState.activeRowIdx = rowIdx;
@@ -14075,7 +14243,9 @@
           record = sheet.rows[rowIdx];
         }
       }
+      console.log('[EV-OPEN] record resolved:', !!record, record ? Object.keys(record).length + ' fields' : 'null');
       _evLoadPdfForRecord(record, recordId, sheetName);
+      _evLoadRightPanelForRecord(record, recordId, sheetName);
 
       var allRows = document.querySelectorAll('#grid-tbody tr[data-record-id]');
       for (var i = 0; i < allRows.length; i++) {
@@ -14084,7 +14254,135 @@
       var activeRow = document.querySelector('#grid-tbody tr[data-record-id="' + recordId + '"]');
       if (activeRow) activeRow.classList.add('ev-active-row');
 
-      console.log('[EV-STATE] viewer opened inline for record:', recordId, 'sheet:', sheetName, 'row:', rowIdx);
+      console.log('[EV-STATE] viewer opened (3-col) for record:', recordId, 'sheet:', sheetName);
+    }
+
+    function openEvidenceViewerForRecord(recordId) {
+      if (!recordId || !window.workbook || !window.workbook.sheets) {
+        console.warn('[EV-OPEN] openEvidenceViewerForRecord: no workbook or recordId');
+        return;
+      }
+      var sheets = window.workbook.sheets;
+      for (var sn in sheets) {
+        if (!sheets.hasOwnProperty(sn)) continue;
+        var rows = sheets[sn].rows || [];
+        for (var i = 0; i < rows.length; i++) {
+          if (rows[i].record_id === recordId || rows[i]._record_id === recordId) {
+            if (_gridViewMode !== 'grid') setGridViewMode('grid');
+            _evOpenViewerForRecord(sn, i, recordId);
+            return;
+          }
+        }
+      }
+      console.warn('[EV-OPEN] openEvidenceViewerForRecord: record not found:', recordId);
+    }
+
+    function evRiToggle(section) {
+      var body = document.getElementById('ev-ri-' + section + '-body');
+      var arrow = document.getElementById('ev-ri-' + section + '-arrow');
+      if (!body) return;
+      body.classList.toggle('collapsed');
+      if (arrow) arrow.classList.toggle('collapsed');
+    }
+
+    function _evLoadRightPanelForRecord(record, recordId, sheetName) {
+      var anchorsBody = document.getElementById('ev-ri-anchors-body');
+      var correctionsBody = document.getElementById('ev-ri-corrections-body');
+      var rfisBody = document.getElementById('ev-ri-rfis-body');
+      var anchorsCount = document.getElementById('ev-ri-anchors-count');
+      var correctionsCount = document.getElementById('ev-ri-corrections-count');
+      var rfisCount = document.getElementById('ev-ri-rfis-count');
+
+      if (anchorsBody) anchorsBody.innerHTML = '<div class="ev-ri-empty">Loading...</div>';
+      if (correctionsBody) correctionsBody.innerHTML = '<div class="ev-ri-empty">Loading...</div>';
+      if (rfisBody) rfisBody.innerHTML = '<div class="ev-ri-empty">Loading...</div>';
+
+      if (!recordId) {
+        if (anchorsBody) anchorsBody.innerHTML = '<div class="ev-ri-empty">Select a record</div>';
+        if (correctionsBody) correctionsBody.innerHTML = '<div class="ev-ri-empty">Select a record</div>';
+        if (rfisBody) rfisBody.innerHTML = '<div class="ev-ri-empty">Select a record</div>';
+        return;
+      }
+
+      var docId = null;
+      var contractKey = '';
+      if (record) {
+        contractKey = record.contract_key || record.Contract_Key || '';
+        if (contractKey && window.workbook && window.workbook.contracts && window.workbook.contracts[contractKey]) {
+          docId = window.workbook.contracts[contractKey].document_id || null;
+        }
+      }
+
+      var wsId = (typeof _getWorkspaceId === 'function') ? _getWorkspaceId() : 'ws_SEED0100000000000000000000';
+
+      if (docId) {
+        fetch('/api/v2.5/documents/' + encodeURIComponent(docId) + '/anchors')
+          .then(function(r) { return r.ok ? r.json() : []; })
+          .then(function(anchors) {
+            if (!Array.isArray(anchors)) anchors = anchors.items || [];
+            if (anchorsCount) anchorsCount.textContent = anchors.length;
+            if (!anchorsBody) return;
+            if (anchors.length === 0) {
+              anchorsBody.innerHTML = '<div class="ev-ri-empty">No anchors for this document</div>';
+              return;
+            }
+            anchorsBody.innerHTML = anchors.map(function(a) {
+              return '<div class="ev-ri-item"><span class="ev-ri-anchor-chip" title="' + (a.anchor_text || '').substring(0, 100) + '">' +
+                '&#128205; ' + (a.anchor_text || '').substring(0, 40) + (a.anchor_text && a.anchor_text.length > 40 ? '...' : '') +
+                '</span></div>';
+            }).join('');
+          })
+          .catch(function() {
+            if (anchorsBody) anchorsBody.innerHTML = '<div class="ev-ri-empty">No anchors available</div>';
+            if (anchorsCount) anchorsCount.textContent = '0';
+          });
+      } else {
+        if (anchorsBody) anchorsBody.innerHTML = '<div class="ev-ri-empty">No document linked</div>';
+        if (anchorsCount) anchorsCount.textContent = '0';
+      }
+
+      fetch('/api/v2.5/workspaces/' + encodeURIComponent(wsId) + '/patches?record_id=' + encodeURIComponent(recordId))
+        .then(function(r) { return r.ok ? r.json() : []; })
+        .then(function(data) {
+          var items = Array.isArray(data) ? data : (data.items || []);
+          var corrections = items.filter(function(p) { return p.kind === 'correction'; });
+          if (correctionsCount) correctionsCount.textContent = corrections.length;
+          if (!correctionsBody) return;
+          if (corrections.length === 0) {
+            correctionsBody.innerHTML = '<div class="ev-ri-empty">No corrections for this record</div>';
+            return;
+          }
+          correctionsBody.innerHTML = corrections.map(function(c) {
+            var st = c.status || 'pending';
+            return '<div class="ev-ri-item"><span class="ev-ri-status ' + st + '">' + st + '</span> ' +
+              '<span style="font-size:0.85em;">' + (c.field_key || c.label || 'field') + '</span></div>';
+          }).join('');
+        })
+        .catch(function() {
+          if (correctionsBody) correctionsBody.innerHTML = '<div class="ev-ri-empty">No corrections for this record</div>';
+          if (correctionsCount) correctionsCount.textContent = '0';
+        });
+
+      fetch('/api/v2.5/workspaces/' + encodeURIComponent(wsId) + '/rfis?record_id=' + encodeURIComponent(recordId))
+        .then(function(r) { return r.ok ? r.json() : []; })
+        .then(function(data) {
+          var rfis = Array.isArray(data) ? data : (data.items || []);
+          if (rfisCount) rfisCount.textContent = rfis.length;
+          if (!rfisBody) return;
+          if (rfis.length === 0) {
+            rfisBody.innerHTML = '<div class="ev-ri-empty">No RFIs for this record</div>';
+            return;
+          }
+          rfisBody.innerHTML = rfis.map(function(r) {
+            var st = r.custody_state || r.status || 'open';
+            return '<div class="ev-ri-item"><span class="ev-ri-status ' + st + '">' + st + '</span> ' +
+              '<span style="font-size:0.85em;">' + (r.subject || r.title || 'RFI') + '</span></div>';
+          }).join('');
+        })
+        .catch(function() {
+          if (rfisBody) rfisBody.innerHTML = '<div class="ev-ri-empty">No RFIs for this record</div>';
+          if (rfisCount) rfisCount.textContent = '0';
+        });
     }
 
     function _evSwitchToReviewWithRecord() {
