@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from server.db import get_conn, put_conn
 from server.ulid import generate_id
 from server.api_v25 import envelope, collection_envelope, error_envelope
-from server.auth import AuthClass, require_auth
+from server.auth import AuthClass, require_auth, get_workspace_role
 from server.audit import emit_audit_event
 
 logger = logging.getLogger(__name__)
@@ -40,6 +40,18 @@ CUSTODY_AUDIT_EVENT_MAP = {
     ("awaiting_verifier", "dismissed"): "RFI_RESOLVED",
     ("returned_to_analyst", "awaiting_verifier"): "RFI_SENT",
 }
+
+ANALYST_SIDE_TRANSITIONS = {
+    ("open", "awaiting_verifier"),
+    ("returned_to_analyst", "awaiting_verifier"),
+}
+VERIFIER_SIDE_TRANSITIONS = {
+    ("awaiting_verifier", "returned_to_analyst"),
+    ("awaiting_verifier", "resolved"),
+    ("awaiting_verifier", "dismissed"),
+}
+ANALYST_ROLES = {"analyst", "admin", "architect"}
+VERIFIER_ROLES = {"verifier", "admin", "architect"}
 
 RFI_COLUMNS = [
     "id", "workspace_id", "patch_id", "author_id", "target_record_id",
@@ -345,6 +357,29 @@ def update_rfi(
                                 % (old_custody, requested_custody, ", ".join(sorted(allowed)) if allowed else "none (terminal)"),
                             ),
                         )
+
+                    transition_pair = (old_custody, requested_custody)
+                    actor_role = get_workspace_role(auth.user_id, workspace_id)
+                    if transition_pair in ANALYST_SIDE_TRANSITIONS:
+                        if actor_role not in ANALYST_ROLES:
+                            return JSONResponse(
+                                status_code=403,
+                                content=error_envelope(
+                                    "ROLE_NOT_ALLOWED",
+                                    "Only analyst, admin, or architect roles can perform this custody transition",
+                                    details={"required_roles": sorted(ANALYST_ROLES), "your_role": actor_role},
+                                ),
+                            )
+                    elif transition_pair in VERIFIER_SIDE_TRANSITIONS:
+                        if actor_role not in VERIFIER_ROLES:
+                            return JSONResponse(
+                                status_code=403,
+                                content=error_envelope(
+                                    "ROLE_NOT_ALLOWED",
+                                    "Only verifier, admin, or architect roles can perform this custody transition",
+                                    details={"required_roles": sorted(VERIFIER_ROLES), "your_role": actor_role},
+                                ),
+                            )
 
                 updates["custody_status"] = requested_custody
                 new_owner_role = CUSTODY_OWNER_MAP.get(requested_custody)

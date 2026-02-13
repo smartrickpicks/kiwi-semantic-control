@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from server.db import get_conn, put_conn
 from server.ulid import generate_id
 from server.api_v25 import envelope, collection_envelope, error_envelope
-from server.auth import AuthClass, require_auth
+from server.auth import AuthClass, require_auth, get_workspace_role
 from server.audit import emit_audit_event
 from server.feature_flags import require_evidence_inspector
 
@@ -276,6 +276,19 @@ def update_correction(
                             % (old_status, new_status, ", ".join(sorted(allowed_next)) if allowed_next else "none (terminal)"),
                         ),
                     )
+
+                if new_status in ("approved", "rejected") and new_status != old_status:
+                    actor_role = get_workspace_role(auth.user_id, workspace_id)
+                    verifier_roles = {"verifier", "admin", "architect"}
+                    if actor_role not in verifier_roles:
+                        return JSONResponse(
+                            status_code=403,
+                            content=error_envelope(
+                                "ROLE_NOT_ALLOWED",
+                                "Only verifier, admin, or architect roles can approve or reject corrections",
+                                details={"required_roles": sorted(verifier_roles), "your_role": actor_role},
+                            ),
+                        )
 
             if "status" in updates and updates["status"] in ("approved", "rejected"):
                 updates["decided_by"] = auth.user_id
