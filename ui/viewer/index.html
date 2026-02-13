@@ -1391,6 +1391,9 @@
     .ev-ri-status.approved { background: #e8f5e9; color: #2e7d32; }
     .ev-ri-status.rejected { background: #ffebee; color: #c62828; }
     #grid-tbody tr.ev-active-row { background: #e3f2fd !important; outline: 2px solid #1565c0; outline-offset: -1px; }
+    .ev-open-newtab-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: 6px; border: 1px solid #1565c0; background: #1565c0; color: #fff; font-size: 0.85em; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+    .ev-open-newtab-btn:hover:not(:disabled) { background: #0d47a1; }
+    .ev-open-newtab-btn:disabled { background: #e0e0e0; border-color: #ccc; color: #999; cursor: not-allowed; }
 
     /* Grid Context Menu */
     .grid-ctx-menu {
@@ -14098,7 +14101,38 @@
       }
     }
 
-    function _evSetPdfReason(reasonCode, detail) {
+    function _evAutoSelectFirstVisible() {
+      if (_evState.activeRecordId) {
+        console.log('[EV-AUTO] Already has active record:', _evState.activeRecordId, '— skipping auto-select');
+        return;
+      }
+      var rows = document.querySelectorAll('#grid-tbody tr[data-record-id]');
+      if (!rows || rows.length === 0) {
+        console.log('[EV-AUTO] No visible rows in grid — nothing to auto-select');
+        return;
+      }
+      var firstRow = null;
+      for (var i = 0; i < rows.length; i++) {
+        if (rows[i].offsetParent !== null && rows[i].style.display !== 'none') {
+          firstRow = rows[i];
+          break;
+        }
+      }
+      if (!firstRow) {
+        firstRow = rows[0];
+      }
+      var recordId = firstRow.getAttribute('data-record-id');
+      var sheetName = firstRow.getAttribute('data-sheet-name');
+      var rowIdx = parseInt(firstRow.getAttribute('data-row-idx'), 10);
+      if (!recordId) {
+        console.log('[EV-AUTO] First row has no record-id attribute');
+        return;
+      }
+      console.log('[EV-AUTO] Auto-selecting first visible record:', recordId, 'sheet:', sheetName, 'row:', rowIdx);
+      _evOpenViewerForRecord(sheetName, rowIdx, recordId);
+    }
+
+    function _evSetPdfReason(reasonCode, detail, docUrl) {
       var slot = document.getElementById('ev-pdf-reason-slot');
       if (!slot) return;
       if (!reasonCode) { slot.innerHTML = ''; return; }
@@ -14109,12 +14143,44 @@
         'unsupported_format': 'Unsupported Format'
       };
       var label = labels[reasonCode] || reasonCode;
-      slot.innerHTML = '<span class="ev-pdf-reason ' + reasonCode + '">' + label + '</span>' +
-        (detail ? '<div style="font-size:0.78em;color:#999;margin-top:4px;">' + detail + '</div>' : '');
+      while (slot.firstChild) slot.removeChild(slot.firstChild);
+
+      var badge = document.createElement('span');
+      badge.className = 'ev-pdf-reason ' + reasonCode;
+      badge.textContent = label;
+      slot.appendChild(badge);
+
+      if (detail) {
+        var detailEl = document.createElement('div');
+        detailEl.style.cssText = 'font-size:0.78em;color:#999;margin-top:4px;';
+        detailEl.textContent = detail;
+        slot.appendChild(detailEl);
+      }
+
+      var btnWrap = document.createElement('div');
+      btnWrap.style.marginTop = '10px';
+      var btn = document.createElement('button');
+      btn.className = 'ev-open-newtab-btn';
+      btn.textContent = 'Open in New Tab';
+      if (docUrl && typeof docUrl === 'string' && (docUrl.indexOf('http://') === 0 || docUrl.indexOf('https://') === 0 || docUrl.indexOf('/proxy/') === 0)) {
+        btn.addEventListener('click', function() { window.open(docUrl, '_blank'); });
+      } else {
+        btn.disabled = true;
+        btn.title = 'No document URL available';
+        var hint = document.createElement('div');
+        hint.style.cssText = 'font-size:0.72em;color:#aaa;margin-top:3px;';
+        hint.textContent = 'No document URL available';
+        btnWrap.appendChild(btn);
+        btnWrap.appendChild(hint);
+        slot.appendChild(btnWrap);
+        return;
+      }
+      btnWrap.appendChild(btn);
+      slot.appendChild(btnWrap);
     }
 
     function _evResolveDocUrl(record, recordId, sheetName) {
-      var result = { pdfUrl: null, sourceLabel: '', reason: null, detail: '' };
+      var result = { pdfUrl: null, rawUrl: null, sourceLabel: '', reason: null, detail: '' };
       console.log('[EV-RESOLVE] Step 1: record id =', recordId, ', sheet =', sheetName, ', record exists =', !!record);
 
       if (!record) {
@@ -14153,6 +14219,7 @@
           if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].indexOf(ext) >= 0) {
             result.reason = 'unsupported_format';
             result.detail = 'File type: .' + ext + ' (only PDF supported)';
+            result.rawUrl = fileUrl;
             console.log('[EV-RESOLVE] Step 4: unsupported format:', ext);
             return result;
           }
@@ -14204,6 +14271,7 @@
       if (sourceEl) sourceEl.textContent = sheetName || '';
 
       var resolved = _evResolveDocUrl(record, recordId, sheetName);
+      var rawDocUrl = resolved.pdfUrl || resolved.rawUrl || null;
 
       if (resolved.pdfUrl) {
         _evSetPdfReason(null);
@@ -14220,7 +14288,7 @@
             var msgEl = emptyEl.querySelector('div > div:nth-child(2)');
             if (msgEl) msgEl.textContent = 'Document failed to load';
           }
-          _evSetPdfReason('proxy_fetch_failed', 'The proxy could not fetch: ' + resolved.sourceLabel);
+          _evSetPdfReason('proxy_fetch_failed', 'The proxy could not fetch: ' + resolved.sourceLabel, rawDocUrl);
         };
 
         console.log('[EV-INLINE] PDF loaded:', resolved.sourceLabel, 'for record:', recordId);
@@ -14239,7 +14307,7 @@
             msgEl.textContent = msgs[resolved.reason] || 'No document available';
           }
         }
-        _evSetPdfReason(resolved.reason, resolved.detail);
+        _evSetPdfReason(resolved.reason, resolved.detail, rawDocUrl);
         console.log('[EV-INLINE] No PDF for record:', recordId, 'reason:', resolved.reason);
       }
     }
@@ -14417,6 +14485,7 @@
 
       if (mode === 'grid' && prevMode !== 'grid') {
         _evResetViewerState();
+        setTimeout(function() { _evAutoSelectFirstVisible(); }, 100);
       }
 
       if (mode === 'review' && prevMode === 'grid') {
