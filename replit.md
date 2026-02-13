@@ -52,6 +52,21 @@ The system is undergoing a multi-gate upgrade to add Postgres-backed multi-user 
 - **Seeded users:** 9 Create Music Group employees + 4 demo users in workspace `ws_SEED0100000000000000000000`
 - **Migration 003:** `server/migrations/003_auth_google_oauth.sql` — adds `status` and `google_sub` columns to users table, seeds CMG users
 
+## Google Drive Integration (Gate 1 COMPLETE — Awaiting Approval)
+The system is adding Google Drive as a first-class data source for contract workbook import/export:
+- **Gate 1 (Docs):** COMPLETE — Feature spec, readiness report, task list, scope decisions, OpenAPI additions, canonical API spec updated
+- **Gate 2 (Clarity):** PENDING — OAuth scopes, picker UX, export rules, naming conventions to lock
+- **Gate 3 (Alignment):** PENDING — Final task plan freeze
+- **Gate 4 (Code):** PENDING — 6 phases (OAuth, Browser, Import, Export, Audit, UI)
+- **Gate 5 (Audit):** PENDING — 11 validation criteria
+- **Key docs:** `docs/features/V25_GOOGLE_DRIVE_INTEGRATION.md`, `docs/handoff/V25_DRIVE_READINESS_REPORT.md`, `docs/handoff/V25_DRIVE_TASK_LIST.md`, `docs/decisions/DECISION_V25_DRIVE_SCOPE.md`
+- **Locked decisions:** Two-way (pull + export push), manual refresh only, working copy model, status-based export naming, red-cell acceptance, no patch backfill from external cells
+- **Non-negotiables:** Keep /api/v2.5/ canonical, no RBAC weakening, all Drive actions auditable, secrets in env only, no mixed envelopes
+- **New endpoints:** 7 Drive endpoints under `/workspaces/{ws_id}/drive/` (connect, callback, disconnect, status, browse, import, export)
+- **New DB tables:** `drive_connections` (OAuth tokens), `drive_import_provenance` (source tracking)
+- **New audit events:** DRIVE_CONNECTED, DRIVE_DISCONNECTED, DRIVE_FILE_BROWSED, DRIVE_FILE_IMPORTED, DRIVE_EXPORT_SAVED, DRIVE_EXPORT_FINALIZED
+- **New ID prefix:** `drv_` (Drive Import Provenance), `drc_` (Drive Connection)
+
 ## External Dependencies
 - **FastAPI server**: Acts as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
 - **SheetJS (XLSX)**: Loaded via CDN for Excel import/export functionality.
