@@ -14617,7 +14617,11 @@
             char_end: payload.char_end
           };
           var apiBase = window.API_BASE || '/api/v2.5';
-          var docIdForAnchor = payload.document_id || ('doc_' + (payload.record_id || 'unknown'));
+          var docIdForAnchor = payload.document_id || null;
+          if (!docIdForAnchor) {
+            if (typeof showToast === 'function') showToast('Cannot create Evidence Mark: no linked document for this record', 'warning');
+            return;
+          }
           fetch(apiBase + '/documents/' + encodeURIComponent(docIdForAnchor) + '/anchors', {
             method: 'POST',
             headers: (typeof _eiAuthHeaders === 'function') ? _eiAuthHeaders() : { 'Content-Type': 'application/json' },
@@ -14929,10 +14933,20 @@
         return;
       }
       var submitBtn = document.getElementById('ev-cor-submit-btn');
-      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting...'; }
-      var record = _evFindRecord(_evState.activeSheetName, _evState.activeRowIdx, payload.record_id || _evState.activeRecordId);
+      var resultArea = document.getElementById('ev-cor-result-area');
+      var footerStatus = document.getElementById('ev-cor-footer-status');
+      var recordId = payload.record_id || _evState.activeRecordId;
+      var record = _evFindRecord(_evState.activeSheetName, _evState.activeRowIdx, recordId);
       var docId = record ? _evResolveDocId(record) : (payload.document_id || null);
-      if (!docId) docId = payload.document_id || ('doc_' + (payload.record_id || 'unknown'));
+      if (!docId && payload.document_id) docId = payload.document_id;
+      console.log('[EV-COR] Submit: docId =', docId, ', recordId =', recordId, ', record resolved =', !!record);
+      if (!docId) {
+        console.warn('[EV-COR] Submit blocked: no document_id resolved. record =', record);
+        if (resultArea) resultArea.innerHTML = '<div class="ev-cor-result-badge error">Cannot submit correction: no linked document for this selection.</div>';
+        if (typeof showToast === 'function') showToast('Cannot submit: no linked document for this record', 'warning');
+        return;
+      }
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting...'; }
       var correctionBody = {
         original_value: originalValue,
         corrected_value: correctedValue,
@@ -14943,25 +14957,44 @@
           evidence_page: payload.page,
           evidence_char_start: payload.char_start,
           evidence_char_end: payload.char_end,
-          record_id: payload.record_id || _evState.activeRecordId || ''
+          record_id: recordId || ''
         }
       };
       var apiBase = window.API_BASE || '/api/v2.5';
       var headers = (typeof _getAuthHeaders === 'function') ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
       if (!headers['Content-Type']) headers['Content-Type'] = 'application/json';
-      fetch(apiBase + '/documents/' + encodeURIComponent(docId) + '/corrections', {
+      var postUrl = apiBase + '/documents/' + encodeURIComponent(docId) + '/corrections';
+      console.log('[EV-COR] POST', postUrl, correctionBody);
+      fetch(postUrl, {
         method: 'POST',
         headers: headers,
         body: JSON.stringify(correctionBody)
       }).then(function(resp) {
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        if (!resp.ok) {
+          return resp.json().catch(function() { return {}; }).then(function(errBody) {
+            var errCode = (errBody.error && errBody.error.code) || '';
+            var errMsg = (errBody.error && errBody.error.message) || '';
+            var reason = 'endpoint_not_found';
+            var userMsg = 'Could not submit correction';
+            if (resp.status === 404) {
+              reason = 'mapping_not_found';
+              userMsg = 'Document not found — this record may not have a linked document yet';
+            } else if (resp.status === 400) {
+              reason = 'validation_error';
+              userMsg = errMsg || 'Invalid correction data';
+            } else if (resp.status === 401 || resp.status === 403) {
+              reason = 'auth_error';
+              userMsg = 'Not authorized to submit corrections';
+            }
+            console.error('[EV-COR] Submit failed:', reason, '- HTTP', resp.status, errCode, errMsg);
+            throw { reason: reason, userMsg: userMsg, status: resp.status };
+          });
+        }
         return resp.json();
       }).then(function(result) {
         var corData = result.data || {};
         var status = corData.status || 'unknown';
         var corType = corData.correction_type || 'unknown';
-        var resultArea = document.getElementById('ev-cor-result-area');
-        var footerStatus = document.getElementById('ev-cor-footer-status');
         if (status === 'auto_applied') {
           if (resultArea) resultArea.innerHTML = '<div class="ev-cor-result-badge auto_applied">&#10003; Auto-applied — minor encoding fix applied immediately</div>';
           if (footerStatus) footerStatus.innerHTML = '<span style="color:#2e7d32;font-size:0.82em;font-weight:600;">&#10003; Applied</span>';
@@ -14973,7 +15006,7 @@
         }
         if (typeof Components !== 'undefined' && Components.PatchPanel && typeof Components.PatchPanel.openWithContext === 'function') {
           Components.PatchPanel.openWithContext({
-            recordId: payload.record_id,
+            recordId: recordId,
             sheetName: payload.sheet_name,
             rowIdx: _evState.activeRowIdx,
             record: record,
@@ -14983,12 +15016,12 @@
           }, 'correction', 'ev_reader');
         }
         if (record) {
-          _evLoadRightPanelForRecord(record, payload.record_id || _evState.activeRecordId, payload.sheet_name || _evState.activeSheetName);
+          _evLoadRightPanelForRecord(record, recordId, payload.sheet_name || _evState.activeSheetName);
         }
         if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
           AuditTimeline.emit('reader_encoding_correction_created', {
             correction_id: corData.id || null,
-            record_id: payload.record_id,
+            record_id: recordId,
             document_id: docId,
             correction_type: corType,
             status: status,
@@ -15000,10 +15033,11 @@
         if (submitBtn) { submitBtn.textContent = 'Done'; }
         setTimeout(function() { _evCorModalClose(); }, 1800);
       }).catch(function(err) {
-        console.error('[EV-COR] Submit failed:', err);
-        var resultArea = document.getElementById('ev-cor-result-area');
-        if (resultArea) resultArea.innerHTML = '<div class="ev-cor-result-badge error">&#10007; Failed: ' + (err.message || 'Unknown error') + '</div>';
-        if (typeof showToast === 'function') showToast('Failed to submit correction: ' + err.message, 'error');
+        console.error('[EV-COR] Submit error:', err);
+        var msg = err.userMsg || err.message || 'Unknown error';
+        var reason = err.reason || 'unknown';
+        if (resultArea) resultArea.innerHTML = '<div class="ev-cor-result-badge error">&#10007; ' + msg + '</div>';
+        if (typeof showToast === 'function') showToast(msg, 'error');
         if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit Correction'; }
       });
     }
@@ -15263,6 +15297,9 @@
 
     function _evResolveDocId(record) {
       if (!record) return null;
+      if (record._identity && record._identity.document_id) return record._identity.document_id;
+      if (record._document_id) return record._document_id;
+      if (record.document_id) return record.document_id;
       var contractKey = record.contract_key || record.Contract_Key || '';
       if (contractKey && window.workbook && window.workbook.contracts && window.workbook.contracts[contractKey]) {
         return window.workbook.contracts[contractKey].document_id || null;
