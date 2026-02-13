@@ -11335,6 +11335,19 @@
             headers: _getAuthHeaders()
           }).then(function(r) { return r.json(); })
           .then(function(resp) {
+            if (resp.error) {
+              var errCode = resp.error.code || '';
+              var errMsg = resp.error.message || 'Failed to browse Drive files';
+              if (errCode === 'DRIVE_API_NOT_ENABLED') {
+                if (container) container.innerHTML = '<div style="padding: 24px; text-align: center; color: #e57373;">' +
+                  '<div style="font-weight:600;margin-bottom:8px;">Google Drive API Not Enabled</div>' +
+                  '<div style="font-size:0.9em;color:#90a4ae;">The Google Drive API needs to be enabled in Google Cloud Console. ' +
+                  'Please ask your admin to enable it, then click Browse Drive again.</div></div>';
+                return;
+              }
+              if (container) container.innerHTML = '<div style="padding: 24px; text-align: center; color: #e57373;">' + escapeHtml(errMsg) + '</div>';
+              return;
+            }
             var d = resp.data || {};
             var items = d.items || [];
             if (parentId) {
@@ -11342,7 +11355,7 @@
             }
             var html = '<div class="ds-drive-browser">';
             html += '<div class="ds-drive-breadcrumb">';
-            html += '<span class="ds-bc-item" onclick="dsPanel.browseDriveRoot()" style="cursor:pointer;color:#4fc3f7;">My Drive</span>';
+            html += '<span class="ds-bc-item" onclick="dsPanel.browseDriveRoot()" style="cursor:pointer;color:#4fc3f7;">Contracts</span>';
             for (var i = 0; i < _browsePath.length; i++) {
               html += ' <span style="color:#546e7a;"> / </span> ';
               if (i < _browsePath.length - 1) {

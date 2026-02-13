@@ -28,6 +28,8 @@ DRIVE_SCOPES = [
 
 MAX_IMPORT_SIZE_BYTES = 50 * 1024 * 1024
 
+DRIVE_ROOT_FOLDER_ID = os.environ.get("DRIVE_ROOT_FOLDER_ID", "")
+
 CONN_COLUMNS = [
     "id", "workspace_id", "connected_by", "drive_email",
     "status", "connected_at", "updated_at", "metadata",
@@ -379,6 +381,8 @@ def drive_browse(
         q_parts = []
         if parent:
             q_parts.append("'%s' in parents" % parent)
+        elif DRIVE_ROOT_FOLDER_ID:
+            q_parts.append("'%s' in parents" % DRIVE_ROOT_FOLDER_ID)
         else:
             q_parts.append("'root' in parents")
 
@@ -446,7 +450,18 @@ def drive_browse(
 
     except Exception as e:
         logger.error("drive_browse error: %s", e)
-        return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
+        err_str = str(e)
+        if "accessNotConfigured" in err_str or "has not been used in project" in err_str:
+            return JSONResponse(
+                status_code=503,
+                content=error_envelope(
+                    "DRIVE_API_NOT_ENABLED",
+                    "The Google Drive API is not enabled in the Google Cloud project. "
+                    "Please enable it at https://console.developers.google.com/apis/api/drive.googleapis.com/overview "
+                    "and wait a few minutes before retrying.",
+                ),
+            )
+        return JSONResponse(status_code=500, content=error_envelope("INTERNAL", err_str))
     finally:
         put_conn(conn)
 
