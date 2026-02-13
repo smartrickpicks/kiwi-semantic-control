@@ -1,3 +1,5 @@
+import base64
+import io
 import json
 import logging
 import os
@@ -519,6 +521,42 @@ async def drive_import(ws_id: str, request: Request, auth=Depends(require_auth(A
                 ),
             )
 
+        mime = file_meta.get("mimeType", "")
+        google_export_mimes = {
+            "application/vnd.google-apps.spreadsheet": (
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                ".xlsx",
+            ),
+        }
+
+        from googleapiclient.http import MediaIoBaseDownload
+        if mime in google_export_mimes:
+            export_mime, ext = google_export_mimes[mime]
+            request_dl = service.files().export_media(
+                fileId=file_id, mimeType=export_mime
+            )
+        else:
+            ext = None
+            request_dl = service.files().get_media(
+                fileId=file_id, supportsAllDrives=True
+            )
+
+        buf = io.BytesIO()
+        downloader = MediaIoBaseDownload(buf, request_dl)
+        done = False
+        while not done:
+            _, done = downloader.next_chunk()
+
+        file_bytes = buf.getvalue()
+        file_b64 = base64.b64encode(file_bytes).decode("ascii")
+
+        raw_name = file_meta.get("name", "file")
+        if ext:
+            name_base = raw_name.rsplit(".", 1)[0] if "." in raw_name else raw_name
+            download_name = name_base + ext
+        else:
+            download_name = raw_name
+
         with conn.cursor() as cur:
             cur.execute(
                 """SELECT id, version_number FROM drive_import_provenance
@@ -576,6 +614,8 @@ async def drive_import(ws_id: str, request: Request, auth=Depends(require_auth(A
 
         result = _row_to_dict(prov_row, PROV_COLUMNS)
         result["is_refresh"] = is_refresh
+        result["file_content_base64"] = file_b64
+        result["file_name"] = download_name
 
         return JSONResponse(status_code=201, content=envelope(result))
 

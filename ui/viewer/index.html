@@ -11419,16 +11419,32 @@
             body: JSON.stringify({ file_id: fileId, file_name: fileName })
           }).then(function(r) { return r.json(); })
           .then(function(resp) {
-            if (resp.data) {
-              showToast('Imported: ' + fileName, 'success');
+            if (resp.data && resp.data.file_content_base64) {
+              var b64 = resp.data.file_content_base64;
+              var byteChars = atob(b64);
+              var byteArray = new Uint8Array(byteChars.length);
+              for (var i = 0; i < byteChars.length; i++) {
+                byteArray[i] = byteChars.charCodeAt(i);
+              }
+              var realName = resp.data.file_name || fileName;
+              var blob = new Blob([byteArray]);
+              var file = new File([blob], realName);
+              showToast('Loading workbook: ' + realName, 'success');
               _setDefaultSource('drive');
               _updateDefaultBadge();
+              if (typeof handleFileImport === 'function') {
+                handleFileImport(file);
+              } else if (window._globalHandleFileImport) {
+                window._globalHandleFileImport(file);
+              }
               renderSessionsList();
               _fetchServerSessions();
+            } else if (resp.data) {
+              showToast('Import recorded but no file content returned', 'warning');
             } else {
-              showToast('Import failed: ' + (resp.error || 'Unknown error'), 'error');
+              showToast('Import failed: ' + ((resp.error && resp.error.message) || 'Unknown error'), 'error');
             }
-          }).catch(function() { showToast('Import failed', 'error'); });
+          }).catch(function(err) { showToast('Import failed: ' + err.message, 'error'); });
         },
 
         refreshDrive: function() {
