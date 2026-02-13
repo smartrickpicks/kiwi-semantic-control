@@ -1313,17 +1313,22 @@
     /* v2.53: Frozen first data column (record label) */
     .grid-table td.grid-col-frozen,
     .grid-table th.grid-col-frozen {
-      position: sticky; left: 0; z-index: 4; background: #fff; border-right: 2px solid #cce5ff;
-      min-width: 200px; max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      box-shadow: 2px 0 6px rgba(0,0,0,0.05);
+      position: sticky !important; left: 0; z-index: 4; background: #fff; border-right: 2px solid #bbdefb;
+      min-width: 260px; max-width: 360px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      box-shadow: 3px 0 8px rgba(0,0,0,0.08);
     }
     .grid-table.grid-mode-active td.grid-col-frozen,
     .grid-table.grid-mode-active th.grid-col-frozen {
       left: 60px;
     }
-    .grid-table thead th.grid-col-frozen { z-index: 11; background: #e8f0fe; }
+    .grid-table thead th.grid-col-frozen { z-index: 11; background: #e8f0fe; font-weight: 600; }
     .grid-table.grid-mode-active thead th.grid-col-frozen { z-index: 12; background: #e8f0fe; }
     .grid-table tr:hover td.grid-col-frozen { background: #f0f4ff; }
+    .p1c-section-body .grid-table td.grid-col-frozen,
+    .p1c-section-body .grid-table th.grid-col-frozen {
+      position: sticky !important; background: #fff; z-index: 4;
+    }
+    .p1c-section-body .grid-table thead th.grid-col-frozen { background: #e8f0fe; z-index: 6; }
     .grid-rail-btn { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75em; margin: 0 1px; background: #e3f2fd; color: #1565c0; }
     .grid-rail-btn:hover { background: #bbdefb; }
     .grid-row-verified { background: #e8f5e9 !important; }
@@ -16734,12 +16739,13 @@
             var displayName = col.replace(/_c$/i, '').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
             if (displayName.length > 20) displayName = displayName.substring(0, 18) + '...';
             var frozenClass = (idx === 0) ? ' grid-col-frozen' : '';
+            var headerDisplayName = (idx === 0) ? 'Record' : displayName;
             headerHtml += '<th class="' + frozenClass + '" draggable="true" data-col-idx="' + idx + '" data-col-name="' + col + '" ' +
               'ondragstart="handleColumnDragStart(event)" ondragover="handleColumnDragOver(event)" ' +
               'ondrop="handleColumnDrop(event)" ondragend="handleColumnDragEnd(event)" ' +
-              'style="cursor: grab; user-select: none; min-width: 80px;">' +
+              'style="cursor: grab; user-select: none; min-width: ' + (idx === 0 ? '260' : '80') + 'px;">' +
               '<div style="font-size: 0.7em; color: #888; margin-bottom: 2px; font-weight: 600;">' + colLetter + '</div>' +
-              '<div title="' + col + '" style="font-size: 0.85em;">' + displayName + '</div></th>';
+              '<div title="' + col + '" style="font-size: 0.85em;">' + headerDisplayName + '</div></th>';
           }
           headerRow.innerHTML = headerHtml;
           console.log('[APP-MODULES][P1D1] GridHeader.render: cols=' + visibleColumns.length);
@@ -25910,11 +25916,11 @@
     // v2.53: Build standardized record label for first column
     // Format: Contract:Account (for accounts) or Contract:Account:Opportunity (for opportunities)
     function _gridBuildRecordLabel(record, sheetName) {
-      var OPP_FIELDS = ['Opportunity_Name_c', 'Opportunity_Name__c', 'Opportunity_Name', 'opportunity_name', 'Name'];
+      var OPP_FIELDS = ['Opportunity_Name__c', 'Opportunity_Name_c', 'Opportunity_Name', 'opportunity_name', 'Name'];
       var ACCT_FIELDS = [
-        'Account_Name_c', 'Account_Name', 'account_name', 'account_name_c',
-        'Artist_Name_pka_or_dba_c', 'Artist_Name_c', 'artist_name',
-        'Legal_Name_c', 'legal_name', 'Payee_c'
+        'Account_Name__c', 'Account_Name_c', 'Account_Name', 'account_name', 'account_name_c',
+        'Artist_Name_pka_or_dba__c', 'Artist_Name_pka_or_dba_c', 'Artist_Name__c', 'Artist_Name_c', 'artist_name',
+        'Legal_Name__c', 'Legal_Name_c', 'legal_name', 'Payee__c', 'Payee_c', 'Account'
       ];
       var contractRaw = record.File_Name_c || record.file_name || record.File_Name || record.contract_key || '';
       var contract = contractRaw.replace(/\.(pdf|xlsx|csv|xls)$/i, '').replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
@@ -29884,9 +29890,10 @@
           var displayName = col.replace(/_c$/i, '').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
           if (displayName.length > 20) displayName = displayName.substring(0, 18) + '...';
           var compFrozenCls = (ci === 0) ? ' class="grid-col-frozen"' : '';
-          headTr.innerHTML += '<th' + compFrozenCls + ' style="min-width: 80px;">' +
+          var compDisplayName = (ci === 0) ? 'Record' : displayName;
+          headTr.innerHTML += '<th' + compFrozenCls + ' style="min-width: ' + (ci === 0 ? '260' : '80') + 'px;">' +
             '<div style="font-size: 0.7em; color: #888; margin-bottom: 2px; font-weight: 600;">' + colLetter + '</div>' +
-            '<div title="' + col + '" style="font-size: 0.85em;">' + displayName + '</div></th>';
+            '<div title="' + col + '" style="font-size: 0.85em;">' + compDisplayName + '</div></th>';
         }
         thead.appendChild(headTr);
         tbl.appendChild(thead);
@@ -48850,7 +48857,7 @@ Add any additional notes here.
     
     /* ── P1C: Contract Composite Grid ── */
 
-    .p1c-section { margin-bottom: 16px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .p1c-section { margin-bottom: 16px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: clip; }
     .p1c-section-header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #f5f5f5; cursor: pointer; user-select: none; border-bottom: 1px solid #e0e0e0; }
     .p1c-section-header:hover { background: #eef2f7; }
     .p1c-section-caret { font-size: 0.8em; transition: transform 0.15s; display: inline-block; }
@@ -48870,6 +48877,7 @@ Add any additional notes here.
     .p1c-section-body table tr:hover { background: #f8f9fa; }
     .p1c-section-body table tr.clickable { cursor: pointer; }
     .p1c-section-body table td.truncated { max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+    .p1c-section-body table td.truncated.grid-col-frozen { max-width: 360px; min-width: 260px; }
     .p1c-section-body table td.status-ready { color: #2e7d32; }
     .p1c-section-body table td.status-needs_review { color: #f57c00; }
     .p1c-section-body table td.status-blocked { color: #c62828; }
