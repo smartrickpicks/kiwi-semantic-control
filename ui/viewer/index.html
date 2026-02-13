@@ -15599,6 +15599,13 @@
         .then(function(data) {
           var allRfis = Array.isArray(data) ? data : (data.items || []);
           if (_evRfiDebug) console.log('[EV-RFI-PANEL] Server returned', allRfis.length, 'RFIs');
+          if (optimisticItem && optimisticItem.id) {
+            var optimisticFound = allRfis.some(function(r) { return r.id === optimisticItem.id; });
+            if (!optimisticFound) {
+              allRfis.unshift(optimisticItem);
+              if (_evRfiDebug) console.log('[EV-RFI-PANEL] Preserved optimistic RFI (not yet in server):', optimisticItem.id);
+            }
+          }
           var filtered = _evRfiRoleFilter(allRfis, role, userId);
           if (_evRfiDebug) console.log('[EV-RFI-PANEL] After role filter (' + role + '):', filtered.length, 'of', allRfis.length);
           filtered.sort(function(a, b) {
@@ -15616,6 +15623,10 @@
         })
         .catch(function(err) {
           console.error('[EV-RFI-PANEL] Fetch error:', err);
+          if (optimisticItem && rfisBody) {
+            if (_evRfiDebug) console.log('[EV-RFI-PANEL] Fetch failed but preserving optimistic RFI');
+            return;
+          }
           if (rfisBody) rfisBody.innerHTML = '<div class="ev-ri-empty">Could not load RFIs</div>';
           if (rfisCount) rfisCount.textContent = '0';
         });
@@ -15713,6 +15724,21 @@
       if (typeof renderVerifierTriage === 'function') {
         try { renderVerifierTriage(); } catch (e) { console.warn('[EV-RFI-PROP] renderVerifierTriage error:', e); }
       }
+
+      var pqCountEl = document.getElementById('patch-queue-count');
+      if (pqCountEl) {
+        var currentPatchCount = (typeof analystTriageState !== 'undefined' && Array.isArray(analystTriageState.patchItems)) ? analystTriageState.patchItems.length : 1;
+        pqCountEl.textContent = '(' + currentPatchCount + ')';
+      }
+      if (typeof TriageAnalytics !== 'undefined' && TriageAnalytics._cache && TriageAnalytics._cache.lanes) {
+        var prCount = (typeof PATCH_REQUEST_STORE !== 'undefined') ? PATCH_REQUEST_STORE.list().length : 0;
+        TriageAnalytics._cache.lanes.patch_review.total = prCount;
+        if (typeof TriageAnalytics.renderHeader === 'function') {
+          try { TriageAnalytics.renderHeader(); } catch(e) {}
+        }
+      }
+
+      window._evRfiPendingPropagation = true;
 
       console.log('[EV-RFI-PROP] Propagated RFI to queues:', { prId: prId, rfiId: rfiId, recordId: recordId });
     }
@@ -23264,6 +23290,12 @@
       
       // DEV-ONLY: Assert no admin sections render inside triage
       if (page === 'triage') {
+        if (window._evRfiPendingPropagation) {
+          window._evRfiPendingPropagation = false;
+          if (typeof renderAnalystTriage === 'function') {
+            try { renderAnalystTriage(); } catch(e) {}
+          }
+        }
         var triageEl = document.getElementById('page-triage');
         if (triageEl) {
           var adminSectionsInTriage = triageEl.querySelectorAll('[data-admin-section="true"]');
