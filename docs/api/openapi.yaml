@@ -906,7 +906,7 @@ paths:
 
         '
       tags:
-      - Evidence Inspector
+      - Evidence Viewer
       parameters:
       - name: doc_id
         in: path
@@ -939,7 +939,7 @@ paths:
         based on (document_id, page_number, block_index). Quality flag is auto-detected if not provided. Cache key: (document_id,
         source_pdf_hash, ocr_version). Emits reader_node_cache.upserted audit event. Feature-gated behind EVIDENCE_INSPECTOR_V251.'
       tags:
-      - Evidence Inspector
+      - Evidence Viewer
       parameters:
       - name: doc_id
         in: path
@@ -1011,7 +1011,7 @@ paths:
 
         '
       tags:
-      - Evidence Inspector
+      - Evidence Viewer
       parameters:
       - name: doc_id
         in: path
@@ -1046,7 +1046,7 @@ paths:
 
         '
       tags:
-      - Evidence Inspector
+      - Evidence Viewer
       parameters:
       - name: doc_id
         in: path
@@ -1079,7 +1079,7 @@ paths:
 
         '
       tags:
-      - Evidence Inspector
+      - Evidence Viewer
       parameters:
       - name: doc_id
         in: path
@@ -1113,7 +1113,7 @@ paths:
 
         '
       tags:
-      - Evidence Inspector
+      - Evidence Viewer
       parameters:
       - name: cor_id
         in: path
@@ -1148,7 +1148,7 @@ paths:
 
         '
       tags:
-      - Evidence Inspector
+      - Evidence Viewer
       parameters:
       - name: bat_id
         in: path
@@ -1184,7 +1184,7 @@ paths:
 
         '
       tags:
-      - Evidence Inspector
+      - Evidence Viewer
       parameters:
       - name: bat_id
         in: path
@@ -1222,7 +1222,7 @@ paths:
 
         '
       tags:
-      - Evidence Inspector
+      - Evidence Viewer
       parameters:
       - name: bat_id
         in: path
@@ -1247,7 +1247,7 @@ paths:
 
         '
       tags:
-      - Evidence Inspector
+      - Evidence Viewer
       parameters:
       - name: doc_id
         in: path

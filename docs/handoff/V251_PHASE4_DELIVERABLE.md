@@ -4,7 +4,7 @@
 
 ## Summary
 
-Phase 4 delivers three hardening features:
+Phase 4 delivers three hardening features for Evidence Viewer:
 
 1. **Role Enforcement (P0)** — RFI custody transitions and correction approve/reject are now gated by workspace role
 2. **OCR Escalation Idempotency** — Duplicate escalation requests return 200 with `_idempotent` flag instead of creating duplicates

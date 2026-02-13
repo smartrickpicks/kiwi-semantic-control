@@ -173,7 +173,7 @@ All mutations produce audit events. No unaudited write paths.
 | Reader content fetching | Low | Reader shows cached nodes; actual fetch from reader-nodes API happens on document load |
 | Anchor bbox scroll (sub-page positioning) | Low | Page-level scroll implemented; sub-page bbox scroll deferred (best-effort per spec) |
 | OpenAPI validation | Info | No formal OpenAPI spec file exists; routes follow consistent envelope pattern |
-| Feature flag off behavior | Low | Evidence Inspector endpoints return 403 when flag disabled; tested in Phase 1 |
+| Feature flag off behavior | Low | Evidence Viewer endpoints return 403 when flag disabled; tested in Phase 1 |
 
 ---
 

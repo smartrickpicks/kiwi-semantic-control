@@ -678,21 +678,28 @@
     .srr-indicator.flag { background: #ffcdd2; color: #c62828; }
     .srr-indicator.evidence { background: #e3f2fd; color: #1565c0; }
     
-    /* Document Viewer */
+    /* Evidence Viewer */
     .srr-doc-viewer { height: 100%; display: flex; flex-direction: column; }
     .srr-doc-controls { display: flex; gap: 8px; padding: 8px 12px; background: #263238; border-bottom: 1px solid #37474f; align-items: center; }
-    .srr-view-toggle { display: flex; gap: 0; padding: 4px 12px; background: #1a2328; border-bottom: 1px solid #37474f; align-items: center; }
-    .srr-view-toggle-btn { padding: 5px 16px; font-size: 0.82em; font-weight: 500; border: 1px solid #37474f; background: transparent; color: #90a4ae; cursor: pointer; transition: all 0.15s; }
-    .srr-view-toggle-btn:first-child { border-radius: 4px 0 0 4px; }
-    .srr-view-toggle-btn:last-child { border-radius: 0 4px 4px 0; border-left: none; }
-    .srr-view-toggle-btn.active { background: #1565c0; color: #fff; border-color: #1565c0; }
+    .srr-view-toggle { display: flex; gap: 0; padding: 0 12px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; align-items: stretch; }
+    .srr-view-toggle-btn { padding: 8px 16px; font-size: 0.82em; font-weight: 500; border: none; border-bottom: 2px solid transparent; background: transparent; color: #888; cursor: pointer; transition: all 0.15s; border-radius: 0; }
+    .srr-view-toggle-btn:first-child { border-radius: 0; }
+    .srr-view-toggle-btn:last-child { border-radius: 0; }
+    .srr-view-toggle-btn.active { background: transparent; color: #1565c0; border-bottom: 2px solid #1565c0; }
     .srr-view-toggle-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .srr-view-toggle-hint { font-size: 0.75em; color: #78909c; margin-left: 10px; font-style: italic; }
-    .srr-reader-container { width: 100%; height: 100%; overflow: auto; padding: 16px 20px; background: #fafafa; font-family: 'Inter', system-ui, sans-serif; font-size: 0.92em; line-height: 1.65; color: #263238; }
-    .srr-reader-container .reader-node { margin-bottom: 6px; }
+    .srr-reader-container { width: 100%; height: 100%; overflow: auto; padding: 16px 20px; background: #fafafa; font-family: 'Inter', system-ui, sans-serif; font-size: 0.95em; line-height: 1.7; color: #333; }
+    .srr-reader-container p, .srr-reader-container .reader-node { margin-bottom: 16px; }
     .srr-reader-container .reader-node[data-quality="suspect"] { background: #fff8e1; border-left: 3px solid #ff9800; padding-left: 8px; }
-    .srr-reader-container .reader-highlight { background: #bbdefb; border-radius: 2px; padding: 0 2px; }
+    .srr-reader-container .reader-highlight { background: #fff9c4; border-radius: 2px; padding: 1px 3px; }
     .srr-reader-container .reader-empty { text-align: center; padding: 40px; color: #999; }
+    .ev-rfi-callout { display: flex; align-items: flex-start; gap: 12px; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 6px; padding: 12px 16px; margin: 12px 0; font-size: 0.88em; }
+    .ev-rfi-callout-icon { flex-shrink: 0; width: 24px; height: 24px; background: #1565c0; color: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 0.75em; font-weight: 600; }
+    .ev-rfi-callout-body { flex: 1; }
+    .ev-rfi-callout-title { font-weight: 600; color: #1565c0; margin-bottom: 4px; }
+    .ev-rfi-callout-status { font-size: 0.85em; color: #666; }
+    .ev-correction-hint { display: inline-flex; align-items: center; gap: 6px; background: #e8f5e9; border: 1px solid #a5d6a7; border-radius: 4px; padding: 6px 12px; margin: 4px 0 4px 12px; font-size: 0.82em; color: #2e7d32; font-weight: 500; }
+    .ev-correction-hint-dot { width: 8px; height: 8px; border-radius: 50%; background: #4caf50; flex-shrink: 0; }
     .srr-anchor-scroll-hint { display: none; padding: 6px 12px; background: #e3f2fd; color: #1565c0; font-size: 0.8em; border-bottom: 1px solid #bbdefb; text-align: center; }
     .srr-anchor-scroll-hint.visible { display: block; }
     .srr-doc-btn { background: #37474f; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8em; }
@@ -1965,7 +1972,7 @@
           <div class="nav-subitems" id="triage-subnav">
             <a class="nav-item nav-subitem nav-subparent" data-page="grid" href="#/grid" onclick="gridState.sheet = null;">
               <span class="nav-icon">📊</span>
-              <span class="nav-label">All Data Grid</span>
+              <span class="nav-label">Record Inspector</span>
               <span class="nav-expand-arrow" id="grid-expand-arrow">&#9656;</span>
             </a>
             <div class="nav-subitems nav-level3" id="grid-sections-nav">
@@ -2662,7 +2669,7 @@
       <div class="page" id="page-grid">
         <div class="page-header">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <h2>All-Data Grid</h2>
+            <h2>Record Inspector</h2>
           </div>
           <p class="page-desc">Dense spreadsheet view of all records with filtering and search.</p>
         </div>
@@ -2916,10 +2923,10 @@
             </div>
           </div>
 
-          <!-- Center Panel: Document Viewer -->
+          <!-- Center Panel: Evidence Viewer -->
           <div class="srr-panel srr-panel-center">
             <div class="srr-panel-header">
-              <span>Document Viewer</span>
+              <span>Evidence Viewer</span>
               <span id="srr-doc-page" style="font-weight: normal; color: #666; font-size: 0.85em;">Page 1 of 1</span>
             </div>
             <div class="srr-file-action-bar" id="srr-file-action-bar">
@@ -2934,8 +2941,8 @@
             </div>
             <div class="srr-doc-viewer">
               <div class="srr-view-toggle" id="srr-view-toggle" style="display: none;">
-                <button class="srr-view-toggle-btn active" id="srr-toggle-reader" onclick="srrViewToggle('reader')">Reader</button>
-                <button class="srr-view-toggle-btn" id="srr-toggle-pdf" onclick="srrViewToggle('pdf')">PDF</button>
+                <button class="srr-view-toggle-btn active" id="srr-toggle-reader" onclick="srrViewToggle('reader')">Reader Mode</button>
+                <button class="srr-view-toggle-btn" id="srr-toggle-pdf" onclick="srrViewToggle('pdf')">PDF Mode</button>
                 <span class="srr-view-toggle-hint" id="srr-view-toggle-hint"></span>
               </div>
               <div id="srr-anchor-scroll-hint" class="srr-anchor-scroll-hint"></div>
@@ -2962,7 +2969,7 @@
                   <span class="match-close" onclick="pdfMatchDismiss()" title="Close (Esc)">✕</span>
                 </div>
                 
-                <div id="mojibake-gate-banner" style="display: none; padding: 12px 16px; margin: 8px 12px; border-radius: 8px; border: 1px solid #ff9800; background: #fff3e0; color: #e65100;">
+                <div id="mojibake-gate-banner" style="display: none; padding: 12px 16px; margin: 8px 12px; border-radius: 6px; background: #fff3e0; border-left: 4px solid #ff9800; color: #e65100;">
                   <div style="display: flex; align-items: flex-start; gap: 10px;">
                     <span style="font-size: 1.3em; flex-shrink: 0;" id="mojibake-gate-icon"></span>
                     <div style="flex: 1;">
@@ -3026,7 +3033,7 @@
               <div id="srr-panel-tabs" class="srr-panel-tabs" style="display: none;"></div>
             </div>
             
-            <!-- Evidence Inspector Tab (v2.51) -->
+            <!-- Evidence Viewer Tab (v2.51) -->
             <div class="srr-panel-body ei-panel" id="ei-tab-panel" style="display: none;">
               <div class="ei-section" id="ei-anchors-section">
                 <div class="ei-section-header" onclick="eiToggleSection('anchors')">
@@ -15188,7 +15195,7 @@
     })();
     // ========== END PHASE D5 ==========
 
-    // ========== MOJIBAKE GATE UI (Evidence Inspector v2.51 Phase 4) ==========
+    // ========== MOJIBAKE GATE UI (Evidence Viewer v2.51 Phase 4) ==========
     var _mojibakeGateState = { documentId: null, qualityFlag: null, escalationPending: false };
 
     var MOJIBAKE_GATE_CONFIG = {
@@ -15196,21 +15203,21 @@
         icon: '\u26a0\ufe0f',
         title: 'Suspect Encoding Issues Detected',
         msg: 'The text extracted from this document may contain encoding artifacts (mojibake). Reader mode is available but results may be unreliable.',
-        style: 'border-color: #ff9800; background: #fff3e0; color: #e65100;',
+        style: 'background: #fff3e0; border-left: 4px solid #ff9800; color: #e65100;',
         disableReader: false
       },
       unreadable: {
         icon: '\ud83d\udeab',
         title: 'Document Text Unreadable',
         msg: 'The OCR engine could not produce readable text from this document. Reader mode is disabled. Use the PDF viewer to review the source document directly.',
-        style: 'border-color: #c62828; background: #ffebee; color: #c62828;',
+        style: 'background: #ffebee; border-left: 4px solid #c62828; color: #c62828;',
         disableReader: true
       },
       missing_text_layer: {
         icon: '\ud83d\udcc4',
         title: 'No Text Layer Available',
         msg: 'This PDF does not contain a searchable text layer (likely a scanned image). Reader mode is disabled. Use the PDF viewer to review the source document directly.',
-        style: 'border-color: #c62828; background: #ffebee; color: #c62828;',
+        style: 'background: #ffebee; border-left: 4px solid #c62828; color: #c62828;',
         disableReader: true
       }
     };
@@ -15231,7 +15238,7 @@
       }
 
       banner.style.display = 'block';
-      banner.setAttribute('style', 'display: block; padding: 12px 16px; margin: 8px 12px; border-radius: 8px; ' + config.style);
+      banner.setAttribute('style', 'display: block; padding: 12px 16px; margin: 8px 12px; border-radius: 6px; ' + config.style);
       document.getElementById('mojibake-gate-icon').textContent = config.icon;
       document.getElementById('mojibake-gate-title').textContent = config.title;
       document.getElementById('mojibake-gate-msg').textContent = config.msg;
@@ -15303,7 +15310,7 @@
     }
     // ========== END MOJIBAKE GATE UI ==========
 
-    // ========== READER/PDF TOGGLE (Evidence Inspector v2.51 Phase 5 - EVIDENCE-23) ==========
+    // ========== READER/PDF TOGGLE (Evidence Viewer v2.51 Phase 5 - EVIDENCE-23) ==========
     var _srrViewState = {
       mode: 'reader',
       qualityFlag: null,
@@ -15415,7 +15422,7 @@
     }
     // ========== END READER/PDF TOGGLE ==========
 
-    // ========== ANCHOR SCROLL MAPPING (Evidence Inspector v2.51 Phase 5 - EVIDENCE-24) ==========
+    // ========== ANCHOR SCROLL MAPPING (Evidence Viewer v2.51 Phase 5 - EVIDENCE-24) ==========
     function srrScrollToAnchor(anchor) {
       if (!anchor) return;
       var hint = document.getElementById('srr-anchor-scroll-hint');
@@ -15597,6 +15604,8 @@
       eiBtn.id = 'ei-tab-btn';
       eiBtn.dataset.tab = 'evidence';
       eiBtn.textContent = 'Evidence';
+      eiBtn.title = 'Evidence Viewer';
+      eiBtn.setAttribute('aria-label', 'Evidence Viewer');
       eiBtn.onclick = function() { eiShowTab(); };
       tabsEl.appendChild(eiBtn);
     }
@@ -15621,7 +15630,7 @@
       if (eiPanel) eiPanel.style.display = 'block';
 
       var titleEl = document.getElementById('srr-right-panel-title');
-      if (titleEl) titleEl.textContent = 'Evidence Inspector';
+      if (titleEl) titleEl.textContent = 'Evidence Viewer';
 
       var docId = (typeof _srrViewState !== 'undefined' && _srrViewState.documentId) ? _srrViewState.documentId : null;
       if (docId && docId !== _eiState.documentId) {
@@ -41661,7 +41670,7 @@
     document.addEventListener('DOMContentLoaded', function() {
       initDebugPanel();
       loadRulesBundle();  // v1.5.7: Load rules bundle for Field Inspector ordering
-      eiInit();  // v2.51: Evidence Inspector initialization
+      eiInit();  // v2.51: Evidence Viewer initialization
     });
     
 

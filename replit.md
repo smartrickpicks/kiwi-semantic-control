@@ -13,11 +13,11 @@ Semantic rules, defined by a WHEN/THEN pattern, generate deterministic cell-leve
 
 The system is undergoing an upgrade to add Postgres-backed multi-user persistence, featuring resource-based routes, ULID primaries, optimistic concurrency, and server-enforced no-self-approval. Authentication uses Google OAuth for human users and scoped API keys for service ingestion, with strict workspace isolation.
 
-An Evidence Inspector (v2.51) is fully implemented with document-level text anchoring, corrections workflow, and RFI custody tracking. All phases complete:
+An Evidence Viewer (v2.51) is fully implemented with document-level text anchoring, corrections workflow, and RFI custody tracking. All phases complete:
 - Phase 1-3: Foundation, Reader+Anchors, RFI Custody+Corrections (backend + DB)
 - Phase 4: Hardening (role enforcement, OCR idempotency, Mojibake Gate UI)
 - Phase 5: Finalization (Reader/PDF toggle, anchor scroll mapping, 37-test suite)
-- Phase 6 (UI): Evidence Inspector interactive panel in the right sidebar with three collapsible sections:
+- Phase 6 (UI): Evidence Viewer interactive panel in the right sidebar with three collapsible sections:
   - **Anchors Panel**: Create anchors from text selection in Reader view, list with click-to-scroll, delete capability (soft-delete via DELETE /anchors/{id})
   - **Corrections Panel**: View corrections with status chips (auto_applied/pending_verifier/approved/rejected), Approve/Reject buttons role-gated to verifier/admin/architect
   - **RFI Custody Panel**: View RFIs filtered to current document context, custody state badges (open/awaiting_verifier/returned_to_analyst/resolved/dismissed), role-appropriate action buttons (analyst: Send; verifier: Return/Resolve/Dismiss)

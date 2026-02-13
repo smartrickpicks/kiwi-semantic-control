@@ -19,10 +19,10 @@ Accepted ON values: `true`, `1`, `yes`, `on` (case-insensitive).
 ### Default OFF Confirmation
 
 The flag defaults to OFF. When OFF:
-- All v2.51 endpoints return `404` with `{"code": "FEATURE_DISABLED", "message": "Evidence Inspector v2.51 is not enabled. Set EVIDENCE_INSPECTOR_V251=true to activate."}`.
+- All v2.51 endpoints return `404` with `{"code": "FEATURE_DISABLED", "message": "Evidence Viewer v2.51 is not enabled. Set EVIDENCE_INSPECTOR_V251=true to activate."}`.
 - All v2.5 endpoints remain fully functional — no behavior change.
 - DB tables exist but are inert (no reads/writes hit them from application code).
-- UI Evidence Inspector components are not rendered (gated in JS).
+- UI Evidence Viewer components are not rendered (gated in JS).
 
 Implementation reference: `server/feature_flags.py` — `is_enabled()` reads `os.environ`, caches result.
 
@@ -171,7 +171,7 @@ All 10 v2.51 endpoints call `require_evidence_inspector()` as their first operat
   "status": "error",
   "error": {
     "code": "FEATURE_DISABLED",
-    "message": "Evidence Inspector v2.51 is not enabled. Set EVIDENCE_INSPECTOR_V251=true to activate."
+    "message": "Evidence Viewer v2.51 is not enabled. Set EVIDENCE_INSPECTOR_V251=true to activate."
   }
 }
 ```
@@ -261,7 +261,7 @@ HTTP 403
 
 FastAPI auto-generates an OpenAPI 3.1.0 spec at `/openapi.json`. The spec is derived from route definitions and is always current with the running application.
 
-**Note:** The spec metadata (`title: "Orchestrate OS PDF Proxy"`) reflects the original app title before Evidence Inspector was added. This is cosmetic and does not affect endpoint definitions or validation.
+**Note:** The spec metadata (`title: "Orchestrate OS PDF Proxy"`) reflects the original app title before Evidence Viewer was added. This is cosmetic and does not affect endpoint definitions or validation.
 
 | Check | Result |
 |-------|--------|

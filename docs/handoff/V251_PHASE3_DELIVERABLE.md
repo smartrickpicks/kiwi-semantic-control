@@ -9,7 +9,7 @@
 
 ## 1) Progress Summary
 
-Phase 3 implements the RFI custody state machine with enforced transitions and ownership tracking, plus the corrections lifecycle with auto-apply policy and verifier decision workflow. All mutations emit both backward-compatible generic events and new domain-specific audit events.
+Phase 3 implements the RFI custody state machine with enforced transitions and ownership tracking, plus the corrections lifecycle with auto-apply policy and verifier decision workflow for Evidence Viewer. All mutations emit both backward-compatible generic events and new domain-specific audit events.
 
 ### Acceptance Criteria Status
 

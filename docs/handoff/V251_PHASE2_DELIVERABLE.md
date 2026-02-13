@@ -9,7 +9,7 @@
 
 ## 1) Progress Summary
 
-Phase 2 implements the core Reader Node Cache and Anchor subsystems with deterministic identifiers, fingerprint-based deduplication, and full audit event emission.
+Phase 2 implements the core Reader Node Cache and Anchor subsystems with deterministic identifiers, fingerprint-based deduplication, and full audit event emission for Evidence Viewer.
 
 ### Acceptance Criteria Status
 

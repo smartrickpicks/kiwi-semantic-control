@@ -8,7 +8,7 @@
 
 ## 1) Progress Summary
 
-Phase 1 delivers the foundational infrastructure for Evidence Inspector v2.51:
+Phase 1 delivers the foundational infrastructure for Evidence Viewer v2.51:
 
 | Task ID | Description | Status |
 |---------|-------------|--------|
@@ -104,7 +104,7 @@ All endpoints live under `/api/v2.5/` namespace and use the standard `ok/data/me
 {
   "error": {
     "code": "FEATURE_DISABLED",
-    "message": "Evidence Inspector v2.51 is not enabled. Set EVIDENCE_INSPECTOR_V251=true to activate."
+    "message": "Evidence Viewer v2.51 is not enabled. Set EVIDENCE_INSPECTOR_V251=true to activate."
   }
 }
 ```
@@ -133,7 +133,7 @@ See `docs/api/openapi.yaml` — v2.51 additive schemas and endpoints appended.
 - `Rfi` — id, document_id, status (v2.5), custody_status (v2.51 additive), version, metadata
 - `RfiCollection`
 
-**New path entries (9 operations):** All under `/api/v2.5/` namespace, tagged `[Evidence Inspector]`.
+**New path entries (9 operations):** All under `/api/v2.5/` namespace, tagged `[Evidence Viewer]`.
 
 **Known structural note:** Path entries are appended after the Drive integration paths, following the same established pattern in the file. A full file restructure to consolidate all paths under a single `paths:` block is deferred to a future housekeeping pass.
 
@@ -188,4 +188,4 @@ None. All Phase 1 tasks complete, all decision locks confirmed.
 - Wire `GET /documents/{id}/reader-nodes` to actual PDF text extraction via PyMuPDF
 - Populate `reader_node_cache` on first read with quality detection
 - Build reader node→anchor selection pipeline
-- Frontend 3-pane Evidence Inspector shell (if applicable)
+- Frontend 3-pane Evidence Viewer shell (if applicable)
