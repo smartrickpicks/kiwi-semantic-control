@@ -1384,6 +1384,34 @@
     .ev-sel-menu-item:hover { background: #f0f4ff; }
     .ev-sel-menu-item .ev-sel-icon { font-size: 1em; width: 18px; text-align: center; }
     .ev-sel-menu-sep { height: 1px; background: #eee; margin: 3px 0; }
+    .ev-rfi-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); display: none; justify-content: center; align-items: center; z-index: 10000; }
+    .ev-rfi-modal-overlay.active { display: flex; }
+    .ev-rfi-modal { background: #fff; border-radius: 10px; width: 480px; max-width: 92vw; max-height: 85vh; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.22); display: flex; flex-direction: column; }
+    .ev-rfi-modal-header { background: #1a1a2e; color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .ev-rfi-modal-header h3 { margin: 0; font-size: 1em; font-weight: 600; }
+    .ev-rfi-modal-close { background: none; border: none; color: #fff; font-size: 1.3em; cursor: pointer; padding: 0 4px; opacity: 0.7; }
+    .ev-rfi-modal-close:hover { opacity: 1; }
+    .ev-rfi-modal-body { padding: 18px 20px; overflow-y: auto; flex: 1; }
+    .ev-rfi-quote { background: #f7f7f0; border-left: 3px solid #c9a227; padding: 10px 14px; margin-bottom: 16px; border-radius: 4px; font-size: 0.85em; color: #555; font-style: italic; max-height: 80px; overflow-y: auto; word-break: break-word; }
+    .ev-rfi-quote-label { font-size: 0.72em; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-style: normal; font-weight: 600; }
+    .ev-rfi-field { margin-bottom: 14px; }
+    .ev-rfi-field label { display: block; font-size: 0.82em; font-weight: 600; color: #444; margin-bottom: 4px; }
+    .ev-rfi-field textarea, .ev-rfi-field select { width: 100%; box-sizing: border-box; border: 1px solid #d0d0d0; border-radius: 5px; font-size: 0.88em; padding: 8px 10px; font-family: inherit; }
+    .ev-rfi-field textarea { resize: vertical; min-height: 72px; }
+    .ev-rfi-field textarea:focus, .ev-rfi-field select:focus { outline: none; border-color: #1976d2; box-shadow: 0 0 0 2px rgba(25,118,210,0.12); }
+    .ev-rfi-footer { padding: 12px 20px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; background: #fafafa; }
+    .ev-rfi-btn { padding: 8px 18px; border-radius: 5px; font-size: 0.85em; font-weight: 600; cursor: pointer; border: none; }
+    .ev-rfi-btn-cancel { background: #e8e8e8; color: #555; }
+    .ev-rfi-btn-cancel:hover { background: #ddd; }
+    .ev-rfi-btn-submit { background: #1976d2; color: #fff; }
+    .ev-rfi-btn-submit:hover { background: #1565c0; }
+    .ev-rfi-btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .ev-rfi-priority-row { display: flex; gap: 6px; }
+    .ev-rfi-priority-chip { padding: 5px 12px; border-radius: 12px; font-size: 0.78em; font-weight: 600; cursor: pointer; border: 1.5px solid #ddd; background: #fff; color: #666; transition: all 0.15s; }
+    .ev-rfi-priority-chip:hover { border-color: #aaa; }
+    .ev-rfi-priority-chip.selected { border-color: #1976d2; background: #e8f0fe; color: #1976d2; }
+    .ev-rfi-priority-chip[data-priority="high"].selected { border-color: #c62828; background: #fdecea; color: #c62828; }
+    .ev-rfi-priority-chip[data-priority="medium"].selected { border-color: #e65100; background: #fff3e0; color: #e65100; }
     .ev-reader-heading { font-size: 1.15em; font-weight: 700; color: #1a1a1a; margin: 18px 0 8px 0; padding-bottom: 4px; border-bottom: 1px solid #e0e0e0; font-family: 'Inter', -apple-system, sans-serif; }
     .ev-reader-subheading { font-size: 1.02em; font-weight: 600; color: #333; margin: 12px 0 6px 0; font-family: 'Inter', -apple-system, sans-serif; }
     .ev-reader-clause { margin: 6px 0; padding-left: 0; }
@@ -14579,7 +14607,12 @@
         return;
       }
 
-      if (action === 'correction' || action === 'rfi') {
+      if (action === 'rfi') {
+        _evRfiModalOpen(payload);
+        return;
+      }
+
+      if (action === 'correction') {
         var record = _evFindRecord(_evState.activeSheetName, _evState.activeRowIdx, _evState.activeRecordId);
         var patchCtx = {
           recordId: payload.record_id,
@@ -14595,12 +14628,12 @@
         };
         if (typeof Components !== 'undefined' && Components.PatchPanel && typeof Components.PatchPanel.openWithContext === 'function') {
           Components.PatchPanel.openWithContext(patchCtx, action, 'ev_reader');
-          if (typeof showToast === 'function') showToast((action === 'rfi' ? 'RFI linked to selected text' : 'Correction') + ' draft started from selected text', 'info');
+          if (typeof showToast === 'function') showToast('Correction draft started from selected text', 'info');
         } else {
           if (typeof showToast === 'function') showToast('Patch panel not available', 'warning');
         }
         if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
-          AuditTimeline.emit('reader_' + action + '_initiated', {
+          AuditTimeline.emit('reader_correction_initiated', {
             record_id: payload.record_id, document_id: payload.document_id,
             selected_text: payload.selected_text.substring(0, 100),
             page: payload.page, source: 'ev_reader_selection'
@@ -14619,6 +14652,146 @@
       try { document.execCommand('copy'); if (typeof showToast === 'function') showToast('Copied to clipboard', 'success'); }
       catch (e) { if (typeof showToast === 'function') showToast('Copy failed', 'error'); }
       document.body.removeChild(ta);
+    }
+
+    var _evRfiModalPayload = null;
+
+    function _evRfiModalOpen(payload) {
+      _evRfiModalPayload = payload;
+      var overlay = document.getElementById('ev-rfi-modal-overlay');
+      if (!overlay) { console.warn('[EV-RFI] Modal overlay not found'); return; }
+      var quoteEl = document.getElementById('ev-rfi-quote-text');
+      if (quoteEl) {
+        var rawText = payload.selected_text || '';
+        var txt = rawText.substring(0, 300);
+        quoteEl.textContent = txt + (rawText.length > 300 ? '...' : '');
+      }
+      var questionEl = document.getElementById('ev-rfi-question');
+      if (questionEl) questionEl.value = '';
+      var chips = overlay.querySelectorAll('.ev-rfi-priority-chip');
+      for (var i = 0; i < chips.length; i++) {
+        chips[i].classList.toggle('selected', chips[i].getAttribute('data-priority') === 'normal');
+      }
+      _evRfiPopulateAssign();
+      overlay.classList.add('active');
+      if (questionEl) setTimeout(function() { questionEl.focus(); }, 80);
+      console.log('[EV-RFI] Modal opened for record:', payload.record_id, 'page:', payload.page);
+    }
+
+    function _evRfiModalClose() {
+      var overlay = document.getElementById('ev-rfi-modal-overlay');
+      if (overlay) overlay.classList.remove('active');
+      _evRfiModalPayload = null;
+    }
+
+    function _evRfiSetPriority(btn) {
+      var row = btn.parentElement;
+      if (!row) return;
+      var chips = row.querySelectorAll('.ev-rfi-priority-chip');
+      for (var i = 0; i < chips.length; i++) chips[i].classList.remove('selected');
+      btn.classList.add('selected');
+    }
+
+    function _evRfiPopulateAssign() {
+      var sel = document.getElementById('ev-rfi-assign');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">Unassigned</option>';
+      var members = _dbMembers || (typeof getDemoUsers === 'function' ? getDemoUsers() : []);
+      for (var i = 0; i < members.length; i++) {
+        var m = members[i];
+        var name = m.display_name || m.name || m.email || m.id;
+        var role = m.role || '';
+        var opt = document.createElement('option');
+        opt.value = m.id || m.userId || '';
+        opt.textContent = name + (role ? ' (' + role + ')' : '');
+        sel.appendChild(opt);
+      }
+    }
+
+    function _evRfiModalSubmit() {
+      var payload = _evRfiModalPayload;
+      if (!payload) return;
+      var questionEl = document.getElementById('ev-rfi-question');
+      var question = questionEl ? questionEl.value.trim() : '';
+      if (!question) {
+        if (typeof showToast === 'function') showToast('Please enter a question', 'warning');
+        if (questionEl) questionEl.focus();
+        return;
+      }
+      var assignEl = document.getElementById('ev-rfi-assign');
+      var assignTo = assignEl ? assignEl.value : '';
+      var selectedChip = document.querySelector('.ev-rfi-priority-chip.selected');
+      var priority = selectedChip ? selectedChip.getAttribute('data-priority') : 'normal';
+      var submitBtn = document.getElementById('ev-rfi-submit-btn');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Sending...'; }
+      var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : _dbMembersWorkspaceId;
+      var recordId = payload.record_id || _evState.activeRecordId || '';
+      var record = _evFindRecord(_evState.activeSheetName, _evState.activeRowIdx, recordId);
+      var docId = record ? _evResolveDocId(record) : null;
+      var rfiBody = {
+        question: question,
+        target_record_id: recordId,
+        target_field_key: payload.field_key || '',
+        metadata: {
+          evidence_text: (payload.selected_text || '').substring(0, 500),
+          evidence_page: payload.page,
+          evidence_char_start: payload.char_start,
+          evidence_char_end: payload.char_end,
+          evidence_anchor_context: true,
+          document_id: docId || payload.document_id || '',
+          priority: priority,
+          assigned_to: assignTo || null,
+          source: 'ev_reader_selection'
+        }
+      };
+      var apiBase = window.API_BASE || '/api/v2.5';
+      var headers = (typeof _getAuthHeaders === 'function') ? _getAuthHeaders() : { 'Content-Type': 'application/json' };
+      if (!headers['Content-Type']) headers['Content-Type'] = 'application/json';
+      fetch(apiBase + '/workspaces/' + encodeURIComponent(wsId) + '/rfis', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(rfiBody)
+      }).then(function(resp) {
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return resp.json();
+      }).then(function(result) {
+        if (typeof showToast === 'function') showToast('RFI linked to selected text', 'success');
+        _evRfiModalClose();
+        if (typeof Components !== 'undefined' && Components.PatchPanel && typeof Components.PatchPanel.openWithContext === 'function') {
+          Components.PatchPanel.openWithContext({
+            recordId: recordId,
+            sheetName: payload.sheet_name,
+            rowIdx: _evState.activeRowIdx,
+            record: record,
+            source: 'ev_reader_selection',
+            evidence_text: payload.selected_text,
+            evidence_page: payload.page,
+            evidence_char_start: payload.char_start,
+            evidence_char_end: payload.char_end,
+            evidence_anchor_context: true
+          }, 'rfi', 'ev_reader');
+        }
+        if (record) {
+          _evLoadRightPanelForRecord(record, recordId, payload.sheet_name || _evState.activeSheetName);
+        }
+        if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
+          AuditTimeline.emit('reader_rfi_created', {
+            rfi_id: (result.data && result.data.id) || null,
+            record_id: recordId,
+            document_id: docId || payload.document_id,
+            selected_text: (payload.selected_text || '').substring(0, 100),
+            page: payload.page,
+            priority: priority,
+            assigned_to: assignTo || null,
+            source: 'ev_reader_selection'
+          });
+        }
+      }).catch(function(err) {
+        console.error('[EV-RFI] Submit failed:', err);
+        if (typeof showToast === 'function') showToast('Failed to create RFI: ' + err.message, 'error');
+      }).finally(function() {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Send RFI'; }
+      });
     }
 
     function _evShowPdfPane() {
@@ -48693,6 +48866,41 @@ var P022_RuntimeValidation = {
 <!-- Grid Context Menu -->
 <div id="grid-ctx-menu" class="grid-ctx-menu" role="menu" aria-label="Grid actions"></div>
 <div id="ev-sel-menu" class="ev-sel-menu" role="menu" aria-label="Reader selection actions"></div>
+
+<div id="ev-rfi-modal-overlay" class="ev-rfi-modal-overlay">
+  <div class="ev-rfi-modal">
+    <div class="ev-rfi-modal-header">
+      <h3>Create RFI</h3>
+      <button class="ev-rfi-modal-close" onclick="_evRfiModalClose()" aria-label="Close">&times;</button>
+    </div>
+    <div class="ev-rfi-modal-body">
+      <div class="ev-rfi-quote">
+        <div class="ev-rfi-quote-label">Selected text</div>
+        <div id="ev-rfi-quote-text"></div>
+      </div>
+      <div class="ev-rfi-field">
+        <label for="ev-rfi-question">Question <span style="color:#c62828;">*</span></label>
+        <textarea id="ev-rfi-question" placeholder="What do you need clarified about this text?"></textarea>
+      </div>
+      <div class="ev-rfi-field">
+        <label for="ev-rfi-assign">Assign to</label>
+        <select id="ev-rfi-assign"><option value="">Unassigned</option></select>
+      </div>
+      <div class="ev-rfi-field">
+        <label>Priority</label>
+        <div class="ev-rfi-priority-row">
+          <button type="button" class="ev-rfi-priority-chip selected" data-priority="normal" onclick="_evRfiSetPriority(this)">Normal</button>
+          <button type="button" class="ev-rfi-priority-chip" data-priority="medium" onclick="_evRfiSetPriority(this)">Medium</button>
+          <button type="button" class="ev-rfi-priority-chip" data-priority="high" onclick="_evRfiSetPriority(this)">High</button>
+        </div>
+      </div>
+    </div>
+    <div class="ev-rfi-footer">
+      <button class="ev-rfi-btn ev-rfi-btn-cancel" onclick="_evRfiModalClose()">Cancel</button>
+      <button class="ev-rfi-btn ev-rfi-btn-submit" id="ev-rfi-submit-btn" onclick="_evRfiModalSubmit()">Send RFI</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
