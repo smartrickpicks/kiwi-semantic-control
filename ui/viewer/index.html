@@ -2027,11 +2027,17 @@
         </div>
         <!-- Export / Save -->
         <div class="nav-section" style="padding: 12px 16px;">
-          <button class="nav-action-btn export-btn" onclick="handleExportSave()">
-            <span class="nav-action-icon">💾</span>
-            <span>Export Local</span>
-          </button>
-          <button class="nav-action-btn export-btn" onclick="handleSaveToDrive()" style="margin-top:6px;background:#1a73e8;color:#fff;">
+          <div style="display:flex;gap:4px;">
+            <button class="nav-action-btn export-btn" onclick="handleExportClean()" style="flex:1;font-size:0.78em;" title="Download Excel with your edits only — no extra audit sheets">
+              <span class="nav-action-icon">💾</span>
+              <span>Export</span>
+            </button>
+            <button class="nav-action-btn export-btn" onclick="handleExportFull()" style="flex:1;font-size:0.78em;background:#2e7d32;color:#fff;" title="Download Excel with change log, signals, RFIs, and audit trail">
+              <span class="nav-action-icon">📋</span>
+              <span>Export Full</span>
+            </button>
+          </div>
+          <button class="nav-action-btn export-btn" onclick="handleSaveToDrive()" style="margin-top:6px;background:#1a73e8;color:#fff;" title="Save full workbook with audit trail to Google Drive for verifier review">
             <span class="nav-action-icon">☁️</span>
             <span>Save to Drive</span>
           </button>
@@ -19323,7 +19329,8 @@
     }
 
     // ========== EXPORT / SAVE FUNCTIONALITY (v1.6.33 + v2.0 status naming + cell styles) ==========
-    function _buildExportWorkbook() {
+    function _buildExportWorkbook(options) {
+      var includeMeta = options && options.full;
       var wb = XLSX.utils.book_new();
       var dataSheets = getDataSheets();
       dataSheets.forEach(function(sheetName) {
@@ -19364,20 +19371,22 @@
         _applyCellStylesToSheet(ws, sheetName, exportHeaders, sheetData.rows.length);
         XLSX.utils.book_append_sheet(wb, ws, sheetName.substring(0, 31));
       });
-      var changeLogWs = buildChangeLogSheet();
-      if (changeLogWs) XLSX.utils.book_append_sheet(wb, changeLogWs, '_change_log');
-      var rfiWs = buildRFISheet();
-      if (rfiWs) XLSX.utils.book_append_sheet(wb, rfiWs, 'RFIs & Analyst Notes');
-      var signalsWs = buildSignalsSummarySheet();
-      if (signalsWs) XLSX.utils.book_append_sheet(wb, signalsWs, '_signals_summary');
-      var metaWs = buildMetadataSheet();
-      XLSX.utils.book_append_sheet(wb, metaWs, '_orchestrate_meta');
-      var auditWs = buildAuditLogSheet();
-      if (auditWs) XLSX.utils.book_append_sheet(wb, auditWs, 'Audit_Log');
+      if (includeMeta) {
+        var changeLogWs = buildChangeLogSheet();
+        if (changeLogWs) XLSX.utils.book_append_sheet(wb, changeLogWs, '_change_log');
+        var rfiWs = buildRFISheet();
+        if (rfiWs) XLSX.utils.book_append_sheet(wb, rfiWs, 'RFIs & Analyst Notes');
+        var signalsWs = buildSignalsSummarySheet();
+        if (signalsWs) XLSX.utils.book_append_sheet(wb, signalsWs, '_signals_summary');
+        var metaWs = buildMetadataSheet();
+        XLSX.utils.book_append_sheet(wb, metaWs, '_orchestrate_meta');
+        var auditWs = buildAuditLogSheet();
+        if (auditWs) XLSX.utils.book_append_sheet(wb, auditWs, 'Audit_Log');
+      }
       return wb;
     }
 
-    function handleExportSave() {
+    function _exportToFile(options) {
       if (typeof XLSX === 'undefined') {
         showToast('Excel library not loaded. Please refresh and try again.', 'error');
         return;
@@ -19386,20 +19395,25 @@
         showToast('No data to export. Please load a dataset first.', 'warning');
         return;
       }
-      showToast('Preparing export...', 'info');
+      var label = options && options.full ? 'full export' : 'export';
+      showToast('Preparing ' + label + '...', 'info');
       try {
-        var wb = _buildExportWorkbook();
+        var wb = _buildExportWorkbook(options);
         var exportStatus = _resolveExportStatus();
         var datasetName = IDENTITY_CONTEXT.dataset_id || 'dataset';
         var filename = _buildExportFilename(datasetName, exportStatus);
         XLSX.writeFile(wb, filename);
         showToast('Exported: ' + filename, 'success');
-        console.log('[Export] Generated:', filename, 'status:', exportStatus, 'sheets:', wb.SheetNames.length);
+        console.log('[Export] Generated:', filename, 'status:', exportStatus, 'sheets:', wb.SheetNames.length, 'mode:', label);
       } catch (err) {
         console.error('[Export] Error:', err);
         showToast('Export failed: ' + err.message, 'error');
       }
     }
+
+    function handleExportClean() { _exportToFile({ full: false }); }
+    function handleExportFull() { _exportToFile({ full: true }); }
+    function handleExportSave() { _exportToFile({ full: true }); }
 
     function handleSaveToDrive(folderId) {
       if (typeof XLSX === 'undefined') {
@@ -19412,7 +19426,7 @@
       }
       showToast('Building workbook for Drive...', 'info');
       try {
-        var wb = _buildExportWorkbook();
+        var wb = _buildExportWorkbook({ full: true });
         var exportStatus = _resolveExportStatus();
         var datasetName = IDENTITY_CONTEXT.dataset_id || 'dataset';
         var filename = _buildExportFilename(datasetName, exportStatus);
