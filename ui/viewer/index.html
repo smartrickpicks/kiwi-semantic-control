@@ -11343,6 +11343,11 @@
 
       function _getAuthHeaders() {
         var headers = { 'Content-Type': 'application/json' };
+        var token = localStorage.getItem('orchestrate_auth_token');
+        if (token) {
+          headers['Authorization'] = 'Bearer ' + token;
+          return headers;
+        }
         try {
           var s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}');
           if (s.token) {
@@ -11351,12 +11356,14 @@
             headers['Authorization'] = 'Bearer ' + s.user_id;
           } else if (s.email) {
             headers['Authorization'] = 'Bearer ' + s.email;
-          } else {
-            headers['Authorization'] = 'Bearer usr_SEED0300000000000000000000';
           }
-        } catch(e) {
-          headers['Authorization'] = 'Bearer usr_SEED0300000000000000000000';
-        }
+        } catch(e) {}
+        try {
+          var du = JSON.parse(localStorage.getItem('demoUser') || '{}');
+          if (!headers['Authorization'] && du.userId) {
+            headers['Authorization'] = 'Bearer ' + du.userId;
+          }
+        } catch(e) {}
         return headers;
       }
 
