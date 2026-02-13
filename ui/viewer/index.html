@@ -29189,7 +29189,7 @@
     function srrHasUnresolvedFields() {
       for (var key in srrState.fieldStates) {
         var state = srrState.fieldStates[key];
-        if (state === 'patched' || state === 'rfi') return true;
+        if (state === 'patched' || state === 'rfi_pending') return true;
       }
       return false;
     }
@@ -29199,7 +29199,7 @@
       var count = 0;
       for (var key in srrState.fieldStates) {
         var state = srrState.fieldStates[key];
-        if (state === 'patched' || state === 'rfi') count++;
+        if (state === 'patched' || state === 'rfi_pending') count++;
       }
       return count;
     }
@@ -29826,7 +29826,7 @@
       // Clear all PATCHED and RFI states
       for (var key in srrState.fieldStates) {
         var state = srrState.fieldStates[key];
-        if (state === 'patched' || state === 'rfi') {
+        if (state === 'patched' || state === 'rfi_pending') {
           delete srrState.fieldStates[key];
           delete srrState.proposedChanges[key];
           delete srrState.lockedFields[key];
@@ -29834,6 +29834,41 @@
         }
       }
       srrState.patchDraft.changes = [];
+      srrHideGuardModal();
+      navigateTo(_srrNavOrigin || 'grid');
+    }
+    
+    function srrGuardSaveDraft() {
+      var rec = srrState.currentRecord || {};
+      var recordId = (rec._identity && rec._identity.record_id) || rec.record_id || srrState.currentRecordKey || '';
+      var sheetName = srrState.currentSheetName || '';
+      var scopeKey = recordId + ':' + sheetName;
+      try {
+        var draftBundle = {
+          patchDraft: srrState.patchDraft || {},
+          patchType: srrState.patchType || 'correction',
+          fieldStates: {},
+          proposedChanges: {},
+          editedValues: {},
+          rfiField: srrState.rfiField || null,
+          savedAt: new Date().toISOString()
+        };
+        for (var key in srrState.fieldStates) {
+          var st = srrState.fieldStates[key];
+          if (st === 'patched' || st === 'rfi_pending') {
+            draftBundle.fieldStates[key] = st;
+            if (srrState.proposedChanges[key]) draftBundle.proposedChanges[key] = srrState.proposedChanges[key];
+            if (srrState.editedValues.hasOwnProperty(key)) draftBundle.editedValues[key] = srrState.editedValues[key];
+          }
+        }
+        sessionStorage.setItem('srr_guard_draft_' + scopeKey, JSON.stringify(draftBundle));
+        sessionStorage.setItem('srr_studio_draft_' + scopeKey, JSON.stringify(srrState.patchDraft || {}));
+        console.log('[SRR] Guard draft saved for scope:', scopeKey, draftBundle);
+        showToast('Draft saved — you can resume when you return', 'success');
+      } catch (e) {
+        console.warn('[SRR] Guard draft save failed:', e);
+        showToast('Could not save draft', 'warning');
+      }
       srrHideGuardModal();
       navigateTo(_srrNavOrigin || 'grid');
     }
@@ -32293,6 +32328,42 @@
         }
       } catch (e) {
         console.warn('[SRR_STUDIO] Failed to hydrate draft:', e);
+      }
+      try {
+        var guardRaw = sessionStorage.getItem('srr_guard_draft_' + scopeKey);
+        if (guardRaw) {
+          var bundle = JSON.parse(guardRaw);
+          var restoredCount = 0;
+          console.log('[SRR_STUDIO] Restoring guard draft for scope:', scopeKey);
+          if (bundle.fieldStates) {
+            for (var fk in bundle.fieldStates) {
+              srrState.fieldStates[fk] = bundle.fieldStates[fk];
+              _cacheFieldState(recordId, fk, bundle.fieldStates[fk]);
+              restoredCount++;
+            }
+          }
+          if (bundle.proposedChanges) {
+            for (var pk in bundle.proposedChanges) {
+              srrState.proposedChanges[pk] = bundle.proposedChanges[pk];
+            }
+          }
+          if (bundle.editedValues) {
+            for (var ek in bundle.editedValues) {
+              srrState.editedValues[ek] = bundle.editedValues[ek];
+            }
+          }
+          if (bundle.patchDraft) {
+            srrState.patchDraft = Object.assign(srrState.patchDraft || {}, bundle.patchDraft);
+          }
+          if (bundle.patchType) srrState.patchType = bundle.patchType;
+          if (bundle.rfiField) srrState.rfiField = bundle.rfiField;
+          sessionStorage.removeItem('srr_guard_draft_' + scopeKey);
+          if (restoredCount > 0) {
+            showToast('Previous draft restored (' + restoredCount + ' field' + (restoredCount > 1 ? 's' : '') + ')', 'info');
+          }
+        }
+      } catch (e2) {
+        console.warn('[SRR_STUDIO] Failed to restore guard draft:', e2);
       }
     }
 
