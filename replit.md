@@ -13,7 +13,7 @@ Semantic rules, defined by a WHEN/THEN pattern, generate deterministic cell-leve
 
 The system is undergoing an upgrade to add Postgres-backed multi-user persistence, featuring resource-based routes, ULID primaries, optimistic concurrency, and server-enforced no-self-approval. Authentication uses Google OAuth for human users and scoped API keys for service ingestion, with strict workspace isolation.
 
-An Evidence Inspector is being added for document-level text anchoring, corrections, and RFI custody tracking, utilizing new database tables for anchors, corrections, and OCR escalations, and introducing a feature flag for controlled rollout.
+An Evidence Inspector (v2.51) is being added for document-level text anchoring, corrections, and RFI custody tracking. Phase 1 (Foundation) is complete: feature flag infrastructure, 4 new DB tables (anchors, corrections, reader_node_cache, ocr_escalations), 9 route modules. Phase 2 (Reader + Anchors) is complete: deterministic node_ids, reader node cache with quality detection, anchor fingerprint dedup with selected_text_hash, cursor pagination, audit events. All behind `EVIDENCE_INSPECTOR_V251` feature flag.
 
 ## External Dependencies
 - **FastAPI server**: Used as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.

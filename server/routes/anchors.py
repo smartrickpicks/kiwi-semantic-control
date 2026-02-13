@@ -19,6 +19,7 @@ router = APIRouter(prefix="/api/v2.5")
 ANCHOR_COLUMNS = [
     "id", "document_id", "workspace_id", "anchor_fingerprint",
     "node_id", "char_start", "char_end", "selected_text",
+    "selected_text_hash",
     "field_id", "field_key", "page_number",
     "created_by", "created_at", "updated_at", "deleted_at", "version", "metadata",
 ]
@@ -36,13 +37,18 @@ def _row_to_dict(row, columns):
     return d
 
 
+def _compute_selected_text_hash(selected_text):
+    return hashlib.sha256((selected_text or "").encode("utf-8")).hexdigest()
+
+
 def _compute_fingerprint(document_id, node_id, char_start, char_end, selected_text):
+    text_hash = _compute_selected_text_hash(selected_text)
     raw = "%s|%s|%s|%s|%s" % (
         document_id or "",
         node_id or "",
         char_start if char_start is not None else "",
         char_end if char_end is not None else "",
-        hashlib.sha256((selected_text or "").encode("utf-8")).hexdigest(),
+        text_hash,
     )
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
@@ -68,6 +74,23 @@ def create_anchor(
     page_number = body.get("page_number")
     metadata = body.get("metadata", {})
 
+    if not node_id:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "node_id is required"),
+        )
+    if char_start is None or char_end is None:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "char_start and char_end are required"),
+        )
+    if not selected_text:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "selected_text is required"),
+        )
+
+    selected_text_hash = _compute_selected_text_hash(selected_text)
     fingerprint = _compute_fingerprint(doc_id, node_id, char_start, char_end, selected_text)
 
     conn = get_conn()
@@ -86,31 +109,26 @@ def create_anchor(
             workspace_id = doc_row[1]
 
             cur.execute(
-                "SELECT id FROM anchors WHERE anchor_fingerprint = %s AND deleted_at IS NULL",
+                "SELECT %s FROM anchors WHERE anchor_fingerprint = %%s AND deleted_at IS NULL" % ANCHOR_SELECT,
                 (fingerprint,),
             )
             existing = cur.fetchone()
             if existing:
-                cur.execute(
-                    "SELECT %s FROM anchors WHERE id = %%s" % ANCHOR_SELECT,
-                    (existing[0],),
-                )
-                row = cur.fetchone()
                 return JSONResponse(
                     status_code=200,
-                    content=envelope(_row_to_dict(row, ANCHOR_COLUMNS)),
+                    content=envelope(_row_to_dict(existing, ANCHOR_COLUMNS)),
                 )
 
             anchor_id = generate_id("anc_")
             cur.execute(
                 """INSERT INTO anchors
                    (id, document_id, workspace_id, anchor_fingerprint,
-                    node_id, char_start, char_end, selected_text,
+                    node_id, char_start, char_end, selected_text, selected_text_hash,
                     field_id, field_key, page_number, created_by, metadata)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                    RETURNING """ + ANCHOR_SELECT,
                 (anchor_id, doc_id, workspace_id, fingerprint,
-                 node_id, char_start, char_end, selected_text,
+                 node_id, char_start, char_end, selected_text, selected_text_hash,
                  field_id, field_key, page_number, auth.user_id,
                  json.dumps(metadata)),
             )
@@ -123,7 +141,16 @@ def create_anchor(
                 actor_id=auth.user_id,
                 resource_type="anchor",
                 resource_id=anchor_id,
-                detail={"document_id": doc_id, "fingerprint": fingerprint},
+                detail={
+                    "document_id": doc_id,
+                    "fingerprint": fingerprint,
+                    "node_id": node_id,
+                    "char_start": char_start,
+                    "char_end": char_end,
+                    "page_number": page_number,
+                    "field_id": field_id,
+                    "field_key": field_key,
+                },
             )
         conn.commit()
 
@@ -145,6 +172,8 @@ def list_anchors(
     cursor: str = Query(None),
     limit: int = Query(50, ge=1, le=200),
     include_deleted: bool = Query(False),
+    field_id: str = Query(None),
+    page_number: int = Query(None),
     auth=Depends(require_auth(AuthClass.EITHER)),
 ):
     if isinstance(auth, JSONResponse):
@@ -167,16 +196,22 @@ def list_anchors(
                 )
 
             conditions = ["document_id = %s"]
-            params = [doc_id]
+            params: list = [doc_id]
             if not include_deleted:
                 conditions.append("deleted_at IS NULL")
             if cursor:
                 conditions.append("id > %s")
                 params.append(cursor)
+            if field_id:
+                conditions.append("field_id = %s")
+                params.append(field_id)
+            if page_number is not None:
+                conditions.append("page_number = %s")
+                params.append(str(page_number))
 
             where = "WHERE " + " AND ".join(conditions)
             sql = "SELECT %s FROM anchors %s ORDER BY id ASC LIMIT %%s" % (ANCHOR_SELECT, where)
-            params.append(limit + 1)
+            params.append(str(limit + 1))
 
             cur.execute(sql, params)
             rows = cur.fetchall()

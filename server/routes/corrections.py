@@ -311,7 +311,7 @@ def list_batch_corrections(
             conditions = [
                 "c.document_id IN (SELECT id FROM documents WHERE batch_id = %s AND deleted_at IS NULL)"
             ]
-            params = [bat_id]
+            params: list = [bat_id]
 
             conditions.append("c.deleted_at IS NULL")
             if status:

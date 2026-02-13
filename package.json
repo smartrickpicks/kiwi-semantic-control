@@ -1,0 +1,28 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "Orchestrate OS is an offline‑first, deterministic, config‑driven governance surface for DataDash workflows. It defines, validates, previews, and exports semantic rules using local artifacts only. No runtime execution, no network calls, no credentials, and no LLM prompts. Preview evidence and strict smoke tests are the arbiter of correctness.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smartrickpicks/kiwi-semantic-control.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/smartrickpicks/kiwi-semantic-control/issues"
+  },
+  "homepage": "https://github.com/smartrickpicks/kiwi-semantic-control#readme",
+  "dependencies": {
+    "@redocly/cli": "^2.18.0"
+  }
+}

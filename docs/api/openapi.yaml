@@ -2,22 +2,22 @@ openapi: '3.1.0'
 info:
   title: Orchestrate OS API
   version: 2.5.0-draft
-  description: >
-    Governance-only semantic control plane API. Resource-style endpoints
-    for multi-user Postgres-backed persistence with append-only audit logging.
+  description: 'Governance-only semantic control plane API. Resource-style endpoints for multi-user Postgres-backed persistence
+    with append-only audit logging.
+
+    '
   contact:
     name: Orchestrate OS Team
-
 servers:
-  - url: /api/v2.5
-    description: Canonical API base
-
+- url: /api/v2.5
+  description: Canonical API base
 paths:
   /health:
     get:
       operationId: getHealth
       summary: Health check
-      tags: [System]
+      tags:
+      - System
       responses:
         '200':
           description: Server healthy
@@ -28,21 +28,24 @@ paths:
                 properties:
                   status:
                     type: string
-                    enum: [ok]
+                    enum:
+                    - ok
                   db:
                     type: string
-                    enum: [connected, disconnected]
+                    enum:
+                    - connected
+                    - disconnected
                   version:
                     type: string
-
   /workspaces:
     get:
       operationId: listWorkspaces
       summary: List workspaces
-      tags: [Workspaces]
+      tags:
+      - Workspaces
       parameters:
-        - $ref: '#/components/parameters/CursorParam'
-        - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/CursorParam'
+      - $ref: '#/components/parameters/LimitParam'
       responses:
         '200':
           description: Workspace list
@@ -53,9 +56,10 @@ paths:
     post:
       operationId: createWorkspace
       summary: Create workspace
-      tags: [Workspaces]
+      tags:
+      - Workspaces
       parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -69,14 +73,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WorkspaceResponse'
-
   /workspaces/{workspace_id}:
     get:
       operationId: getWorkspace
       summary: Get workspace
-      tags: [Workspaces]
+      tags:
+      - Workspaces
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/WorkspaceId'
       responses:
         '200':
           description: Workspace details
@@ -87,9 +91,10 @@ paths:
     patch:
       operationId: updateWorkspace
       summary: Update workspace
-      tags: [Workspaces]
+      tags:
+      - Workspaces
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/WorkspaceId'
       requestBody:
         required: true
         content:
@@ -105,16 +110,16 @@ paths:
                 $ref: '#/components/schemas/WorkspaceResponse'
         '409':
           $ref: '#/components/responses/StaleVersion'
-
   /workspaces/{workspace_id}/batches:
     get:
       operationId: listBatches
       summary: List batches in workspace
-      tags: [Batches]
+      tags:
+      - Batches
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/CursorParam'
-        - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/CursorParam'
+      - $ref: '#/components/parameters/LimitParam'
       responses:
         '200':
           description: Batch list
@@ -125,10 +130,11 @@ paths:
     post:
       operationId: createBatch
       summary: Create batch
-      tags: [Batches]
+      tags:
+      - Batches
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -142,14 +148,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BatchResponse'
-
   /batches/{batch_id}:
     get:
       operationId: getBatch
       summary: Get batch
-      tags: [Batches]
+      tags:
+      - Batches
       parameters:
-        - $ref: '#/components/parameters/BatchId'
+      - $ref: '#/components/parameters/BatchId'
       responses:
         '200':
           description: Batch details
@@ -160,9 +166,10 @@ paths:
     patch:
       operationId: updateBatch
       summary: Update batch
-      tags: [Batches]
+      tags:
+      - Batches
       parameters:
-        - $ref: '#/components/parameters/BatchId'
+      - $ref: '#/components/parameters/BatchId'
       requestBody:
         required: true
         content:
@@ -174,24 +181,24 @@ paths:
           description: Batch updated
         '409':
           $ref: '#/components/responses/StaleVersion'
-
   /workspaces/{workspace_id}/patches:
     get:
       operationId: listPatches
       summary: List patches in workspace
-      tags: [Patches]
+      tags:
+      - Patches
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/CursorParam'
-        - $ref: '#/components/parameters/LimitParam'
-        - name: status
-          in: query
-          schema:
-            type: string
-        - name: author_id
-          in: query
-          schema:
-            type: string
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/CursorParam'
+      - $ref: '#/components/parameters/LimitParam'
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: author_id
+        in: query
+        schema:
+          type: string
       responses:
         '200':
           description: Patch list
@@ -202,10 +209,11 @@ paths:
     post:
       operationId: createPatch
       summary: Create patch (Draft status)
-      tags: [Patches]
+      tags:
+      - Patches
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -219,14 +227,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PatchResponse'
-
   /patches/{patch_id}:
     get:
       operationId: getPatch
       summary: Get patch with history
-      tags: [Patches]
+      tags:
+      - Patches
       parameters:
-        - $ref: '#/components/parameters/PatchId'
+      - $ref: '#/components/parameters/PatchId'
       responses:
         '200':
           description: Patch details
@@ -237,13 +245,14 @@ paths:
     patch:
       operationId: updatePatch
       summary: Update patch status or fields
-      description: >
-        Status transitions are validated against the transition matrix.
-        Self-approval is blocked for Verifier_Approved and Admin_Approved.
-        Requires version field for optimistic concurrency.
-      tags: [Patches]
+      description: 'Status transitions are validated against the transition matrix. Self-approval is blocked for Verifier_Approved
+        and Admin_Approved. Requires version field for optimistic concurrency.
+
+        '
+      tags:
+      - Patches
       parameters:
-        - $ref: '#/components/parameters/PatchId'
+      - $ref: '#/components/parameters/PatchId'
       requestBody:
         required: true
         content:
@@ -265,24 +274,25 @@ paths:
                 $ref: '#/components/schemas/ErrorEnvelope'
         '409':
           $ref: '#/components/responses/StaleVersion'
-
   /patches/{patch_id}/evidence-packs:
     get:
       operationId: listEvidencePacks
       summary: List evidence packs for patch
-      tags: [Evidence Packs]
+      tags:
+      - Evidence Packs
       parameters:
-        - $ref: '#/components/parameters/PatchId'
+      - $ref: '#/components/parameters/PatchId'
       responses:
         '200':
           description: Evidence pack list
     post:
       operationId: createEvidencePack
       summary: Create evidence pack
-      tags: [Evidence Packs]
+      tags:
+      - Evidence Packs
       parameters:
-        - $ref: '#/components/parameters/PatchId'
-        - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/PatchId'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -292,26 +302,27 @@ paths:
       responses:
         '201':
           description: Evidence pack created
-
   /workspaces/{workspace_id}/annotations:
     get:
       operationId: listAnnotations
       summary: List annotations
-      tags: [Annotations]
+      tags:
+      - Annotations
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/CursorParam'
-        - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/CursorParam'
+      - $ref: '#/components/parameters/LimitParam'
       responses:
         '200':
           description: Annotation list
     post:
       operationId: createAnnotation
       summary: Create annotation
-      tags: [Annotations]
+      tags:
+      - Annotations
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -321,26 +332,27 @@ paths:
       responses:
         '201':
           description: Annotation created
-
   /workspaces/{workspace_id}/rfis:
     get:
       operationId: listRfis
       summary: List RFIs
-      tags: [RFIs]
+      tags:
+      - RFIs
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/CursorParam'
-        - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/CursorParam'
+      - $ref: '#/components/parameters/LimitParam'
       responses:
         '200':
           description: RFI list
     post:
       operationId: createRfi
       summary: Create RFI
-      tags: [RFIs]
+      tags:
+      - RFIs
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -350,26 +362,27 @@ paths:
       responses:
         '201':
           description: RFI created
-
   /batches/{batch_id}/triage-items:
     get:
       operationId: listTriageItems
       summary: List triage items
-      tags: [Triage]
+      tags:
+      - Triage
       parameters:
-        - $ref: '#/components/parameters/BatchId'
-        - $ref: '#/components/parameters/CursorParam'
-        - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/BatchId'
+      - $ref: '#/components/parameters/CursorParam'
+      - $ref: '#/components/parameters/LimitParam'
       responses:
         '200':
           description: Triage item list
     post:
       operationId: createTriageItem
       summary: Create triage item
-      tags: [Triage]
+      tags:
+      - Triage
       parameters:
-        - $ref: '#/components/parameters/BatchId'
-        - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/BatchId'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -379,26 +392,27 @@ paths:
       responses:
         '201':
           description: Triage item created
-
   /batches/{batch_id}/signals:
     get:
       operationId: listSignals
       summary: List signals
-      tags: [Signals]
+      tags:
+      - Signals
       parameters:
-        - $ref: '#/components/parameters/BatchId'
-        - $ref: '#/components/parameters/CursorParam'
-        - $ref: '#/components/parameters/LimitParam'
+      - $ref: '#/components/parameters/BatchId'
+      - $ref: '#/components/parameters/CursorParam'
+      - $ref: '#/components/parameters/LimitParam'
       responses:
         '200':
           description: Signal list
     post:
       operationId: createSignal
       summary: Create signal
-      tags: [Signals]
+      tags:
+      - Signals
       parameters:
-        - $ref: '#/components/parameters/BatchId'
-        - $ref: '#/components/parameters/IdempotencyKey'
+      - $ref: '#/components/parameters/BatchId'
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -408,34 +422,35 @@ paths:
       responses:
         '201':
           description: Signal created
-
   /documents/{document_id}/selection-captures:
     get:
       operationId: listSelectionCaptures
       summary: List selection captures
-      tags: [Selection Captures]
+      tags:
+      - Selection Captures
       parameters:
-        - name: document_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - $ref: '#/components/parameters/CursorParam'
-        - $ref: '#/components/parameters/LimitParam'
+      - name: document_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/CursorParam'
+      - $ref: '#/components/parameters/LimitParam'
       responses:
         '200':
           description: Selection capture list
     post:
       operationId: createSelectionCapture
       summary: Create selection capture
-      tags: [Selection Captures]
+      tags:
+      - Selection Captures
       parameters:
-        - name: document_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - $ref: '#/components/parameters/IdempotencyKey'
+      - name: document_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -445,29 +460,29 @@ paths:
       responses:
         '201':
           description: Selection capture created
-
   /workspaces/{workspace_id}/audit-events:
     get:
       operationId: listAuditEvents
       summary: List audit events (read-only)
-      tags: [Audit]
+      tags:
+      - Audit
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - $ref: '#/components/parameters/CursorParam'
-        - $ref: '#/components/parameters/LimitParam'
-        - name: event_type
-          in: query
-          schema:
-            type: string
-        - name: actor_id
-          in: query
-          schema:
-            type: string
-        - name: since
-          in: query
-          schema:
-            type: string
-            format: date-time
+      - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/CursorParam'
+      - $ref: '#/components/parameters/LimitParam'
+      - name: event_type
+        in: query
+        schema:
+          type: string
+      - name: actor_id
+        in: query
+        schema:
+          type: string
+      - name: since
+        in: query
+        schema:
+          type: string
+          format: date-time
       responses:
         '200':
           description: Audit event list
@@ -475,14 +490,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuditEventCollection'
-
   /workspaces/{workspace_id}/events/stream:
     get:
       operationId: streamEvents
       summary: SSE event stream
-      tags: [Events]
+      tags:
+      - Events
       parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
+      - $ref: '#/components/parameters/WorkspaceId'
       responses:
         '200':
           description: SSE event stream
@@ -490,7 +505,775 @@ paths:
             text/event-stream:
               schema:
                 type: string
+  /workspaces/{workspace_id}/drive/connect:
+    post:
+      operationId: connectDrive
+      summary: Initiate Google Drive OAuth connection
+      tags:
+      - Drive
+      parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                redirect_uri:
+                  type: string
+                  description: OAuth callback URL
+              required:
+              - redirect_uri
+      responses:
+        '200':
+          description: OAuth authorization URL returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      auth_url:
+                        type: string
+                        description: Google OAuth consent URL to redirect user to
+                  meta:
+                    $ref: '#/components/schemas/ResponseMeta'
+        '403':
+          description: Insufficient permissions (admin/architect only)
+  /workspaces/{workspace_id}/drive/callback:
+    post:
+      operationId: driveOAuthCallback
+      summary: Handle Drive OAuth callback and store tokens
+      tags:
+      - Drive
+      parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: OAuth authorization code from Google
+                redirect_uri:
+                  type: string
+              required:
+              - code
+              - redirect_uri
+      responses:
+        '200':
+          description: Drive connected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      connected:
+                        type: boolean
+                      drive_email:
+                        type: string
+                  meta:
+                    $ref: '#/components/schemas/ResponseMeta'
+  /workspaces/{workspace_id}/drive/disconnect:
+    delete:
+      operationId: disconnectDrive
+      summary: Disconnect Google Drive and revoke tokens
+      tags:
+      - Drive
+      parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: Drive disconnected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      disconnected:
+                        type: boolean
+                  meta:
+                    $ref: '#/components/schemas/ResponseMeta'
+        '403':
+          description: Insufficient permissions (admin/architect only)
+  /workspaces/{workspace_id}/drive/status:
+    get:
+      operationId: getDriveStatus
+      summary: Check Drive connection status
+      tags:
+      - Drive
+      parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          description: Connection status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      connected:
+                        type: boolean
+                      drive_email:
+                        type:
+                        - string
+                        - 'null'
+                      connected_at:
+                        type:
+                        - string
+                        - 'null'
+                        format: date-time
+                      connected_by:
+                        type:
+                        - string
+                        - 'null'
+                  meta:
+                    $ref: '#/components/schemas/ResponseMeta'
+  /workspaces/{workspace_id}/drive/browse:
+    get:
+      operationId: browseDrive
+      summary: Browse Drive folders and files
+      tags:
+      - Drive
+      parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - name: parent_id
+        in: query
+        schema:
+          type: string
+        description: Folder ID to list contents of. Omit for root / shared drives.
+      - name: drive_id
+        in: query
+        schema:
+          type: string
+        description: Shared drive ID (required for shared drive browsing)
+      - name: type
+        in: query
+        schema:
+          type: string
+          enum:
+          - drives
+          - files
+          default: files
+        description: '''drives'' lists shared drives, ''files'' lists folder contents'
+      responses:
+        '200':
+          description: Drive contents
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      items:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                            mime_type:
+                              type: string
+                            kind:
+                              type: string
+                              enum:
+                              - drive
+                              - folder
+                              - file
+                            modified_time:
+                              type:
+                              - string
+                              - 'null'
+                              format: date-time
+                            size:
+                              type:
+                              - integer
+                              - 'null'
+                      breadcrumb:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            name:
+                              type: string
+                  meta:
+                    $ref: '#/components/schemas/ResponseMeta'
+  /workspaces/{workspace_id}/drive/import:
+    post:
+      operationId: importFromDrive
+      summary: Import a file from Google Drive as working copy
+      tags:
+      - Drive
+      parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                file_id:
+                  type: string
+                  description: Google Drive file ID
+                drive_id:
+                  type:
+                  - string
+                  - 'null'
+                  description: Shared drive ID (if applicable)
+              required:
+              - file_id
+      responses:
+        '200':
+          description: File imported successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      import_id:
+                        type: string
+                        description: Provenance record ID (drv_ prefix)
+                      filename:
+                        type: string
+                      mime_type:
+                        type: string
+                      size_bytes:
+                        type: integer
+                      source_file_id:
+                        type: string
+                      source_drive_id:
+                        type:
+                        - string
+                        - 'null'
+                      has_external_modifications:
+                        type: boolean
+                      baseline_unknown:
+                        type: boolean
+                      version_number:
+                        type: integer
+                        description: Import version number (1 for first import, incremented on refresh)
+                      supersedes_id:
+                        type:
+                        - string
+                        - 'null'
+                        description: Previous version's import_id (null for first import)
+                      download_url:
+                        type: string
+                        description: Temporary URL to fetch file bytes
+                  meta:
+                    $ref: '#/components/schemas/ResponseMeta'
+  /workspaces/{workspace_id}/drive/import-history:
+    get:
+      operationId: getDriveImportHistory
+      summary: List all imported versions of a Drive file
+      tags:
+      - Drive
+      parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      - name: source_file_id
+        in: query
+        required: true
+        schema:
+          type: string
+        description: Google Drive file ID to list import versions for
+      responses:
+        '200':
+          description: Import version history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      versions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            import_id:
+                              type: string
+                            version_number:
+                              type: integer
+                            imported_at:
+                              type: string
+                              format: date-time
+                            imported_by:
+                              type: string
+                            supersedes_id:
+                              type:
+                              - string
+                              - 'null'
+                            is_current:
+                              type: boolean
+                  meta:
+                    $ref: '#/components/schemas/ResponseMeta'
+  /workspaces/{workspace_id}/drive/export:
+    post:
+      operationId: exportToDrive
+      summary: Export working copy back to Google Drive
+      tags:
+      - Drive
+      parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The workbook file to upload
+                export_type:
+                  type: string
+                  enum:
+                  - in_progress
+                  - final
+                  description: '''in_progress'' for Save In Progress, ''final'' for Export Final'
+                target_folder_id:
+                  type: string
+                  description: Drive folder to save into (defaults to source folder)
+                source_import_id:
+                  type: string
+                  description: Original import provenance ID for traceability
+                changes_log:
+                  type: string
+                  description: JSON-encoded changes log artifact
+              required:
+              - file
+              - export_type
+      responses:
+        '200':
+          description: File exported to Drive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      drive_file_id:
+                        type: string
+                        description: ID of the created Drive file
+                      drive_file_name:
+                        type: string
+                        description: Filename with status convention applied
+                      drive_file_url:
+                        type: string
+                        description: Web URL to the file in Drive
+                      export_type:
+                        type: string
+                  meta:
+                    $ref: '#/components/schemas/ResponseMeta'
+        '403':
+          description: Role not authorized for this export type
+  /documents/{doc_id}/reader-nodes:
+    get:
+      operationId: getReaderNodes
+      summary: Get cached reader nodes for a document
+      description: 'Returns cached text extraction nodes for a document. Cache key is (document_id, source_pdf_hash, ocr_version).
+        If no cache entry exists, returns empty nodes with quality_flag=missing_text_layer. Feature-gated behind EVIDENCE_INSPECTOR_V251.
 
+        '
+      tags:
+      - Evidence Inspector
+      parameters:
+      - name: doc_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: source_pdf_hash
+        in: query
+        schema:
+          type: string
+        description: SHA-256 hash of the source PDF
+      - name: ocr_version
+        in: query
+        schema:
+          type: string
+          default: v1
+      responses:
+        '200':
+          description: Reader node cache hit or fallback
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReaderNodeResponse'
+        '404':
+          description: Document not found or feature disabled
+    put:
+      operationId: upsertReaderNodes
+      summary: Upsert reader node cache for a document
+      description: 'Creates or updates the reader node cache entry for a document. Each node receives a deterministic node_id
+        based on (document_id, page_number, block_index). Quality flag is auto-detected if not provided. Cache key: (document_id,
+        source_pdf_hash, ocr_version). Emits reader_node_cache.upserted audit event. Feature-gated behind EVIDENCE_INSPECTOR_V251.'
+      tags:
+      - Evidence Inspector
+      parameters:
+      - name: doc_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - source_pdf_hash
+              - nodes
+              properties:
+                source_pdf_hash:
+                  type: string
+                  description: SHA-256 hash of the source PDF bytes
+                ocr_version:
+                  type: string
+                  default: v1
+                  description: OCR engine version string
+                page_count:
+                  type: integer
+                  description: Total page count in the PDF
+                quality_flag:
+                  type: string
+                  enum:
+                  - ok
+                  - suspect_mojibake
+                  - unreadable
+                  - missing_text_layer
+                  description: Override quality flag (auto-detected if omitted)
+                nodes:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      page_number:
+                        type: integer
+                      block_index:
+                        type: integer
+                      text:
+                        type: string
+                      bbox:
+                        type: array
+                        items:
+                          type: number
+                        description: '[x0, y0, x1, y1] bounding box'
+      responses:
+        '200':
+          description: Reader node cache created or updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReaderNodeResponse'
+        '400':
+          description: Validation error (missing source_pdf_hash)
+        '404':
+          description: Document not found or feature disabled
+  /documents/{doc_id}/anchors:
+    post:
+      operationId: createAnchor
+      summary: Create a text anchor on a document
+      description: 'Creates a text anchor with fingerprint-based dedup. If an anchor with the same fingerprint already exists,
+        returns the existing anchor (200) instead of creating a duplicate. Emits anchor.created audit event. Feature-gated
+        behind EVIDENCE_INSPECTOR_V251.
+
+        '
+      tags:
+      - Evidence Inspector
+      parameters:
+      - name: doc_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnchorCreate'
+      responses:
+        '201':
+          description: Anchor created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnchorResponse'
+        '200':
+          description: Existing anchor returned (fingerprint dedup)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnchorResponse'
+        '404':
+          description: Document not found or feature disabled
+    get:
+      operationId: listAnchors
+      summary: List anchors for a document
+      description: 'Returns paginated list of anchors for a document. Feature-gated behind EVIDENCE_INSPECTOR_V251.
+
+        '
+      tags:
+      - Evidence Inspector
+      parameters:
+      - name: doc_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - $ref: '#/components/parameters/CursorParam'
+      - $ref: '#/components/parameters/LimitParam'
+      - name: include_deleted
+        in: query
+        schema:
+          type: boolean
+          default: false
+      responses:
+        '200':
+          description: Anchor list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnchorCollection'
+        '404':
+          description: Document not found or feature disabled
+  /documents/{doc_id}/corrections:
+    post:
+      operationId: createCorrection
+      summary: Create a field-level correction
+      description: 'Creates a correction linked to a document, optionally referencing an anchor and/or RFI. Auto-classifies
+        as minor (auto_applied) or non_trivial (pending_verifier) based on policy: abs(length_delta)<=2 AND no digits AND
+        no currency/percent = minor. Emits correction.created audit event. Feature-gated behind EVIDENCE_INSPECTOR_V251.
+
+        '
+      tags:
+      - Evidence Inspector
+      parameters:
+      - name: doc_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrectionCreate'
+      responses:
+        '201':
+          description: Correction created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorrectionResponse'
+        '400':
+          description: Validation error (missing corrected_value, invalid anchor/rfi ref)
+        '404':
+          description: Document not found or feature disabled
+  /corrections/{cor_id}:
+    patch:
+      operationId: updateCorrection
+      summary: Update a correction (approve/reject/modify)
+      description: 'Updates correction status, corrected_value, or metadata. Requires version for optimistic concurrency (409
+        STALE_VERSION on mismatch). Setting status to approved/rejected auto-sets decided_by and decided_at. Emits correction.updated
+        audit event. Feature-gated behind EVIDENCE_INSPECTOR_V251.
+
+        '
+      tags:
+      - Evidence Inspector
+      parameters:
+      - name: cor_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrectionUpdate'
+      responses:
+        '200':
+          description: Correction updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorrectionResponse'
+        '400':
+          description: Validation error
+        '404':
+          description: Correction not found or feature disabled
+        '409':
+          description: Stale version — concurrent modification
+  /batches/{bat_id}/corrections:
+    get:
+      operationId: listBatchCorrections
+      summary: List corrections across all documents in a batch
+      description: 'Returns paginated corrections for all documents in the batch, optionally filtered by status. Feature-gated
+        behind EVIDENCE_INSPECTOR_V251.
+
+        '
+      tags:
+      - Evidence Inspector
+      parameters:
+      - name: bat_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - pending_verifier
+          - approved
+          - rejected
+          - auto_applied
+      - $ref: '#/components/parameters/CursorParam'
+      - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Correction list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorrectionCollection'
+        '404':
+          description: Batch not found or feature disabled
+  /batches/{bat_id}/rfis:
+    get:
+      operationId: listBatchRfis
+      summary: List RFIs scoped to a batch with custody_status filter
+      description: 'Returns paginated RFIs for documents in the batch. Filters on custody_status with fallback to legacy status
+        column for backward compatibility. Feature-gated behind EVIDENCE_INSPECTOR_V251.
+
+        '
+      tags:
+      - Evidence Inspector
+      parameters:
+      - name: bat_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - open
+          - awaiting_verifier
+          - returned_to_analyst
+          - resolved
+          - dismissed
+        description: Filter by custody_status (falls back to legacy status mapping)
+      - $ref: '#/components/parameters/CursorParam'
+      - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: RFI list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfiCollection'
+        '404':
+          description: Batch not found or feature disabled
+  /batches/{bat_id}/health:
+    get:
+      operationId: getBatchHealth
+      summary: Get health aggregation for a batch
+      description: 'Returns aggregate counts of open RFIs, pending corrections, mojibake suspects, and unreadable documents.
+        Includes blockers list. Feature-gated behind EVIDENCE_INSPECTOR_V251.
+
+        '
+      tags:
+      - Evidence Inspector
+      parameters:
+      - name: bat_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Batch health summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchHealthResponse'
+        '404':
+          description: Batch not found or feature disabled
+  /documents/{doc_id}/ocr-escalations:
+    post:
+      operationId: createOcrEscalation
+      summary: Request OCR reprocessing for a document (mock)
+      description: 'Creates an OCR escalation request. Currently a mock endpoint that records the request and emits an audit
+        event but does not trigger actual OCR reprocessing. Response includes _mock=true flag. Feature-gated behind EVIDENCE_INSPECTOR_V251.
+
+        '
+      tags:
+      - Evidence Inspector
+      parameters:
+      - name: doc_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                escalation_type:
+                  type: string
+                  default: ocr_reprocess
+                metadata:
+                  type: object
+      responses:
+        '201':
+          description: OCR escalation recorded (mock)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OcrEscalationResponse'
+        '404':
+          description: Document not found or feature disabled
 components:
   parameters:
     WorkspaceId:
@@ -499,21 +1282,21 @@ components:
       required: true
       schema:
         type: string
-        pattern: '^ws_[A-Za-z0-9]{26}$'
+        pattern: ^ws_[A-Za-z0-9]{26}$
     BatchId:
       name: batch_id
       in: path
       required: true
       schema:
         type: string
-        pattern: '^bat_[A-Za-z0-9]{26}$'
+        pattern: ^bat_[A-Za-z0-9]{26}$
     PatchId:
       name: patch_id
       in: path
       required: true
       schema:
         type: string
-        pattern: '^pat_[A-Za-z0-9]{26}$'
+        pattern: ^pat_[A-Za-z0-9]{26}$
     CursorParam:
       name: cursor
       in: query
@@ -535,35 +1318,38 @@ components:
       required: false
       schema:
         type: string
-
   schemas:
     WorkspaceCreate:
       type: object
-      required: [name]
+      required:
+      - name
       properties:
         name:
           type: string
         mode:
           type: string
-          enum: [sandbox, production]
+          enum:
+          - sandbox
+          - production
           default: sandbox
         metadata:
           type: object
-
     WorkspaceUpdate:
       type: object
-      required: [version]
+      required:
+      - version
       properties:
         name:
           type: string
         mode:
           type: string
-          enum: [sandbox, production]
+          enum:
+          - sandbox
+          - production
         version:
           type: integer
         metadata:
           type: object
-
     WorkspaceResponse:
       type: object
       properties:
@@ -571,7 +1357,6 @@ components:
           $ref: '#/components/schemas/Workspace'
         meta:
           $ref: '#/components/schemas/ResponseMeta'
-
     WorkspaceCollection:
       type: object
       properties:
@@ -581,7 +1366,6 @@ components:
             $ref: '#/components/schemas/Workspace'
         meta:
           $ref: '#/components/schemas/CollectionMeta'
-
     Workspace:
       type: object
       properties:
@@ -591,7 +1375,9 @@ components:
           type: string
         mode:
           type: string
-          enum: [sandbox, production]
+          enum:
+          - sandbox
+          - production
         created_at:
           type: string
           format: date-time
@@ -602,36 +1388,40 @@ components:
           type: integer
         metadata:
           type: object
-
     BatchCreate:
       type: object
-      required: [name]
+      required:
+      - name
       properties:
         name:
           type: string
         source:
           type: string
-          enum: [upload, merge, import]
+          enum:
+          - upload
+          - merge
+          - import
           default: upload
         batch_fingerprint:
           type: string
         metadata:
           type: object
-
     BatchUpdate:
       type: object
-      required: [version]
+      required:
+      - version
       properties:
         name:
           type: string
         status:
           type: string
-          enum: [active, archived]
+          enum:
+          - active
+          - archived
         version:
           type: integer
         metadata:
           type: object
-
     BatchResponse:
       type: object
       properties:
@@ -639,7 +1429,6 @@ components:
           $ref: '#/components/schemas/Batch'
         meta:
           $ref: '#/components/schemas/ResponseMeta'
-
     BatchCollection:
       type: object
       properties:
@@ -649,7 +1438,6 @@ components:
             $ref: '#/components/schemas/Batch'
         meta:
           $ref: '#/components/schemas/CollectionMeta'
-
     Batch:
       type: object
       properties:
@@ -677,10 +1465,13 @@ components:
           type: integer
         metadata:
           type: object
-
     PatchCreate:
       type: object
-      required: [batch_id, record_id, field_key, intent]
+      required:
+      - batch_id
+      - record_id
+      - field_key
+      - intent
       properties:
         batch_id:
           type: string
@@ -706,33 +1497,32 @@ components:
           type: string
         metadata:
           type: object
-
     PatchUpdate:
       type: object
-      required: [version]
+      required:
+      - version
       properties:
         status:
           type: string
           enum:
-            - Draft
-            - Submitted
-            - Needs_Clarification
-            - Verifier_Responded
-            - Verifier_Approved
-            - Admin_Approved
-            - Admin_Hold
-            - Applied
-            - Rejected
-            - Cancelled
-            - Sent_to_Kiwi
-            - Kiwi_Returned
+          - Draft
+          - Submitted
+          - Needs_Clarification
+          - Verifier_Responded
+          - Verifier_Approved
+          - Admin_Approved
+          - Admin_Hold
+          - Applied
+          - Rejected
+          - Cancelled
+          - Sent_to_Kiwi
+          - Kiwi_Returned
         notes:
           type: string
         version:
           type: integer
         metadata:
           type: object
-
     PatchResponse:
       type: object
       properties:
@@ -740,7 +1530,6 @@ components:
           $ref: '#/components/schemas/Patch'
         meta:
           $ref: '#/components/schemas/ResponseMeta'
-
     PatchCollection:
       type: object
       properties:
@@ -750,7 +1539,6 @@ components:
             $ref: '#/components/schemas/Patch'
         meta:
           $ref: '#/components/schemas/CollectionMeta'
-
     Patch:
       type: object
       properties:
@@ -804,7 +1592,6 @@ components:
           type: integer
         metadata:
           type: object
-
     EvidencePackCreate:
       type: object
       properties:
@@ -821,28 +1608,38 @@ components:
               type: object
         metadata:
           type: object
-
     AnnotationCreate:
       type: object
-      required: [target_type, target_id, content]
+      required:
+      - target_type
+      - target_id
+      - content
       properties:
         target_type:
           type: string
-          enum: [field, record, contract, document]
+          enum:
+          - field
+          - record
+          - contract
+          - document
         target_id:
           type: string
         content:
           type: string
         annotation_type:
           type: string
-          enum: [note, flag, question]
+          enum:
+          - note
+          - flag
+          - question
           default: note
         metadata:
           type: object
-
     RfiCreate:
       type: object
-      required: [target_record_id, question]
+      required:
+      - target_record_id
+      - question
       properties:
         patch_id:
           type: string
@@ -854,10 +1651,12 @@ components:
           type: string
         metadata:
           type: object
-
     TriageItemCreate:
       type: object
-      required: [record_id, issue_type, severity]
+      required:
+      - record_id
+      - issue_type
+      - severity
       properties:
         record_id:
           type: string
@@ -867,17 +1666,28 @@ components:
           type: string
         severity:
           type: string
-          enum: [info, warning, blocker]
+          enum:
+          - info
+          - warning
+          - blocker
         source:
           type: string
-          enum: [qa_rule, preflight, system_pass, manual]
+          enum:
+          - qa_rule
+          - preflight
+          - system_pass
+          - manual
           default: manual
         metadata:
           type: object
-
     SignalCreate:
       type: object
-      required: [record_id, field_key, signal_type, severity, message]
+      required:
+      - record_id
+      - field_key
+      - signal_type
+      - severity
+      - message
       properties:
         record_id:
           type: string
@@ -887,17 +1697,20 @@ components:
           type: string
         severity:
           type: string
-          enum: [info, warning, blocking]
+          enum:
+          - info
+          - warning
+          - blocking
         rule_id:
           type: string
         message:
           type: string
         metadata:
           type: object
-
     SelectionCaptureCreate:
       type: object
-      required: [purpose]
+      required:
+      - purpose
       properties:
         field_id:
           type: string
@@ -911,10 +1724,12 @@ components:
           type: string
         purpose:
           type: string
-          enum: [evidence, annotation, rfi_anchor]
+          enum:
+          - evidence
+          - annotation
+          - rfi_anchor
         metadata:
           type: object
-
     AuditEvent:
       type: object
       properties:
@@ -928,7 +1743,11 @@ components:
           type: string
         actor_role:
           type: string
-          enum: [analyst, verifier, admin, architect]
+          enum:
+          - analyst
+          - verifier
+          - admin
+          - architect
         timestamp_iso:
           type: string
           format: date-time
@@ -948,7 +1767,6 @@ components:
           type: string
         metadata:
           type: object
-
     AuditEventCollection:
       type: object
       properties:
@@ -958,14 +1776,17 @@ components:
             $ref: '#/components/schemas/AuditEvent'
         meta:
           $ref: '#/components/schemas/CollectionMeta'
-
     ErrorEnvelope:
       type: object
-      required: [error, meta]
+      required:
+      - error
+      - meta
       properties:
         error:
           type: object
-          required: [code, message]
+          required:
+          - code
+          - message
           properties:
             code:
               type: string
@@ -975,7 +1796,6 @@ components:
               type: object
         meta:
           $ref: '#/components/schemas/ResponseMeta'
-
     ResponseMeta:
       type: object
       properties:
@@ -984,7 +1804,6 @@ components:
         timestamp:
           type: string
           format: date-time
-
     CollectionMeta:
       type: object
       properties:
@@ -1002,9 +1821,6 @@ components:
               type: boolean
             limit:
               type: integer
-
-    # ── Evidence Inspector v2.51 Schemas ──
-
     Anchor:
       type: object
       properties:
@@ -1041,14 +1857,17 @@ components:
           type: string
           format: date-time
         deleted_at:
-          type: string
+          type:
+          - string
+          - 'null'
           format: date-time
-          nullable: true
         version:
           type: integer
         metadata:
           type: object
-
+        selected_text_hash:
+          type: string
+          description: SHA-256 hash of selected_text, computed server-side
     AnchorCreate:
       type: object
       properties:
@@ -1068,7 +1887,6 @@ components:
           type: integer
         metadata:
           type: object
-
     AnchorResponse:
       type: object
       properties:
@@ -1076,7 +1894,6 @@ components:
           $ref: '#/components/schemas/Anchor'
         meta:
           $ref: '#/components/schemas/ResponseMeta'
-
     AnchorCollection:
       type: object
       properties:
@@ -1086,7 +1903,6 @@ components:
             $ref: '#/components/schemas/Anchor'
         meta:
           $ref: '#/components/schemas/CollectionMeta'
-
     Correction:
       type: object
       properties:
@@ -1098,36 +1914,48 @@ components:
         workspace_id:
           type: string
         anchor_id:
-          type: string
-          nullable: true
+          type:
+          - string
+          - 'null'
         rfi_id:
-          type: string
-          nullable: true
+          type:
+          - string
+          - 'null'
         field_id:
           type: string
         field_key:
           type: string
         original_value:
-          type: string
-          nullable: true
+          type:
+          - string
+          - 'null'
         corrected_value:
           type: string
         correction_type:
           type: string
-          enum: [minor, non_trivial]
-          description: >
-            Auto-classified: minor if abs(length_delta)<=2, no digits,
-            no currency/percent symbols. Otherwise non_trivial.
+          enum:
+          - minor
+          - non_trivial
+          description: 'Auto-classified: minor if abs(length_delta)<=2, no digits, no currency/percent symbols. Otherwise
+            non_trivial.
+
+            '
         status:
           type: string
-          enum: [pending_verifier, approved, rejected, auto_applied]
+          enum:
+          - pending_verifier
+          - approved
+          - rejected
+          - auto_applied
         decided_by:
-          type: string
-          nullable: true
+          type:
+          - string
+          - 'null'
         decided_at:
-          type: string
+          type:
+          - string
+          - 'null'
           format: date-time
-          nullable: true
         created_by:
           type: string
         created_at:
@@ -1137,17 +1965,18 @@ components:
           type: string
           format: date-time
         deleted_at:
-          type: string
+          type:
+          - string
+          - 'null'
           format: date-time
-          nullable: true
         version:
           type: integer
         metadata:
           type: object
-
     CorrectionCreate:
       type: object
-      required: [corrected_value]
+      required:
+      - corrected_value
       properties:
         original_value:
           type: string
@@ -1163,22 +1992,25 @@ components:
           type: string
         metadata:
           type: object
-
     CorrectionUpdate:
       type: object
-      required: [version]
+      required:
+      - version
       properties:
         version:
           type: integer
           description: Required for optimistic concurrency
         status:
           type: string
-          enum: [pending_verifier, approved, rejected, auto_applied]
+          enum:
+          - pending_verifier
+          - approved
+          - rejected
+          - auto_applied
         corrected_value:
           type: string
         metadata:
           type: object
-
     CorrectionResponse:
       type: object
       properties:
@@ -1186,7 +2018,6 @@ components:
           $ref: '#/components/schemas/Correction'
         meta:
           $ref: '#/components/schemas/ResponseMeta'
-
     CorrectionCollection:
       type: object
       properties:
@@ -1196,7 +2027,6 @@ components:
             $ref: '#/components/schemas/Correction'
         meta:
           $ref: '#/components/schemas/CollectionMeta'
-
     ReaderNodeCache:
       type: object
       properties:
@@ -1210,7 +2040,11 @@ components:
           type: string
         quality_flag:
           type: string
-          enum: [ok, suspect_mojibake, unreadable, missing_text_layer]
+          enum:
+          - ok
+          - suspect_mojibake
+          - unreadable
+          - missing_text_layer
         nodes:
           type: array
           items:
@@ -1219,15 +2053,14 @@ components:
           type: integer
         cached:
           type: boolean
-          description: >
-            false when returning fallback (no cache entry found),
-            true or omitted when returning from DB cache
+          description: 'false when returning fallback (no cache entry found), true or omitted when returning from DB cache
+
+            '
         created_at:
           type: string
           format: date-time
         metadata:
           type: object
-
     ReaderNodeResponse:
       type: object
       properties:
@@ -1235,7 +2068,6 @@ components:
           $ref: '#/components/schemas/ReaderNodeCache'
         meta:
           $ref: '#/components/schemas/ResponseMeta'
-
     OcrEscalation:
       type: object
       properties:
@@ -1251,16 +2083,21 @@ components:
           default: ocr_reprocess
         status:
           type: string
-          enum: [pending, resolved, dismissed]
+          enum:
+          - pending
+          - resolved
+          - dismissed
         requested_by:
           type: string
         resolved_by:
-          type: string
-          nullable: true
+          type:
+          - string
+          - 'null'
         resolved_at:
-          type: string
+          type:
+          - string
+          - 'null'
           format: date-time
-          nullable: true
         created_at:
           type: string
           format: date-time
@@ -1268,9 +2105,10 @@ components:
           type: string
           format: date-time
         deleted_at:
-          type: string
+          type:
+          - string
+          - 'null'
           format: date-time
-          nullable: true
         version:
           type: integer
         metadata:
@@ -1280,7 +2118,6 @@ components:
           description: Always true — OCR pipeline not yet implemented
         _note:
           type: string
-
     OcrEscalationResponse:
       type: object
       properties:
@@ -1288,7 +2125,6 @@ components:
           $ref: '#/components/schemas/OcrEscalation'
         meta:
           $ref: '#/components/schemas/ResponseMeta'
-
     BatchHealth:
       type: object
       properties:
@@ -1314,7 +2150,6 @@ components:
         updated_at:
           type: string
           format: date-time
-
     BatchHealthResponse:
       type: object
       properties:
@@ -1322,7 +2157,6 @@ components:
           $ref: '#/components/schemas/BatchHealth'
         meta:
           $ref: '#/components/schemas/ResponseMeta'
-
     Rfi:
       type: object
       description: Request for Information (v2.5 core + v2.51 custody_status)
@@ -1339,12 +2173,21 @@ components:
           type: string
         status:
           type: string
-          enum: [open, responded, closed]
+          enum:
+          - open
+          - responded
+          - closed
           description: Legacy v2.5 status
         custody_status:
-          type: string
-          enum: [open, awaiting_verifier, returned_to_analyst, resolved, dismissed]
-          nullable: true
+          type:
+          - string
+          - 'null'
+          enum:
+          - open
+          - awaiting_verifier
+          - returned_to_analyst
+          - resolved
+          - dismissed
           description: v2.51 custody lifecycle status (additive)
         created_by:
           type: string
@@ -1355,14 +2198,14 @@ components:
           type: string
           format: date-time
         deleted_at:
-          type: string
+          type:
+          - string
+          - 'null'
           format: date-time
-          nullable: true
         version:
           type: integer
         metadata:
           type: object
-
     RfiCollection:
       type: object
       properties:
@@ -1372,7 +2215,6 @@ components:
             $ref: '#/components/schemas/Rfi'
         meta:
           $ref: '#/components/schemas/CollectionMeta'
-
   responses:
     StaleVersion:
       description: Optimistic concurrency conflict
@@ -1390,13 +2232,13 @@ components:
             meta:
               request_id: req_abc123
               timestamp: '2026-02-12T00:00:00Z'
-
   securitySchemes:
     GoogleOAuth:
       type: oauth2
-      description: >
-        Google OAuth 2.0 (OIDC) for production human users.
-        Required for human-governed endpoints (patch transitions, approvals, annotations).
+      description: 'Google OAuth 2.0 (OIDC) for production human users. Required for human-governed endpoints (patch transitions,
+        approvals, annotations).
+
+        '
       flows:
         authorizationCode:
           authorizationUrl: https://accounts.google.com/o/oauth2/v2/auth
@@ -1408,698 +2250,19 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: >
-        Server-issued JWT (1h expiry) obtained after Google OAuth code exchange.
-        Used in Authorization header for all authenticated requests.
+      description: 'Server-issued JWT (1h expiry) obtained after Google OAuth code exchange. Used in Authorization header
+        for all authenticated requests.
+
+        '
     ScopedApiKey:
       type: apiKey
       in: header
       name: X-API-Key
-      description: >
-        Workspace-scoped API key for sandbox and service ingestion endpoints.
-        Keys carry explicit scopes (e.g., signals:write, batches:write, read:all).
-        Required for service ingestion endpoints (POST /signals, POST /triage-items).
+      description: 'Workspace-scoped API key for sandbox and service ingestion endpoints. Keys carry explicit scopes (e.g.,
+        signals:write, batches:write, read:all). Required for service ingestion endpoints (POST /signals, POST /triage-items).
         Accepted as alternative auth on read endpoints.
 
-  /workspaces/{workspace_id}/drive/connect:
-    post:
-      operationId: connectDrive
-      summary: Initiate Google Drive OAuth connection
-      tags: [Drive]
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                redirect_uri:
-                  type: string
-                  description: OAuth callback URL
-              required: [redirect_uri]
-      responses:
-        '200':
-          description: OAuth authorization URL returned
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      auth_url:
-                        type: string
-                        description: Google OAuth consent URL to redirect user to
-                  meta:
-                    $ref: '#/components/schemas/Meta'
-        '403':
-          description: Insufficient permissions (admin/architect only)
-
-  /workspaces/{workspace_id}/drive/callback:
-    post:
-      operationId: driveOAuthCallback
-      summary: Handle Drive OAuth callback and store tokens
-      tags: [Drive]
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                code:
-                  type: string
-                  description: OAuth authorization code from Google
-                redirect_uri:
-                  type: string
-              required: [code, redirect_uri]
-      responses:
-        '200':
-          description: Drive connected successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      connected:
-                        type: boolean
-                      drive_email:
-                        type: string
-                  meta:
-                    $ref: '#/components/schemas/Meta'
-
-  /workspaces/{workspace_id}/drive/disconnect:
-    delete:
-      operationId: disconnectDrive
-      summary: Disconnect Google Drive and revoke tokens
-      tags: [Drive]
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-      responses:
-        '200':
-          description: Drive disconnected
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      disconnected:
-                        type: boolean
-                  meta:
-                    $ref: '#/components/schemas/Meta'
-        '403':
-          description: Insufficient permissions (admin/architect only)
-
-  /workspaces/{workspace_id}/drive/status:
-    get:
-      operationId: getDriveStatus
-      summary: Check Drive connection status
-      tags: [Drive]
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-      responses:
-        '200':
-          description: Connection status
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      connected:
-                        type: boolean
-                      drive_email:
-                        type: string
-                        nullable: true
-                      connected_at:
-                        type: string
-                        format: date-time
-                        nullable: true
-                      connected_by:
-                        type: string
-                        nullable: true
-                  meta:
-                    $ref: '#/components/schemas/Meta'
-
-  /workspaces/{workspace_id}/drive/browse:
-    get:
-      operationId: browseDrive
-      summary: Browse Drive folders and files
-      tags: [Drive]
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - name: parent_id
-          in: query
-          schema:
-            type: string
-          description: Folder ID to list contents of. Omit for root / shared drives.
-        - name: drive_id
-          in: query
-          schema:
-            type: string
-          description: Shared drive ID (required for shared drive browsing)
-        - name: type
-          in: query
-          schema:
-            type: string
-            enum: [drives, files]
-            default: files
-          description: "'drives' lists shared drives, 'files' lists folder contents"
-      responses:
-        '200':
-          description: Drive contents
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      items:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                            name:
-                              type: string
-                            mime_type:
-                              type: string
-                            kind:
-                              type: string
-                              enum: [drive, folder, file]
-                            modified_time:
-                              type: string
-                              format: date-time
-                              nullable: true
-                            size:
-                              type: integer
-                              nullable: true
-                      breadcrumb:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: string
-                            name:
-                              type: string
-                  meta:
-                    $ref: '#/components/schemas/Meta'
-
-  /workspaces/{workspace_id}/drive/import:
-    post:
-      operationId: importFromDrive
-      summary: Import a file from Google Drive as working copy
-      tags: [Drive]
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                file_id:
-                  type: string
-                  description: Google Drive file ID
-                drive_id:
-                  type: string
-                  nullable: true
-                  description: Shared drive ID (if applicable)
-              required: [file_id]
-      responses:
-        '200':
-          description: File imported successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      import_id:
-                        type: string
-                        description: Provenance record ID (drv_ prefix)
-                      filename:
-                        type: string
-                      mime_type:
-                        type: string
-                      size_bytes:
-                        type: integer
-                      source_file_id:
-                        type: string
-                      source_drive_id:
-                        type: string
-                        nullable: true
-                      has_external_modifications:
-                        type: boolean
-                      baseline_unknown:
-                        type: boolean
-                      version_number:
-                        type: integer
-                        description: Import version number (1 for first import, incremented on refresh)
-                      supersedes_id:
-                        type: string
-                        nullable: true
-                        description: Previous version's import_id (null for first import)
-                      download_url:
-                        type: string
-                        description: Temporary URL to fetch file bytes
-                  meta:
-                    $ref: '#/components/schemas/Meta'
-
-  /workspaces/{workspace_id}/drive/import-history:
-    get:
-      operationId: getDriveImportHistory
-      summary: List all imported versions of a Drive file
-      tags: [Drive]
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-        - name: source_file_id
-          in: query
-          required: true
-          schema:
-            type: string
-          description: Google Drive file ID to list import versions for
-      responses:
-        '200':
-          description: Import version history
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      versions:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            import_id:
-                              type: string
-                            version_number:
-                              type: integer
-                            imported_at:
-                              type: string
-                              format: date-time
-                            imported_by:
-                              type: string
-                            supersedes_id:
-                              type: string
-                              nullable: true
-                            is_current:
-                              type: boolean
-                  meta:
-                    $ref: '#/components/schemas/Meta'
-
-  /workspaces/{workspace_id}/drive/export:
-    post:
-      operationId: exportToDrive
-      summary: Export working copy back to Google Drive
-      tags: [Drive]
-      parameters:
-        - $ref: '#/components/parameters/WorkspaceId'
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
-                  description: The workbook file to upload
-                export_type:
-                  type: string
-                  enum: [in_progress, final]
-                  description: "'in_progress' for Save In Progress, 'final' for Export Final"
-                target_folder_id:
-                  type: string
-                  description: Drive folder to save into (defaults to source folder)
-                source_import_id:
-                  type: string
-                  description: Original import provenance ID for traceability
-                changes_log:
-                  type: string
-                  description: JSON-encoded changes log artifact
-              required: [file, export_type]
-      responses:
-        '200':
-          description: File exported to Drive
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      drive_file_id:
-                        type: string
-                        description: ID of the created Drive file
-                      drive_file_name:
-                        type: string
-                        description: Filename with status convention applied
-                      drive_file_url:
-                        type: string
-                        description: Web URL to the file in Drive
-                      export_type:
-                        type: string
-                  meta:
-                    $ref: '#/components/schemas/Meta'
-        '403':
-          description: Role not authorized for this export type
-
-  # ── Evidence Inspector v2.51 (feature-gated: EVIDENCE_INSPECTOR_V251) ──
-
-  /documents/{doc_id}/reader-nodes:
-    get:
-      operationId: getReaderNodes
-      summary: Get cached reader nodes for a document
-      description: >
-        Returns cached text extraction nodes for a document. Cache key is
-        (document_id, source_pdf_hash, ocr_version). If no cache entry exists,
-        returns empty nodes with quality_flag=missing_text_layer.
-        Feature-gated behind EVIDENCE_INSPECTOR_V251.
-      tags: [Evidence Inspector]
-      parameters:
-        - name: doc_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: source_pdf_hash
-          in: query
-          schema:
-            type: string
-          description: SHA-256 hash of the source PDF
-        - name: ocr_version
-          in: query
-          schema:
-            type: string
-            default: v1
-      responses:
-        '200':
-          description: Reader node cache hit or fallback
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ReaderNodeResponse'
-        '404':
-          description: Document not found or feature disabled
-
-  /documents/{doc_id}/anchors:
-    post:
-      operationId: createAnchor
-      summary: Create a text anchor on a document
-      description: >
-        Creates a text anchor with fingerprint-based dedup. If an anchor with
-        the same fingerprint already exists, returns the existing anchor (200)
-        instead of creating a duplicate. Emits anchor.created audit event.
-        Feature-gated behind EVIDENCE_INSPECTOR_V251.
-      tags: [Evidence Inspector]
-      parameters:
-        - name: doc_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AnchorCreate'
-      responses:
-        '201':
-          description: Anchor created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnchorResponse'
-        '200':
-          description: Existing anchor returned (fingerprint dedup)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnchorResponse'
-        '404':
-          description: Document not found or feature disabled
-    get:
-      operationId: listAnchors
-      summary: List anchors for a document
-      description: >
-        Returns paginated list of anchors for a document.
-        Feature-gated behind EVIDENCE_INSPECTOR_V251.
-      tags: [Evidence Inspector]
-      parameters:
-        - name: doc_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - $ref: '#/components/parameters/CursorParam'
-        - $ref: '#/components/parameters/LimitParam'
-        - name: include_deleted
-          in: query
-          schema:
-            type: boolean
-            default: false
-      responses:
-        '200':
-          description: Anchor list
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnchorCollection'
-        '404':
-          description: Document not found or feature disabled
-
-  /documents/{doc_id}/corrections:
-    post:
-      operationId: createCorrection
-      summary: Create a field-level correction
-      description: >
-        Creates a correction linked to a document, optionally referencing an
-        anchor and/or RFI. Auto-classifies as minor (auto_applied) or
-        non_trivial (pending_verifier) based on policy:
-        abs(length_delta)<=2 AND no digits AND no currency/percent = minor.
-        Emits correction.created audit event.
-        Feature-gated behind EVIDENCE_INSPECTOR_V251.
-      tags: [Evidence Inspector]
-      parameters:
-        - name: doc_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CorrectionCreate'
-      responses:
-        '201':
-          description: Correction created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CorrectionResponse'
-        '400':
-          description: Validation error (missing corrected_value, invalid anchor/rfi ref)
-        '404':
-          description: Document not found or feature disabled
-
-  /corrections/{cor_id}:
-    patch:
-      operationId: updateCorrection
-      summary: Update a correction (approve/reject/modify)
-      description: >
-        Updates correction status, corrected_value, or metadata. Requires
-        version for optimistic concurrency (409 STALE_VERSION on mismatch).
-        Setting status to approved/rejected auto-sets decided_by and decided_at.
-        Emits correction.updated audit event.
-        Feature-gated behind EVIDENCE_INSPECTOR_V251.
-      tags: [Evidence Inspector]
-      parameters:
-        - name: cor_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CorrectionUpdate'
-      responses:
-        '200':
-          description: Correction updated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CorrectionResponse'
-        '400':
-          description: Validation error
-        '404':
-          description: Correction not found or feature disabled
-        '409':
-          description: Stale version — concurrent modification
-
-  /batches/{bat_id}/corrections:
-    get:
-      operationId: listBatchCorrections
-      summary: List corrections across all documents in a batch
-      description: >
-        Returns paginated corrections for all documents in the batch,
-        optionally filtered by status.
-        Feature-gated behind EVIDENCE_INSPECTOR_V251.
-      tags: [Evidence Inspector]
-      parameters:
-        - name: bat_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: status
-          in: query
-          schema:
-            type: string
-            enum: [pending_verifier, approved, rejected, auto_applied]
-        - $ref: '#/components/parameters/CursorParam'
-        - $ref: '#/components/parameters/LimitParam'
-      responses:
-        '200':
-          description: Correction list
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CorrectionCollection'
-        '404':
-          description: Batch not found or feature disabled
-
-  /batches/{bat_id}/rfis:
-    get:
-      operationId: listBatchRfis
-      summary: List RFIs scoped to a batch with custody_status filter
-      description: >
-        Returns paginated RFIs for documents in the batch. Filters on
-        custody_status with fallback to legacy status column for backward
-        compatibility.
-        Feature-gated behind EVIDENCE_INSPECTOR_V251.
-      tags: [Evidence Inspector]
-      parameters:
-        - name: bat_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: status
-          in: query
-          schema:
-            type: string
-            enum: [open, awaiting_verifier, returned_to_analyst, resolved, dismissed]
-          description: Filter by custody_status (falls back to legacy status mapping)
-        - $ref: '#/components/parameters/CursorParam'
-        - $ref: '#/components/parameters/LimitParam'
-      responses:
-        '200':
-          description: RFI list
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RfiCollection'
-        '404':
-          description: Batch not found or feature disabled
-
-  /batches/{bat_id}/health:
-    get:
-      operationId: getBatchHealth
-      summary: Get health aggregation for a batch
-      description: >
-        Returns aggregate counts of open RFIs, pending corrections,
-        mojibake suspects, and unreadable documents. Includes blockers list.
-        Feature-gated behind EVIDENCE_INSPECTOR_V251.
-      tags: [Evidence Inspector]
-      parameters:
-        - name: bat_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Batch health summary
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BatchHealthResponse'
-        '404':
-          description: Batch not found or feature disabled
-
-  /documents/{doc_id}/ocr-escalations:
-    post:
-      operationId: createOcrEscalation
-      summary: Request OCR reprocessing for a document (mock)
-      description: >
-        Creates an OCR escalation request. Currently a mock endpoint that
-        records the request and emits an audit event but does not trigger
-        actual OCR reprocessing. Response includes _mock=true flag.
-        Feature-gated behind EVIDENCE_INSPECTOR_V251.
-      tags: [Evidence Inspector]
-      parameters:
-        - name: doc_id
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                escalation_type:
-                  type: string
-                  default: ocr_reprocess
-                metadata:
-                  type: object
-      responses:
-        '201':
-          description: OCR escalation recorded (mock)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OcrEscalationResponse'
-        '404':
-          description: Document not found or feature disabled
-
+        '
 security:
-  - BearerToken: []
-  - ScopedApiKey: []
-  # Note: GoogleOAuth is the authentication flow that produces the BearerToken.
-  # Clients authenticate via Google OAuth, then use the resulting JWT as BearerToken.
-  # ScopedApiKey is the alternative for service/sandbox endpoints.
+- BearerToken: []
+- ScopedApiKey: []
