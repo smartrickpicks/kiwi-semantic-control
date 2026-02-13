@@ -1307,10 +1307,23 @@
     .grid-table.grid-mode-active td.grid-rail,
     .grid-table.grid-mode-active th.grid-rail {
       position: sticky; left: 0; z-index: 5; background: #f5f5f5; border-right: 2px solid #bbdefb;
-      min-width: 50px; max-width: 60px; white-space: nowrap; box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+      min-width: 90px; max-width: 100px; white-space: nowrap; box-shadow: 2px 0 4px rgba(0,0,0,0.06);
     }
     .grid-table.grid-mode-active thead th.grid-rail { z-index: 12; background: #e3f2fd; }
-    /* v2.53: Frozen first data column (record label) — sticky left */
+    /* v2.53b: Scroll container for standard grid — constrained height enables sticky */
+    .grid-table-container {
+      max-height: calc(100vh - 260px) !important;
+      overflow: auto !important;
+    }
+    /* v2.53b: Sticky headers — ALL grid tables (standard + composite) */
+    .grid-table-container > table thead th,
+    .grid-table-container > table thead,
+    .p1c-section-body table thead th {
+      position: -webkit-sticky !important; position: sticky !important;
+      top: 0 !important; z-index: 10 !important;
+      background: #fafafa !important;
+    }
+    /* v2.53b: Frozen first data column (record label) — sticky left */
     td.grid-col-frozen,
     th.grid-col-frozen {
       position: -webkit-sticky !important; position: sticky !important;
@@ -1326,16 +1339,10 @@
     }
     .grid-table.grid-mode-active td.grid-col-frozen,
     .grid-table.grid-mode-active th.grid-col-frozen {
-      left: 60px !important;
+      left: 100px !important;
     }
     tr:hover td.grid-col-frozen { background: #f0f4ff !important; }
-    /* v2.53: Frozen table headers — sticky top */
-    .p1c-section-body table thead th {
-      position: -webkit-sticky !important; position: sticky !important;
-      top: 0 !important; z-index: 10 !important;
-      background: #fafafa !important;
-    }
-    /* Corner cell: both sticky top AND left */
+    /* v2.53b: Corner cell in composite — both sticky top AND left */
     .p1c-section-body table thead th.grid-col-frozen {
       position: -webkit-sticky !important; position: sticky !important;
       top: 0 !important; left: 0 !important;
@@ -1343,7 +1350,26 @@
     }
     .p1c-section-body.grid-mode-active table thead th.grid-col-frozen,
     .grid-mode-active .p1c-section-body table thead th.grid-col-frozen {
-      left: 60px !important;
+      left: 100px !important;
+    }
+    /* v2.53b: Corner cell in standard grid — both sticky top AND left */
+    .grid-table-container > table thead th.grid-col-frozen {
+      position: -webkit-sticky !important; position: sticky !important;
+      top: 0 !important; left: 0 !important;
+      z-index: 20 !important; background: #e8f0fe !important;
+    }
+    .grid-table-container > table.grid-mode-active thead th.grid-col-frozen {
+      left: 100px !important;
+    }
+    /* v2.53b: Sticky grid-rail in grid mode (Actions column) */
+    .grid-table.grid-mode-active thead th.grid-rail {
+      position: -webkit-sticky !important; position: sticky !important;
+      top: 0 !important; left: 0 !important;
+      z-index: 20 !important;
+    }
+    .grid-table.grid-mode-active td.grid-rail {
+      position: -webkit-sticky !important; position: sticky !important;
+      left: 0 !important; z-index: 4 !important;
     }
     .grid-rail-btn { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75em; margin: 0 1px; background: #e3f2fd; color: #1565c0; }
     .grid-rail-btn:hover { background: #bbdefb; }
@@ -3125,9 +3151,9 @@
             </div>
           </div>
           <div id="ev-right-grid-column">
-            <div class="grid-table-container" style="overflow: auto; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <div class="grid-table-container" style="border: 1px solid #e0e0e0; border-radius: 8px;">
               <table class="grid-table" id="grid-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
-                <thead id="grid-thead" style="position: sticky; top: 0; background: #f5f5f5; z-index: 10;">
+                <thead id="grid-thead">
                   <tr id="grid-header-row"></tr>
                 </thead>
                 <tbody id="grid-tbody"></tbody>
@@ -16747,7 +16773,7 @@
         render: function(visibleColumns, gridViewMode) {
           var headerRow = document.getElementById(this._headerRowId);
           if (!headerRow) return;
-          var flatRailHeader = (gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:50px;width:50px;">Actions</th>' : '';
+          var flatRailHeader = (gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:90px;width:90px;">Actions</th>' : '';
           var headerHtml = flatRailHeader + '<th class="row-index" style="background: #f0f0f0; font-weight: 600;">#</th>';
           for (var idx = 0; idx < visibleColumns.length; idx++) {
             var col = visibleColumns[idx];
@@ -29904,7 +29930,7 @@
         // Thead
         var thead = document.createElement('thead');
         var headTr = document.createElement('tr');
-        var railHeaderHtml = (_gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:50px;width:50px;">Actions</th>' : '';
+        var railHeaderHtml = (_gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:90px;width:90px;">Actions</th>' : '';
         headTr.innerHTML = railHeaderHtml + '<th style="background: #fafafa; font-weight: 600;">#</th>';
         for (var ci = 0; ci < columns.length; ci++) {
           var col = columns[ci];
@@ -29974,9 +30000,11 @@
               if (acctLabel.length > 14) acctLabel = acctLabel.substring(0, 12) + '..';
             }
             var pdfUrl = r.file_url || r.File_URL_c || '';
+            var compPdfUrl = r.file_url || r.File_URL_c || '';
             railHtml = '<td class="grid-rail">' +
               '<button class="grid-rail-btn" title="Open Evidence Viewer" onclick="event.stopPropagation(); _evOpenViewerForRecord(\'' + (r.sheet || sheetName).replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ', \'' + (recordId || '').replace(/'/g, "\\'") + '\');">&#128270;</button>' +
-              (acctLabel ? '<span style="font-size:0.75em;color:#666;margin-left:2px;" title="' + acctLabel + '">' + acctLabel + '</span>' : '') +
+              '<button class="grid-rail-btn" title="Open in Review Mode" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + (r.sheet || sheetName).replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');" style="background:#f3e5f5;color:#6a1b9a;">&#128196;</button>' +
+              (compPdfUrl ? '<a href="' + compPdfUrl + '" target="_blank" onclick="event.stopPropagation();" class="grid-rail-btn" title="Download contract" style="text-decoration:none;background:#e8f5e9;color:#2e7d32;">&#128279;</a>' : '') +
               '</td>';
           }
           var rowHtml = railHtml + '<td class="row-index">' + (ri2 + 1) + rowBadgesHtml + '</td>';
@@ -29995,15 +30023,11 @@
               var recordLabel = _gridBuildRecordLabel(r, sheetName);
               if (isFirstCol2 && recordLabel) {
                 var shortLabel = recordLabel.length > 55 ? recordLabel.substring(0, 53) + '..' : recordLabel;
-                if (fileUrl) {
-                  cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" title="Download contract" style="text-decoration: none; margin-right: 6px;">&#128279;</a><span style="color: #333;">' + escapeHtml(shortLabel) + '</span>';
-                } else {
-                  cellContent = escapeHtml(shortLabel);
-                }
+                cellContent = '<span style="color: #333;">' + escapeHtml(shortLabel) + '</span>';
                 val = recordLabel;
               } else if (isFileNameCol && val && (r.file_url || r.File_URL_c)) {
                 var shortName = val.length > 40 ? val.substring(0, 38) + '...' : val;
-                cellContent = '<a href="' + (r.file_url || r.File_URL_c) + '" target="_blank" onclick="event.stopPropagation();" title="Download contract" style="text-decoration: none; margin-right: 6px;">&#128279;</a><span style="color: #333;">' + shortName + '</span>';
+                cellContent = '<span style="color: #333;">' + escapeHtml(shortName) + '</span>';
               }
             }
             var isStatusCol = STATUS_KEYS.indexOf(col2) >= 0 || col2.toLowerCase() === 'status';
@@ -42804,9 +42828,11 @@
             if (flatAcctLabel.length > 14) flatAcctLabel = flatAcctLabel.substring(0, 12) + '..';
           }
           var flatPdfUrl = r.file_url || r.File_URL_c || '';
+          var flatPdfUrl2 = r.file_url || r.File_URL_c || '';
           flatRailHtml = '<td class="grid-rail">' +
             '<button class="grid-rail-btn" title="Open Evidence Viewer" onclick="event.stopPropagation(); _evOpenViewerForRecord(\'' + sheetName.replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ', \'' + (recordId || '').replace(/'/g, "\\'") + '\');">&#128270;</button>' +
-            (flatAcctLabel ? '<span style="font-size:0.75em;color:#666;margin-left:2px;">' + flatAcctLabel + '</span>' : '') +
+            '<button class="grid-rail-btn" title="Open in Review Mode" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + sheetName.replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');" style="background:#f3e5f5;color:#6a1b9a;">&#128196;</button>' +
+            (flatPdfUrl2 ? '<a href="' + flatPdfUrl2 + '" target="_blank" onclick="event.stopPropagation();" class="grid-rail-btn" title="Download contract" style="text-decoration:none;background:#e8f5e9;color:#2e7d32;">&#128279;</a>' : '') +
             '</td>';
         }
         tr.innerHTML = flatRailHtml + '<td class="row-index">' + groupCaret + childIndent + (idx + 1) + rowBadgesHtml + '</td>' +
@@ -42826,17 +42852,11 @@
               var recordLabel = _gridBuildRecordLabel(r, sheetName);
               if (isFirstCol && recordLabel) {
                 var shortLabel = recordLabel.length > 50 ? recordLabel.substring(0, 48) + '..' : recordLabel;
-                if (fileUrl) {
-                  cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" style="color: #1976d2; text-decoration: none; display: flex; align-items: center; gap: 4px;">' +
-'&#128279;</a><span style="color: #333;">' + escapeHtml(shortLabel) + '</span>';
-                } else {
-                  cellContent = escapeHtml(shortLabel);
-                }
+                cellContent = '<span style="color: #333;">' + escapeHtml(shortLabel) + '</span>';
                 val = recordLabel;
               } else if (isFileNameCol && val && fileUrl) {
                 var shortName = val.length > 40 ? val.substring(0, 38) + '...' : val;
-                cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" style="color: #1976d2; text-decoration: none; display: flex; align-items: center; gap: 4px;">' +
-                  '<span style="font-size: 0.9em;">&#128279;</span>' + shortName + '</a>';
+                cellContent = '<span style="color: #333;">' + escapeHtml(shortName) + '</span>';
               }
             }
             
