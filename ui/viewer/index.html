@@ -16258,6 +16258,11 @@
 
     if (!window._gridVerifiedCells) window._gridVerifiedCells = {};
 
+    function _gridRowClick(sheetName, rowIdx) {
+      if (_gridViewMode === 'grid') return;
+      openRowReviewDrawer(sheetName, rowIdx);
+    }
+
     function _gridVerifyCellToggle(recordId, fieldKey, tdEl, sheetName, rowIdx) {
       if (!recordId || !fieldKey) return;
       if (!window._gridVerifiedCells[recordId]) window._gridVerifiedCells[recordId] = {};
@@ -25685,7 +25690,7 @@
           }
           // v1.5.2: Verifier mode - apply PR status highlighting
           var rowStyle = '';
-          var clickHandler = 'openRowReviewDrawer(\'' + sheetName + '\',' + sheetRowIdx + ')';
+          var clickHandler = '_gridRowClick(\'' + sheetName + '\',' + sheetRowIdx + ')';
           if (isVerifierMode) {
             var highlight = getVerifierRowHighlight(recordId);
             if (highlight) {
@@ -37149,6 +37154,7 @@
     }
     
     function handleVerifierRowClick(recordId, sheetName, rowIndex) {
+      if (_gridViewMode === 'grid') return;
       // v1.5.3 Fix: Verifier row click - route to Verifier Review via patch_request_id
       // Try multiple lookup keys for robustness
       var prInfo = null;
