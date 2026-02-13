@@ -34571,9 +34571,8 @@
             console.log('[TRIAGE-ANALYTICS][P0.1] lifecycle: excluded ' + cache._orphan_row_count + ' orphan rows from contract lifecycle');
           }
         } else {
-          cache.total_contracts = 1;
-          cache.lifecycle.loaded.count = 1;
-          totalContracts = 1;
+          cache.total_contracts = 0;
+          totalContracts = 0;
         }
 
         Object.keys(cache.lifecycle).forEach(function(stage) {
