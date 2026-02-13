@@ -1307,7 +1307,7 @@
     .grid-table.grid-mode-active td.grid-rail,
     .grid-table.grid-mode-active th.grid-rail {
       position: sticky; left: 0; z-index: 5; background: #f5f5f5; border-right: 2px solid #bbdefb;
-      min-width: 90px; max-width: 100px; white-space: nowrap; box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+      min-width: 60px; max-width: 70px; white-space: nowrap; box-shadow: 2px 0 4px rgba(0,0,0,0.06);
     }
     .grid-table.grid-mode-active thead th.grid-rail { z-index: 12; background: #e3f2fd; }
     /* v2.53b: Scroll container for standard grid — constrained height enables sticky */
@@ -1339,7 +1339,7 @@
     }
     .grid-table.grid-mode-active td.grid-col-frozen,
     .grid-table.grid-mode-active th.grid-col-frozen {
-      left: 100px !important;
+      left: 60px !important;
     }
     tr:hover td.grid-col-frozen { background: #f0f4ff !important; }
     /* v2.53b: Corner cell in composite — both sticky top AND left */
@@ -1350,7 +1350,7 @@
     }
     .p1c-section-body.grid-mode-active table thead th.grid-col-frozen,
     .grid-mode-active .p1c-section-body table thead th.grid-col-frozen {
-      left: 100px !important;
+      left: 60px !important;
     }
     /* v2.53b: Corner cell in standard grid — both sticky top AND left */
     .grid-table-container > table thead th.grid-col-frozen {
@@ -1359,7 +1359,7 @@
       z-index: 20 !important; background: #e8f0fe !important;
     }
     .grid-table-container > table.grid-mode-active thead th.grid-col-frozen {
-      left: 100px !important;
+      left: 60px !important;
     }
     /* v2.53b: Sticky grid-rail in grid mode (Actions column) */
     .grid-table.grid-mode-active thead th.grid-rail {
@@ -1530,7 +1530,7 @@
     #ev-middle-viewer .ev-pdf-body { flex: 1; overflow: auto; position: relative; min-height: 200px; }
     #ev-middle-viewer .ev-pdf-body iframe, #ev-middle-viewer .ev-pdf-body object { width: 100%; height: 100%; border: none; display: block; min-height: 400px; }
     #ev-middle-viewer .ev-pdf-empty { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 200px; color: #999; font-size: 0.95em; text-align: center; padding: 20px; }
-    #ev-middle-viewer .ev-pdf-record-label { font-size: 0.8em; color: #1565c0; background: #e3f2fd; padding: 2px 8px; border-radius: 4px; }
+    #ev-middle-viewer .ev-pdf-record-label { font-size: 1.05em; color: #0d47a1; background: #bbdefb; padding: 6px 14px; border-radius: 6px; font-weight: 700; letter-spacing: 0.2px; max-width: 500px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; box-shadow: 0 1px 3px rgba(13,71,161,0.15); }
     .ev-pdf-reason { display: inline-block; margin-top: 6px; padding: 3px 10px; border-radius: 12px; font-size: 0.78em; font-weight: 600; letter-spacing: 0.3px; }
     .ev-pdf-reason.no_document_link { background: #fff3e0; color: #e65100; }
     .ev-pdf-reason.mapping_not_found { background: #fce4ec; color: #c62828; }
@@ -3083,9 +3083,9 @@
           <div id="ev-middle-column">
             <div id="ev-middle-viewer">
               <div class="ev-pdf-header">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="ev-pdf-title">Evidence Viewer</span>
-                  <span class="ev-pdf-record-label" id="ev-pdf-record-label"></span>
+                <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                  <span class="ev-pdf-title" style="flex-shrink: 0;">Evidence Viewer</span>
+                  <span class="ev-pdf-record-label" id="ev-pdf-record-label" style="flex: 1; min-width: 0;"></span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px;">
                   <div class="ev-view-toggle" id="ev-view-toggle">
@@ -16773,7 +16773,7 @@
         render: function(visibleColumns, gridViewMode) {
           var headerRow = document.getElementById(this._headerRowId);
           if (!headerRow) return;
-          var flatRailHeader = (gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:90px;width:90px;">Actions</th>' : '';
+          var flatRailHeader = (gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:60px;width:60px;">Actions</th>' : '';
           var headerHtml = flatRailHeader + '<th class="row-index" style="background: #f0f0f0; font-weight: 600;">#</th>';
           for (var idx = 0; idx < visibleColumns.length; idx++) {
             var col = visibleColumns[idx];
@@ -29930,7 +29930,7 @@
         // Thead
         var thead = document.createElement('thead');
         var headTr = document.createElement('tr');
-        var railHeaderHtml = (_gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:90px;width:90px;">Actions</th>' : '';
+        var railHeaderHtml = (_gridViewMode === 'grid') ? '<th class="grid-rail" style="background:#e3f2fd;font-weight:600;min-width:60px;width:60px;">Actions</th>' : '';
         headTr.innerHTML = railHeaderHtml + '<th style="background: #fafafa; font-weight: 600;">#</th>';
         for (var ci = 0; ci < columns.length; ci++) {
           var col = columns[ci];
@@ -30002,9 +30002,8 @@
             var pdfUrl = r.file_url || r.File_URL_c || '';
             var compPdfUrl = r.file_url || r.File_URL_c || '';
             railHtml = '<td class="grid-rail">' +
-              '<button class="grid-rail-btn" title="Open Evidence Viewer" onclick="event.stopPropagation(); _evOpenViewerForRecord(\'' + (r.sheet || sheetName).replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ', \'' + (recordId || '').replace(/'/g, "\\'") + '\');">&#128270;</button>' +
-              '<button class="grid-rail-btn" title="Open in Review Mode" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + (r.sheet || sheetName).replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');" style="background:#f3e5f5;color:#6a1b9a;">&#128196;</button>' +
-              (compPdfUrl ? '<a href="' + compPdfUrl + '" target="_blank" onclick="event.stopPropagation();" class="grid-rail-btn" title="Download contract" style="text-decoration:none;background:#e8f5e9;color:#2e7d32;">&#128279;</a>' : '') +
+              '<button class="grid-rail-btn" title="Open in Review Mode" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + (r.sheet || sheetName).replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');">&#128270;</button>' +
+              (compPdfUrl ? '<a href="' + compPdfUrl + '" target="_blank" onclick="event.stopPropagation();" class="grid-rail-btn" title="Download contract" style="text-decoration:none;">&#128279;</a>' : '') +
               '</td>';
           }
           var rowHtml = railHtml + '<td class="row-index">' + (ri2 + 1) + rowBadgesHtml + '</td>';
@@ -42830,9 +42829,8 @@
           var flatPdfUrl = r.file_url || r.File_URL_c || '';
           var flatPdfUrl2 = r.file_url || r.File_URL_c || '';
           flatRailHtml = '<td class="grid-rail">' +
-            '<button class="grid-rail-btn" title="Open Evidence Viewer" onclick="event.stopPropagation(); _evOpenViewerForRecord(\'' + sheetName.replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ', \'' + (recordId || '').replace(/'/g, "\\'") + '\');">&#128270;</button>' +
-            '<button class="grid-rail-btn" title="Open in Review Mode" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + sheetName.replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');" style="background:#f3e5f5;color:#6a1b9a;">&#128196;</button>' +
-            (flatPdfUrl2 ? '<a href="' + flatPdfUrl2 + '" target="_blank" onclick="event.stopPropagation();" class="grid-rail-btn" title="Download contract" style="text-decoration:none;background:#e8f5e9;color:#2e7d32;">&#128279;</a>' : '') +
+            '<button class="grid-rail-btn" title="Open in Review Mode" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + sheetName.replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');">&#128270;</button>' +
+            (flatPdfUrl2 ? '<a href="' + flatPdfUrl2 + '" target="_blank" onclick="event.stopPropagation();" class="grid-rail-btn" title="Download contract" style="text-decoration:none;">&#128279;</a>' : '') +
             '</td>';
         }
         tr.innerHTML = flatRailHtml + '<td class="row-index">' + groupCaret + childIndent + (idx + 1) + rowBadgesHtml + '</td>' +
