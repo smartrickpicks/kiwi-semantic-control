@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orchestrate OS — Google Drive Authorization</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0d1b2a;
+      color: #e0e0e0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: #1b2838;
+      border-radius: 12px;
+      padding: 40px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .card h2 { font-size: 1.2em; margin-bottom: 12px; color: #ffffff; }
+    .card p { font-size: 0.9em; color: #a0a8b4; margin-bottom: 16px; line-height: 1.5; }
+    .spinner {
+      width: 40px; height: 40px; margin: 20px auto;
+      border: 4px solid #1b3a5c;
+      border-top-color: #4fc3f7;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status-ok { color: #66bb6a; }
+    .status-err { color: #ef5350; }
+    .btn {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 10px 24px;
+      background: #1565c0;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+    .btn:hover { background: #1976d2; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div id="loading">
+      <div class="spinner"></div>
+      <h2>Connecting Google Drive...</h2>
+      <p>Please wait while we complete the authorization.</p>
+    </div>
+    <div id="success" class="hidden">
+      <h2 class="status-ok">Drive Connected</h2>
+      <p>Your Google Drive is now linked. This window will close automatically.</p>
+    </div>
+    <div id="error" class="hidden">
+      <h2 class="status-err">Connection Failed</h2>
+      <p id="error-msg">Something went wrong during authorization.</p>
+      <button class="btn" onclick="window.close()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      var params = new URLSearchParams(window.location.search);
+      var code = params.get('code');
+      var stateRaw = params.get('state');
+      var errorParam = params.get('error');
+
+      function showError(msg) {
+        document.getElementById('loading').className = 'hidden';
+        document.getElementById('error').className = '';
+        document.getElementById('error-msg').textContent = msg || 'Authorization was cancelled or failed.';
+      }
+
+      function showSuccess() {
+        document.getElementById('loading').className = 'hidden';
+        document.getElementById('success').className = '';
+        setTimeout(function() { window.close(); }, 1500);
+      }
+
+      if (errorParam) {
+        showError('Google returned an error: ' + errorParam);
+        return;
+      }
+
+      if (!code) {
+        showError('No authorization code received from Google.');
+        return;
+      }
+
+      var state = {};
+      try { state = JSON.parse(stateRaw || '{}'); } catch(e) {}
+
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({
+          type: 'DRIVE_AUTH_CALLBACK',
+          code: code,
+          state: state
+        }, '*');
+        showSuccess();
+      } else {
+        showError('Parent window is no longer available. Please try connecting again from the Data Source panel.');
+      }
+    })();
+  </script>
+</body>
+</html>
