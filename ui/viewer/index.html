@@ -1310,6 +1310,20 @@
       min-width: 50px; max-width: 60px; white-space: nowrap; box-shadow: 2px 0 4px rgba(0,0,0,0.06);
     }
     .grid-table.grid-mode-active thead th.grid-rail { z-index: 12; background: #e3f2fd; }
+    /* v2.53: Frozen first data column (record label) */
+    .grid-table td.grid-col-frozen,
+    .grid-table th.grid-col-frozen {
+      position: sticky; left: 0; z-index: 4; background: #fff; border-right: 2px solid #cce5ff;
+      min-width: 200px; max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      box-shadow: 2px 0 6px rgba(0,0,0,0.05);
+    }
+    .grid-table.grid-mode-active td.grid-col-frozen,
+    .grid-table.grid-mode-active th.grid-col-frozen {
+      left: 60px;
+    }
+    .grid-table thead th.grid-col-frozen { z-index: 11; background: #e8f0fe; }
+    .grid-table.grid-mode-active thead th.grid-col-frozen { z-index: 12; background: #e8f0fe; }
+    .grid-table tr:hover td.grid-col-frozen { background: #f0f4ff; }
     .grid-rail-btn { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75em; margin: 0 1px; background: #e3f2fd; color: #1565c0; }
     .grid-rail-btn:hover { background: #bbdefb; }
     .grid-row-verified { background: #e8f5e9 !important; }
@@ -16719,7 +16733,8 @@
             var colLetter = _ns.Engines.GridState.getColumnLetter(idx);
             var displayName = col.replace(/_c$/i, '').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
             if (displayName.length > 20) displayName = displayName.substring(0, 18) + '...';
-            headerHtml += '<th draggable="true" data-col-idx="' + idx + '" data-col-name="' + col + '" ' +
+            var frozenClass = (idx === 0) ? ' grid-col-frozen' : '';
+            headerHtml += '<th class="' + frozenClass + '" draggable="true" data-col-idx="' + idx + '" data-col-name="' + col + '" ' +
               'ondragstart="handleColumnDragStart(event)" ondragover="handleColumnDragOver(event)" ' +
               'ondrop="handleColumnDrop(event)" ondragend="handleColumnDragEnd(event)" ' +
               'style="cursor: grab; user-select: none; min-width: 80px;">' +
@@ -25726,12 +25741,21 @@
               if (_norm.display !== String(val)) val = _norm.display;
               var _normTooltip = (_norm.tooltip || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
               
-              // v1.6.46: Make File_Name a clickable link using file_url
+              var isFirstCol = (col === gridState.visibleColumns[0]);
               var isFileNameCol = col.toLowerCase().includes('file_name');
               var cellContent = String(val);
-              if (isFileNameCol && val) {
+              if (isFirstCol || isFileNameCol) {
                 var fileUrl = r.file_url || r.File_URL_c || '';
-                if (fileUrl) {
+                var recordLabel = _gridBuildRecordLabel(r, sheetName);
+                if (isFirstCol && recordLabel) {
+                  var shortLabel = recordLabel.length > 50 ? recordLabel.substring(0, 48) + '..' : recordLabel;
+                  if (fileUrl) {
+                    cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" style="color: #1976d2; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><span style="font-size: 0.9em;">&#128279;</span>' + escapeHtml(shortLabel) + '</a>';
+                  } else {
+                    cellContent = escapeHtml(shortLabel);
+                  }
+                  val = recordLabel;
+                } else if (isFileNameCol && val && fileUrl) {
                   var shortName = val.length > 40 ? val.substring(0, 38) + '...' : val;
                   cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" style="color: #1976d2; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><span style="font-size: 0.9em;">&#128279;</span>' + shortName + '</a>';
                 }
@@ -25742,7 +25766,7 @@
               var cellClass = isStatusCol ? statusClass : '';
               // v1.6.2: Apply signal-based cell coloring (v1.6.18: pass record)
               var cellStyle = getGridCellStyle(recordId, col, r);
-              var changeInfo = getCellChangeInfo(recordId, col, r); var titlePrefix = changeInfo && CHANGE_TYPE_STYLES[changeInfo.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo.type].label + '] ' : ''; if (!titlePrefix && typeof _getAddrCorrectionTooltip === 'function') { var _acTipP1c = _getAddrCorrectionTooltip(recordId, col); if (_acTipP1c) titlePrefix = _acTipP1c; } var _fullTitle = (_normTooltip ? _normTooltip + ' | ' : '') + titlePrefix + String(val).replace(/"/g, '&quot;'); return '<td class="' + cellClass + ' truncated" data-gfield="' + col + '" style="' + cellStyle + '" title="' + _fullTitle + '">' + cellContent + '</td>';
+              var changeInfo = getCellChangeInfo(recordId, col, r); var titlePrefix = changeInfo && CHANGE_TYPE_STYLES[changeInfo.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo.type].label + '] ' : ''; if (!titlePrefix && typeof _getAddrCorrectionTooltip === 'function') { var _acTipP1c = _getAddrCorrectionTooltip(recordId, col); if (_acTipP1c) titlePrefix = _acTipP1c; } var _fullTitle = (_normTooltip ? _normTooltip + ' | ' : '') + titlePrefix + String(val).replace(/"/g, '&quot;'); var _frozenCls = isFirstCol ? ' grid-col-frozen' : ''; return '<td class="' + cellClass + ' truncated' + _frozenCls + '" data-gfield="' + col + '" style="' + cellStyle + '" title="' + _fullTitle + '">' + cellContent + '</td>';
             }).join('') +
             '</tr>';
         }).join('');
@@ -25881,6 +25905,40 @@
         }
       }
       return '';
+    }
+
+    // v2.53: Build standardized record label for first column
+    // Format: Contract:Account (for accounts) or Contract:Account:Opportunity (for opportunities)
+    function _gridBuildRecordLabel(record, sheetName) {
+      var OPP_FIELDS = ['Opportunity_Name_c', 'Opportunity_Name__c', 'Opportunity_Name', 'opportunity_name', 'Name'];
+      var ACCT_FIELDS = [
+        'Account_Name_c', 'Account_Name', 'account_name', 'account_name_c',
+        'Artist_Name_pka_or_dba_c', 'Artist_Name_c', 'artist_name',
+        'Legal_Name_c', 'legal_name', 'Payee_c'
+      ];
+      var contractRaw = record.File_Name_c || record.file_name || record.File_Name || record.contract_key || '';
+      var contract = contractRaw.replace(/\.(pdf|xlsx|csv|xls)$/i, '').replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+      if (contract.length > 40) contract = contract.substring(0, 38) + '..';
+      var account = '';
+      for (var i = 0; i < ACCT_FIELDS.length; i++) {
+        var v = record[ACCT_FIELDS[i]];
+        if (v && typeof v === 'string' && v.trim() && v !== 'N/A' && v !== '-') { account = v.trim(); break; }
+      }
+      var sn = (sheetName || '').toLowerCase();
+      var isOpportunity = sn.indexOf('opportunit') >= 0;
+      if (isOpportunity) {
+        var opp = '';
+        for (var j = 0; j < OPP_FIELDS.length; j++) {
+          var ov = record[OPP_FIELDS[j]];
+          if (ov && typeof ov === 'string' && ov.trim() && ov !== 'N/A' && ov !== '-') { opp = ov.trim(); break; }
+        }
+        if (contract && account && opp) return contract + ': ' + account + ': ' + opp;
+        if (contract && account) return contract + ': ' + account;
+        if (contract && opp) return contract + ': ' + opp;
+        return contract || account || opp || '';
+      }
+      if (contract && account) return contract + ': ' + account;
+      return contract || account || '';
     }
 
     // v2.3.5-P1D.1: Get human-readable batch name from IDENTITY_CONTEXT or session
@@ -42718,13 +42776,22 @@
             if (_norm2.display !== String(val)) val = _norm2.display;
             var _normTooltip2 = (_norm2.tooltip || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
             
-            // v1.6.46: Make File_Name a clickable link using file_url
+            var isFirstCol = (col === columns[0]);
             var isFileNameCol = col.toLowerCase().includes('file_name');
             var cellContent = String(val);
-            if (isFileNameCol && val) {
+            if (isFirstCol || isFileNameCol) {
               var fileUrl = r.file_url || r.File_URL_c || '';
-              if (fileUrl) {
-                // Show truncated file name with link icon
+              var recordLabel = _gridBuildRecordLabel(r, sheetName);
+              if (isFirstCol && recordLabel) {
+                var shortLabel = recordLabel.length > 50 ? recordLabel.substring(0, 48) + '..' : recordLabel;
+                if (fileUrl) {
+                  cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" style="color: #1976d2; text-decoration: none; display: flex; align-items: center; gap: 4px;">' +
+                    '<span style="font-size: 0.9em;">&#128279;</span>' + escapeHtml(shortLabel) + '</a>';
+                } else {
+                  cellContent = escapeHtml(shortLabel);
+                }
+                val = recordLabel;
+              } else if (isFileNameCol && val && fileUrl) {
                 var shortName = val.length > 40 ? val.substring(0, 38) + '...' : val;
                 cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" style="color: #1976d2; text-decoration: none; display: flex; align-items: center; gap: 4px;">' +
                   '<span style="font-size: 0.9em;">&#128279;</span>' + shortName + '</a>';
@@ -42739,7 +42806,7 @@
             var changeInfo2 = getCellChangeInfo(recordId, col, r); var titlePrefix2 = changeInfo2 && CHANGE_TYPE_STYLES[changeInfo2.type] ? '[' + CHANGE_TYPE_STYLES[changeInfo2.type].label + '] ' : '';
             if (false) { /* inline edit removed - grid mode uses click-to-verify / dblclick-to-patch */
             }
-            var _fullTitle2 = (_normTooltip2 ? _normTooltip2 + ' | ' : '') + titlePrefix2 + String(val).replace(/"/g, '&quot;'); return '<td class="' + cellClass + ' truncated" data-gfield="' + col + '" style="' + cellStyle + '" title="' + _fullTitle2 + '">' + cellContent + '</td>';
+            var _frozenCls2 = isFirstCol ? ' grid-col-frozen' : ''; var _fullTitle2 = (_normTooltip2 ? _normTooltip2 + ' | ' : '') + titlePrefix2 + String(val).replace(/"/g, '&quot;'); return '<td class="' + cellClass + ' truncated' + _frozenCls2 + '" data-gfield="' + col + '" style="' + cellStyle + '" title="' + _fullTitle2 + '">' + cellContent + '</td>';
           }).join('');
         
         fragment.appendChild(tr);
