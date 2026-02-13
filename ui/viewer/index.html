@@ -29883,7 +29883,8 @@
           var colLetter = getColumnLetter(ci);
           var displayName = col.replace(/_c$/i, '').replace(/_/g, ' ').replace(/\b\w/g, function(l) { return l.toUpperCase(); });
           if (displayName.length > 20) displayName = displayName.substring(0, 18) + '...';
-          headTr.innerHTML += '<th style="min-width: 80px;">' +
+          var compFrozenCls = (ci === 0) ? ' class="grid-col-frozen"' : '';
+          headTr.innerHTML += '<th' + compFrozenCls + ' style="min-width: 80px;">' +
             '<div style="font-size: 0.7em; color: #888; margin-bottom: 2px; font-weight: 600;">' + colLetter + '</div>' +
             '<div title="' + col + '" style="font-size: 0.85em;">' + displayName + '</div></th>';
         }
@@ -29955,13 +29956,25 @@
             var val = r[col2];
             if (val === null || val === undefined) val = '';
             if (typeof val === 'object') val = JSON.stringify(val);
+            var _normC = _gridNormalizeCellValue(val, col2);
+            if (_normC.display !== String(val)) val = _normC.display;
+            var isFirstCol2 = (ci2 === 0);
             var isFileNameCol = col2.toLowerCase().indexOf('file_name') >= 0;
             var cellContent = String(val);
-            if (isFileNameCol && val) {
+            if (isFirstCol2 || isFileNameCol) {
               var fileUrl = r.file_url || r.File_URL_c || '';
-              if (fileUrl) {
+              var recordLabel = _gridBuildRecordLabel(r, sheetName);
+              if (isFirstCol2 && recordLabel) {
+                var shortLabel = recordLabel.length > 50 ? recordLabel.substring(0, 48) + '..' : recordLabel;
+                if (fileUrl) {
+                  cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" style="color: #1976d2; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><span style="font-size: 0.9em;">&#128279;</span>' + escapeHtml(shortLabel) + '</a>';
+                } else {
+                  cellContent = escapeHtml(shortLabel);
+                }
+                val = recordLabel;
+              } else if (isFileNameCol && val && (r.file_url || r.File_URL_c)) {
                 var shortName = val.length > 40 ? val.substring(0, 38) + '...' : val;
-                cellContent = '<a href="' + fileUrl + '" target="_blank" onclick="event.stopPropagation();" style="color: #1976d2; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><span style="font-size: 0.9em;">&#128279;</span>' + shortName + '</a>';
+                cellContent = '<a href="' + (r.file_url || r.File_URL_c) + '" target="_blank" onclick="event.stopPropagation();" style="color: #1976d2; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><span style="font-size: 0.9em;">&#128279;</span>' + shortName + '</a>';
               }
             }
             var isStatusCol = STATUS_KEYS.indexOf(col2) >= 0 || col2.toLowerCase() === 'status';
@@ -29976,9 +29989,9 @@
             var editAttrs = '';
             if (_gridViewMode === 'grid') {
               editAttrs = ' style="' + cStyle + '"';
-              rowHtml += '<td class="' + cellCls + ' truncated" data-gfield="' + col2 + '"' + editAttrs + ' title="' + titlePfx + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+              var _compFrozen1 = isFirstCol2 ? ' grid-col-frozen' : ''; rowHtml += '<td class="' + cellCls + ' truncated' + _compFrozen1 + '" data-gfield="' + col2 + '"' + editAttrs + ' title="' + titlePfx + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
             } else {
-              rowHtml += '<td class="' + cellCls + ' truncated" data-gfield="' + col2 + '" style="' + cStyle + '" title="' + titlePfx + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
+              var _compFrozen2 = isFirstCol2 ? ' grid-col-frozen' : ''; rowHtml += '<td class="' + cellCls + ' truncated' + _compFrozen2 + '" data-gfield="' + col2 + '" style="' + cStyle + '" title="' + titlePfx + String(val).replace(/"/g, '&quot;') + '">' + cellContent + '</td>';
             }
           }
           tr.innerHTML = rowHtml;
