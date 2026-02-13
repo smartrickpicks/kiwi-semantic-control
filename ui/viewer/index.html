@@ -1351,6 +1351,19 @@
     .grid-mode-toggle button { border: none; padding: 6px 20px; cursor: pointer; font-weight: 600; background: #fff; color: #1565c0; transition: background 0.15s, color 0.15s; min-width: 70px; text-align: center; font-size: 0.85em; }
     .grid-mode-toggle button.active { background: #1565c0; color: #fff; }
 
+    /* Inline Evidence Viewer PDF Pane (inside page-grid) */
+    .ev-inline-wrapper { display: flex; gap: 0; width: 100%; }
+    .ev-inline-wrapper .ev-grid-column { flex: 1 1 55%; min-width: 0; overflow: auto; }
+    .ev-inline-wrapper .ev-pdf-column { flex: 0 0 42%; max-width: 42%; border-left: 2px solid #e0e0e0; display: flex; flex-direction: column; background: #fafafa; }
+    .ev-pdf-column .ev-pdf-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f5f5f5; border-bottom: 1px solid #e0e0e0; font-size: 0.85em; }
+    .ev-pdf-column .ev-pdf-header .ev-pdf-title { font-weight: 600; color: #333; }
+    .ev-pdf-column .ev-pdf-header .ev-pdf-source { color: #888; font-size: 0.9em; margin-left: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+    .ev-pdf-column .ev-pdf-body { flex: 1; overflow: auto; position: relative; min-height: 400px; }
+    .ev-pdf-column .ev-pdf-body iframe, .ev-pdf-column .ev-pdf-body object { width: 100%; height: 100%; border: none; display: block; min-height: 500px; }
+    .ev-pdf-column .ev-pdf-empty { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 400px; color: #999; font-size: 0.95em; text-align: center; padding: 20px; }
+    .ev-pdf-column .ev-pdf-record-label { font-size: 0.8em; color: #1565c0; background: #e3f2fd; padding: 2px 8px; border-radius: 4px; }
+    #grid-tbody tr.ev-active-row { background: #e3f2fd !important; outline: 2px solid #1565c0; outline-offset: -1px; }
+
     /* Grid Context Menu */
     .grid-ctx-menu {
       position: fixed;
@@ -2796,13 +2809,37 @@
             <button id="gfc-collapse-btn" class="gfc-btn" onclick="_p1cCollapseAll()" style="display:none;">Collapse All</button>
           </div>
 
-        <div class="grid-table-container" style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px;">
-          <table class="grid-table" id="grid-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
-            <thead id="grid-thead" style="position: sticky; top: 0; background: #f5f5f5; z-index: 10;">
-              <tr id="grid-header-row"></tr>
-            </thead>
-            <tbody id="grid-tbody"></tbody>
-          </table>
+        <div class="ev-inline-wrapper" id="ev-inline-wrapper">
+          <div class="ev-grid-column" id="ev-grid-column">
+            <div class="grid-table-container" style="overflow-x: auto; border: 1px solid #e0e0e0; border-radius: 8px;">
+              <table class="grid-table" id="grid-table" style="width: 100%; border-collapse: collapse; font-size: 0.85em;">
+                <thead id="grid-thead" style="position: sticky; top: 0; background: #f5f5f5; z-index: 10;">
+                  <tr id="grid-header-row"></tr>
+                </thead>
+                <tbody id="grid-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="ev-pdf-column" id="ev-pdf-column" style="display: none;">
+            <div class="ev-pdf-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="ev-pdf-title">Evidence Viewer</span>
+                <span class="ev-pdf-record-label" id="ev-pdf-record-label"></span>
+              </div>
+              <span class="ev-pdf-source" id="ev-pdf-source"></span>
+            </div>
+            <div class="ev-pdf-body" id="ev-pdf-body">
+              <div class="ev-pdf-empty" id="ev-pdf-empty">
+                <div>
+                  <div style="font-size: 2em; margin-bottom: 8px;">📄</div>
+                  <div>Click a record row to load its document</div>
+                </div>
+              </div>
+              <object id="ev-pdf-object" type="application/pdf" data="about:blank" style="display: none; width: 100%; height: 100%; min-height: 500px; border: none;">
+                <p>PDF viewer not available</p>
+              </object>
+            </div>
+          </div>
         </div>
 
         <!-- Grid Footer -->
@@ -13961,16 +13998,93 @@
       _evState.clickArmedAfterOpen = false;
     }
 
-    function _evOpenViewerForRecord(sheetName, rowIdx, recordId) {
+    function _evShowPdfPane() {
+      var pane = document.getElementById('ev-pdf-column');
+      if (pane) pane.style.display = '';
       _evState.viewerOpen = true;
+    }
+
+    function _evHidePdfPane() {
+      var pane = document.getElementById('ev-pdf-column');
+      if (pane) pane.style.display = 'none';
+      _evState.viewerOpen = false;
+    }
+
+    function _evLoadPdfForRecord(record, recordId, sheetName) {
+      var pdfObj = document.getElementById('ev-pdf-object');
+      var emptyEl = document.getElementById('ev-pdf-empty');
+      var labelEl = document.getElementById('ev-pdf-record-label');
+      var sourceEl = document.getElementById('ev-pdf-source');
+      if (!pdfObj) return;
+
+      if (labelEl) labelEl.textContent = recordId || '';
+      if (sourceEl) sourceEl.textContent = sheetName || '';
+
+      if (!record) {
+        if (pdfObj) pdfObj.style.display = 'none';
+        if (emptyEl) { emptyEl.style.display = ''; emptyEl.querySelector('div > div:last-child').textContent = 'No record data available'; }
+        return;
+      }
+
+      var fileUrl = (typeof srrResolveFieldValue === 'function') ? srrResolveFieldValue(record, 'file_url') : (record.file_url || record.File_URL_c || '');
+      var fileName = (typeof srrResolveFieldValue === 'function') ? srrResolveFieldValue(record, 'file_name') : (record.file_name || record.File_Name_c || '');
+      var hasUrl = (typeof srrIsValidPdfUrl === 'function') ? srrIsValidPdfUrl(fileUrl) : (fileUrl && fileUrl.indexOf('http') === 0);
+
+      var attachments = [];
+      try { attachments = JSON.parse(localStorage.getItem(STORAGE_KEY_PDF_ATTACHMENTS) || '[]'); } catch (e) {}
+
+      var pdfUrl = null;
+      var sourceLabel = '';
+
+      if (hasUrl) {
+        pdfUrl = '/proxy/pdf?url=' + encodeURIComponent(fileUrl);
+        sourceLabel = fileName || fileUrl.split('/').pop().split('?')[0];
+      } else if (fileName && attachments.length > 0) {
+        var match = attachments.find(function(a) { return a.file_name === fileName; });
+        if (match && match.local_object_url) { pdfUrl = match.local_object_url; sourceLabel = match.file_name; }
+      }
+      if (!pdfUrl && attachments.length > 0 && attachments[0].local_object_url) {
+        pdfUrl = attachments[0].local_object_url;
+        sourceLabel = attachments[0].file_name;
+      }
+
+      if (pdfUrl) {
+        if (emptyEl) emptyEl.style.display = 'none';
+        pdfObj.style.display = 'block';
+        pdfObj.data = pdfUrl;
+        if (sourceEl) sourceEl.textContent = sourceLabel;
+        console.log('[EV-INLINE] PDF loaded:', sourceLabel, 'for record:', recordId);
+      } else {
+        pdfObj.style.display = 'none';
+        if (emptyEl) { emptyEl.style.display = ''; emptyEl.querySelector('div > div:last-child').textContent = 'No document attached to this record'; }
+        console.log('[EV-INLINE] No PDF for record:', recordId);
+      }
+    }
+
+    function _evOpenViewerForRecord(sheetName, rowIdx, recordId) {
       _evState.activeRecordId = recordId;
       _evState.activeSheetName = sheetName;
       _evState.activeRowIdx = rowIdx;
       _evState.clickArmedAfterOpen = true;
-      console.log('[EV-STATE] viewer opened for record:', recordId, 'sheet:', sheetName, 'row:', rowIdx);
-      if (typeof openRowReviewDrawer === 'function') {
-        openRowReviewDrawer(sheetName, rowIdx);
+      _evShowPdfPane();
+
+      var record = null;
+      if (window.workbook && window.workbook.sheets && window.workbook.sheets[sheetName]) {
+        var sheet = window.workbook.sheets[sheetName];
+        if (sheet.rows && rowIdx >= 0 && rowIdx < sheet.rows.length) {
+          record = sheet.rows[rowIdx];
+        }
       }
+      _evLoadPdfForRecord(record, recordId, sheetName);
+
+      var allRows = document.querySelectorAll('#grid-tbody tr[data-record-id]');
+      for (var i = 0; i < allRows.length; i++) {
+        allRows[i].classList.remove('ev-active-row');
+      }
+      var activeRow = document.querySelector('#grid-tbody tr[data-record-id="' + recordId + '"]');
+      if (activeRow) activeRow.classList.add('ev-active-row');
+
+      console.log('[EV-STATE] viewer opened inline for record:', recordId, 'sheet:', sheetName, 'row:', rowIdx);
     }
 
     function _evSwitchToReviewWithRecord() {
@@ -13988,6 +14102,11 @@
       _evState.mode = mode === 'grid' ? 'evidence_viewer' : 'review';
 
       if (mode === 'grid' && prevMode !== 'grid') {
+        _evResetViewerState();
+      }
+
+      if (mode === 'review' && prevMode === 'grid') {
+        _evHidePdfPane();
         _evResetViewerState();
       }
 
@@ -14009,13 +14128,6 @@
       renderGrid();
       var legendEl = document.getElementById('grid-color-legend');
       if (legendEl) legendEl.style.display = mode === 'grid' ? 'flex' : 'none';
-      if (mode === 'grid') {
-        var centerPanel = document.querySelector('.srr-panel-center');
-        if (centerPanel) centerPanel.classList.add('ev-grid-mode');
-      } else {
-        var centerPanel = document.querySelector('.srr-panel-center');
-        if (centerPanel) centerPanel.classList.remove('ev-grid-mode');
-      }
     }
 
 
@@ -14246,12 +14358,7 @@
         }
 
         if (_evState.activeRecordId !== recordId) {
-          _evState.activeRecordId = recordId;
-          _evState.activeSheetName = sheetName;
-          _evState.activeRowIdx = rowIdx;
-          if (typeof openRowReviewDrawer === 'function') {
-            openRowReviewDrawer(sheetName, rowIdx);
-          }
+          _evOpenViewerForRecord(sheetName, rowIdx, recordId);
           return;
         }
 
@@ -17664,7 +17771,9 @@
 
       if (action === 'inspect') {
         _gridCtxClose();
-        if (typeof openRowReviewDrawer === 'function') {
+        if (_gridViewMode === 'grid') {
+          _evOpenViewerForRecord(ctx.sheetName, ctx.rowIdx, ctx.recordId);
+        } else if (typeof openRowReviewDrawer === 'function') {
           openRowReviewDrawer(ctx.sheetName, ctx.rowIdx);
         } else {
           showToast('Record Inspector not available', 'warning');
@@ -27763,6 +27872,14 @@
             tr.style.cursor = 'pointer';
           } else if (_gridViewMode === 'grid') {
             tr.style.cursor = 'pointer';
+            tr.onclick = (function(sn, sri, rid) { return function(e) {
+              if (e.target && e.target.closest && e.target.closest('td[data-gfield]')) return;
+              if (!_evState.viewerOpen) {
+                _evOpenViewerForRecord(sn, sri, rid);
+              } else if (_evState.activeRecordId !== rid) {
+                _evOpenViewerForRecord(sn, sri, rid);
+              }
+            }; })(r.sheet || sheetName, sheetRowIdx, recordId);
           }
 
           var railHtml = '';
@@ -27774,7 +27891,7 @@
             }
             var pdfUrl = r.file_url || r.File_URL_c || '';
             railHtml = '<td class="grid-rail">' +
-              '<button class="grid-rail-btn" title="Record Inspector" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + (r.sheet || sheetName).replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');">&#128270;</button>' +
+              '<button class="grid-rail-btn" title="Open Evidence Viewer" onclick="event.stopPropagation(); _evOpenViewerForRecord(\'' + (r.sheet || sheetName).replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ', \'' + (recordId || '').replace(/'/g, "\\'") + '\');">&#128270;</button>' +
               (acctLabel ? '<span style="font-size:0.75em;color:#666;margin-left:2px;" title="' + acctLabel + '">' + acctLabel + '</span>' : '') +
               '</td>';
           }
@@ -30486,12 +30603,6 @@
       }
 
       if (_gridViewMode === 'grid' && typeof eiShowTab === 'function') {
-        _evState.viewerOpen = true;
-        if (srrState.currentRecordKey) {
-          _evState.activeRecordId = srrState.currentRecordKey;
-          _evState.activeSheetName = srrState.currentSheetName;
-          _evState.activeRowIdx = srrState.currentRowId;
-        }
         setTimeout(function() {
           var rightPanel = document.querySelector('.srr-panel-right');
           if (rightPanel) rightPanel.style.display = '';
@@ -40483,6 +40594,14 @@
           tr.style.cursor = 'pointer';
         } else if (_gridViewMode === 'grid') {
           tr.style.cursor = 'pointer';
+          tr.onclick = (function(sn, sri, rid) { return function(e) {
+            if (e.target && e.target.closest && e.target.closest('td[data-gfield]')) return;
+            if (!_evState.viewerOpen) {
+              _evOpenViewerForRecord(sn, sri, rid);
+            } else if (_evState.activeRecordId !== rid) {
+              _evOpenViewerForRecord(sn, sri, rid);
+            }
+          }; })(sheetName, sheetRowIdx, recordId);
         }
         
         // v1.6.18: Normalize status field lookup - try multiple header variants
@@ -40518,7 +40637,7 @@
           }
           var flatPdfUrl = r.file_url || r.File_URL_c || '';
           flatRailHtml = '<td class="grid-rail">' +
-            '<button class="grid-rail-btn" title="Record Inspector" onclick="event.stopPropagation(); openRowReviewDrawer(\'' + sheetName.replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ');">&#128270;</button>' +
+            '<button class="grid-rail-btn" title="Open Evidence Viewer" onclick="event.stopPropagation(); _evOpenViewerForRecord(\'' + sheetName.replace(/'/g, "\\'") + '\', ' + sheetRowIdx + ', \'' + (recordId || '').replace(/'/g, "\\'") + '\');">&#128270;</button>' +
             (flatAcctLabel ? '<span style="font-size:0.75em;color:#666;margin-left:2px;">' + flatAcctLabel + '</span>' : '') +
             '</td>';
         }

@@ -33,6 +33,8 @@ The "Grid" mode has been renamed to "Evidence Viewer" mode with unified click be
 - **State machine**: `_evState` object tracks `mode` (review/evidence_viewer), `viewerOpen`, `activeRecordId`, `activeSheetName`, `activeRowIdx`, `clickArmedAfterOpen`.
 - Transitions: T1 (mode toggle), T2 (first click opens viewer), T3 (subsequent clicks validate), T4 (double-click context menu), T5 (Open in Review Mode), T6 (toggle back to review preserves record).
 
+**Inline PDF Pane (no page switch)**: Evidence Viewer mode adds an inline PDF pane (`ev-pdf-column`) inside `page-grid` via `ev-inline-wrapper` flex layout. The grid table stays visible and interactive on the left (55%), the PDF pane appears on the right (42%). Toggling Evidence Viewer mode ON/OFF only shows/hides the pane — no navigation to `page-row`. Row clicks in Evidence Viewer mode call `_evOpenViewerForRecord()` which loads the PDF inline using `_evLoadPdfForRecord()` and highlights the active row with `.ev-active-row` class. The rail button (magnifying glass) in grid mode also opens the inline viewer. "Open in Review Mode" context menu action explicitly switches to review mode and navigates to `page-row`.
+
 ## External Dependencies
 - **FastAPI server**: Used as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
 - **SheetJS (XLSX)**: Integrated via CDN for Excel import/export functionality.
