@@ -1003,6 +1003,376 @@ components:
             limit:
               type: integer
 
+    # ── Evidence Inspector v2.51 Schemas ──
+
+    Anchor:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ULID with anc_ prefix
+        document_id:
+          type: string
+        workspace_id:
+          type: string
+        anchor_fingerprint:
+          type: string
+          description: SHA-256 fingerprint for dedup
+        node_id:
+          type: string
+        char_start:
+          type: integer
+        char_end:
+          type: integer
+        selected_text:
+          type: string
+        field_id:
+          type: string
+        field_key:
+          type: string
+        page_number:
+          type: integer
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+        version:
+          type: integer
+        metadata:
+          type: object
+
+    AnchorCreate:
+      type: object
+      properties:
+        node_id:
+          type: string
+        char_start:
+          type: integer
+        char_end:
+          type: integer
+        selected_text:
+          type: string
+        field_id:
+          type: string
+        field_key:
+          type: string
+        page_number:
+          type: integer
+        metadata:
+          type: object
+
+    AnchorResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Anchor'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    AnchorCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Anchor'
+        meta:
+          $ref: '#/components/schemas/CollectionMeta'
+
+    Correction:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ULID with cor_ prefix
+        document_id:
+          type: string
+        workspace_id:
+          type: string
+        anchor_id:
+          type: string
+          nullable: true
+        rfi_id:
+          type: string
+          nullable: true
+        field_id:
+          type: string
+        field_key:
+          type: string
+        original_value:
+          type: string
+          nullable: true
+        corrected_value:
+          type: string
+        correction_type:
+          type: string
+          enum: [minor, non_trivial]
+          description: >
+            Auto-classified: minor if abs(length_delta)<=2, no digits,
+            no currency/percent symbols. Otherwise non_trivial.
+        status:
+          type: string
+          enum: [pending_verifier, approved, rejected, auto_applied]
+        decided_by:
+          type: string
+          nullable: true
+        decided_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+        version:
+          type: integer
+        metadata:
+          type: object
+
+    CorrectionCreate:
+      type: object
+      required: [corrected_value]
+      properties:
+        original_value:
+          type: string
+        corrected_value:
+          type: string
+        anchor_id:
+          type: string
+        rfi_id:
+          type: string
+        field_id:
+          type: string
+        field_key:
+          type: string
+        metadata:
+          type: object
+
+    CorrectionUpdate:
+      type: object
+      required: [version]
+      properties:
+        version:
+          type: integer
+          description: Required for optimistic concurrency
+        status:
+          type: string
+          enum: [pending_verifier, approved, rejected, auto_applied]
+        corrected_value:
+          type: string
+        metadata:
+          type: object
+
+    CorrectionResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Correction'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    CorrectionCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Correction'
+        meta:
+          $ref: '#/components/schemas/CollectionMeta'
+
+    ReaderNodeCache:
+      type: object
+      properties:
+        id:
+          type: string
+        document_id:
+          type: string
+        source_pdf_hash:
+          type: string
+        ocr_version:
+          type: string
+        quality_flag:
+          type: string
+          enum: [ok, suspect_mojibake, unreadable, missing_text_layer]
+        nodes:
+          type: array
+          items:
+            type: object
+        page_count:
+          type: integer
+        cached:
+          type: boolean
+          description: >
+            false when returning fallback (no cache entry found),
+            true or omitted when returning from DB cache
+        created_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+
+    ReaderNodeResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ReaderNodeCache'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    OcrEscalation:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ULID with oce_ prefix
+        document_id:
+          type: string
+        workspace_id:
+          type: string
+        escalation_type:
+          type: string
+          default: ocr_reprocess
+        status:
+          type: string
+          enum: [pending, resolved, dismissed]
+        requested_by:
+          type: string
+        resolved_by:
+          type: string
+          nullable: true
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+        version:
+          type: integer
+        metadata:
+          type: object
+        _mock:
+          type: boolean
+          description: Always true — OCR pipeline not yet implemented
+        _note:
+          type: string
+
+    OcrEscalationResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/OcrEscalation'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    BatchHealth:
+      type: object
+      properties:
+        batch_id:
+          type: string
+        counts:
+          type: object
+          properties:
+            rfis_open:
+              type: integer
+            rfis_awaiting_verifier:
+              type: integer
+            corrections_pending:
+              type: integer
+            mojibake_suspect_docs:
+              type: integer
+            reader_unreadable_docs:
+              type: integer
+        blockers:
+          type: array
+          items:
+            type: string
+        updated_at:
+          type: string
+          format: date-time
+
+    BatchHealthResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/BatchHealth'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+
+    Rfi:
+      type: object
+      description: Request for Information (v2.5 core + v2.51 custody_status)
+      properties:
+        id:
+          type: string
+        document_id:
+          type: string
+        workspace_id:
+          type: string
+        field_id:
+          type: string
+        question:
+          type: string
+        status:
+          type: string
+          enum: [open, responded, closed]
+          description: Legacy v2.5 status
+        custody_status:
+          type: string
+          enum: [open, awaiting_verifier, returned_to_analyst, resolved, dismissed]
+          nullable: true
+          description: v2.51 custody lifecycle status (additive)
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+        version:
+          type: integer
+        metadata:
+          type: object
+
+    RfiCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rfi'
+        meta:
+          $ref: '#/components/schemas/CollectionMeta'
+
   responses:
     StaleVersion:
       description: Optimistic concurrency conflict
@@ -1420,6 +1790,312 @@ components:
                     $ref: '#/components/schemas/Meta'
         '403':
           description: Role not authorized for this export type
+
+  # ── Evidence Inspector v2.51 (feature-gated: EVIDENCE_INSPECTOR_V251) ──
+
+  /documents/{doc_id}/reader-nodes:
+    get:
+      operationId: getReaderNodes
+      summary: Get cached reader nodes for a document
+      description: >
+        Returns cached text extraction nodes for a document. Cache key is
+        (document_id, source_pdf_hash, ocr_version). If no cache entry exists,
+        returns empty nodes with quality_flag=missing_text_layer.
+        Feature-gated behind EVIDENCE_INSPECTOR_V251.
+      tags: [Evidence Inspector]
+      parameters:
+        - name: doc_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: source_pdf_hash
+          in: query
+          schema:
+            type: string
+          description: SHA-256 hash of the source PDF
+        - name: ocr_version
+          in: query
+          schema:
+            type: string
+            default: v1
+      responses:
+        '200':
+          description: Reader node cache hit or fallback
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReaderNodeResponse'
+        '404':
+          description: Document not found or feature disabled
+
+  /documents/{doc_id}/anchors:
+    post:
+      operationId: createAnchor
+      summary: Create a text anchor on a document
+      description: >
+        Creates a text anchor with fingerprint-based dedup. If an anchor with
+        the same fingerprint already exists, returns the existing anchor (200)
+        instead of creating a duplicate. Emits anchor.created audit event.
+        Feature-gated behind EVIDENCE_INSPECTOR_V251.
+      tags: [Evidence Inspector]
+      parameters:
+        - name: doc_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnchorCreate'
+      responses:
+        '201':
+          description: Anchor created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnchorResponse'
+        '200':
+          description: Existing anchor returned (fingerprint dedup)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnchorResponse'
+        '404':
+          description: Document not found or feature disabled
+    get:
+      operationId: listAnchors
+      summary: List anchors for a document
+      description: >
+        Returns paginated list of anchors for a document.
+        Feature-gated behind EVIDENCE_INSPECTOR_V251.
+      tags: [Evidence Inspector]
+      parameters:
+        - name: doc_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: include_deleted
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Anchor list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnchorCollection'
+        '404':
+          description: Document not found or feature disabled
+
+  /documents/{doc_id}/corrections:
+    post:
+      operationId: createCorrection
+      summary: Create a field-level correction
+      description: >
+        Creates a correction linked to a document, optionally referencing an
+        anchor and/or RFI. Auto-classifies as minor (auto_applied) or
+        non_trivial (pending_verifier) based on policy:
+        abs(length_delta)<=2 AND no digits AND no currency/percent = minor.
+        Emits correction.created audit event.
+        Feature-gated behind EVIDENCE_INSPECTOR_V251.
+      tags: [Evidence Inspector]
+      parameters:
+        - name: doc_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrectionCreate'
+      responses:
+        '201':
+          description: Correction created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorrectionResponse'
+        '400':
+          description: Validation error (missing corrected_value, invalid anchor/rfi ref)
+        '404':
+          description: Document not found or feature disabled
+
+  /corrections/{cor_id}:
+    patch:
+      operationId: updateCorrection
+      summary: Update a correction (approve/reject/modify)
+      description: >
+        Updates correction status, corrected_value, or metadata. Requires
+        version for optimistic concurrency (409 STALE_VERSION on mismatch).
+        Setting status to approved/rejected auto-sets decided_by and decided_at.
+        Emits correction.updated audit event.
+        Feature-gated behind EVIDENCE_INSPECTOR_V251.
+      tags: [Evidence Inspector]
+      parameters:
+        - name: cor_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrectionUpdate'
+      responses:
+        '200':
+          description: Correction updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorrectionResponse'
+        '400':
+          description: Validation error
+        '404':
+          description: Correction not found or feature disabled
+        '409':
+          description: Stale version — concurrent modification
+
+  /batches/{bat_id}/corrections:
+    get:
+      operationId: listBatchCorrections
+      summary: List corrections across all documents in a batch
+      description: >
+        Returns paginated corrections for all documents in the batch,
+        optionally filtered by status.
+        Feature-gated behind EVIDENCE_INSPECTOR_V251.
+      tags: [Evidence Inspector]
+      parameters:
+        - name: bat_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending_verifier, approved, rejected, auto_applied]
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Correction list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorrectionCollection'
+        '404':
+          description: Batch not found or feature disabled
+
+  /batches/{bat_id}/rfis:
+    get:
+      operationId: listBatchRfis
+      summary: List RFIs scoped to a batch with custody_status filter
+      description: >
+        Returns paginated RFIs for documents in the batch. Filters on
+        custody_status with fallback to legacy status column for backward
+        compatibility.
+        Feature-gated behind EVIDENCE_INSPECTOR_V251.
+      tags: [Evidence Inspector]
+      parameters:
+        - name: bat_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, awaiting_verifier, returned_to_analyst, resolved, dismissed]
+          description: Filter by custody_status (falls back to legacy status mapping)
+        - $ref: '#/components/parameters/CursorParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: RFI list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfiCollection'
+        '404':
+          description: Batch not found or feature disabled
+
+  /batches/{bat_id}/health:
+    get:
+      operationId: getBatchHealth
+      summary: Get health aggregation for a batch
+      description: >
+        Returns aggregate counts of open RFIs, pending corrections,
+        mojibake suspects, and unreadable documents. Includes blockers list.
+        Feature-gated behind EVIDENCE_INSPECTOR_V251.
+      tags: [Evidence Inspector]
+      parameters:
+        - name: bat_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Batch health summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchHealthResponse'
+        '404':
+          description: Batch not found or feature disabled
+
+  /documents/{doc_id}/ocr-escalations:
+    post:
+      operationId: createOcrEscalation
+      summary: Request OCR reprocessing for a document (mock)
+      description: >
+        Creates an OCR escalation request. Currently a mock endpoint that
+        records the request and emits an audit event but does not trigger
+        actual OCR reprocessing. Response includes _mock=true flag.
+        Feature-gated behind EVIDENCE_INSPECTOR_V251.
+      tags: [Evidence Inspector]
+      parameters:
+        - name: doc_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                escalation_type:
+                  type: string
+                  default: ocr_reprocess
+                metadata:
+                  type: object
+      responses:
+        '201':
+          description: OCR escalation recorded (mock)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OcrEscalationResponse'
+        '404':
+          description: Document not found or feature disabled
 
 security:
   - BearerToken: []
