@@ -1,5 +1,38 @@
 # CHANGELOG
 
+## Version: v2.53
+Date: 2026-02-14
+
+### Added (Suggested Fields — P2 Cleanup + P1 Features)
+
+- SUGGEST-24: Renamed "Sync" tab → "Suggestions" in grid float controls; "Reject" button → "Decline" in suggestion action buttons. Internal API status value remains `rejected`; this is a presentation-layer change only.
+
+- SUGGEST-22: Migration 009 adds `version` (integer, default 1) and `updated_at` (timestamptz, default now()) to `glossary_aliases` table. Enables optimistic-concurrency on alias edits.
+
+- SUGGEST-23: `PATCH /glossary/aliases/{id}` endpoint with version-based OCC. Duplicate normalized-alias detection returns 409. Emits `glossary_alias.updated` audit event with before/after payload.
+
+- SUGGEST-09/10: OpenAPI documentation (docs/api/openapi.yaml) updated with full Suggested Fields tag, including glossary/terms, glossary/aliases, suggestions/run, and suggestions endpoints with request/response schemas.
+
+- SUGGEST-11: Frontend workspace context via `_syncHeaders()` — all suggestion/glossary API calls include `X-Workspace-Id` header. Source: JWT claim → localStorage session → seed workspace fallback.
+
+- Module Registry (P1D16): `Engines.SuggestionsState` and `Components.SuggestionsPanel` registered in AppModules with delegating accessors to `_syncState`, toggle, run, accept, decline, and refresh operations.
+
+- Section Metadata Integration: `orderFieldsForInspector()` now reads `enrichments.section_metadata` from `field_meta.json`. When section_headers + field_section_map are present for a sheet, fields are grouped by section with question_order ordering. Falls back to legacy hinge-based grouping when metadata is absent.
+
+- Section Focus Guidance: `renderSectionGuidanceCard()` reads `section_focus` from section_metadata before falling back to `config/section_guidance.json`. Preserves existing guidance card UI shell (what_to_look_for, common_failure_modes).
+
+- Glossary Definition Surfaces: `buildGlossaryPortalContent()` now shows "No definition available for this field." when `fields[].definition` is empty/missing. Preserves requiredness, type, picklist, and hinge group tags.
+
+### Verified (Alias Workflow Alignment)
+- Alias accept path confirmed idempotent (duplicate returns 409 with existing mapping)
+- Audit emission confirmed on create (`glossary_alias.created`) and update (`glossary_alias.updated`)
+- Workspace isolation confirmed via `_require_workspace_id()` on all glossary endpoints
+- Suggestion naming consistent: UI "Decline" / display "declined" / API status "rejected"
+- Non-suggestion rejection semantics (patch/system flows) unchanged
+
+---
+
+
 ## Version: v1.4.5
 Date: 2026-01-31
 

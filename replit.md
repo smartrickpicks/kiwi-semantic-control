@@ -30,6 +30,12 @@ Multi-Workspace Glossary Routing: All glossary endpoints (GET /glossary/terms, P
 ## Migration Notes
 Migration 003 (auth_google_oauth) is self-contained: it creates the production workspace (`ws_SEED0100000000000000000000`) via `INSERT ... ON CONFLICT DO NOTHING` before inserting user workspace roles, so it does not depend on seed data from migration 002. This ensures the migration succeeds in production where `SEED_DATA` is not enabled.
 
+Section Metadata Integration (v2.53): The `orderFieldsForInspector()` function in the record inspector reads `enrichments.section_metadata` from `field_meta.json`. When section_headers and field_section_map are present for a sheet, fields are grouped by section (using `section_key`) and ordered by `question_order`. Section titles and descriptions from `section_headers` are displayed as group headers. If section_metadata is absent for a sheet, the legacy hinge-based grouping (Primary/Secondary/Other) is used as fallback. The `_getSectionMetadata()` helper retrieves metadata, and `_orderFieldsBySectionMetadata()` builds the grouped ordering.
+
+Section Focus Guidance (v2.53): The `renderSectionGuidanceCard()` function first checks `section_focus` from `enrichments.section_metadata` for the current sheet. If available, it uses that text as the "what to look for" guidance. If section_focus is unavailable, it falls back to `config/section_guidance.json`. The `_getSectionFocusFromMeta()` helper resolves section_focus from the metadata. The guidance card UI shell (section label, what_to_look_for, common_failure_modes) is preserved.
+
+Module Registry (v2.53): `Engines.SuggestionsState` and `Components.SuggestionsPanel` registered in AppModules Phase D16. SuggestionsState provides accessors for sync state, document/workspace IDs, and headers. SuggestionsPanel provides toggle, run, accept, decline, and refresh operations. Total registered modules: ~50+ across D1-D16 phases.
+
 ## External Dependencies
 - **FastAPI server**: Used as a local PDF proxy for CORS-safe PDF fetching and text extraction using PyMuPDF.
 - **SheetJS (XLSX)**: Integrated for Excel import/export functionality.

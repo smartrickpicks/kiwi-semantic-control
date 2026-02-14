@@ -886,6 +886,8 @@
     .srr-field-group-header.group-primary { background: #e8f5e9; border-bottom-color: #4caf50; color: #2e7d32; }
     .srr-field-group-header.group-secondary { background: #e3f2fd; border-bottom-color: #1976d2; color: #1565c0; }
     .srr-field-group-header.group-other { background: #fafafa; border-bottom-color: #9e9e9e; color: #616161; }
+    .srr-field-group-header.group-section { background: #f3e5f5; border-bottom-color: #7b1fa2; color: #6a1b9a; }
+    .srr-section-desc { font-size: 0.72em; font-weight: 400; color: #888; text-transform: none; letter-spacing: 0; margin-top: 3px; line-height: 1.4; }
     .srr-group-count { font-weight: 400; color: #999; }
     
     /* v1.4.18: Field Card enhancements - locked, changed */
@@ -19729,6 +19731,71 @@
     })();
     // ========== END PHASE D15 ==========
 
+    // ========== PHASE D16: SUGGESTIONS MODULE EXTRACTION ==========
+    (function() {
+      var ns = window.AppModules;
+      if (!ns) return;
+
+      ns.Engines.SuggestionsState = {
+        _id: 'Engines.SuggestionsState',
+        getState: function() {
+          return (typeof _syncState !== 'undefined') ? _syncState : { visible: false, suggestions: [], loading: false, documentId: null };
+        },
+        isVisible: function() {
+          var s = this.getState();
+          return s.visible;
+        },
+        isLoading: function() {
+          var s = this.getState();
+          return s.loading;
+        },
+        getSuggestions: function() {
+          var s = this.getState();
+          return s.suggestions || [];
+        },
+        getDocumentId: function() {
+          if (typeof _syncGetDocumentId === 'function') return _syncGetDocumentId();
+          return null;
+        },
+        getWorkspaceId: function() {
+          if (typeof _syncGetWorkspaceId === 'function') return _syncGetWorkspaceId();
+          return null;
+        },
+        getHeaders: function() {
+          if (typeof _syncHeaders === 'function') return _syncHeaders();
+          return { 'Content-Type': 'application/json' };
+        }
+      };
+      ns._registry.push('Engines.SuggestionsState');
+      console.log('[APP-MODULES][P1D16] registered: Engines.SuggestionsState');
+
+      ns.Components.SuggestionsPanel = {
+        _id: 'Components.SuggestionsPanel',
+        _panelId: 'sync-suggestions-panel',
+        _listId: 'sync-suggestions-list',
+        toggle: function() {
+          if (typeof _syncTogglePanel === 'function') _syncTogglePanel();
+        },
+        run: function() {
+          if (typeof _syncRunSuggestions === 'function') _syncRunSuggestions();
+        },
+        accept: function(sugId, version) {
+          if (typeof _syncAccept === 'function') _syncAccept(sugId, version);
+        },
+        decline: function(sugId, version) {
+          if (typeof _syncReject === 'function') _syncReject(sugId, version);
+        },
+        refresh: function() {
+          if (typeof _syncRenderSuggestions === 'function') _syncRenderSuggestions();
+        }
+      };
+      ns._registry.push('Components.SuggestionsPanel');
+      console.log('[APP-MODULES][P1D16] registered: Components.SuggestionsPanel');
+
+      console.log('[APP-MODULES][P1D16] suggestions_modules_registered: SuggestionsState, SuggestionsPanel');
+    })();
+    // ========== END PHASE D16 ==========
+
     // ========== PHASE B: REUSABLE COMPONENT SCAFFOLDING ==========
 
     var Components = window.Components || {};
@@ -30679,7 +30746,92 @@
     
     // v1.5.7: Order fields for Field Inspector using rules_bundle
     // Returns: { groups: [{name, fields: [key]}], orderedKeys: [key] }
+    function _getSectionMetadata(sheetName) {
+      if (!rulesBundleCache || !rulesBundleCache.fieldMeta) return null;
+      var enr = rulesBundleCache.fieldMeta.enrichments;
+      if (!enr || !enr.section_metadata) return null;
+      var sm = enr.section_metadata[sheetName];
+      if (!sm || !sm.section_headers || !sm.field_section_map) return null;
+      if (sm.section_headers.length === 0 || sm.field_section_map.length === 0) return null;
+      return sm;
+    }
+
+    function _orderFieldsBySectionMetadata(record, sheetName, sectionMeta) {
+      var allKeys = Object.keys(record).filter(function(k) { return !k.startsWith('_'); });
+      var keySet = {};
+      allKeys.forEach(function(k) { keySet[normalizeFieldKey(k)] = k; });
+
+      var headers = sectionMeta.section_headers.slice().sort(function(a, b) {
+        return (a.display_order || 999) - (b.display_order || 999);
+      });
+
+      var fsmBySection = {};
+      sectionMeta.field_section_map.forEach(function(entry) {
+        var sk = entry.section_key;
+        if (!fsmBySection[sk]) fsmBySection[sk] = [];
+        fsmBySection[sk].push(entry);
+      });
+
+      var groups = [];
+      var orderedKeys = [];
+      var usedKeys = {};
+
+      var accountNameKey = null;
+      allKeys.forEach(function(k) {
+        if (!accountNameKey && isAccountNameField(k)) accountNameKey = k;
+      });
+      if (accountNameKey) {
+        groups.push({ name: null, fields: [accountNameKey] });
+        orderedKeys.push(accountNameKey);
+        usedKeys[normalizeFieldKey(accountNameKey)] = true;
+      }
+
+      for (var si = 0; si < headers.length; si++) {
+        var hdr = headers[si];
+        var sectionFields = fsmBySection[hdr.section_key] || [];
+        sectionFields.sort(function(a, b) { return (a.question_order || 999) - (b.question_order || 999); });
+
+        var matchedKeys = [];
+        for (var fi = 0; fi < sectionFields.length; fi++) {
+          var normFk = normalizeFieldKey(sectionFields[fi].field_key);
+          if (usedKeys[normFk]) continue;
+          var actualKey = keySet[normFk];
+          if (actualKey) {
+            matchedKeys.push(actualKey);
+            usedKeys[normFk] = true;
+          }
+        }
+        if (matchedKeys.length > 0) {
+          groups.push({
+            name: hdr.section_title || hdr.section_key,
+            type: 'section',
+            section_key: hdr.section_key,
+            description: hdr.section_description || ''
+          , fields: matchedKeys });
+          orderedKeys = orderedKeys.concat(matchedKeys);
+        }
+      }
+
+      var remaining = [];
+      allKeys.forEach(function(k) {
+        if (!usedKeys[normalizeFieldKey(k)]) remaining.push(k);
+      });
+      remaining.sort();
+      if (remaining.length > 0) {
+        groups.push({ name: 'Other Fields', type: 'other', fields: remaining });
+        orderedKeys = orderedKeys.concat(remaining);
+      }
+
+      console.log('[SECTION-META] grouped: sheet=' + sheetName + ', sections=' + (groups.length - (accountNameKey ? 1 : 0)) + ', fields=' + orderedKeys.length);
+      return { groups: groups, orderedKeys: orderedKeys };
+    }
+
     function orderFieldsForInspector(record, sheetName) {
+      var sectionMeta = _getSectionMetadata(sheetName);
+      if (sectionMeta) {
+        return _orderFieldsBySectionMetadata(record, sheetName, sectionMeta);
+      }
+
       var allKeys = Object.keys(record).filter(function(k) { return !k.startsWith('_'); });
       
       // Get hinge configuration for this sheet
@@ -31843,7 +31995,7 @@
       var required = fieldMeta.requiredness || 'not_needed';
       var requiredLabel = required === 'required' ? 'Required' : 
                          required === 'optional' ? 'Optional' : 'Not Required';
-      var definition = fieldMeta.definition || '';
+      var definition = fieldMeta.definition || 'No definition available for this field.';
       var options = fieldMeta.options || [];
       var hingeGroup = '';
       if (rulesBundleCache.hingeGroups && rulesBundleCache.hingeGroups.hinges) {
@@ -32643,14 +32795,34 @@
       return null;
     }
 
+    function _getSectionFocusFromMeta(sheetName) {
+      if (!rulesBundleCache || !rulesBundleCache.fieldMeta) return null;
+      var enr = rulesBundleCache.fieldMeta.enrichments;
+      if (!enr || !enr.section_metadata) return null;
+      var sm = enr.section_metadata[sheetName];
+      if (!sm || !sm.section_focus) return null;
+      var focusText = sm.section_focus;
+      if (typeof focusText !== 'string' || !focusText.trim()) return null;
+      console.log('[SECTION-FOCUS] resolved from section_metadata: sheet=' + sheetName);
+      return {
+        section_label: sheetName + ' — Section Focus',
+        what_to_look_for: [focusText],
+        common_failure_modes: [],
+        _source: 'section_metadata'
+      };
+    }
+
     function renderSectionGuidanceCard(record, container) {
-      if (!container || !_sectionGuidanceConfig) return;
       var docRole = record._document_role || record.document_role || '';
       var docType = record._document_type || record.document_type || '';
       var confidence = record._confidence || record.confidence || null;
       var _sheetName = (typeof srrState !== 'undefined' && srrState.currentSheetName) ? srrState.currentSheetName : '';
-      var guidance = getSectionGuidance(docRole, docType, _sheetName);
-      if (!guidance) return;
+      var guidance = _getSectionFocusFromMeta(_sheetName);
+      if (!guidance) {
+        if (!_sectionGuidanceConfig) return;
+        guidance = getSectionGuidance(docRole, docType, _sheetName);
+      }
+      if (!container || !guidance) return;
 
       if (_guidanceCardExpanded === null) {
         var pref = localStorage.getItem('guidance_card_expanded');
@@ -33365,7 +33537,9 @@
         // Add group header if group has a name (Account Name has null name)
         if (group.name) {
           var groupTypeClass = group.type ? ' group-' + group.type : '';
-          html += '<div class="srr-field-group-header' + groupTypeClass + '">' + group.name + ' <span class="srr-group-count">(' + groupFields.length + ')</span></div>';
+          html += '<div class="srr-field-group-header' + groupTypeClass + '">' + group.name + ' <span class="srr-group-count">(' + groupFields.length + ')</span>';
+          if (group.description) html += '<div class="srr-section-desc">' + group.description + '</div>';
+          html += '</div>';
         }
         
         // Render field cards in this group
