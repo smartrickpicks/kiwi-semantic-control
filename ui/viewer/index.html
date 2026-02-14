@@ -1480,6 +1480,33 @@
     .ev-sel-menu-item:hover { background: #f0f4ff; }
     .ev-sel-menu-item .ev-sel-icon { font-size: 1em; width: 18px; text-align: center; }
     .ev-sel-menu-sep { height: 1px; background: #eee; margin: 3px 0; }
+    .alias-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10001; display: flex; align-items: center; justify-content: center; }
+    .alias-modal { background: white; border-radius: 12px; max-width: 480px; width: 92%; max-height: 70vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.3); animation: modalFadeIn 0.2s ease-out; }
+    .alias-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid #e0e0e0; }
+    .alias-modal-header h3 { margin: 0; font-size: 1em; font-weight: 600; color: #1a1a2e; }
+    .alias-modal-close { background: none; border: none; font-size: 1.4em; cursor: pointer; color: #999; padding: 0 4px; }
+    .alias-modal-close:hover { color: #333; }
+    .alias-modal-body { flex: 1; overflow-y: auto; padding: 16px 18px; }
+    .alias-modal-search { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9em; margin-bottom: 12px; box-sizing: border-box; }
+    .alias-modal-search:focus { border-color: #1565c0; outline: none; }
+    .alias-modal-highlight { background: #fff3e0; border: 1px solid #ffe0b2; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; font-size: 0.85em; }
+    .alias-modal-highlight strong { color: #e65100; }
+    .alias-modal-terms { max-height: 280px; overflow-y: auto; border: 1px solid #e0e0e0; border-radius: 6px; }
+    .alias-modal-term { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 0.85em; transition: background 0.15s; }
+    .alias-modal-term:last-child { border-bottom: none; }
+    .alias-modal-term:hover { background: #e3f2fd; }
+    .alias-modal-term.selected { background: #bbdefb; }
+    .alias-modal-term-key { font-weight: 600; color: #1565c0; min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .alias-modal-term-name { color: #666; font-size: 0.9em; flex-shrink: 0; }
+    .alias-modal-term-cat { color: #999; font-size: 0.75em; background: #f5f5f5; padding: 1px 6px; border-radius: 8px; flex-shrink: 0; }
+    .alias-modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 12px 18px; border-top: 1px solid #e0e0e0; }
+    .alias-modal-btn { padding: 7px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85em; }
+    .alias-modal-btn.cancel { border: 1px solid #ddd; background: white; color: #666; }
+    .alias-modal-btn.cancel:hover { background: #f5f5f5; }
+    .alias-modal-btn.confirm { border: none; background: #1565c0; color: white; font-weight: 500; }
+    .alias-modal-btn.confirm:hover { background: #1976d2; }
+    .alias-modal-btn.confirm:disabled { background: #ccc; cursor: default; }
+    .alias-modal-empty { padding: 20px; text-align: center; color: #999; font-size: 0.85em; }
     .ev-rfi-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); display: none; justify-content: center; align-items: center; z-index: 10000; }
     .ev-rfi-modal-overlay.active { display: flex; }
     .ev-rfi-modal { background: #fff; border-radius: 10px; width: 480px; max-width: 92vw; max-height: 85vh; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.22); display: flex; flex-direction: column; }
@@ -10642,12 +10669,21 @@
       var created = [];
       newItems.forEach(function(ci, idx) {
         var newRow = {};
-        sheet.headers.forEach(function(h) {
-          if (anchor[h] !== undefined && anchor[h] !== null) {
-            newRow[h] = anchor[h];
+        if (batchAddState && batchAddState.sourceRow) {
+          for (var _ck in batchAddState.sourceRow) {
+            if (batchAddState.sourceRow.hasOwnProperty(_ck)) {
+              newRow[_ck] = batchAddState.sourceRow[_ck];
+            }
           }
-        });
-        newRow[targetField] = ci.text;
+          newRow[targetField] = ci.text;
+        } else {
+          sheet.headers.forEach(function(h) {
+            if (anchor[h] !== undefined && anchor[h] !== null) {
+              newRow[h] = anchor[h];
+            }
+          });
+          newRow[targetField] = ci.text;
+        }
 
         if (batchAddState && batchAddState.metadata) {
           var metaKeys = Object.keys(batchAddState.metadata);
@@ -14774,7 +14810,7 @@
         { id: 'rfi', icon: '\uD83D\uDCAC', label: 'Create RFI' },
         { id: 'correction', icon: '\u270E', label: 'Create Correction' },
         { id: 'sep2', sep: true },
-        { id: 'glossary', icon: '\uD83D\uDCD6', label: 'Open in Glossary' }
+        { id: 'create-alias', icon: '\uD83D\uDD17', label: 'Create Alias' }
       ];
       var html = '';
       for (var i = 0; i < items.length; i++) {
@@ -14792,6 +14828,7 @@
         else if (act === 'anchor') iconEls[j].innerHTML = '&#128204;';
         else if (act === 'rfi') iconEls[j].innerHTML = '&#128172;';
         else if (act === 'correction') iconEls[j].innerHTML = '&#9998;';
+        else if (act === 'create-alias') iconEls[j].innerHTML = '&#128279;';
       }
       menu.style.display = 'block';
       var mw = menu.offsetWidth;
@@ -14829,10 +14866,13 @@
       if (!payload) return;
       console.log('[EV-SEL] action:', action, 'text:', (payload.selected_text || '').substring(0, 40), 'record:', payload.record_id);
 
-      if (action === 'glossary') {
-        var fk = payload.fieldKey || '';
-        if (typeof openGlossaryDrawer === 'function') openGlossaryDrawer(fk);
+      if (action === 'create-alias') {
         _evSelClose();
+        if (typeof _aliasModalOpen === 'function') {
+          _aliasModalOpen(payload);
+        } else {
+          if (typeof showToast === 'function') showToast('Create Alias not available', 'warning');
+        }
         return;
       }
 
@@ -20324,7 +20364,8 @@
             contract_id: contractId || ctx.sheetName,
             contract_section: ctx.sheetName,
             record_id: ctx.recordId || '',
-            row_index: ctx.rowIdx
+            row_index: ctx.rowIdx,
+            field_key: ctx.fieldKey || ''
           };
           if (typeof srrState !== 'undefined') {
             srrState.currentSheetName = ctx.sheetName;
@@ -49198,6 +49239,28 @@ Add any additional notes here.
     batchAddState.categorizedItems = [];
     batchAddState.rawText = '';
 
+    var _ctxScope = window._gridCtxLineItemScope || null;
+    if (_ctxScope && _ctxScope.field_key) {
+      batchAddState.targetField = _ctxScope.field_key;
+    }
+
+    batchAddState.sourceRow = null;
+    batchAddState.uniqueField = '';
+    if (_ctxScope && _ctxScope.row_index >= 0) {
+      var _srcSheet = window.workbook && window.workbook.sheets ? window.workbook.sheets[sheetName] : null;
+      if (_srcSheet && _srcSheet.rows && _srcSheet.rows[_ctxScope.row_index]) {
+        batchAddState.sourceRow = {};
+        batchAddState.uniqueField = _ctxScope.field_key || batchAddState.targetField || '';
+        var _srcRec = _srcSheet.rows[_ctxScope.row_index];
+        for (var _sk in _srcRec) {
+          if (_srcRec.hasOwnProperty(_sk) && _sk.charAt(0) !== '_') {
+            batchAddState.sourceRow[_sk] = _srcRec[_sk];
+          }
+        }
+        console.log('[BATCH-ADD] source row loaded, unique field: ' + batchAddState.uniqueField + ', fields: ' + Object.keys(batchAddState.sourceRow).length);
+      }
+    }
+
     if (!record._group || !record._group.is_anchor) {
       if (typeof markAsGroupAnchor === 'function') markAsGroupAnchor(sheetName, rowIndex);
       if (!record._capabilities) record._capabilities = {};
@@ -50659,5 +50722,347 @@ var P022_RuntimeValidation = {
   </div>
 </div>
 
+<div id="alias-modal-overlay" class="alias-modal-overlay" style="display:none;" onclick="if(event.target===this)_aliasModalClose()">
+  <div class="alias-modal">
+    <div class="alias-modal-header">
+      <h3>Create Alias</h3>
+      <button class="alias-modal-close" onclick="_aliasModalClose()">&times;</button>
+    </div>
+    <div class="alias-modal-body">
+      <div class="alias-modal-highlight" id="alias-modal-highlight"></div>
+      <input type="text" class="alias-modal-search" id="alias-modal-search" placeholder="Search canonical fields..." oninput="_aliasModalFilter(this.value)">
+      <div class="alias-modal-terms" id="alias-modal-terms"></div>
+    </div>
+    <div class="alias-modal-footer">
+      <button class="alias-modal-btn cancel" onclick="_aliasModalClose()">Cancel</button>
+      <button class="alias-modal-btn confirm" id="alias-modal-confirm" onclick="_aliasModalConfirm()" disabled>Create Alias</button>
+    </div>
+  </div>
+</div>
+<script>
+(function() {
+  var _aliasState = {
+    payload: null,
+    terms: [],
+    filteredTerms: [],
+    selectedTermId: null,
+    loading: false
+  };
+
+  window._aliasModalOpen = function(payload) {
+    _aliasState.payload = payload;
+    _aliasState.selectedTermId = null;
+    _aliasState.terms = [];
+    _aliasState.filteredTerms = [];
+
+    var highlightEl = document.getElementById('alias-modal-highlight');
+    if (highlightEl) {
+      highlightEl.innerHTML = 'Alias text: <strong>' + escapeHtml(payload.selected_text || '') + '</strong>';
+    }
+
+    var searchEl = document.getElementById('alias-modal-search');
+    if (searchEl) searchEl.value = '';
+
+    var confirmBtn = document.getElementById('alias-modal-confirm');
+    if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Create Alias'; }
+
+    document.getElementById('alias-modal-overlay').style.display = 'flex';
+    _aliasLoadTerms();
+
+    document.addEventListener('keydown', _aliasEscHandler);
+  };
+
+  window._aliasModalClose = function() {
+    document.getElementById('alias-modal-overlay').style.display = 'none';
+    _aliasState.payload = null;
+    _aliasState.selectedTermId = null;
+    document.removeEventListener('keydown', _aliasEscHandler);
+  };
+
+  function _aliasEscHandler(e) {
+    if (e.key === 'Escape' || e.keyCode === 27) _aliasModalClose();
+  }
+
+  function _aliasLoadTerms() {
+    var termsEl = document.getElementById('alias-modal-terms');
+    if (termsEl) termsEl.innerHTML = '<div class="alias-modal-empty">Loading glossary terms...</div>';
+
+    var sheetName = '';
+    if (_aliasState.payload) {
+      sheetName = _aliasState.payload.sheet_name || '';
+      if (!sheetName && typeof _evState !== 'undefined') sheetName = _evState.activeSheetName || '';
+    }
+
+    var baseUrl = window.location.origin;
+    var apiBase = window.API_BASE || '/api/v2.5';
+    var url = baseUrl + apiBase + '/glossary/terms?limit=200';
+    if (sheetName) url += '&category=' + encodeURIComponent(sheetName);
+
+    var headers = {};
+    if (typeof _syncHeaders === 'function') {
+      headers = _syncHeaders();
+    } else {
+      headers = { 'Content-Type': 'application/json' };
+      var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : 'ws_SEED0100000000000000000000';
+      if (wsId) headers['X-Workspace-Id'] = wsId;
+      if (typeof _authToken !== 'undefined' && _authToken) headers['Authorization'] = 'Bearer ' + _authToken;
+    }
+
+    fetch(url, { method: 'GET', headers: headers })
+      .then(function(resp) {
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return resp.json();
+      })
+      .then(function(data) {
+        var items = (data && data.data && data.data.items) ? data.data.items : (data && data.items) ? data.items : [];
+        _aliasState.terms = items;
+        _aliasState.filteredTerms = items;
+        _aliasRenderTerms();
+        if (items.length === 0 && sheetName) {
+          var url2 = baseUrl + apiBase + '/glossary/terms?limit=200';
+          fetch(url2, { method: 'GET', headers: headers })
+            .then(function(r) { return r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)); })
+            .then(function(d2) {
+              var all = (d2 && d2.data && d2.data.items) ? d2.data.items : (d2 && d2.items) ? d2.items : [];
+              if (all.length > 0) {
+                _aliasState.terms = all;
+                _aliasState.filteredTerms = all;
+                _aliasRenderTerms();
+              }
+            })
+            .catch(function() {});
+        }
+      })
+      .catch(function(err) {
+        console.error('[ALIAS] Failed to load terms:', err);
+        _aliasState.terms = _aliasFallbackTerms();
+        _aliasState.filteredTerms = _aliasState.terms;
+        _aliasRenderTerms();
+      });
+  }
+
+  function _aliasFallbackTerms() {
+    var terms = [];
+    if (typeof window.workbook !== 'undefined' && window.workbook && window.workbook.sheets) {
+      var sheetName = (_aliasState.payload && _aliasState.payload.sheet_name) || '';
+      if (!sheetName && typeof _evState !== 'undefined') sheetName = _evState.activeSheetName || '';
+      var sheet = sheetName ? window.workbook.sheets[sheetName] : null;
+      if (sheet && sheet.headers) {
+        for (var i = 0; i < sheet.headers.length; i++) {
+          var h = sheet.headers[i];
+          if (h.charAt(0) !== '_') {
+            terms.push({ id: 'local_' + i, field_key: h, display_name: h, category: sheetName || 'unknown' });
+          }
+        }
+      }
+    }
+    return terms;
+  }
+
+  window._aliasModalFilter = function(query) {
+    var q = (query || '').toLowerCase().trim();
+    if (!q) {
+      _aliasState.filteredTerms = _aliasState.terms;
+    } else {
+      _aliasState.filteredTerms = _aliasState.terms.filter(function(t) {
+        return (t.field_key && t.field_key.toLowerCase().indexOf(q) >= 0) ||
+               (t.display_name && t.display_name.toLowerCase().indexOf(q) >= 0) ||
+               (t.category && t.category.toLowerCase().indexOf(q) >= 0);
+      });
+    }
+    _aliasRenderTerms();
+  };
+
+  function _aliasRenderTerms() {
+    var el = document.getElementById('alias-modal-terms');
+    if (!el) return;
+    var terms = _aliasState.filteredTerms;
+    if (!terms || terms.length === 0) {
+      el.innerHTML = '<div class="alias-modal-empty">No matching glossary terms found</div>';
+      return;
+    }
+    var html = '';
+    for (var i = 0; i < terms.length; i++) {
+      var t = terms[i];
+      var sel = (_aliasState.selectedTermId === t.id) ? ' selected' : '';
+      var displayName = t.display_name || t.field_key || '';
+      var fieldKey = t.field_key || '';
+      var cat = t.category || '';
+      html += '<div class="alias-modal-term' + sel + '" data-term-id="' + escapeHtml(t.id) + '" onclick="_aliasSelectTerm(\'' + escapeHtml(t.id) + '\')">';
+      html += '<span class="alias-modal-term-key">' + escapeHtml(fieldKey) + '</span>';
+      if (displayName && displayName !== fieldKey) {
+        html += '<span class="alias-modal-term-name">' + escapeHtml(displayName) + '</span>';
+      }
+      if (cat) {
+        html += '<span class="alias-modal-term-cat">' + escapeHtml(cat) + '</span>';
+      }
+      html += '</div>';
+    }
+    el.innerHTML = html;
+  }
+
+  window._aliasSelectTerm = function(termId) {
+    _aliasState.selectedTermId = termId;
+    var items = document.querySelectorAll('#alias-modal-terms .alias-modal-term');
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].getAttribute('data-term-id') === termId) {
+        items[i].classList.add('selected');
+      } else {
+        items[i].classList.remove('selected');
+      }
+    }
+    var confirmBtn = document.getElementById('alias-modal-confirm');
+    if (confirmBtn) confirmBtn.disabled = false;
+  };
+
+  window._aliasModalConfirm = function() {
+    if (!_aliasState.selectedTermId || !_aliasState.payload) return;
+    var payload = _aliasState.payload;
+    var termId = _aliasState.selectedTermId;
+    var aliasText = (payload.selected_text || '').trim();
+    if (!aliasText) {
+      if (typeof showToast === 'function') showToast('No text selected for alias', 'warning');
+      return;
+    }
+
+    var confirmBtn = document.getElementById('alias-modal-confirm');
+    if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Creating...'; }
+
+    var selectedTerm = null;
+    for (var i = 0; i < _aliasState.terms.length; i++) {
+      if (_aliasState.terms[i].id === termId) { selectedTerm = _aliasState.terms[i]; break; }
+    }
+
+    if (termId.indexOf('local_') === 0) {
+      _aliasApplyLocal(payload, selectedTerm, aliasText);
+      return;
+    }
+
+    var baseUrl = window.location.origin;
+    var apiBase = window.API_BASE || '/api/v2.5';
+    var headers = {};
+    if (typeof _syncHeaders === 'function') {
+      headers = _syncHeaders();
+    } else {
+      headers = { 'Content-Type': 'application/json' };
+      var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : 'ws_SEED0100000000000000000000';
+      if (wsId) headers['X-Workspace-Id'] = wsId;
+      if (typeof _authToken !== 'undefined' && _authToken) headers['Authorization'] = 'Bearer ' + _authToken;
+    }
+
+    fetch(baseUrl + apiBase + '/glossary/aliases', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({ term_id: termId, alias: aliasText })
+    })
+    .then(function(resp) {
+      if (resp.status === 409) {
+        return resp.json().then(function(d) {
+          if (typeof showToast === 'function') showToast('Alias already exists: ' + aliasText, 'info');
+          _aliasApplyLocal(payload, selectedTerm, aliasText);
+          return null;
+        });
+      }
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return resp.json();
+    })
+    .then(function(data) {
+      if (data === null) return;
+      if (typeof showToast === 'function') showToast('Alias created: "' + aliasText + '" \u2192 ' + (selectedTerm ? selectedTerm.field_key : termId), 'success');
+      _aliasApplyLocal(payload, selectedTerm, aliasText);
+    })
+    .catch(function(err) {
+      console.error('[ALIAS] create error:', err);
+      if (typeof showToast === 'function') showToast('Failed to create alias: ' + err.message, 'error');
+      if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Create Alias'; }
+    });
+  };
+
+  function _aliasApplyLocal(payload, selectedTerm, aliasText) {
+    _aliasModalClose();
+
+    var fieldKey = selectedTerm ? selectedTerm.field_key : '';
+    var sheetName = payload.sheet_name || '';
+    if (!sheetName && typeof _evState !== 'undefined') sheetName = _evState.activeSheetName || '';
+    var rowIdx = payload.rowIdx;
+    if (rowIdx === undefined && typeof _evState !== 'undefined') rowIdx = _evState.activeRowIdx;
+
+    if (fieldKey && sheetName && typeof window.workbook !== 'undefined' && window.workbook && window.workbook.sheets) {
+      var sheet = window.workbook.sheets[sheetName];
+      if (sheet && sheet.rows && rowIdx >= 0 && rowIdx < sheet.rows.length) {
+        var record = sheet.rows[rowIdx];
+        var oldVal = record[fieldKey];
+        record[fieldKey] = aliasText;
+        console.log('[ALIAS] cell populated: sheet=' + sheetName + ' row=' + rowIdx + ' field=' + fieldKey + ' value=' + aliasText + ' old=' + (oldVal || ''));
+
+        if (typeof saveWorkbookToCache === 'function') saveWorkbookToCache();
+
+        var gridCell = document.querySelector('td[data-gfield="' + fieldKey + '"]');
+        if (gridCell) {
+          var tr = gridCell.closest ? gridCell.closest('tr[data-record-index="' + rowIdx + '"]') : null;
+          if (!tr) {
+            var allTds = document.querySelectorAll('td[data-gfield="' + fieldKey + '"]');
+            for (var ti = 0; ti < allTds.length; ti++) {
+              var parentTr = allTds[ti].parentElement;
+              if (parentTr && parentTr.dataset && parentTr.dataset.recordIndex === String(rowIdx)) {
+                gridCell = allTds[ti];
+                break;
+              }
+            }
+          }
+          if (gridCell) {
+            gridCell.textContent = aliasText;
+            gridCell.style.transition = 'background 0.3s';
+            gridCell.style.background = '#c8e6c9';
+            setTimeout(function() { gridCell.style.background = ''; }, 1500);
+          }
+        }
+      }
+    }
+
+    if (payload.selected_text && payload.document_id) {
+      var anchorPayload = {
+        node_id: payload.node_id || 'rn_manual',
+        selected_text: payload.selected_text,
+        char_start: payload.char_start,
+        char_end: payload.char_end
+      };
+      var apiBase2 = window.API_BASE || '/api/v2.5';
+      var baseUrl2 = window.location.origin;
+      var docId = payload.document_id;
+      var headers2 = {};
+      if (typeof _syncHeaders === 'function') {
+        headers2 = _syncHeaders();
+      } else {
+        headers2 = { 'Content-Type': 'application/json' };
+      }
+      fetch(baseUrl2 + apiBase2 + '/documents/' + encodeURIComponent(docId) + '/anchors', {
+        method: 'POST',
+        headers: headers2,
+        body: JSON.stringify(anchorPayload)
+      })
+      .then(function(resp) {
+        if (!resp.ok) console.warn('[ALIAS] evidence mark creation failed: HTTP ' + resp.status);
+        else console.log('[ALIAS] evidence mark created for alias');
+      })
+      .catch(function(err) {
+        console.warn('[ALIAS] evidence mark error:', err.message);
+      });
+    }
+
+    if (typeof AuditTimeline !== 'undefined' && typeof AuditTimeline.emit === 'function') {
+      AuditTimeline.emit('alias_created_from_reader', {
+        record_id: payload.record_id,
+        document_id: payload.document_id,
+        alias_text: aliasText.substring(0, 100),
+        term_id: selectedTerm ? selectedTerm.id : '',
+        field_key: fieldKey,
+        sheet_name: sheetName,
+        source: 'ev_reader_selection'
+      });
+    }
+  }
+})();
+</script>
 </body>
 </html>
