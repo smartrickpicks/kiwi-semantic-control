@@ -62,6 +62,8 @@ from server.routes.anchors import router as anchors_router
 from server.routes.corrections import router as corrections_router
 from server.routes.batch_health import router as batch_health_router
 from server.routes.ocr_escalations import router as ocr_escalations_router
+from server.routes.suggestions import router as suggestions_router
+from server.routes.glossary import router as glossary_router
 from server.feature_flags import is_enabled, EVIDENCE_INSPECTOR
 import logging as _logging
 
@@ -119,6 +121,8 @@ app.include_router(anchors_router)
 app.include_router(corrections_router)
 app.include_router(batch_health_router)
 app.include_router(ocr_escalations_router)
+app.include_router(suggestions_router)
+app.include_router(glossary_router)
 
 PROJECT_ROOT = Path(__file__).parent.parent
 

@@ -7,6 +7,7 @@ VALID_PREFIXES = frozenset([
     "evp_", "sig_", "tri_", "aud_", "rfi_", "ann_",
     "sel_", "usr_", "wbs_", "drv_", "drc_",
     "anc_", "cor_", "oce_",
+    "glt_", "gla_", "sgr_", "sug_",
 ])
 
 CROCKFORD_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"

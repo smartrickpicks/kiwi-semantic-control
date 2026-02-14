@@ -1412,6 +1412,39 @@
     .grid-mode-toggle button { border: none; padding: 6px 20px; cursor: pointer; font-weight: 600; background: #fff; color: #1565c0; transition: background 0.15s, color 0.15s; min-width: 70px; text-align: center; font-size: 0.85em; }
     .grid-mode-toggle button.active { background: #1565c0; color: #fff; }
 
+    /* Sync Suggestions Panel */
+    #sync-suggestions-panel { display: none; padding: 16px 20px; background: #fafbfc; border-bottom: 2px solid #e0e0e0; max-height: 50vh; overflow-y: auto; }
+    #sync-suggestions-panel.active { display: block; }
+    .sync-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .sync-header h3 { margin: 0; font-size: 1em; color: #333; }
+    .sync-run-btn { padding: 6px 16px; background: #1565c0; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 600; }
+    .sync-run-btn:hover { background: #0d47a1; }
+    .sync-run-btn:disabled { background: #bbb; cursor: not-allowed; }
+    .sync-group { margin-bottom: 14px; }
+    .sync-group-header { font-size: 0.82em; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px solid #e0e0e0; }
+    .sync-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #fff; border: 1px solid #eee; border-radius: 6px; margin-bottom: 4px; font-size: 0.85em; }
+    .sync-row:hover { border-color: #90caf9; }
+    .sync-source { font-weight: 600; color: #333; min-width: 150px; flex-shrink: 0; }
+    .sync-arrow { color: #999; font-size: 0.9em; }
+    .sync-target { color: #1565c0; font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sync-score { font-size: 0.75em; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    .sync-score.high { background: #e8f5e9; color: #2e7d32; }
+    .sync-score.medium { background: #fff8e1; color: #f57f17; }
+    .sync-score.low { background: #fce4ec; color: #c62828; }
+    .sync-score.none { background: #f5f5f5; color: #999; }
+    .sync-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .sync-accept-btn { padding: 3px 10px; background: #4caf50; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: 600; }
+    .sync-accept-btn:hover { background: #388e3c; }
+    .sync-reject-btn { padding: 3px 10px; background: #ef5350; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: 600; }
+    .sync-reject-btn:hover { background: #c62828; }
+    .sync-status-badge { padding: 3px 10px; border-radius: 4px; font-size: 0.8em; font-weight: 600; }
+    .sync-status-badge.accepted { background: #e8f5e9; color: #2e7d32; }
+    .sync-status-badge.rejected { background: #fce4ec; color: #c62828; }
+    .sync-empty { padding: 24px; text-align: center; color: #999; font-size: 0.9em; }
+    .sync-stats { display: flex; gap: 16px; margin-bottom: 12px; }
+    .sync-stat { font-size: 0.82em; color: #666; }
+    .sync-stat strong { color: #333; }
+
     /* Evidence Viewer — Layout: middle (viewer+details) | right (grid) */
     .ev-inline-wrapper { display: flex; gap: 0; width: 100%; height: calc(100vh - 280px); min-height: 500px; }
     #ev-middle-column { flex: 0 0 48%; max-width: 55%; display: none; flex-direction: column; background: #fafafa; border-right: 2px solid #e0e0e0; overflow: hidden; }
@@ -3074,10 +3107,23 @@
           <div id="grid-float-controls" class="grid-float-controls" style="display:none;">
             <button id="grid-mode-review-btn" class="gfc-btn active" onclick="setGridViewMode('review')">Review</button>
             <button id="grid-mode-grid-btn" class="gfc-btn" onclick="setGridViewMode('grid')">Evidence Viewer</button>
+            <button id="grid-mode-sync-btn" class="gfc-btn" onclick="_syncTogglePanel()">Sync</button>
             <div class="gfc-divider" id="gfc-composite-divider" style="display:none;"></div>
             <button id="gfc-expand-btn" class="gfc-btn" onclick="_p1cExpandAll()" style="display:none;">Expand All</button>
             <button id="gfc-collapse-btn" class="gfc-btn" onclick="_p1cCollapseAll()" style="display:none;">Collapse All</button>
           </div>
+
+        <div id="sync-suggestions-panel">
+          <div class="sync-header">
+            <h3>Sync Suggestions</h3>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span id="sync-status-text" style="font-size: 0.82em; color: #666;"></span>
+              <button class="sync-run-btn" id="sync-run-btn" onclick="_syncRunSuggestions()">Run Suggestions</button>
+            </div>
+          </div>
+          <div id="sync-stats" class="sync-stats" style="display: none;"></div>
+          <div id="sync-suggestions-list"></div>
+        </div>
 
         <div class="ev-inline-wrapper" id="ev-inline-wrapper">
           <div id="ev-middle-column">
@@ -16155,10 +16201,15 @@
 
       var reviewBtn = document.getElementById('grid-mode-review-btn');
       var gridBtn = document.getElementById('grid-mode-grid-btn');
+      var syncBtn = document.getElementById('grid-mode-sync-btn');
       if (reviewBtn && gridBtn) {
         reviewBtn.className = 'gfc-btn' + (mode === 'review' ? ' active' : '');
         gridBtn.className = 'gfc-btn' + (mode === 'grid' ? ' active' : '');
       }
+      if (syncBtn) syncBtn.className = 'gfc-btn';
+      var syncPanel = document.getElementById('sync-suggestions-panel');
+      if (syncPanel) syncPanel.classList.remove('active');
+
       var allTables = document.querySelectorAll('.grid-table');
       for (var ti = 0; ti < allTables.length; ti++) {
         if (mode === 'grid') {
@@ -16185,6 +16236,232 @@
       document.body.removeChild(a);
     }
 
+    var _syncState = { visible: false, suggestions: [], loading: false, documentId: null };
+
+    function _syncTogglePanel() {
+      var panel = document.getElementById('sync-suggestions-panel');
+      var syncBtn = document.getElementById('grid-mode-sync-btn');
+      if (!panel) return;
+      _syncState.visible = !_syncState.visible;
+      if (_syncState.visible) {
+        panel.classList.add('active');
+        if (syncBtn) syncBtn.className = 'gfc-btn active';
+      } else {
+        panel.classList.remove('active');
+        if (syncBtn) syncBtn.className = 'gfc-btn';
+      }
+      console.log('[SYNC] panel toggled:', _syncState.visible);
+    }
+
+    function _syncGetDocumentId() {
+      if (typeof _evState !== 'undefined' && _evState.activeDocId) return _evState.activeDocId;
+      var ds = typeof getActiveDataSource === 'function' ? getActiveDataSource() : null;
+      if (ds && ds.documentId) return ds.documentId;
+      return null;
+    }
+
+    function _syncRunSuggestions() {
+      var docId = _syncGetDocumentId();
+      var statusEl = document.getElementById('sync-status-text');
+      var runBtn = document.getElementById('sync-run-btn');
+
+      if (!docId) {
+        if (statusEl) statusEl.textContent = 'No document selected';
+        console.warn('[SYNC] No document ID available for suggestion run');
+        _syncRenderDemoSuggestions();
+        return;
+      }
+
+      if (_syncState.loading) return;
+      _syncState.loading = true;
+      _syncState.documentId = docId;
+      if (runBtn) { runBtn.disabled = true; runBtn.textContent = 'Running...'; }
+      if (statusEl) statusEl.textContent = 'Generating suggestions...';
+
+      var baseUrl = window.location.origin;
+      fetch(baseUrl + '/api/v2.5/documents/' + docId + '/suggestion-runs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (typeof _authToken !== 'undefined' ? _authToken : '') },
+        body: '{}'
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(resp) {
+        if (resp.error) {
+          if (statusEl) statusEl.textContent = 'Error: ' + resp.error.message;
+          console.error('[SYNC] Run failed:', resp.error);
+          return;
+        }
+        var run = resp.data;
+        if (statusEl) statusEl.textContent = run.total_suggestions + ' suggestions found';
+        return _syncFetchSuggestions(docId);
+      })
+      .catch(function(err) {
+        console.error('[SYNC] Run error:', err);
+        if (statusEl) statusEl.textContent = 'Network error';
+      })
+      .finally(function() {
+        _syncState.loading = false;
+        if (runBtn) { runBtn.disabled = false; runBtn.textContent = 'Run Suggestions'; }
+      });
+    }
+
+    function _syncFetchSuggestions(docId) {
+      var baseUrl = window.location.origin;
+      return fetch(baseUrl + '/api/v2.5/documents/' + docId + '/suggestions?limit=200', {
+        headers: { 'Authorization': 'Bearer ' + (typeof _authToken !== 'undefined' ? _authToken : '') }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(resp) {
+        if (resp.data) {
+          _syncState.suggestions = resp.data;
+          _syncRenderSuggestions();
+        }
+      });
+    }
+
+    function _syncRenderDemoSuggestions() {
+      var list = document.getElementById('sync-suggestions-list');
+      if (!list) return;
+      var demoSuggestions = [
+        { id: 'demo_1', source_field: 'Pmt_Freq', match_method: 'fuzzy', match_score: 0.85, status: 'pending', suggested_term_id: null, candidates: [] },
+        { id: 'demo_2', source_field: 'Account_Name', match_method: 'exact', match_score: 1.0, status: 'pending', suggested_term_id: null, candidates: [] },
+        { id: 'demo_3', source_field: 'Terr_Rights', match_method: 'keyword', match_score: 0.45, status: 'pending', suggested_term_id: null, candidates: [] },
+        { id: 'demo_4', source_field: 'xyz_unknown_col', match_method: 'none', match_score: 0.0, status: 'pending', suggested_term_id: null, candidates: [] },
+      ];
+      _syncState.suggestions = demoSuggestions;
+      var statusEl = document.getElementById('sync-status-text');
+      if (statusEl) statusEl.textContent = 'Demo mode: showing sample suggestions';
+      _syncRenderSuggestions();
+    }
+
+    function _syncRenderSuggestions() {
+      var list = document.getElementById('sync-suggestions-list');
+      var statsEl = document.getElementById('sync-stats');
+      if (!list) return;
+
+      var suggestions = _syncState.suggestions;
+      if (!suggestions || suggestions.length === 0) {
+        list.innerHTML = '<div class="sync-empty">No suggestions yet. Click "Run Suggestions" to analyze field mappings.</div>';
+        if (statsEl) statsEl.style.display = 'none';
+        return;
+      }
+
+      var groups = { exact: [], fuzzy: [], keyword: [], none: [] };
+      var counts = { total: suggestions.length, pending: 0, accepted: 0, rejected: 0 };
+      for (var i = 0; i < suggestions.length; i++) {
+        var s = suggestions[i];
+        var method = s.match_method || 'none';
+        if (!groups[method]) groups[method] = [];
+        groups[method].push(s);
+        if (s.status === 'pending') counts.pending++;
+        else if (s.status === 'accepted') counts.accepted++;
+        else if (s.status === 'rejected') counts.rejected++;
+      }
+
+      if (statsEl) {
+        statsEl.style.display = 'flex';
+        statsEl.innerHTML =
+          '<div class="sync-stat"><strong>' + counts.total + '</strong> total</div>' +
+          '<div class="sync-stat"><strong>' + counts.pending + '</strong> pending</div>' +
+          '<div class="sync-stat" style="color: #2e7d32;"><strong>' + counts.accepted + '</strong> accepted</div>' +
+          '<div class="sync-stat" style="color: #c62828;"><strong>' + counts.rejected + '</strong> rejected</div>';
+      }
+
+      var groupLabels = {
+        exact: 'Exact Matches',
+        fuzzy: 'Fuzzy Matches',
+        keyword: 'Keyword Matches',
+        none: 'Unmatched Fields'
+      };
+
+      var html = '';
+      var order = ['exact', 'fuzzy', 'keyword', 'none'];
+      for (var gi = 0; gi < order.length; gi++) {
+        var gKey = order[gi];
+        var items = groups[gKey];
+        if (!items || items.length === 0) continue;
+        html += '<div class="sync-group">';
+        html += '<div class="sync-group-header">' + groupLabels[gKey] + ' (' + items.length + ')</div>';
+        for (var si = 0; si < items.length; si++) {
+          var sug = items[si];
+          var scoreClass = sug.match_score >= 0.8 ? 'high' : sug.match_score >= 0.5 ? 'medium' : sug.match_score > 0 ? 'low' : 'none';
+          var scoreText = sug.match_score > 0 ? Math.round(sug.match_score * 100) + '%' : '--';
+          var targetText = sug.suggested_term_id || '(no match)';
+
+          html += '<div class="sync-row" data-sug-id="' + sug.id + '">';
+          html += '<span class="sync-source">' + _escHtml(sug.source_field) + '</span>';
+          html += '<span class="sync-arrow">&rarr;</span>';
+          html += '<span class="sync-target">' + _escHtml(targetText) + '</span>';
+          html += '<span class="sync-score ' + scoreClass + '">' + scoreText + '</span>';
+
+          if (sug.status === 'pending') {
+            html += '<div class="sync-actions">';
+            html += '<button class="sync-accept-btn" onclick="_syncAccept(\'' + sug.id + '\', ' + (sug.version || 1) + ')">Accept</button>';
+            html += '<button class="sync-reject-btn" onclick="_syncReject(\'' + sug.id + '\', ' + (sug.version || 1) + ')">Reject</button>';
+            html += '</div>';
+          } else {
+            html += '<span class="sync-status-badge ' + sug.status + '">' + sug.status + '</span>';
+          }
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+      list.innerHTML = html;
+    }
+
+    function _escHtml(s) {
+      if (!s) return '';
+      var d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function _syncAccept(sugId, version) {
+      _syncUpdateStatus(sugId, 'accepted', version);
+    }
+
+    function _syncReject(sugId, version) {
+      _syncUpdateStatus(sugId, 'rejected', version);
+    }
+
+    function _syncUpdateStatus(sugId, newStatus, version) {
+      if (sugId.indexOf('demo_') === 0) {
+        for (var i = 0; i < _syncState.suggestions.length; i++) {
+          if (_syncState.suggestions[i].id === sugId) {
+            _syncState.suggestions[i].status = newStatus;
+            break;
+          }
+        }
+        _syncRenderSuggestions();
+        console.log('[SYNC] Demo suggestion', sugId, 'set to', newStatus);
+        return;
+      }
+
+      var baseUrl = window.location.origin;
+      fetch(baseUrl + '/api/v2.5/suggestions/' + sugId, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (typeof _authToken !== 'undefined' ? _authToken : '') },
+        body: JSON.stringify({ status: newStatus, version: version })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(resp) {
+        if (resp.error) {
+          console.error('[SYNC] Update failed:', resp.error);
+          return;
+        }
+        for (var i = 0; i < _syncState.suggestions.length; i++) {
+          if (_syncState.suggestions[i].id === sugId) {
+            _syncState.suggestions[i] = resp.data;
+            break;
+          }
+        }
+        _syncRenderSuggestions();
+        console.log('[SYNC] Suggestion', sugId, 'updated to', newStatus);
+      })
+      .catch(function(err) {
+        console.error('[SYNC] Update error:', err);
+      });
+    }
 
     var _gridEditState = { active: false, td: null, originalValue: '', recordId: '', fieldKey: '', sheetName: '' };
 

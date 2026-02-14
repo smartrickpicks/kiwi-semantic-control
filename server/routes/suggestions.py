@@ -1,0 +1,337 @@
+import json
+import logging
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse
+
+from server.db import get_conn, put_conn
+from server.ulid import generate_id
+from server.api_v25 import envelope, collection_envelope, error_envelope
+from server.auth import AuthClass, require_auth
+from server.audit import emit_audit_event
+from server.suggestion_engine import generate_suggestions
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/api/v2.5")
+
+SUGGESTION_COLUMNS = [
+    "id", "workspace_id", "run_id", "document_id", "source_field",
+    "suggested_term_id", "match_score", "match_method", "status",
+    "resolved_by", "resolved_at", "candidates", "created_at", "version", "metadata",
+]
+SUGGESTION_SELECT = ", ".join(SUGGESTION_COLUMNS)
+
+RUN_COLUMNS = [
+    "id", "workspace_id", "document_id", "status",
+    "total_suggestions", "created_at", "completed_at", "created_by", "metadata",
+]
+RUN_SELECT = ", ".join(RUN_COLUMNS)
+
+
+def _row_to_dict(row, columns):
+    d = {}
+    for i, col in enumerate(columns):
+        val = row[i]
+        if isinstance(val, datetime):
+            d[col] = val.isoformat()
+        else:
+            d[col] = val
+    return d
+
+
+def _normalize_alias(alias):
+    import re
+    s = alias.strip().lower()
+    s = re.sub(r'\s+', ' ', s)
+    return s
+
+
+@router.post("/documents/{document_id}/suggestion-runs", status_code=201)
+def create_suggestion_run(
+    document_id: str,
+    auth=Depends(require_auth(AuthClass.EITHER)),
+):
+    if isinstance(auth, JSONResponse):
+        return auth
+
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, workspace_id FROM documents WHERE id = %s AND workspace_id = %s AND deleted_at IS NULL",
+                (document_id, auth.workspace_id),
+            )
+            doc_row = cur.fetchone()
+            if not doc_row:
+                return JSONResponse(
+                    status_code=404,
+                    content=error_envelope("NOT_FOUND", "Document not found: %s" % document_id),
+                )
+
+            workspace_id = auth.workspace_id
+            run_id = generate_id("sgr_")
+
+            cur.execute(
+                """INSERT INTO suggestion_runs
+                   (id, workspace_id, document_id, status, created_by)
+                   VALUES (%s, %s, %s, 'running', %s)""",
+                (run_id, workspace_id, document_id, auth.user_id),
+            )
+
+            try:
+                suggestions = generate_suggestions(cur, workspace_id, document_id)
+            except Exception as e:
+                logger.error("[SUGGEST] Engine error: %s", e)
+                cur.execute(
+                    """UPDATE suggestion_runs SET status = 'failed',
+                       completed_at = NOW(), metadata = %s::jsonb
+                       WHERE id = %s""",
+                    (json.dumps({"error": str(e)}), run_id),
+                )
+                conn.commit()
+                return JSONResponse(
+                    status_code=500,
+                    content=error_envelope("SUGGESTION_ENGINE_FAILED", str(e)),
+                )
+
+            for s in suggestions:
+                sug_id = generate_id("sug_")
+                cur.execute(
+                    """INSERT INTO suggestions
+                       (id, workspace_id, run_id, document_id, source_field,
+                        suggested_term_id, match_score, match_method, candidates)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s::jsonb)""",
+                    (sug_id, workspace_id, run_id, document_id,
+                     s["source_field"], s["suggested_term_id"],
+                     s["match_score"], s["match_method"],
+                     json.dumps(s["candidates"])),
+                )
+
+            now_iso = datetime.now(timezone.utc).isoformat()
+            cur.execute(
+                """UPDATE suggestion_runs
+                   SET status = 'completed', total_suggestions = %s, completed_at = %s
+                   WHERE id = %s
+                   RETURNING """ + RUN_SELECT,
+                (len(suggestions), now_iso, run_id),
+            )
+            run_row = cur.fetchone()
+
+            emit_audit_event(
+                cur,
+                workspace_id=workspace_id,
+                event_type="suggestion_run.created",
+                actor_id=auth.user_id,
+                resource_type="suggestion_run",
+                resource_id=run_id,
+                detail={"document_id": document_id, "total_suggestions": len(suggestions)},
+            )
+        conn.commit()
+
+        return JSONResponse(
+            status_code=201,
+            content=envelope(_row_to_dict(run_row, RUN_COLUMNS)),
+        )
+    except Exception as e:
+        logger.error("create_suggestion_run error: %s", e)
+        conn.rollback()
+        return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
+    finally:
+        put_conn(conn)
+
+
+@router.get("/documents/{document_id}/suggestions")
+def list_suggestions(
+    document_id: str,
+    status: str = Query(None),
+    cursor: str = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+    auth=Depends(require_auth(AuthClass.EITHER)),
+):
+    if isinstance(auth, JSONResponse):
+        return auth
+
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id, workspace_id FROM documents WHERE id = %s AND workspace_id = %s AND deleted_at IS NULL",
+                (document_id, auth.workspace_id),
+            )
+            doc_row = cur.fetchone()
+            if not doc_row:
+                return JSONResponse(
+                    status_code=404,
+                    content=error_envelope("NOT_FOUND", "Document not found: %s" % document_id),
+                )
+
+            conditions = ["document_id = %s", "workspace_id = %s"]
+            params: list = [document_id, auth.workspace_id]
+
+            if status:
+                conditions.append("status = %s")
+                params.append(status)
+            if cursor:
+                conditions.append("id > %s")
+                params.append(cursor)
+
+            where = "WHERE " + " AND ".join(conditions)
+            sql = "SELECT %s FROM suggestions %s ORDER BY id ASC LIMIT %%s" % (
+                SUGGESTION_SELECT, where
+            )
+            params.append(limit + 1)
+
+            cur.execute(sql, params)
+            rows = cur.fetchall()
+
+        has_more = len(rows) > limit
+        if has_more:
+            rows = rows[:limit]
+
+        items = [_row_to_dict(r, SUGGESTION_COLUMNS) for r in rows]
+        next_cursor = items[-1]["id"] if items and has_more else None
+
+        return collection_envelope(items, cursor=next_cursor, has_more=has_more, limit=limit)
+    except Exception as e:
+        logger.error("list_suggestions error: %s", e)
+        conn.rollback()
+        return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
+    finally:
+        put_conn(conn)
+
+
+@router.patch("/suggestions/{suggestion_id}")
+def update_suggestion(
+    suggestion_id: str,
+    body: dict,
+    auth=Depends(require_auth(AuthClass.BEARER)),
+):
+    if isinstance(auth, JSONResponse):
+        return auth
+
+    new_status = body.get("status")
+    version = body.get("version")
+    selected_term_id = body.get("selected_term_id")
+
+    if new_status not in ("accepted", "rejected", "dismissed"):
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "status must be one of: accepted, rejected, dismissed"),
+        )
+    if version is None or not isinstance(version, int):
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "version (integer) is required for PATCH"),
+        )
+
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT %s FROM suggestions WHERE id = %%s AND workspace_id = %%s" % SUGGESTION_SELECT,
+                (suggestion_id, auth.workspace_id),
+            )
+            row = cur.fetchone()
+            if not row:
+                return JSONResponse(
+                    status_code=404,
+                    content=error_envelope("NOT_FOUND", "Suggestion not found: %s" % suggestion_id),
+                )
+
+            sug = _row_to_dict(row, SUGGESTION_COLUMNS)
+            if sug["version"] != version:
+                return JSONResponse(
+                    status_code=409,
+                    content=error_envelope(
+                        "STALE_VERSION",
+                        "Resource has been modified since your last read",
+                        details={"current_version": sug["version"], "provided_version": version},
+                    ),
+                )
+
+            if sug["status"] != "pending":
+                return JSONResponse(
+                    status_code=400,
+                    content=error_envelope("INVALID_STATE", "Suggestion is already %s" % sug["status"]),
+                )
+
+            now_iso = datetime.now(timezone.utc).isoformat()
+            term_id = selected_term_id or sug["suggested_term_id"]
+
+            cur.execute(
+                """UPDATE suggestions
+                   SET status = %s, resolved_by = %s, resolved_at = %s,
+                       version = version + 1, suggested_term_id = COALESCE(%s, suggested_term_id)
+                   WHERE id = %s AND version = %s
+                   RETURNING """ + SUGGESTION_SELECT,
+                (new_status, auth.user_id, now_iso, selected_term_id,
+                 suggestion_id, version),
+            )
+            updated = cur.fetchone()
+            if not updated:
+                conn.rollback()
+                return JSONResponse(
+                    status_code=409,
+                    content=error_envelope("STALE_VERSION", "Concurrent modification detected"),
+                )
+
+            alias_id = None
+            if new_status == "accepted" and term_id:
+                source_field = sug["source_field"]
+                normalized = _normalize_alias(source_field)
+
+                cur.execute(
+                    """SELECT id FROM glossary_aliases
+                       WHERE workspace_id = %s AND normalized_alias = %s AND deleted_at IS NULL""",
+                    (sug["workspace_id"], normalized),
+                )
+                existing = cur.fetchone()
+                if existing:
+                    alias_id = existing[0]
+                else:
+                    alias_id = generate_id("gla_")
+                    cur.execute(
+                        """INSERT INTO glossary_aliases
+                           (id, workspace_id, term_id, alias, normalized_alias, source, created_by)
+                           VALUES (%s, %s, %s, %s, %s, 'suggestion', %s)""",
+                        (alias_id, sug["workspace_id"], term_id,
+                         source_field, normalized, auth.user_id),
+                    )
+                    emit_audit_event(
+                        cur,
+                        workspace_id=sug["workspace_id"],
+                        event_type="glossary_alias.created",
+                        actor_id=auth.user_id,
+                        resource_type="glossary_alias",
+                        resource_id=alias_id,
+                        detail={"term_id": term_id, "alias": source_field, "normalized_alias": normalized},
+                    )
+
+            event_type = "suggestion.%s" % new_status
+            emit_audit_event(
+                cur,
+                workspace_id=sug["workspace_id"],
+                event_type=event_type,
+                actor_id=auth.user_id,
+                resource_type="suggestion",
+                resource_id=suggestion_id,
+                detail={
+                    "source_field": sug["source_field"],
+                    "term_id": term_id,
+                    "alias_id": alias_id,
+                },
+            )
+        conn.commit()
+
+        result = _row_to_dict(updated, SUGGESTION_COLUMNS)
+        if alias_id:
+            result["alias_id"] = alias_id
+
+        return envelope(result)
+    except Exception as e:
+        logger.error("update_suggestion error: %s", e)
+        conn.rollback()
+        return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
+    finally:
+        put_conn(conn)
