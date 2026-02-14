@@ -15,6 +15,30 @@ from server.audit import emit_audit_event
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v2.5")
 
+
+def _resolve_workspace_id(auth, conn):
+    if auth.workspace_id:
+        return auth.workspace_id
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT workspace_id FROM user_workspace_roles WHERE user_id = %s ORDER BY workspace_id LIMIT 1",
+            (auth.user_id,),
+        )
+        row = cur.fetchone()
+        if row:
+            auth.workspace_id = row[0]
+            return row[0]
+    return None
+
+
+def _verify_workspace_access(auth, workspace_id, conn):
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT role FROM user_workspace_roles WHERE user_id = %s AND workspace_id = %s",
+            (auth.user_id, workspace_id),
+        )
+        return cur.fetchone() is not None
+
 TERM_COLUMNS = [
     "id", "workspace_id", "field_key", "display_name", "description",
     "data_type", "category", "is_required",
@@ -59,9 +83,13 @@ def list_glossary_terms(
 
     conn = get_conn()
     try:
+        ws_id = _resolve_workspace_id(auth, conn)
+        if not ws_id:
+            return JSONResponse(status_code=403, content=error_envelope("FORBIDDEN", "No workspace access"))
+
         with conn.cursor() as cur:
             conditions = ["deleted_at IS NULL", "workspace_id = %s"]
-            params = [auth.workspace_id]
+            params = [ws_id]
 
             if query:
                 conditions.append("(field_key ILIKE %s OR display_name ILIKE %s OR description ILIKE %s)")
@@ -114,13 +142,6 @@ def create_glossary_term(
             content=error_envelope("VALIDATION_ERROR", "field_key (string) is required"),
         )
 
-    workspace_id = auth.workspace_id
-    if not workspace_id:
-        return JSONResponse(
-            status_code=400,
-            content=error_envelope("VALIDATION_ERROR", "workspace_id could not be determined from auth context"),
-        )
-
     display_name = body.get("display_name", field_key)
     description = body.get("description")
     data_type = body.get("data_type", "string")
@@ -131,6 +152,13 @@ def create_glossary_term(
     term_id = generate_id("glt_")
 
     conn = get_conn()
+    workspace_id = _resolve_workspace_id(auth, conn)
+    if not workspace_id:
+        put_conn(conn)
+        return JSONResponse(
+            status_code=403,
+            content=error_envelope("FORBIDDEN", "No workspace access"),
+        )
     try:
         with conn.cursor() as cur:
             cur.execute(
@@ -204,10 +232,14 @@ def create_glossary_alias(
 
     conn = get_conn()
     try:
+        ws_id = _resolve_workspace_id(auth, conn)
+        if not ws_id:
+            return JSONResponse(status_code=403, content=error_envelope("FORBIDDEN", "No workspace access"))
+
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT id, workspace_id FROM glossary_terms WHERE id = %s AND workspace_id = %s AND deleted_at IS NULL",
-                (term_id, auth.workspace_id),
+                (term_id, ws_id),
             )
             term_row = cur.fetchone()
             if not term_row:
@@ -215,7 +247,7 @@ def create_glossary_alias(
                     status_code=404,
                     content=error_envelope("NOT_FOUND", "Glossary term not found: %s" % term_id),
                 )
-            workspace_id = auth.workspace_id
+            workspace_id = ws_id
 
             cur.execute(
                 """INSERT INTO glossary_aliases

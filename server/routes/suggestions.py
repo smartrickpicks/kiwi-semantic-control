@@ -15,6 +15,30 @@ from server.suggestion_engine import generate_suggestions
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v2.5")
 
+
+def _resolve_workspace_id(auth, conn):
+    if auth.workspace_id:
+        return auth.workspace_id
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT workspace_id FROM user_workspace_roles WHERE user_id = %s LIMIT 1",
+            (auth.user_id,),
+        )
+        row = cur.fetchone()
+        if row:
+            auth.workspace_id = row[0]
+            return row[0]
+    return None
+
+
+def _verify_workspace_access(auth, workspace_id, conn):
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT role FROM user_workspace_roles WHERE user_id = %s AND workspace_id = %s",
+            (auth.user_id, workspace_id),
+        )
+        return cur.fetchone() is not None
+
 SUGGESTION_COLUMNS = [
     "id", "workspace_id", "run_id", "document_id", "source_field",
     "suggested_term_id", "match_score", "match_method", "status",
@@ -59,8 +83,8 @@ def create_suggestion_run(
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id, workspace_id FROM documents WHERE id = %s AND workspace_id = %s AND deleted_at IS NULL",
-                (document_id, auth.workspace_id),
+                "SELECT id, workspace_id FROM documents WHERE id = %s AND deleted_at IS NULL",
+                (document_id,),
             )
             doc_row = cur.fetchone()
             if not doc_row:
@@ -69,7 +93,13 @@ def create_suggestion_run(
                     content=error_envelope("NOT_FOUND", "Document not found: %s" % document_id),
                 )
 
-            workspace_id = auth.workspace_id
+            workspace_id = doc_row[1]
+            if not _verify_workspace_access(auth, workspace_id, conn):
+                return JSONResponse(
+                    status_code=404,
+                    content=error_envelope("NOT_FOUND", "Document not found: %s" % document_id),
+                )
+
             run_id = generate_id("sgr_")
 
             cur.execute(
@@ -156,8 +186,8 @@ def list_suggestions(
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id, workspace_id FROM documents WHERE id = %s AND workspace_id = %s AND deleted_at IS NULL",
-                (document_id, auth.workspace_id),
+                "SELECT id, workspace_id FROM documents WHERE id = %s AND deleted_at IS NULL",
+                (document_id,),
             )
             doc_row = cur.fetchone()
             if not doc_row:
@@ -166,8 +196,15 @@ def list_suggestions(
                     content=error_envelope("NOT_FOUND", "Document not found: %s" % document_id),
                 )
 
+            doc_ws = doc_row[1]
+            if not _verify_workspace_access(auth, doc_ws, conn):
+                return JSONResponse(
+                    status_code=404,
+                    content=error_envelope("NOT_FOUND", "Document not found: %s" % document_id),
+                )
+
             conditions = ["document_id = %s", "workspace_id = %s"]
-            params: list = [document_id, auth.workspace_id]
+            params: list = [document_id, doc_ws]
 
             if status:
                 conditions.append("status = %s")
@@ -229,11 +266,18 @@ def update_suggestion(
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT %s FROM suggestions WHERE id = %%s AND workspace_id = %%s" % SUGGESTION_SELECT,
-                (suggestion_id, auth.workspace_id),
+                "SELECT %s FROM suggestions WHERE id = %%s" % SUGGESTION_SELECT,
+                (suggestion_id,),
             )
             row = cur.fetchone()
             if not row:
+                return JSONResponse(
+                    status_code=404,
+                    content=error_envelope("NOT_FOUND", "Suggestion not found: %s" % suggestion_id),
+                )
+
+            sug_ws = row[1]
+            if not _verify_workspace_access(auth, sug_ws, conn):
                 return JSONResponse(
                     status_code=404,
                     content=error_envelope("NOT_FOUND", "Suggestion not found: %s" % suggestion_id),
