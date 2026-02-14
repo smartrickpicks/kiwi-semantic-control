@@ -23858,8 +23858,8 @@
     // v1.6.24: Check if playground mode is enabled for admin
     function isPlaygroundEnabled() {
       try {
+        if (isDemoMode()) return true;
         var demoUser = JSON.parse(localStorage.getItem('demoUser') || '{}');
-        // In demo mode, only Admin gets playground (role switching)
         if (demoUser.isDemo === true) return demoUser.role === 'admin';
         return demoUser.playgroundEnabled === true;
       } catch (e) {
