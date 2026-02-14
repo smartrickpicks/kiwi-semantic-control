@@ -1274,6 +1274,278 @@ paths:
                 $ref: '#/components/schemas/OcrEscalationResponse'
         '404':
           description: Document not found or feature disabled
+  /glossary/terms:
+    get:
+      operationId: listGlossaryTerms
+      summary: List glossary terms for a workspace
+      description: >
+        Returns paginated glossary terms filtered by workspace. Requires workspace selection
+        via X-Workspace-Id header. Supports search by query string and category filter.
+      tags:
+      - Suggested Fields
+      parameters:
+      - name: X-Workspace-Id
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Workspace ID for scoping. Returns 422 MISSING_WORKSPACE if absent.
+      - name: query
+        in: query
+        schema:
+          type: string
+        description: Search across field_key, display_name, and description (ILIKE)
+      - name: category
+        in: query
+        schema:
+          type: string
+        description: Filter by term category
+      - $ref: '#/components/parameters/CursorParam'
+      - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Glossary terms list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlossaryTermCollection'
+        '403':
+          description: No access to specified workspace
+        '422':
+          description: Missing workspace selector (X-Workspace-Id header)
+    post:
+      operationId: createGlossaryTerm
+      summary: Create a glossary term in a workspace
+      description: >
+        Creates a canonical glossary term with field_key uniqueness enforced per workspace.
+        Returns 409 DUPLICATE if field_key already exists. Emits glossary_term.created audit event.
+      tags:
+      - Suggested Fields
+      parameters:
+      - name: X-Workspace-Id
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GlossaryTermCreate'
+      responses:
+        '201':
+          description: Term created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlossaryTermResponse'
+        '400':
+          description: Validation error (missing field_key)
+        '409':
+          description: Duplicate field_key in workspace
+        '422':
+          description: Missing workspace selector
+  /glossary/aliases:
+    post:
+      operationId: createGlossaryAlias
+      summary: Create an alias for a glossary term
+      description: >
+        Links an alternate name to a canonical glossary term. Normalized alias uniqueness
+        enforced per workspace. Returns 409 DUPLICATE_ALIAS with existing mapping details
+        if normalized alias already exists. Emits glossary_alias.created audit event.
+      tags:
+      - Suggested Fields
+      parameters:
+      - name: X-Workspace-Id
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GlossaryAliasCreate'
+      responses:
+        '201':
+          description: Alias created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlossaryAliasResponse'
+        '400':
+          description: Validation error (missing term_id or alias)
+        '404':
+          description: Referenced glossary term not found
+        '409':
+          description: Duplicate alias in workspace (includes existing mapping details)
+        '422':
+          description: Missing workspace selector
+  /glossary/aliases/{alias_id}:
+    patch:
+      operationId: updateGlossaryAlias
+      summary: Update a glossary alias (reassign term or rename)
+      description: >
+        Updates an alias's term_id and/or alias text. Requires version for optimistic
+        concurrency (409 STALE_VERSION on mismatch). Validates new term_id exists and
+        checks for duplicate normalized alias. Emits glossary_alias.updated audit event.
+      tags:
+      - Suggested Fields
+      parameters:
+      - name: alias_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Workspace-Id
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GlossaryAliasUpdate'
+      responses:
+        '200':
+          description: Alias updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GlossaryAliasResponse'
+        '400':
+          description: Validation error (missing version or no fields to update)
+        '404':
+          description: Alias or referenced term not found
+        '409':
+          description: Stale version or duplicate alias
+        '422':
+          description: Missing workspace selector
+  /suggestions/run:
+    post:
+      operationId: runSuggestions
+      summary: Run the suggestion engine against a document
+      description: >
+        Analyzes source document column headers and proposes mappings to canonical glossary
+        terms. Uses three matching strategies: exact (score 1.0), fuzzy (Levenshtein >= 0.6),
+        and keyword (category-based). Creates a suggestion_run record and individual suggestion
+        records. Emits suggestion_run.completed audit event.
+      tags:
+      - Suggested Fields
+      parameters:
+      - name: X-Workspace-Id
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - document_id
+              properties:
+                document_id:
+                  type: string
+      responses:
+        '200':
+          description: Suggestion run completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestionRunResponse'
+        '404':
+          description: Document not found
+        '422':
+          description: Missing workspace selector
+  /suggestions:
+    get:
+      operationId: listSuggestions
+      summary: List suggestions for a document
+      description: >
+        Returns suggestions for a specific document, optionally filtered by status.
+        Results grouped by match_method (exact, fuzzy, keyword, none).
+      tags:
+      - Suggested Fields
+      parameters:
+      - name: X-Workspace-Id
+        in: header
+        required: true
+        schema:
+          type: string
+      - name: document_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - pending
+          - accepted
+          - rejected
+          - dismissed
+      - $ref: '#/components/parameters/CursorParam'
+      - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Suggestions list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestionCollection'
+        '422':
+          description: Missing workspace selector
+  /suggestions/{suggestion_id}:
+    patch:
+      operationId: updateSuggestion
+      summary: Accept or decline a suggestion
+      description: >
+        Updates a suggestion status (accepted/rejected). On accept, auto-creates a glossary
+        alias linking the source field to the suggested term. Requires version for optimistic
+        concurrency. Emits suggestion.accepted or suggestion.rejected audit event.
+      tags:
+      - Suggested Fields
+      parameters:
+      - name: suggestion_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Workspace-Id
+        in: header
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestionUpdate'
+      responses:
+        '200':
+          description: Suggestion updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestionResponse'
+        '400':
+          description: Validation error
+        '404':
+          description: Suggestion not found
+        '409':
+          description: Stale version
+        '422':
+          description: Missing workspace selector
 components:
   parameters:
     WorkspaceId:
@@ -1319,6 +1591,270 @@ components:
       schema:
         type: string
   schemas:
+    GlossaryTerm:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ULID with glt_ prefix
+        workspace_id:
+          type: string
+        field_key:
+          type: string
+        display_name:
+          type: string
+        description:
+          type: string
+        data_type:
+          type: string
+          default: string
+        category:
+          type: string
+        is_required:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        version:
+          type: integer
+        metadata:
+          type: object
+    GlossaryTermCreate:
+      type: object
+      required:
+      - field_key
+      properties:
+        field_key:
+          type: string
+        display_name:
+          type: string
+        description:
+          type: string
+        data_type:
+          type: string
+          default: string
+        category:
+          type: string
+        is_required:
+          type: boolean
+          default: false
+        metadata:
+          type: object
+    GlossaryTermResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GlossaryTerm'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    GlossaryTermCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/GlossaryTerm'
+        meta:
+          $ref: '#/components/schemas/CollectionMeta'
+    GlossaryAlias:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ULID with gla_ prefix
+        workspace_id:
+          type: string
+        term_id:
+          type: string
+        alias:
+          type: string
+        normalized_alias:
+          type: string
+        source:
+          type: string
+          enum:
+          - manual
+          - suggestion
+          - import
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deleted_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        version:
+          type: integer
+        metadata:
+          type: object
+    GlossaryAliasCreate:
+      type: object
+      required:
+      - term_id
+      - alias
+      properties:
+        term_id:
+          type: string
+        alias:
+          type: string
+        metadata:
+          type: object
+    GlossaryAliasUpdate:
+      type: object
+      required:
+      - version
+      properties:
+        version:
+          type: integer
+          description: Required for optimistic concurrency
+        term_id:
+          type: string
+          description: Reassign alias to a different glossary term
+        alias:
+          type: string
+          description: Rename the alias text
+    GlossaryAliasResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/GlossaryAlias'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    SuggestionRun:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ULID with sgr_ prefix
+        workspace_id:
+          type: string
+        document_id:
+          type: string
+        status:
+          type: string
+          enum:
+          - running
+          - completed
+          - failed
+        total_suggestions:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+        metadata:
+          type: object
+    SuggestionRunResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/SuggestionRun'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    Suggestion:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ULID with sug_ prefix
+        workspace_id:
+          type: string
+        run_id:
+          type: string
+        document_id:
+          type: string
+        source_field:
+          type: string
+        suggested_term_id:
+          type:
+          - string
+          - 'null'
+        match_score:
+          type: number
+          format: float
+        match_method:
+          type: string
+          enum:
+          - exact
+          - fuzzy
+          - keyword
+          - none
+        status:
+          type: string
+          enum:
+          - pending
+          - accepted
+          - rejected
+          - dismissed
+        resolved_by:
+          type:
+          - string
+          - 'null'
+        resolved_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        candidates:
+          type: array
+          items:
+            type: object
+        created_at:
+          type: string
+          format: date-time
+        version:
+          type: integer
+        metadata:
+          type: object
+    SuggestionUpdate:
+      type: object
+      required:
+      - version
+      - status
+      properties:
+        version:
+          type: integer
+          description: Required for optimistic concurrency
+        status:
+          type: string
+          enum:
+          - accepted
+          - rejected
+          - dismissed
+    SuggestionResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Suggestion'
+        meta:
+          $ref: '#/components/schemas/ResponseMeta'
+    SuggestionCollection:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Suggestion'
+        meta:
+          $ref: '#/components/schemas/CollectionMeta'
     WorkspaceCreate:
       type: object
       required:

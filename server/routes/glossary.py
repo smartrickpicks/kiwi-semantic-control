@@ -52,6 +52,7 @@ TERM_SELECT = ", ".join(TERM_COLUMNS)
 ALIAS_COLUMNS = [
     "id", "workspace_id", "term_id", "alias", "normalized_alias",
     "source", "created_by", "created_at", "deleted_at", "metadata",
+    "version", "updated_at",
 ]
 ALIAS_SELECT = ", ".join(ALIAS_COLUMNS)
 
@@ -310,6 +311,136 @@ def create_glossary_alias(
                 ),
             )
         logger.error("create_glossary_alias error: %s", e)
+        conn.rollback()
+        return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
+    finally:
+        put_conn(conn)
+
+
+@router.patch("/glossary/aliases/{alias_id}")
+def update_glossary_alias(
+    alias_id: str,
+    request: Request,
+    body: dict,
+    auth=Depends(require_auth(AuthClass.BEARER)),
+):
+    if isinstance(auth, JSONResponse):
+        return auth
+
+    version = body.get("version")
+    if version is None or not isinstance(version, int):
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "version (integer) is required for PATCH"),
+        )
+
+    new_term_id = body.get("term_id")
+    new_alias = body.get("alias")
+    if not new_term_id and not new_alias:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "At least one of term_id or alias is required"),
+        )
+
+    conn = get_conn()
+    try:
+        ws_id, err = _require_workspace_id(request, auth, conn, body)
+        if err:
+            return err
+
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT %s FROM glossary_aliases WHERE id = %%s AND workspace_id = %%s AND deleted_at IS NULL" % ALIAS_SELECT,
+                (alias_id, ws_id),
+            )
+            row = cur.fetchone()
+            if not row:
+                return JSONResponse(
+                    status_code=404,
+                    content=error_envelope("NOT_FOUND", "Glossary alias not found: %s" % alias_id),
+                )
+
+            alias_data = _row_to_dict(row, ALIAS_COLUMNS)
+            if alias_data["version"] != version:
+                return JSONResponse(
+                    status_code=409,
+                    content=error_envelope(
+                        "STALE_VERSION",
+                        "Resource has been modified since your last read",
+                        details={"current_version": alias_data["version"], "provided_version": version},
+                    ),
+                )
+
+            before_term_id = alias_data["term_id"]
+            before_alias = alias_data["alias"]
+
+            update_term_id = new_term_id or before_term_id
+            update_alias = new_alias.strip() if new_alias else before_alias
+            update_normalized = _normalize_alias(update_alias)
+
+            if new_term_id:
+                cur.execute(
+                    "SELECT id FROM glossary_terms WHERE id = %s AND workspace_id = %s AND deleted_at IS NULL",
+                    (new_term_id, ws_id),
+                )
+                if not cur.fetchone():
+                    return JSONResponse(
+                        status_code=404,
+                        content=error_envelope("NOT_FOUND", "Glossary term not found: %s" % new_term_id),
+                    )
+
+            if new_alias and update_normalized != _normalize_alias(before_alias):
+                cur.execute(
+                    """SELECT id FROM glossary_aliases
+                       WHERE workspace_id = %s AND normalized_alias = %s AND deleted_at IS NULL AND id != %s""",
+                    (ws_id, update_normalized, alias_id),
+                )
+                if cur.fetchone():
+                    return JSONResponse(
+                        status_code=409,
+                        content=error_envelope(
+                            "DUPLICATE_ALIAS",
+                            "Alias '%s' already exists in this workspace" % update_alias,
+                        ),
+                    )
+
+            now_iso = datetime.now(timezone.utc).isoformat()
+            cur.execute(
+                """UPDATE glossary_aliases
+                   SET term_id = %s, alias = %s, normalized_alias = %s,
+                       version = version + 1, updated_at = %s
+                   WHERE id = %s AND version = %s
+                   RETURNING """ + ALIAS_SELECT,
+                (update_term_id, update_alias, update_normalized,
+                 now_iso, alias_id, version),
+            )
+            updated = cur.fetchone()
+            if not updated:
+                conn.rollback()
+                return JSONResponse(
+                    status_code=409,
+                    content=error_envelope("STALE_VERSION", "Concurrent modification detected"),
+                )
+
+            emit_audit_event(
+                cur,
+                workspace_id=ws_id,
+                event_type="glossary_alias.updated",
+                actor_id=auth.user_id,
+                resource_type="glossary_alias",
+                resource_id=alias_id,
+                detail={
+                    "before_term_id": before_term_id,
+                    "after_term_id": update_term_id,
+                    "before_alias": before_alias,
+                    "after_alias": update_alias,
+                },
+            )
+        conn.commit()
+
+        return envelope(_row_to_dict(updated, ALIAS_COLUMNS))
+    except Exception as e:
+        logger.error("update_glossary_alias error: %s", e)
         conn.rollback()
         return JSONResponse(status_code=500, content=error_envelope("INTERNAL", str(e)))
     finally:

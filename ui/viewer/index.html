@@ -1412,7 +1412,7 @@
     .grid-mode-toggle button { border: none; padding: 6px 20px; cursor: pointer; font-weight: 600; background: #fff; color: #1565c0; transition: background 0.15s, color 0.15s; min-width: 70px; text-align: center; font-size: 0.85em; }
     .grid-mode-toggle button.active { background: #1565c0; color: #fff; }
 
-    /* Sync Suggestions Panel */
+    /* Suggestions Panel */
     #sync-suggestions-panel { display: none; padding: 16px 20px; background: #fafbfc; border-bottom: 2px solid #e0e0e0; max-height: 50vh; overflow-y: auto; }
     #sync-suggestions-panel.active { display: block; }
     .sync-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
@@ -3107,7 +3107,7 @@
           <div id="grid-float-controls" class="grid-float-controls" style="display:none;">
             <button id="grid-mode-review-btn" class="gfc-btn active" onclick="setGridViewMode('review')">Review</button>
             <button id="grid-mode-grid-btn" class="gfc-btn" onclick="setGridViewMode('grid')">Evidence Viewer</button>
-            <button id="grid-mode-sync-btn" class="gfc-btn" onclick="_syncTogglePanel()">Sync</button>
+            <button id="grid-mode-sync-btn" class="gfc-btn" onclick="_syncTogglePanel()">Suggestions</button>
             <div class="gfc-divider" id="gfc-composite-divider" style="display:none;"></div>
             <button id="gfc-expand-btn" class="gfc-btn" onclick="_p1cExpandAll()" style="display:none;">Expand All</button>
             <button id="gfc-collapse-btn" class="gfc-btn" onclick="_p1cCollapseAll()" style="display:none;">Collapse All</button>
@@ -3115,7 +3115,7 @@
 
         <div id="sync-suggestions-panel">
           <div class="sync-header">
-            <h3>Sync Suggestions</h3>
+            <h3>Field Suggestions</h3>
             <div style="display: flex; gap: 8px; align-items: center;">
               <span id="sync-status-text" style="font-size: 0.82em; color: #666;"></span>
               <button class="sync-run-btn" id="sync-run-btn" onclick="_syncRunSuggestions()">Run Suggestions</button>
@@ -16250,7 +16250,7 @@
         panel.classList.remove('active');
         if (syncBtn) syncBtn.className = 'gfc-btn';
       }
-      console.log('[SYNC] panel toggled:', _syncState.visible);
+      console.log('[SUGGESTIONS] panel toggled:', _syncState.visible);
     }
 
     function _syncGetDocumentId() {
@@ -16260,6 +16260,19 @@
       return null;
     }
 
+    function _syncGetWorkspaceId() {
+      if (typeof IDENTITY_CONTEXT !== 'undefined' && IDENTITY_CONTEXT.workspace_id) return IDENTITY_CONTEXT.workspace_id;
+      try { var s = JSON.parse(localStorage.getItem('orchestrate_session') || '{}'); return s.workspace_id || 'ws_SEED0100000000000000000000'; } catch(e) { return 'ws_SEED0100000000000000000000'; }
+    }
+
+    function _syncHeaders() {
+      var h = { 'Content-Type': 'application/json' };
+      var wsId = _syncGetWorkspaceId();
+      if (wsId) h['X-Workspace-Id'] = wsId;
+      if (typeof _authToken !== 'undefined' && _authToken) h['Authorization'] = 'Bearer ' + _authToken;
+      return h;
+    }
+
     function _syncRunSuggestions() {
       var docId = _syncGetDocumentId();
       var statusEl = document.getElementById('sync-status-text');
@@ -16267,7 +16280,7 @@
 
       if (!docId) {
         if (statusEl) statusEl.textContent = 'No document selected';
-        console.warn('[SYNC] No document ID available for suggestion run');
+        console.warn('[SUGGESTIONS] No document ID available for suggestion run');
         _syncRenderDemoSuggestions();
         return;
       }
@@ -16281,14 +16294,14 @@
       var baseUrl = window.location.origin;
       fetch(baseUrl + '/api/v2.5/documents/' + docId + '/suggestion-runs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (typeof _authToken !== 'undefined' ? _authToken : '') },
+        headers: _syncHeaders(),
         body: '{}'
       })
       .then(function(r) { return r.json(); })
       .then(function(resp) {
         if (resp.error) {
           if (statusEl) statusEl.textContent = 'Error: ' + resp.error.message;
-          console.error('[SYNC] Run failed:', resp.error);
+          console.error('[SUGGESTIONS] Run failed:', resp.error);
           return;
         }
         var run = resp.data;
@@ -16296,7 +16309,7 @@
         return _syncFetchSuggestions(docId);
       })
       .catch(function(err) {
-        console.error('[SYNC] Run error:', err);
+        console.error('[SUGGESTIONS] Run error:', err);
         if (statusEl) statusEl.textContent = 'Network error';
       })
       .finally(function() {
@@ -16308,7 +16321,7 @@
     function _syncFetchSuggestions(docId) {
       var baseUrl = window.location.origin;
       return fetch(baseUrl + '/api/v2.5/documents/' + docId + '/suggestions?limit=200', {
-        headers: { 'Authorization': 'Bearer ' + (typeof _authToken !== 'undefined' ? _authToken : '') }
+        headers: _syncHeaders()
       })
       .then(function(r) { return r.json(); })
       .then(function(resp) {
@@ -16330,7 +16343,7 @@
       ];
       _syncState.suggestions = demoSuggestions;
       var statusEl = document.getElementById('sync-status-text');
-      if (statusEl) statusEl.textContent = 'Demo mode: showing sample suggestions';
+      if (statusEl) statusEl.textContent = 'Demo mode — showing sample suggestions';
       _syncRenderSuggestions();
     }
 
@@ -16341,7 +16354,7 @@
 
       var suggestions = _syncState.suggestions;
       if (!suggestions || suggestions.length === 0) {
-        list.innerHTML = '<div class="sync-empty">No suggestions yet. Click "Run Suggestions" to analyze field mappings.</div>';
+        list.innerHTML = '<div class="sync-empty">No suggestions yet. Click \u201cRun Suggestions\u201d to analyze field mappings.</div>';
         if (statsEl) statsEl.style.display = 'none';
         return;
       }
@@ -16364,7 +16377,7 @@
           '<div class="sync-stat"><strong>' + counts.total + '</strong> total</div>' +
           '<div class="sync-stat"><strong>' + counts.pending + '</strong> pending</div>' +
           '<div class="sync-stat" style="color: #2e7d32;"><strong>' + counts.accepted + '</strong> accepted</div>' +
-          '<div class="sync-stat" style="color: #c62828;"><strong>' + counts.rejected + '</strong> rejected</div>';
+          '<div class="sync-stat" style="color: #c62828;"><strong>' + counts.rejected + '</strong> declined</div>';
       }
 
       var groupLabels = {
@@ -16397,10 +16410,11 @@
           if (sug.status === 'pending') {
             html += '<div class="sync-actions">';
             html += '<button class="sync-accept-btn" onclick="_syncAccept(\'' + sug.id + '\', ' + (sug.version || 1) + ')">Accept</button>';
-            html += '<button class="sync-reject-btn" onclick="_syncReject(\'' + sug.id + '\', ' + (sug.version || 1) + ')">Reject</button>';
+            html += '<button class="sync-reject-btn" onclick="_syncReject(\'' + sug.id + '\', ' + (sug.version || 1) + ')">Decline</button>';
             html += '</div>';
           } else {
-            html += '<span class="sync-status-badge ' + sug.status + '">' + sug.status + '</span>';
+            var badgeLabel = sug.status === 'rejected' ? 'declined' : sug.status;
+            html += '<span class="sync-status-badge ' + sug.status + '">' + badgeLabel + '</span>';
           }
           html += '</div>';
         }
@@ -16433,20 +16447,20 @@
           }
         }
         _syncRenderSuggestions();
-        console.log('[SYNC] Demo suggestion', sugId, 'set to', newStatus);
+        console.log('[SUGGESTIONS] Demo suggestion', sugId, 'set to', newStatus);
         return;
       }
 
       var baseUrl = window.location.origin;
       fetch(baseUrl + '/api/v2.5/suggestions/' + sugId, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (typeof _authToken !== 'undefined' ? _authToken : '') },
+        headers: _syncHeaders(),
         body: JSON.stringify({ status: newStatus, version: version })
       })
       .then(function(r) { return r.json(); })
       .then(function(resp) {
         if (resp.error) {
-          console.error('[SYNC] Update failed:', resp.error);
+          console.error('[SUGGESTIONS] Update failed:', resp.error);
           return;
         }
         for (var i = 0; i < _syncState.suggestions.length; i++) {
@@ -16456,10 +16470,10 @@
           }
         }
         _syncRenderSuggestions();
-        console.log('[SYNC] Suggestion', sugId, 'updated to', newStatus);
+        console.log('[SUGGESTIONS] Suggestion', sugId, 'updated to', newStatus);
       })
       .catch(function(err) {
-        console.error('[SYNC] Update error:', err);
+        console.error('[SUGGESTIONS] Update error:', err);
       });
     }
 
