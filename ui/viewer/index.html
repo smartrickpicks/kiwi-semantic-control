@@ -1475,11 +1475,15 @@
     .ev-reader-loading { text-align: center; padding: 40px 20px; color: #888; }
     .ev-reader-loading-spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid #ddd; border-top-color: #1565c0; border-radius: 50%; animation: ev-spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
     @keyframes ev-spin { to { transform: rotate(360deg); } }
-    .ev-sel-menu { position: fixed; z-index: 9999; background: #fff; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); padding: 4px 0; min-width: 180px; display: none; }
-    .ev-sel-menu-item { display: flex; align-items: center; gap: 8px; padding: 7px 14px; font-size: 0.82em; color: #333; cursor: pointer; border: none; background: none; width: 100%; text-align: left; }
-    .ev-sel-menu-item:hover { background: #f0f4ff; }
-    .ev-sel-menu-item .ev-sel-icon { font-size: 1em; width: 18px; text-align: center; }
-    .ev-sel-menu-sep { height: 1px; background: #eee; margin: 3px 0; }
+    .ev-sel-menu { position: fixed; z-index: 9999; background: #fff; border: 1px solid #d0d5dd; border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.06); padding: 5px 0; min-width: 190px; display: none; font-family: inherit; animation: evSelFadeIn 0.12s ease-out; }
+    @keyframes evSelFadeIn { from { opacity: 0; transform: scale(0.96) translateY(-4px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .ev-sel-menu-item { display: flex; align-items: center; gap: 10px; padding: 6px 16px; font-size: 0.82em; color: #1e293b; cursor: pointer; border: none; background: none; width: 100%; text-align: left; font-family: inherit; outline: none; transition: background 0.1s; white-space: nowrap; line-height: 1.4; }
+    .ev-sel-menu-item:hover { background: #e8f0fe; }
+    .ev-sel-menu-item:active { background: #c8ddf8; }
+    .ev-sel-menu-item .ev-sel-icon { font-size: 1.05em; width: 20px; text-align: center; flex-shrink: 0; line-height: 1; }
+    .ev-sel-menu-sep { height: 1px; background: #e5e7eb; margin: 3px 10px; }
+    .ev-sel-menu-header { padding: 6px 16px 3px; font-size: 0.68em; color: #8896a8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; line-height: 1.3; }
+    .ev-sel-menu-header:first-child { padding-top: 8px; }
     .alias-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10001; display: flex; align-items: center; justify-content: center; }
     .alias-modal { background: white; border-radius: 12px; max-width: 480px; width: 92%; max-height: 70vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.3); animation: modalFadeIn 0.2s ease-out; }
     .alias-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid #e0e0e0; }
@@ -14805,17 +14809,17 @@
       var role = (typeof _eiGetUserRole === 'function') ? _eiGetUserRole() : 'analyst';
       var items = [
         { id: 'copy', icon: '\uD83D\uDCCB', label: 'Copy' },
-        { id: 'sep1', sep: true },
+        { header: 'Patch Actions' },
         { id: 'anchor', icon: '\uD83D\uDCCC', label: 'Create Evidence Mark' },
         { id: 'rfi', icon: '\uD83D\uDCAC', label: 'Create RFI' },
         { id: 'correction', icon: '\u270E', label: 'Create Correction' },
-        { id: 'sep2', sep: true },
+        { header: 'Field Actions' },
         { id: 'create-alias', icon: '\uD83D\uDD17', label: 'Create Alias' }
       ];
       var html = '';
       for (var i = 0; i < items.length; i++) {
         var it = items[i];
-        if (it.sep) { html += '<div class="ev-sel-menu-sep"></div>'; continue; }
+        if (it.header) { html += '<div class="ev-sel-menu-header">' + it.header + '</div>'; continue; }
         html += '<button class="ev-sel-menu-item" data-action="' + it.id + '" onclick="_evSelAction(\'' + it.id + '\')">';
         html += '<span class="ev-sel-icon">' + it.id + '</span>';
         html += it.label + '</button>';
