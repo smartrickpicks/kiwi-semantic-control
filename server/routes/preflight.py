@@ -1,10 +1,12 @@
 """
 Preflight API routes for Orchestrate OS.
 
-POST /api/preflight/run  - Run preflight analysis on a document
+POST /api/preflight/run     - Run preflight analysis on a document (URL)
+POST /api/preflight/upload  - Run preflight on uploaded PDF (base64, internal/Test Lab)
 GET  /api/preflight/{doc_id} - Read cached preflight result
+POST /api/preflight/action  - Accept Risk / Escalate OCR (internal)
 
-Both require:
+All require:
   - v2.5 Either auth (Bearer or API key)
   - Feature flag PREFLIGHT_GATE_SYNC or alias enabled
   - ADMIN role (sandbox stage)
@@ -62,6 +64,65 @@ def _require_admin_sandbox(auth, workspace_id):
 
 def _cache_key(workspace_id, doc_id):
     return "%s::%s" % (workspace_id, doc_id)
+
+
+def _extract_pages_from_pdf(pdf_bytes):
+    """Extract page data from PDF bytes using PyMuPDF. Returns (pages_data, error_response)."""
+    import fitz
+    try:
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        pages_data = []
+        for i in range(len(doc)):
+            page = doc[i]
+            text = page.get_text("text")
+            page_rect = page.rect
+            page_area = page_rect.width * page_rect.height if page_rect else 1
+            images = page.get_images(full=True)
+            image_area = 0
+            for img in images:
+                try:
+                    xref = img[0]
+                    img_rects = page.get_image_rects(xref)
+                    for r in img_rects:
+                        image_area += r.width * r.height
+                except Exception:
+                    pass
+            image_ratio = min(image_area / page_area, 1.0) if page_area > 0 else 0.0
+            pages_data.append({
+                "page": i + 1,
+                "text": text,
+                "char_count": len(text),
+                "image_coverage_ratio": round(image_ratio, 4),
+                "page_width": round(page_rect.width, 2) if page_rect else 0,
+                "page_height": round(page_rect.height, 2) if page_rect else 0,
+            })
+        doc.close()
+        return pages_data, None
+    except Exception as e:
+        return None, JSONResponse(
+            status_code=422,
+            content=error_envelope("EXTRACTION_ERROR", "PDF analysis failed: %s" % str(e)),
+        )
+
+
+def _build_preflight_result(pages_data, doc_id, ws_id, file_url):
+    """Run preflight engine and build cacheable result dict."""
+    result = run_preflight(pages_data)
+    result["doc_id"] = doc_id
+    result["workspace_id"] = ws_id
+    result["file_url"] = file_url
+    result["timestamp"] = datetime.now(timezone.utc).isoformat()
+    result["materialized"] = False
+
+    for pd_item in pages_data:
+        for pr in result.get("page_classifications", []):
+            if pr["page"] == pd_item["page"]:
+                pr["page_width"] = pd_item.get("page_width", 0)
+                pr["page_height"] = pd_item.get("page_height", 0)
+
+    ck = _cache_key(ws_id, doc_id)
+    _preflight_cache[ck] = result
+    return result
 
 
 @router.post("/run")
@@ -142,8 +203,6 @@ async def preflight_run(
             content=error_envelope("FORBIDDEN", "Private/reserved IPs are blocked"),
         )
 
-    import fitz
-
     async with httpx.AsyncClient(timeout=30.0, follow_redirects=False) as client:
         try:
             resp = await client.get(decoded_url)
@@ -180,59 +239,88 @@ async def preflight_run(
                 content=error_envelope("UPSTREAM_ERROR", "Upstream request failed: %s" % str(e)),
             )
 
-    try:
-        doc = fitz.open(stream=resp.content, filetype="pdf")
-        pages_data = []
-        for i in range(len(doc)):
-            page = doc[i]
-            text = page.get_text("text")
-            page_rect = page.rect
-            page_area = page_rect.width * page_rect.height if page_rect else 1
-            images = page.get_images(full=True)
-            image_area = 0
-            for img in images:
-                try:
-                    xref = img[0]
-                    img_rects = page.get_image_rects(xref)
-                    for r in img_rects:
-                        image_area += r.width * r.height
-                except Exception:
-                    pass
-            image_ratio = min(image_area / page_area, 1.0) if page_area > 0 else 0.0
+    pages_data, extract_err = _extract_pages_from_pdf(resp.content)
+    if extract_err:
+        return extract_err
 
-            pages_data.append({
-                "page": i + 1,
-                "text": text,
-                "char_count": len(text),
-                "image_coverage_ratio": round(image_ratio, 4),
-                "page_width": round(page_rect.width, 2) if page_rect else 0,
-                "page_height": round(page_rect.height, 2) if page_rect else 0,
-            })
-        doc.close()
-    except Exception as e:
-        return JSONResponse(
-            status_code=422,
-            content=error_envelope("EXTRACTION_ERROR", "PDF analysis failed: %s" % str(e)),
-        )
-
-    result = run_preflight(pages_data)
-    result["doc_id"] = doc_id
-    result["workspace_id"] = ws_id
-    result["file_url"] = file_url
-    result["timestamp"] = datetime.now(timezone.utc).isoformat()
-    result["materialized"] = False
-
-    for pd_item in pages_data:
-        for pr in result.get("page_classifications", []):
-            if pr["page"] == pd_item["page"]:
-                pr["page_width"] = pd_item.get("page_width", 0)
-                pr["page_height"] = pd_item.get("page_height", 0)
-
-    ck = _cache_key(ws_id, doc_id)
-    _preflight_cache[ck] = result
+    result = _build_preflight_result(pages_data, doc_id, ws_id, file_url)
 
     logger.info(
         "[PREFLIGHT] run complete: doc=%s ws=%s gate=%s mode=%s pages=%d",
+        doc_id, ws_id, result["gate_color"], result["doc_mode"],
+        result["metrics"]["total_pages"],
+    )
+
+    return JSONResponse(status_code=200, content=envelope(result))
+
+
+@router.post("/upload")
+async def preflight_upload(
+    request: Request,
+    auth=Depends(require_auth(AuthClass.EITHER)),
+):
+    """Run preflight on an uploaded PDF (base64-encoded). Internal/Test Lab use."""
+    if isinstance(auth, JSONResponse):
+        return auth
+
+    flag_check = require_preflight()
+    if flag_check:
+        return flag_check
+
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "Invalid JSON body"),
+        )
+
+    ws_id, ws_err = _resolve_workspace(request, auth, body)
+    if ws_err:
+        return ws_err
+
+    admin_err = _require_admin_sandbox(auth, ws_id)
+    if admin_err:
+        return admin_err
+
+    pdf_base64 = body.get("pdf_base64", "").strip()
+    filename = body.get("filename", "uploaded.pdf").strip()
+    doc_id = body.get("doc_id", "").strip()
+
+    if not pdf_base64:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "pdf_base64 is required"),
+        )
+
+    import base64
+    try:
+        pdf_bytes = base64.b64decode(pdf_base64)
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content=error_envelope("VALIDATION_ERROR", "Invalid base64 encoding"),
+        )
+
+    from server.pdf_proxy import MAX_SIZE_BYTES
+    if len(pdf_bytes) > MAX_SIZE_BYTES:
+        return JSONResponse(
+            status_code=413,
+            content=error_envelope("FILE_TOO_LARGE", "File exceeds size limit"),
+        )
+
+    if not doc_id:
+        doc_id = derive_cache_identity(ws_id, "upload://%s" % filename)
+
+    pages_data, extract_err = _extract_pages_from_pdf(pdf_bytes)
+    if extract_err:
+        return extract_err
+
+    file_url = "upload://%s" % filename
+    result = _build_preflight_result(pages_data, doc_id, ws_id, file_url)
+
+    logger.info(
+        "[PREFLIGHT] upload complete: doc=%s ws=%s gate=%s mode=%s pages=%d",
         doc_id, ws_id, result["gate_color"], result["doc_mode"],
         result["metrics"]["total_pages"],
     )

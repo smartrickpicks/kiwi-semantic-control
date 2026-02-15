@@ -1442,6 +1442,66 @@
     .pf-gate-btn.escalate { background: #c62828; color: white; }
     .pf-gate-btn.escalate:hover { background: #d32f2f; }
     .pf-admin-note { font-size: 0.75em; color: #999; font-style: italic; margin-top: 6px; }
+    .pftl-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; }
+    .pftl-modal { background: white; border-radius: 12px; width: 90vw; max-width: 960px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .pftl-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid #e0e0e0; }
+    .pftl-header h3 { margin: 0; font-size: 1.1em; color: #333; }
+    .pftl-close { background: none; border: none; font-size: 1.4em; cursor: pointer; color: #999; padding: 4px 8px; }
+    .pftl-close:hover { color: #333; }
+    .pftl-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+    .pftl-inputs { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 16px; flex-wrap: wrap; }
+    .pftl-input-group { display: flex; flex-direction: column; gap: 4px; }
+    .pftl-input-group label { font-size: 0.78em; color: #666; font-weight: 500; }
+    .pftl-input-group input[type="file"] { font-size: 0.85em; }
+    .pftl-input-group input[type="text"] { padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 0.85em; width: 320px; }
+    .pftl-or { font-size: 0.78em; color: #999; padding: 0 4px; align-self: center; margin-bottom: 2px; }
+    .pftl-actions { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+    .pftl-btn { padding: 7px 16px; border-radius: 6px; font-size: 0.82em; cursor: pointer; border: none; font-weight: 500; }
+    .pftl-btn.run { background: #1565c0; color: white; }
+    .pftl-btn.run:hover { background: #1976d2; }
+    .pftl-btn.run:disabled { background: #bbb; cursor: default; }
+    .pftl-btn.reset { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+    .pftl-btn.reset:hover { background: #eee; }
+    .pftl-btn.download { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+    .pftl-btn.download:hover { background: #c8e6c9; }
+    .pftl-elapsed { font-size: 0.78em; color: #999; margin-left: 8px; }
+    .pftl-error { background: #ffebee; color: #c62828; padding: 10px 14px; border-radius: 6px; font-size: 0.85em; margin-bottom: 12px; border: 1px solid #ffcdd2; }
+    .pftl-forbidden { background: #fff3e0; color: #e65100; padding: 12px 16px; border-radius: 6px; font-size: 0.88em; border: 1px solid #ffcc80; text-align: center; }
+    .pftl-loading { text-align: center; padding: 30px; color: #666; }
+    .pftl-loading-spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid #e0e0e0; border-top-color: #1565c0; border-radius: 50%; animation: pftl-spin 0.8s linear infinite; }
+    @keyframes pftl-spin { to { transform: rotate(360deg); } }
+    .pftl-report { margin-top: 12px; }
+    .pftl-gate-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 16px; background: #fafbfc; border-radius: 8px; border: 1px solid #e0e0e0; }
+    .pftl-gate-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 14px; border-radius: 14px; font-size: 0.85em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .pftl-gate-badge.green { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+    .pftl-gate-badge.yellow { background: #fff8e1; color: #f57f17; border: 1px solid #fff176; }
+    .pftl-gate-badge.red { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+    .pftl-doc-mode { font-size: 0.85em; color: #555; font-weight: 500; }
+    .pftl-section { margin-bottom: 16px; }
+    .pftl-section-title { font-size: 0.82em; font-weight: 600; color: #444; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .pftl-reasons { list-style: none; padding: 0; margin: 0; }
+    .pftl-reasons li { padding: 3px 0; font-size: 0.82em; color: #666; }
+    .pftl-reasons li:before { content: "\2022 "; color: #bbb; }
+    .pftl-metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+    .pftl-metric-card { background: #fafbfc; border: 1px solid #e8e8e8; border-radius: 6px; padding: 10px 12px; text-align: center; }
+    .pftl-metric-val { font-size: 1.15em; font-weight: 700; color: #333; }
+    .pftl-metric-label { font-size: 0.72em; color: #999; margin-top: 2px; }
+    .pftl-table { width: 100%; border-collapse: collapse; font-size: 0.8em; }
+    .pftl-table th { background: #f5f5f5; padding: 6px 10px; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid #e0e0e0; font-size: 0.85em; }
+    .pftl-table td { padding: 5px 10px; border-bottom: 1px solid #f0f0f0; color: #444; }
+    .pftl-table tr:hover td { background: #fafbfc; }
+    .pftl-page-mode { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.8em; font-weight: 600; }
+    .pftl-page-mode.searchable { background: #e8f5e9; color: #2e7d32; }
+    .pftl-page-mode.scanned { background: #fff8e1; color: #f57f17; }
+    .pftl-page-mode.mixed { background: #ffebee; color: #c62828; }
+    .pftl-persistence { background: #f5f5f5; border-radius: 6px; padding: 12px 14px; font-size: 0.82em; }
+    .pftl-persistence-row { display: flex; justify-content: space-between; padding: 3px 0; }
+    .pftl-persistence-key { color: #666; }
+    .pftl-persistence-val { font-weight: 500; color: #333; }
+    .pftl-raw-toggle { cursor: pointer; font-size: 0.8em; color: #1565c0; background: none; border: none; padding: 4px 0; }
+    .pftl-raw-toggle:hover { text-decoration: underline; }
+    .pftl-raw-content { background: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.75em; max-height: 300px; overflow: auto; white-space: pre-wrap; word-break: break-all; display: none; }
+    .pftl-raw-content.open { display: block; }
     .sync-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .sync-header h3 { margin: 0; font-size: 1em; color: #333; }
     .sync-run-btn { padding: 6px 16px; background: #1565c0; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 600; }
@@ -3200,6 +3260,7 @@
         </div>
 
           <div id="pf-gate-panel"></div>
+          <div id="pftl-overlay" class="pftl-overlay" style="display: none;"></div>
 
         <div class="ev-inline-wrapper" id="ev-inline-wrapper">
           <div id="ev-middle-column">
@@ -4474,6 +4535,17 @@
             <div class="state-chip pending">Smoke Baseline: Pending</div>
             <div class="state-chip pending">Smoke Edge: Pending</div>
           </div>
+        </div>
+
+        <div class="admin-section" id="pftl-entry-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h3 style="margin: 0 0 4px; font-size: 1.1em; color: #333;">Preflight Test Lab <span style="font-size: 0.7em; color: #999; font-weight: 400;">Admin Sandbox</span></h3>
+              <p style="margin: 0; font-size: 0.82em; color: #666;">Upload a PDF to run document mode preflight and view a detailed quality report.</p>
+            </div>
+            <button class="pftl-btn run" id="pftl-open-btn" onclick="pftlOpen()">Open Test Lab</button>
+          </div>
+          <div id="pftl-nonadmin-note" style="display: none; margin-top: 8px;" class="pf-admin-note">Admin-only sandbox.</div>
         </div>
         </div>
         </div><!-- end admin-tab-governance -->
@@ -18220,6 +18292,7 @@
               if (typeof FEATURE_FLAGS !== 'undefined') FEATURE_FLAGS.PREFLIGHT_GATE_SYNC = true;
               console.log('[PREFLIGHT-GATE] Feature flag PREFLIGHT_GATE_SYNC is ON');
               if (typeof pfGateInit === 'function') pfGateInit();
+              if (typeof pftlInit === 'function') pftlInit();
             } else {
               console.log('[PREFLIGHT-GATE] Feature flag PREFLIGHT_GATE_SYNC is OFF');
             }
@@ -51370,6 +51443,439 @@ var P022_RuntimeValidation = {
     if (reason.indexOf('avg_chars_per_page_low') === 0) return 'Average text per page is very low';
     if (reason.indexOf('sparse_pages_exceeded') === 0) return 'Most pages have very little text';
     return reason;
+  }
+})();
+</script>
+<script>
+(function() {
+  var _pftlState = {
+    open: false,
+    running: false,
+    result: null,
+    error: null,
+    elapsed: 0,
+    timer: null,
+    file: null,
+    forbidden: false
+  };
+
+  window.pftlOpen = function() {
+    var role = _pftlGetRole();
+    if (role !== 'admin' && role !== 'architect') {
+      _pftlState.forbidden = true;
+    } else {
+      _pftlState.forbidden = false;
+    }
+    _pftlState.open = true;
+    _pftlState.result = null;
+    _pftlState.error = null;
+    _pftlState.elapsed = 0;
+    _pftlState.file = null;
+    _pftlRender();
+    var overlay = document.getElementById('pftl-overlay');
+    if (overlay) overlay.style.display = '';
+  };
+
+  window.pftlClose = function() {
+    _pftlState.open = false;
+    _pftlStopTimer();
+    var overlay = document.getElementById('pftl-overlay');
+    if (overlay) overlay.style.display = 'none';
+  };
+
+  window.pftlReset = function() {
+    _pftlState.result = null;
+    _pftlState.error = null;
+    _pftlState.elapsed = 0;
+    _pftlState.running = false;
+    _pftlState.file = null;
+    _pftlStopTimer();
+    _pftlRender();
+  };
+
+  window.pftlRun = function() {
+    if (_pftlState.running) return;
+    var fileInput = document.getElementById('pftl-file-input');
+    var urlInput = document.getElementById('pftl-url-input');
+    var file = fileInput && fileInput.files && fileInput.files[0];
+    var url = urlInput ? urlInput.value.trim() : '';
+
+    if (!file && !url) {
+      _pftlState.error = 'Please select a PDF file or enter a URL.';
+      _pftlRender();
+      return;
+    }
+
+    _pftlState.running = true;
+    _pftlState.error = null;
+    _pftlState.result = null;
+    _pftlState.elapsed = 0;
+    _pftlStartTimer();
+    _pftlRender();
+
+    if (file) {
+      _pftlRunUpload(file);
+    } else {
+      _pftlRunUrl(url);
+    }
+  };
+
+  window.pftlDownload = function() {
+    if (!_pftlState.result) return;
+    var json = JSON.stringify(_pftlState.result, null, 2);
+    var blob = new Blob([json], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    var docId = (_pftlState.result.doc_id || 'preflight').replace(/[^a-zA-Z0-9_-]/g, '_');
+    a.download = 'preflight_report_' + docId + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  };
+
+  window.pftlInit = function() {
+    var section = document.getElementById('pftl-entry-section');
+    if (!section) return;
+    var role = _pftlGetRole();
+    section.style.display = '';
+    var btn = document.getElementById('pftl-open-btn');
+    var note = document.getElementById('pftl-nonadmin-note');
+    if (role !== 'admin' && role !== 'architect') {
+      if (btn) btn.style.display = 'none';
+      if (note) note.style.display = '';
+    } else {
+      if (btn) btn.style.display = '';
+      if (note) note.style.display = 'none';
+    }
+  };
+
+  function _pftlRunUpload(file) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var arrayBuffer = e.target.result;
+      var bytes = new Uint8Array(arrayBuffer);
+      var binary = '';
+      for (var i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      var base64 = btoa(binary);
+
+      var hashStr = file.name + '|' + file.size + '|' + file.lastModified;
+      var docId = 'upload_' + _pftlSimpleHash(hashStr);
+
+      var headers = _pftlGetHeaders();
+      var baseUrl = window.location.origin;
+      fetch(baseUrl + '/api/preflight/upload', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          pdf_base64: base64,
+          filename: file.name,
+          doc_id: docId
+        })
+      })
+      .then(function(resp) { return _pftlHandleResponse(resp); })
+      .then(function(data) { _pftlOnSuccess(data); })
+      .catch(function(err) { _pftlOnError(err); });
+    };
+    reader.onerror = function() {
+      _pftlOnError(new Error('Failed to read file'));
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function _pftlRunUrl(url) {
+    var headers = _pftlGetHeaders();
+    var baseUrl = window.location.origin;
+    fetch(baseUrl + '/api/preflight/run', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({ file_url: url })
+    })
+    .then(function(resp) { return _pftlHandleResponse(resp); })
+    .then(function(data) { _pftlOnSuccess(data); })
+    .catch(function(err) { _pftlOnError(err); });
+  }
+
+  function _pftlHandleResponse(resp) {
+    if (resp.status === 403) {
+      return resp.json().then(function(body) {
+        var msg = (body.error && body.error.message) || 'Forbidden';
+        if (msg === 'Preflight is in admin sandbox mode.') {
+          _pftlState.forbidden = true;
+          _pftlState.running = false;
+          _pftlStopTimer();
+          _pftlRender();
+          throw new Error('__forbidden__');
+        }
+        throw new Error(msg);
+      });
+    }
+    if (!resp.ok) {
+      return resp.json().then(function(body) {
+        var msg = (body.error && body.error.message) || ('HTTP ' + resp.status);
+        throw new Error(msg);
+      });
+    }
+    return resp.json();
+  }
+
+  function _pftlOnSuccess(data) {
+    _pftlState.running = false;
+    _pftlStopTimer();
+    _pftlState.result = data.data || data;
+    _pftlRender();
+    console.log('[PFTL] run complete:', _pftlState.result.gate_color, _pftlState.result.doc_mode);
+  }
+
+  function _pftlOnError(err) {
+    if (err.message === '__forbidden__') return;
+    _pftlState.running = false;
+    _pftlStopTimer();
+    _pftlState.error = err.message || 'Unknown error';
+    _pftlRender();
+    console.error('[PFTL] error:', err);
+  }
+
+  function _pftlStartTimer() {
+    _pftlState.elapsed = 0;
+    _pftlState.timer = setInterval(function() {
+      _pftlState.elapsed++;
+      var el = document.getElementById('pftl-elapsed');
+      if (el) el.textContent = _pftlState.elapsed + 's';
+    }, 1000);
+  }
+
+  function _pftlStopTimer() {
+    if (_pftlState.timer) {
+      clearInterval(_pftlState.timer);
+      _pftlState.timer = null;
+    }
+  }
+
+  function _pftlRender() {
+    var overlay = document.getElementById('pftl-overlay');
+    if (!overlay) return;
+    if (!_pftlState.open) {
+      overlay.style.display = 'none';
+      return;
+    }
+    overlay.style.display = '';
+
+    var html = '';
+    html += '<div class="pftl-modal">';
+    html += '<div class="pftl-header">';
+    html += '<h3>Preflight Test Lab <span style="font-size:0.7em;color:#999;font-weight:400;">Admin Sandbox</span></h3>';
+    html += '<button class="pftl-close" onclick="pftlClose()">&times;</button>';
+    html += '</div>';
+    html += '<div class="pftl-body">';
+
+    if (_pftlState.forbidden) {
+      html += '<div class="pftl-forbidden">Admin-only sandbox.</div>';
+      html += '</div></div>';
+      overlay.innerHTML = html;
+      return;
+    }
+
+    html += '<div class="pftl-inputs">';
+    html += '<div class="pftl-input-group">';
+    html += '<label>Upload PDF</label>';
+    html += '<input type="file" id="pftl-file-input" accept=".pdf,application/pdf" onchange="pftlOnFileChange()">';
+    html += '</div>';
+    html += '<span class="pftl-or">or</span>';
+    html += '<div class="pftl-input-group">';
+    html += '<label>PDF URL</label>';
+    html += '<input type="text" id="pftl-url-input" placeholder="https://example.com/document.pdf">';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<div class="pftl-actions">';
+    html += '<button class="pftl-btn run" onclick="pftlRun()"' + (_pftlState.running ? ' disabled' : '') + '>' + (_pftlState.running ? 'Analyzing...' : 'Run Preflight') + '</button>';
+    html += '<button class="pftl-btn reset" onclick="pftlReset()">Reset</button>';
+    if (_pftlState.result) {
+      html += '<button class="pftl-btn download" onclick="pftlDownload()">Download JSON</button>';
+    }
+    if (_pftlState.running) {
+      html += '<span class="pftl-elapsed" id="pftl-elapsed">' + _pftlState.elapsed + 's</span>';
+    } else if (_pftlState.elapsed > 0 && _pftlState.result) {
+      html += '<span class="pftl-elapsed">Completed in ' + _pftlState.elapsed + 's</span>';
+    }
+    html += '</div>';
+
+    if (_pftlState.error) {
+      html += '<div class="pftl-error">' + _pftlEsc(_pftlState.error) + '</div>';
+    }
+
+    if (_pftlState.running) {
+      html += '<div class="pftl-loading"><div class="pftl-loading-spinner"></div><div style="margin-top:10px;">Extracting and analyzing PDF...</div></div>';
+    }
+
+    if (_pftlState.result) {
+      html += _pftlRenderReport(_pftlState.result);
+    }
+
+    html += '</div></div>';
+    overlay.innerHTML = html;
+  }
+
+  window.pftlOnFileChange = function() {
+    var urlInput = document.getElementById('pftl-url-input');
+    if (urlInput) urlInput.value = '';
+  };
+
+  function _pftlRenderReport(r) {
+    var html = '<div class="pftl-report">';
+    var gate = r.gate_color || 'GREEN';
+    var mode = r.doc_mode || 'UNKNOWN';
+
+    html += '<div class="pftl-gate-row">';
+    html += '<span class="pftl-gate-badge ' + gate.toLowerCase() + '">' + gate + '</span>';
+    html += '<span class="pftl-doc-mode">Document Mode: ' + mode + '</span>';
+    if (r.doc_id) {
+      html += '<span style="font-size:0.72em;color:#aaa;margin-left:auto;font-family:monospace;">' + _pftlEsc(r.doc_id) + '</span>';
+    }
+    html += '</div>';
+
+    if (r.gate_reasons && r.gate_reasons.length > 0) {
+      html += '<div class="pftl-section">';
+      html += '<div class="pftl-section-title">Reason Codes</div>';
+      html += '<ul class="pftl-reasons">';
+      for (var i = 0; i < r.gate_reasons.length; i++) {
+        html += '<li>' + _pftlEsc(_pftlHumanizeReason(r.gate_reasons[i])) + '</li>';
+      }
+      html += '</ul></div>';
+    }
+
+    var m = r.metrics || {};
+    html += '<div class="pftl-section">';
+    html += '<div class="pftl-section-title">Key Metrics</div>';
+    html += '<div class="pftl-metrics-grid">';
+    html += _pftlMetricCard(m.total_pages, 'Page Count');
+    html += _pftlMetricCard(_pftlFmt(m.avg_chars_per_page, 1), 'Avg Chars/Page');
+    html += _pftlMetricCard(_pftlFmt(m.replacement_char_ratio, 6), 'Replacement Char Ratio');
+    html += _pftlMetricCard(_pftlFmt(m.control_char_ratio, 6), 'Control Char Ratio');
+    html += _pftlMetricCard(m.searchable_pages, 'Searchable Pages');
+    html += _pftlMetricCard(m.scanned_pages, 'Scanned Pages');
+    html += _pftlMetricCard(m.mixed_pages, 'Mixed Pages');
+    var sparseRatio = 0;
+    if (m.total_pages > 0) {
+      var pc = r.page_classifications || [];
+      var sparseCount = 0;
+      for (var s = 0; s < pc.length; s++) {
+        if (pc[s].char_count < 10) sparseCount++;
+      }
+      sparseRatio = sparseCount / m.total_pages;
+    }
+    html += _pftlMetricCard(_pftlFmt(sparseRatio, 2), 'Sparse Page Ratio');
+    html += '</div></div>';
+
+    var pages = r.page_classifications || [];
+    if (pages.length > 0) {
+      html += '<div class="pftl-section">';
+      html += '<div class="pftl-section-title">Per-Page Breakdown (' + pages.length + ' pages)</div>';
+      html += '<div style="max-height:300px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px;">';
+      html += '<table class="pftl-table">';
+      html += '<thead><tr><th>Page</th><th>Chars</th><th>Image Ratio</th><th>Mode</th><th>Dimensions</th></tr></thead>';
+      html += '<tbody>';
+      for (var p = 0; p < pages.length; p++) {
+        var pg = pages[p];
+        var modeClass = (pg.mode || '').toLowerCase();
+        html += '<tr>';
+        html += '<td>' + pg.page + '</td>';
+        html += '<td>' + (pg.char_count || 0) + '</td>';
+        html += '<td>' + _pftlFmt(pg.image_coverage_ratio, 4) + '</td>';
+        html += '<td><span class="pftl-page-mode ' + modeClass + '">' + (pg.mode || 'UNKNOWN') + '</span></td>';
+        var dims = (pg.page_width || 0) + ' x ' + (pg.page_height || 0);
+        html += '<td style="font-size:0.85em;color:#888;">' + dims + '</td>';
+        html += '</tr>';
+      }
+      html += '</tbody></table></div></div>';
+    }
+
+    html += '<div class="pftl-section">';
+    html += '<div class="pftl-section-title">Persistence Status</div>';
+    html += '<div class="pftl-persistence">';
+    html += _pftlPersRow('doc_materialized', r.materialized === true ? 'Yes' : 'No');
+    html += _pftlPersRow('cache_written', 'Yes');
+    html += _pftlPersRow('fk_bound_writes_skipped', r.materialized === true ? 'No' : 'Yes');
+    html += _pftlPersRow('skip_reason', r.materialized === true ? 'N/A (materialized)' : 'No patch_id provided (Test Lab is read-only)');
+    html += '</div></div>';
+
+    html += '<div class="pftl-section">';
+    html += '<button class="pftl-raw-toggle" onclick="pftlToggleRaw()">Show Raw JSON Response</button>';
+    html += '<pre class="pftl-raw-content" id="pftl-raw-json">' + _pftlEsc(JSON.stringify(r, null, 2)) + '</pre>';
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  window.pftlToggleRaw = function() {
+    var el = document.getElementById('pftl-raw-json');
+    if (!el) return;
+    if (el.classList.contains('open')) {
+      el.classList.remove('open');
+    } else {
+      el.classList.add('open');
+    }
+  };
+
+  function _pftlMetricCard(val, label) {
+    var v = (val !== undefined && val !== null) ? val : '--';
+    return '<div class="pftl-metric-card"><div class="pftl-metric-val">' + v + '</div><div class="pftl-metric-label">' + _pftlEsc(label) + '</div></div>';
+  }
+
+  function _pftlPersRow(key, val) {
+    return '<div class="pftl-persistence-row"><span class="pftl-persistence-key">' + _pftlEsc(key) + '</span><span class="pftl-persistence-val">' + _pftlEsc(val) + '</span></div>';
+  }
+
+  function _pftlFmt(num, digits) {
+    if (num === undefined || num === null) return '--';
+    return Number(num).toFixed(digits);
+  }
+
+  function _pftlEsc(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function _pftlHumanizeReason(reason) {
+    if (reason === 'all_checks_passed') return 'All quality checks passed';
+    if (reason === 'doc_mode_mixed') return 'Document has mixed searchable/scanned pages';
+    if (reason === 'no_pages') return 'No pages found in document';
+    if (reason.indexOf('replacement_char_ratio') === 0) return 'Too many encoding errors (replacement characters)';
+    if (reason.indexOf('control_char_ratio') === 0) return 'Too many control characters detected';
+    if (reason.indexOf('avg_chars_per_page_low') === 0) return 'Average text per page is very low';
+    if (reason.indexOf('sparse_pages_exceeded') === 0) return 'Most pages have very little text';
+    return reason;
+  }
+
+  function _pftlGetRole() {
+    if (typeof _eiGetUserRole === 'function') return _eiGetUserRole();
+    if (typeof srrState !== 'undefined' && srrState.userRole) return srrState.userRole;
+    return 'analyst';
+  }
+
+  function _pftlGetHeaders() {
+    if (typeof _syncHeaders === 'function') {
+      return _syncHeaders();
+    }
+    var headers = { 'Content-Type': 'application/json' };
+    var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : '';
+    if (wsId) headers['X-Workspace-Id'] = wsId;
+    if (typeof _authToken !== 'undefined' && _authToken) headers['Authorization'] = 'Bearer ' + _authToken;
+    return headers;
+  }
+
+  function _pftlSimpleHash(str) {
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+      var chr = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + chr;
+      hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36);
   }
 })();
 </script>
