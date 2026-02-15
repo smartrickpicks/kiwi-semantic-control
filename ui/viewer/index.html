@@ -1417,6 +1417,31 @@
     /* Suggestions Panel */
     #sync-suggestions-panel { display: none; padding: 16px 20px; background: #fafbfc; border-bottom: 2px solid #e0e0e0; max-height: 50vh; overflow-y: auto; }
     #sync-suggestions-panel.active { display: block; }
+    #pf-gate-panel { display: none; padding: 14px 20px; background: #fafbfc; border-bottom: 2px solid #e0e0e0; }
+    #pf-gate-panel.active { display: block; }
+    .pf-gate-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .pf-gate-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 12px; font-size: 0.78em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .pf-gate-badge.green { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+    .pf-gate-badge.yellow { background: #fff8e1; color: #f57f17; border: 1px solid #fff176; }
+    .pf-gate-badge.red { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+    .pf-gate-details { font-size: 0.82em; color: #555; margin-bottom: 10px; }
+    .pf-gate-reasons { list-style: none; padding: 0; margin: 4px 0 0 0; }
+    .pf-gate-reasons li { padding: 2px 0; font-size: 0.8em; color: #777; }
+    .pf-gate-reasons li:before { content: "• "; color: #bbb; }
+    .pf-gate-metrics { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; font-size: 0.78em; color: #666; }
+    .pf-gate-metric { display: flex; flex-direction: column; align-items: center; }
+    .pf-gate-metric-val { font-weight: 700; font-size: 1.2em; color: #333; }
+    .pf-gate-metric-label { font-size: 0.85em; color: #999; }
+    .pf-gate-actions { display: flex; gap: 8px; margin-top: 8px; }
+    .pf-gate-btn { padding: 6px 14px; border-radius: 6px; font-size: 0.82em; cursor: pointer; border: none; font-weight: 500; }
+    .pf-gate-btn.run { background: #1565c0; color: white; }
+    .pf-gate-btn.run:hover { background: #1976d2; }
+    .pf-gate-btn.run:disabled { background: #bbb; cursor: default; }
+    .pf-gate-btn.accept { background: #ff8f00; color: white; }
+    .pf-gate-btn.accept:hover { background: #ffa000; }
+    .pf-gate-btn.escalate { background: #c62828; color: white; }
+    .pf-gate-btn.escalate:hover { background: #d32f2f; }
+    .pf-admin-note { font-size: 0.75em; color: #999; font-style: italic; margin-top: 6px; }
     .sync-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .sync-header h3 { margin: 0; font-size: 1em; color: #333; }
     .sync-run-btn { padding: 6px 16px; background: #1565c0; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 600; }
@@ -3156,6 +3181,7 @@
             <button id="grid-mode-review-btn" class="gfc-btn active" onclick="setGridViewMode('review')">Review</button>
             <button id="grid-mode-grid-btn" class="gfc-btn" onclick="setGridViewMode('grid')">Evidence Viewer</button>
             <button id="grid-mode-sync-btn" class="gfc-btn" onclick="_syncTogglePanel()">Suggestions</button>
+            <button class="gfc-btn" id="pf-gate-tab-btn" onclick="pfGateTogglePanel()" style="display:none;">Preflight</button>
             <div class="gfc-divider" id="gfc-composite-divider" style="display:none;"></div>
             <button id="gfc-expand-btn" class="gfc-btn" onclick="_p1cExpandAll()" style="display:none;">Expand All</button>
             <button id="gfc-collapse-btn" class="gfc-btn" onclick="_p1cCollapseAll()" style="display:none;">Collapse All</button>
@@ -3172,6 +3198,8 @@
           <div id="sync-stats" class="sync-stats" style="display: none;"></div>
           <div id="sync-suggestions-list"></div>
         </div>
+
+          <div id="pf-gate-panel"></div>
 
         <div class="ev-inline-wrapper" id="ev-inline-wrapper">
           <div id="ev-middle-column">
@@ -18188,6 +18216,13 @@
             _eiState.enabled = false;
             console.log('[EI] Feature flag EVIDENCE_INSPECTOR_V251 is OFF');
           }
+            if (flags.PREFLIGHT_GATE_SYNC === true || flags.PREFLIGHT_GATE_SYNC === 'true') {
+              if (typeof FEATURE_FLAGS !== 'undefined') FEATURE_FLAGS.PREFLIGHT_GATE_SYNC = true;
+              console.log('[PREFLIGHT-GATE] Feature flag PREFLIGHT_GATE_SYNC is ON');
+              if (typeof pfGateInit === 'function') pfGateInit();
+            } else {
+              console.log('[PREFLIGHT-GATE] Feature flag PREFLIGHT_GATE_SYNC is OFF');
+            }
         });
       }).catch(function(err) {
         console.log('[EI] Feature probe failed: ' + err.message);
@@ -25215,7 +25250,8 @@
 
     // Feature Flags (V1 defaults)
     var FEATURE_FLAGS = {
-      connectors_enabled: false  // V1: offline-first, no connectors
+      connectors_enabled: false,  // V1: offline-first, no connectors
+      PREFLIGHT_GATE_SYNC: false
     };
     
     // Data Source Panel - unified entry point (v1.5.0)
@@ -36741,12 +36777,13 @@
 
     // v1.6.57: Shared submission gate validation (used by both SRR and Patch Studio)
     function validateSubmissionGates(patchType, draft, changeCount, overrideEnabled) {
-      var result = { pass: true, evidenceGaps: [], preflightGaps: [] };
+      var result = { pass: true, evidenceGaps: [], preflightGaps: [], syncPreflightGaps: [] };
       result.evidenceGaps = srrCheckEvidenceGate(patchType, draft, changeCount, overrideEnabled);
       if (patchType !== 'rfi') {
         result.preflightGaps = srrCheckPreflightGate();
       }
-      result.pass = (result.evidenceGaps.length === 0 && result.preflightGaps.length === 0);
+      result.syncPreflightGaps = srrCheckSyncPreflightGate();
+      result.pass = (result.evidenceGaps.length === 0 && result.preflightGaps.length === 0 && result.syncPreflightGaps.length === 0);
       return result;
     }
 
@@ -36773,6 +36810,23 @@
         else if (status === 'fail') failed.push(step.label + ' (failed)');
       }
       return failed;
+    }
+
+    function srrCheckSyncPreflightGate() {
+      if (!window._pfGateState || !window._pfGateState.enabled) return [];
+      if (window._pfGateState.adminOnly) return [];
+      if (!window._pfGateState.result) return ['Document preflight not run'];
+      var gate = window._pfGateState.result.gate_color;
+      if (gate === 'GREEN') return [];
+      if (gate === 'YELLOW') {
+        if (window._pfGateState.actionTaken === 'accept_risk' || window._pfGateState.actionTaken === 'escalate_ocr') return [];
+        return ['Document preflight is YELLOW — must Accept Risk or Escalate OCR'];
+      }
+      if (gate === 'RED') {
+        if (window._pfGateState.actionTaken === 'escalate_ocr') return [];
+        return ['Document preflight is RED — must Escalate to OCR'];
+      }
+      return ['Unknown preflight gate state'];
     }
 
     function srrCheckContractPreflightGate() {
@@ -51065,6 +51119,257 @@ var P022_RuntimeValidation = {
         source: 'ev_reader_selection'
       });
     }
+  }
+})();
+</script>
+<script>
+(function() {
+  var _pfGateState = {
+    enabled: false,
+    running: false,
+    result: null,
+    actionTaken: null,
+    adminOnly: true
+  };
+
+  window._pfGateState = _pfGateState;
+
+  window.pfGateInit = function() {
+    _pfGateState.enabled = true;
+    var tabBtn = document.getElementById('pf-gate-tab-btn');
+    if (tabBtn) tabBtn.style.display = '';
+    var role = _pfGateGetRole();
+    if (role !== 'admin' && role !== 'architect') {
+      _pfGateState.adminOnly = true;
+    } else {
+      _pfGateState.adminOnly = false;
+    }
+    console.log('[PREFLIGHT-GATE] init: enabled=true, role=' + role + ', adminOnly=' + _pfGateState.adminOnly);
+  };
+
+  window.pfGateTogglePanel = function() {
+    var panel = document.getElementById('pf-gate-panel');
+    if (!panel) return;
+    if (panel.classList.contains('active')) {
+      panel.classList.remove('active');
+    } else {
+      panel.classList.add('active');
+      pfGateRenderPanel();
+    }
+  };
+
+  window.pfGateRenderPanel = function() {
+    var panel = document.getElementById('pf-gate-panel');
+    if (!panel) return;
+    var html = '';
+    var role = _pfGateGetRole();
+    var isAdmin = (role === 'admin' || role === 'architect');
+
+    html += '<div class="pf-gate-header">';
+    html += '<span style="font-weight:600;font-size:0.9em;">Document Preflight</span>';
+    if (_pfGateState.result) {
+      var gate = _pfGateState.result.gate_color || 'GREEN';
+      html += '<span class="pf-gate-badge ' + gate.toLowerCase() + '">' + gate + '</span>';
+      if (_pfGateState.result.doc_mode) {
+        html += '<span style="font-size:0.75em;color:#888;margin-left:4px;">(' + _pfGateState.result.doc_mode + ')</span>';
+      }
+    }
+    html += '</div>';
+
+    if (!isAdmin) {
+      html += '<div class="pf-admin-note">Admin-only sandbox.</div>';
+      panel.innerHTML = html;
+      return;
+    }
+
+    if (_pfGateState.result) {
+      var r = _pfGateState.result;
+      var m = r.metrics || {};
+
+      html += '<div class="pf-gate-metrics">';
+      html += '<div class="pf-gate-metric"><span class="pf-gate-metric-val">' + (m.total_pages || 0) + '</span><span class="pf-gate-metric-label">Pages</span></div>';
+      html += '<div class="pf-gate-metric"><span class="pf-gate-metric-val">' + (m.searchable_pages || 0) + '</span><span class="pf-gate-metric-label">Searchable</span></div>';
+      html += '<div class="pf-gate-metric"><span class="pf-gate-metric-val">' + (m.scanned_pages || 0) + '</span><span class="pf-gate-metric-label">Scanned</span></div>';
+      html += '<div class="pf-gate-metric"><span class="pf-gate-metric-val">' + (m.mixed_pages || 0) + '</span><span class="pf-gate-metric-label">Mixed</span></div>';
+      html += '<div class="pf-gate-metric"><span class="pf-gate-metric-val">' + (m.avg_chars_per_page || 0) + '</span><span class="pf-gate-metric-label">Avg Chars/Page</span></div>';
+      html += '</div>';
+
+      if (r.gate_reasons && r.gate_reasons.length > 0) {
+        html += '<div class="pf-gate-details">Reasons:</div>';
+        html += '<ul class="pf-gate-reasons">';
+        for (var i = 0; i < r.gate_reasons.length; i++) {
+          html += '<li>' + _pfGateHumanizeReason(r.gate_reasons[i]) + '</li>';
+        }
+        html += '</ul>';
+      }
+
+      var gate = r.gate_color || 'GREEN';
+      html += '<div class="pf-gate-actions">';
+      if (gate === 'GREEN') {
+        html += '<span style="font-size:0.82em;color:#2e7d32;font-weight:500;">All checks passed. Ready to submit.</span>';
+      } else if (gate === 'YELLOW') {
+        if (_pfGateState.actionTaken) {
+          html += '<span style="font-size:0.82em;color:#f57f17;font-weight:500;">Risk accepted. Submission unlocked.</span>';
+        } else {
+          html += '<button class="pf-gate-btn accept" onclick="pfGateAction(\'accept_risk\')">Accept Risk</button>';
+          html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'escalate_ocr\')">Escalate to OCR</button>';
+        }
+      } else if (gate === 'RED') {
+        if (_pfGateState.actionTaken === 'escalate_ocr') {
+          html += '<span style="font-size:0.82em;color:#c62828;font-weight:500;">OCR escalation requested.</span>';
+        } else {
+          html += '<button class="pf-gate-btn escalate" onclick="pfGateAction(\'escalate_ocr\')">Escalate to OCR</button>';
+          html += '<span style="font-size:0.78em;color:#999;margin-left:8px;">Document quality too low for submission.</span>';
+        }
+      }
+      html += '</div>';
+    } else {
+      html += '<div class="pf-gate-actions">';
+      html += '<button class="pf-gate-btn run" id="pf-gate-run-btn" onclick="pfGateRun()"' + (_pfGateState.running ? ' disabled' : '') + '>' + (_pfGateState.running ? 'Analyzing...' : 'Run Preflight') + '</button>';
+      html += '</div>';
+    }
+
+    panel.innerHTML = html;
+  };
+
+  window.pfGateRun = function() {
+    if (_pfGateState.running) return;
+    var fileUrl = _pfGateGetFileUrl();
+    if (!fileUrl) {
+      if (typeof showToast === 'function') showToast('No document URL available for preflight', 'warning');
+      return;
+    }
+    _pfGateState.running = true;
+    _pfGateState.result = null;
+    _pfGateState.actionTaken = null;
+    pfGateRenderPanel();
+
+    var headers = {};
+    if (typeof _syncHeaders === 'function') {
+      headers = _syncHeaders();
+    } else {
+      headers = { 'Content-Type': 'application/json' };
+      var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : '';
+      if (wsId) headers['X-Workspace-Id'] = wsId;
+      if (typeof _authToken !== 'undefined' && _authToken) headers['Authorization'] = 'Bearer ' + _authToken;
+    }
+
+    var docId = _pfGateGetDocId();
+    var body = { file_url: fileUrl };
+    if (docId) body.doc_id = docId;
+
+    var baseUrl = window.location.origin;
+    fetch(baseUrl + '/api/preflight/run', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(body)
+    })
+    .then(function(resp) {
+      if (!resp.ok) {
+        return resp.json().then(function(err) {
+          throw new Error((err.error && err.error.message) || 'HTTP ' + resp.status);
+        });
+      }
+      return resp.json();
+    })
+    .then(function(data) {
+      _pfGateState.running = false;
+      _pfGateState.result = data.data || data;
+      console.log('[PREFLIGHT-GATE] run complete:', _pfGateState.result.gate_color, _pfGateState.result.doc_mode);
+      pfGateRenderPanel();
+      if (typeof showToast === 'function') {
+        var gate = _pfGateState.result.gate_color;
+        if (gate === 'GREEN') showToast('Preflight passed — document is good quality', 'success');
+        else if (gate === 'YELLOW') showToast('Preflight warning — review required', 'warning');
+        else showToast('Preflight blocked — document quality too low', 'error');
+      }
+    })
+    .catch(function(err) {
+      _pfGateState.running = false;
+      console.error('[PREFLIGHT-GATE] run error:', err);
+      if (typeof showToast === 'function') showToast('Preflight failed: ' + err.message, 'error');
+      pfGateRenderPanel();
+    });
+  };
+
+  window.pfGateAction = function(action) {
+    var headers = {};
+    if (typeof _syncHeaders === 'function') {
+      headers = _syncHeaders();
+    } else {
+      headers = { 'Content-Type': 'application/json' };
+      var wsId = (typeof _eiGetWorkspaceId === 'function') ? _eiGetWorkspaceId() : '';
+      if (wsId) headers['X-Workspace-Id'] = wsId;
+      if (typeof _authToken !== 'undefined' && _authToken) headers['Authorization'] = 'Bearer ' + _authToken;
+    }
+
+    var docId = (_pfGateState.result && _pfGateState.result.doc_id) || '';
+    var body = { doc_id: docId, action: action };
+
+    var baseUrl = window.location.origin;
+    fetch(baseUrl + '/api/preflight/action', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(body)
+    })
+    .then(function(resp) {
+      if (!resp.ok) {
+        return resp.json().then(function(err) {
+          throw new Error((err.error && err.error.message) || 'HTTP ' + resp.status);
+        });
+      }
+      return resp.json();
+    })
+    .then(function(data) {
+      _pfGateState.actionTaken = action;
+      if (data.data && data.data.patch_metadata) {
+        _pfGateState.patchMetadata = data.data.patch_metadata;
+      }
+      console.log('[PREFLIGHT-GATE] action complete:', action);
+      pfGateRenderPanel();
+      if (typeof showToast === 'function') {
+        if (action === 'accept_risk') showToast('Risk accepted — submission unlocked', 'info');
+        else showToast('OCR escalation requested', 'info');
+      }
+    })
+    .catch(function(err) {
+      console.error('[PREFLIGHT-GATE] action error:', err);
+      if (typeof showToast === 'function') showToast('Action failed: ' + err.message, 'error');
+    });
+  };
+
+  function _pfGateGetRole() {
+    if (typeof _eiGetUserRole === 'function') return _eiGetUserRole();
+    if (typeof srrState !== 'undefined' && srrState.userRole) return srrState.userRole;
+    return 'analyst';
+  }
+
+  function _pfGateGetFileUrl() {
+    if (typeof _evState !== 'undefined' && _evState.documentUrl) return _evState.documentUrl;
+    if (typeof srrState !== 'undefined' && srrState.currentDocumentUrl) return srrState.currentDocumentUrl;
+    var pdfFrame = document.getElementById('ev-pdf-frame');
+    if (pdfFrame && pdfFrame.src && pdfFrame.src.indexOf('proxy/pdf') > -1) {
+      var urlMatch = pdfFrame.src.match(/[?&]url=([^&]+)/);
+      if (urlMatch) return decodeURIComponent(urlMatch[1]);
+    }
+    return '';
+  }
+
+  function _pfGateGetDocId() {
+    if (typeof _evState !== 'undefined' && _evState.documentId) return _evState.documentId;
+    if (typeof srrState !== 'undefined' && srrState.currentDocumentId) return srrState.currentDocumentId;
+    return '';
+  }
+
+  function _pfGateHumanizeReason(reason) {
+    if (reason === 'all_checks_passed') return 'All quality checks passed';
+    if (reason === 'doc_mode_mixed') return 'Document has mixed searchable/scanned pages';
+    if (reason === 'no_pages') return 'No pages found in document';
+    if (reason.indexOf('replacement_char_ratio') === 0) return 'Too many encoding errors (replacement characters)';
+    if (reason.indexOf('control_char_ratio') === 0) return 'Too many control characters detected';
+    if (reason.indexOf('avg_chars_per_page_low') === 0) return 'Average text per page is very low';
+    if (reason.indexOf('sparse_pages_exceeded') === 0) return 'Most pages have very little text';
+    return reason;
   }
 })();
 </script>

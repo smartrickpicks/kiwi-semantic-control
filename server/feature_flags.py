@@ -23,6 +23,25 @@ def clear_cache():
 
 EVIDENCE_INSPECTOR = "EVIDENCE_INSPECTOR_V251"
 
+PREFLIGHT_GATE_SYNC = "PREFLIGHT_GATE_SYNC"
+PREFLIGHT_GATE_SYNC_ALIAS = "PREFLIGHT_GATE_SYNC_V251"
+
+def is_preflight_enabled():
+    """Check canonical flag or alias."""
+    return is_enabled(PREFLIGHT_GATE_SYNC) or is_enabled(PREFLIGHT_GATE_SYNC_ALIAS)
+
+def require_preflight():
+    """Gate check returning 404 JSONResponse if preflight disabled."""
+    if not is_preflight_enabled():
+        return JSONResponse(
+            status_code=404,
+            content=error_envelope(
+                "FEATURE_DISABLED",
+                "Preflight Gate Sync is not enabled. Set PREFLIGHT_GATE_SYNC=true to activate.",
+            ),
+        )
+    return None
+
 
 def require_evidence_inspector():
     if not is_enabled(EVIDENCE_INSPECTOR):

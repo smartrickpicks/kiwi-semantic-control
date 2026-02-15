@@ -64,7 +64,8 @@ from server.routes.batch_health import router as batch_health_router
 from server.routes.ocr_escalations import router as ocr_escalations_router
 from server.routes.suggestions import router as suggestions_router
 from server.routes.glossary import router as glossary_router
-from server.feature_flags import is_enabled, EVIDENCE_INSPECTOR
+from server.routes.preflight import router as preflight_router
+from server.feature_flags import is_enabled, EVIDENCE_INSPECTOR, is_preflight_enabled
 import logging as _logging
 
 @app.on_event("startup")
@@ -94,6 +95,7 @@ def get_feature_flags():
     return {
         "data": {
             "EVIDENCE_INSPECTOR_V251": is_enabled(EVIDENCE_INSPECTOR),
+            "PREFLIGHT_GATE_SYNC": is_preflight_enabled(),
         }
     }
 
@@ -123,6 +125,7 @@ app.include_router(batch_health_router)
 app.include_router(ocr_escalations_router)
 app.include_router(suggestions_router)
 app.include_router(glossary_router)
+app.include_router(preflight_router)
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
@@ -377,6 +380,89 @@ async def pdf_text_extract(url: str = Query(..., description="URL of the PDF to 
         doc.close()
     except Exception as e:
         raise HTTPException(status_code=422, detail=f"PDF text extraction failed: {str(e)}")
+
+    return {"pages": pages, "total_pages": len(pages)}
+
+
+@app.get("/api/pdf/text_layout")
+async def pdf_text_layout(url: str = Query(..., description="URL of the PDF to extract text layout from")):
+    """
+    Fetch a PDF and extract per-page text with layout data (char positions, bboxes).
+    Returns per-page text blocks with coordinates in PDF points.
+    Reuses the same security checks as /proxy/pdf and /api/pdf/text.
+    """
+    try:
+        decoded_url = unquote(url)
+        parsed = urlparse(decoded_url)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid URL format")
+
+    if parsed.scheme not in ("http", "https"):
+        raise HTTPException(status_code=400, detail="Only HTTP/HTTPS URLs allowed")
+
+    hostname = parsed.hostname
+    if not hostname:
+        raise HTTPException(status_code=400, detail="Missing hostname in URL")
+
+    if not is_host_allowed(hostname):
+        raise HTTPException(status_code=403, detail=f"Host not in allowlist: {hostname}")
+
+    if is_private_ip(hostname):
+        raise HTTPException(status_code=403, detail="Private/reserved IPs are blocked")
+
+    async with httpx.AsyncClient(timeout=30.0, follow_redirects=False) as client:
+        try:
+            resp = await client.get(decoded_url)
+            if resp.status_code in (301, 302, 303, 307, 308):
+                redirect_url = resp.headers.get("location")
+                if redirect_url:
+                    redirect_parsed = urlparse(redirect_url)
+                    redirect_host = redirect_parsed.hostname
+                    if not redirect_host or not is_host_allowed(redirect_host) or is_private_ip(redirect_host):
+                        raise HTTPException(status_code=403, detail="Redirect to non-allowlisted host blocked")
+                    resp = await client.get(redirect_url)
+            resp.raise_for_status()
+            if len(resp.content) > MAX_SIZE_BYTES:
+                raise HTTPException(status_code=413, detail="File too large")
+        except httpx.TimeoutException:
+            raise HTTPException(status_code=504, detail="Upstream timeout")
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(status_code=e.response.status_code, detail=f"Upstream error: {e.response.status_code}")
+        except httpx.RequestError as e:
+            raise HTTPException(status_code=502, detail=f"Upstream request failed: {str(e)}")
+
+    try:
+        doc = fitz.open(stream=resp.content, filetype="pdf")
+        pages = []
+        for i in range(len(doc)):
+            page = doc[i]
+            page_rect = page.rect
+            blocks = page.get_text("dict", flags=fitz.TEXT_PRESERVE_WHITESPACE)
+            text_blocks = []
+            for block in blocks.get("blocks", []):
+                if block.get("type") != 0:
+                    continue
+                for line in block.get("lines", []):
+                    for span in line.get("spans", []):
+                        text_blocks.append({
+                            "text": span.get("text", ""),
+                            "bbox": list(span.get("bbox", [0, 0, 0, 0])),
+                            "font": span.get("font", ""),
+                            "size": round(span.get("size", 0), 2),
+                        })
+            full_text = page.get_text("text")
+            pages.append({
+                "page": i + 1,
+                "text": full_text,
+                "char_count": len(full_text),
+                "page_width": round(page_rect.width, 2) if page_rect else 0,
+                "page_height": round(page_rect.height, 2) if page_rect else 0,
+                "coord_space": "pdf_points",
+                "text_blocks": text_blocks,
+            })
+        doc.close()
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"PDF text layout extraction failed: {str(e)}")
 
     return {"pages": pages, "total_pages": len(pages)}
 
