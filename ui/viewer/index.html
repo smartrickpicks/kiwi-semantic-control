@@ -5154,19 +5154,24 @@
           </table>
         </div><!-- end admin-tab-qa-runner -->
 
-        <!-- ARCHITECT UTILITY RAIL (bottom bar, visible on admin/architect pages) -->
-        <div id="architect-utility-rail" style="display: none; position: fixed; bottom: 0; left: 280px; right: 0; z-index: 900; background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border-top: 2px solid #ce93d8; padding: 10px 20px; box-shadow: 0 -2px 8px rgba(0,0,0,0.1);">
-          <div id="truth-pack-admin-section" style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <!-- ARCHITECT UTILITY RAIL (bottom bar, visible on admin/architect pages, collapsible) -->
+        <div id="architect-utility-rail" style="display: none; position: fixed; bottom: 0; left: 280px; right: 0; z-index: 900; background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border-top: 2px solid #ce93d8; box-shadow: 0 -2px 8px rgba(0,0,0,0.1);">
+          <div id="architect-rail-header" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 20px; cursor: pointer;" onclick="toggleArchitectRail()">
             <div style="display: flex; align-items: center; gap: 8px;">
               <h4 style="margin: 0; font-size: 0.9em; color: #6a1b9a;">Architect Controls</h4>
               <span style="font-size: 0.65em; padding: 2px 6px; background: #7b1fa2; color: white; border-radius: 10px; font-weight: 600;">ARCHITECT ONLY</span>
             </div>
-            <label style="font-size: 0.82em; color: #555; display: flex; align-items: center; gap: 6px;">
-              <input type="checkbox" id="architect-mode-toggle" onchange="if(this.checked){TruthPack.enableArchitectMode();}else{TruthPack.disableArchitectMode();}">
-              Enable Architect Mode
-            </label>
-            <div id="truth-pack-admin-controls" style="display: none; flex: 1;"></div>
-            <div id="truth-config-controls" style="display: flex; gap: 8px;"></div>
+            <span id="architect-rail-chevron" style="font-size: 1.1em; color: #6a1b9a; transition: transform 0.2s;">&#9650;</span>
+          </div>
+          <div id="architect-rail-body" style="padding: 4px 20px 10px;">
+            <div id="truth-pack-admin-section" style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+              <label style="font-size: 0.82em; color: #555; display: flex; align-items: center; gap: 6px;">
+                <input type="checkbox" id="architect-mode-toggle" onchange="if(this.checked){TruthPack.enableArchitectMode();}else{TruthPack.disableArchitectMode();}">
+                Enable Architect Mode
+              </label>
+              <div id="truth-pack-admin-controls" style="display: none; flex: 1;"></div>
+              <div id="truth-config-controls" style="display: flex; gap: 8px;"></div>
+            </div>
           </div>
         </div>
 
@@ -12839,6 +12844,26 @@
     }
     
     // Toggle Dev Masterline mode
+    function toggleArchitectRail() {
+      var body = document.getElementById('architect-rail-body');
+      var chevron = document.getElementById('architect-rail-chevron');
+      if (!body) return;
+      var collapsed = body.style.display === 'none';
+      body.style.display = collapsed ? '' : 'none';
+      if (chevron) chevron.innerHTML = collapsed ? '&#9650;' : '&#9660;';
+      localStorage.setItem('architect_rail_collapsed', collapsed ? 'false' : 'true');
+    }
+
+    function _initArchitectRailState() {
+      var collapsed = localStorage.getItem('architect_rail_collapsed') === 'true';
+      if (collapsed) {
+        var body = document.getElementById('architect-rail-body');
+        var chevron = document.getElementById('architect-rail-chevron');
+        if (body) body.style.display = 'none';
+        if (chevron) chevron.innerHTML = '&#9660;';
+      }
+    }
+
     function toggleDevMasterline() {
       artifactRegistry.devMasterlineEnabled = !artifactRegistry.devMasterlineEnabled;
       saveArtifactRegistry();
@@ -25005,6 +25030,7 @@
           var _toggle = document.getElementById('architect-mode-toggle');
           if (_toggle) _toggle.checked = (_mode === 'architect' || localStorage.getItem('truth_pack_architect_enabled') === 'true');
           if (typeof TruthPack !== 'undefined') TruthPack._renderControls();
+          if (typeof _initArchitectRailState === 'function') _initArchitectRailState();
         }
       }
       var tabs = ['governance', 'users', 'patch-ops', 'patch-queue', 'runtime-config', 'config', 'inspector', 'standardizer', 'patch-console', 'gov-controls', 'evidence', 'unknown-cols', 'people', 'qa-runner'];
@@ -25081,6 +25107,7 @@
         if (tabName === 'governance') {
           if (typeof renderBatchAddAdminToggles === 'function') renderBatchAddAdminToggles();
           if (typeof BatchMerge !== 'undefined') { BatchMerge.refreshSourceList(); BatchMerge.renderMergedBatchPanel(); }
+          if (typeof pftlInit === 'function') pftlInit();
         }
       }
       
