@@ -12,10 +12,13 @@ Locked thresholds (P1E):
     SCANNED:    >= 80% pages are SCANNED
     else MIXED
 
-  Gate:
-    RED:    replacement_char_ratio > 0.05 OR control_char_ratio > 0.03 OR mojibake_ratio > 0.02
-    YELLOW: not RED AND (doc_mode == MIXED OR avg_chars_per_page < 30 OR >80% pages have <10 chars OR mojibake_ratio > 0.005)
+  Gate (locked policy — single authoritative path):
+    RED:    replacement_char_ratio > 0.05 OR control_char_ratio > 0.03
+    YELLOW: not RED AND (doc_mode == MIXED OR avg_chars_per_page < 30 OR >80% pages have <10 chars)
     GREEN:  otherwise
+
+  mojibake_ratio is a display-only metric; it feeds INTO replacement_char_ratio
+  but does NOT independently trigger RED or YELLOW.
 """
 import hashlib
 import logging
@@ -23,25 +26,24 @@ import re
 
 logger = logging.getLogger(__name__)
 
-# --- Locked page mode thresholds ---
 PAGE_CHARS_MIN_SEARCHABLE = 50
 PAGE_IMAGE_MAX_SEARCHABLE = 0.70
 PAGE_CHARS_MAX_SCANNED = 50
 PAGE_IMAGE_MIN_SCANNED = 0.30
 
-# --- Locked doc mode thresholds ---
 DOC_MODE_SUPERMAJORITY = 0.80
 
-# --- Locked gate thresholds ---
 GATE_RED_REPLACEMENT_RATIO = 0.05
 GATE_RED_CONTROL_RATIO = 0.03
 GATE_YELLOW_AVG_CHARS = 30
 GATE_YELLOW_SPARSE_RATIO = 0.80
 GATE_YELLOW_SPARSE_CHARS = 10
 
+MAX_CORRUPTION_SAMPLES = 20
+SAMPLE_SNIPPET_RADIUS = 40
+
 
 def classify_page(chars_on_page, image_coverage_ratio):
-    """Classify a single page as SEARCHABLE, SCANNED, or MIXED."""
     if chars_on_page >= PAGE_CHARS_MIN_SEARCHABLE and image_coverage_ratio <= PAGE_IMAGE_MAX_SEARCHABLE:
         return "SEARCHABLE"
     if chars_on_page < PAGE_CHARS_MAX_SCANNED and image_coverage_ratio >= PAGE_IMAGE_MIN_SCANNED:
@@ -50,7 +52,6 @@ def classify_page(chars_on_page, image_coverage_ratio):
 
 
 def classify_document(page_modes):
-    """Aggregate page modes into a document-level mode."""
     if not page_modes:
         return "MIXED"
     total = len(page_modes)
@@ -92,9 +93,12 @@ _LATIN_EXT_CLUSTER_RE = re.compile(
     r'[\u0100-\u024F\u0300-\u036F]{3,}'
 )
 
+_REPLACEMENT_CHAR_RE = re.compile(r'\ufffd')
+
+_CONTROL_CHAR_RE = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f]')
+
 
 def compute_text_metrics(pages_text):
-    """Compute replacement_char_ratio, control_char_ratio, and mojibake_ratio from extracted text list."""
     total_chars = 0
     replacement_chars = 0
     control_chars = 0
@@ -120,77 +124,150 @@ def compute_text_metrics(pages_text):
     return replacement_chars / total_chars, control_chars / total_chars, mojibake_chars / total_chars
 
 
-GATE_YELLOW_MOJIBAKE_RATIO = 0.005
-GATE_RED_MOJIBAKE_RATIO = 0.02
+def extract_corruption_samples(pages_text, max_samples=MAX_CORRUPTION_SAMPLES):
+    samples = []
+    for page_idx, text in enumerate(pages_text):
+        if len(samples) >= max_samples:
+            break
+        page_num = page_idx + 1
+        for m in _REPLACEMENT_CHAR_RE.finditer(text):
+            if len(samples) >= max_samples:
+                break
+            start = max(0, m.start() - SAMPLE_SNIPPET_RADIUS)
+            end = min(len(text), m.end() + SAMPLE_SNIPPET_RADIUS)
+            samples.append({
+                "page": page_num,
+                "issue_type": "replacement_char",
+                "char_start": m.start(),
+                "char_end": m.end(),
+                "snippet": text[start:end],
+            })
+        for m in _CONTROL_CHAR_RE.finditer(text):
+            if len(samples) >= max_samples:
+                break
+            start = max(0, m.start() - SAMPLE_SNIPPET_RADIUS)
+            end = min(len(text), m.end() + SAMPLE_SNIPPET_RADIUS)
+            samples.append({
+                "page": page_num,
+                "issue_type": "control_char",
+                "char_start": m.start(),
+                "char_end": m.end(),
+                "snippet": text[start:end],
+            })
+        for m in _LATIN_EXT_CLUSTER_RE.finditer(text):
+            if len(samples) >= max_samples:
+                break
+            start = max(0, m.start() - SAMPLE_SNIPPET_RADIUS)
+            end = min(len(text), m.end() + SAMPLE_SNIPPET_RADIUS)
+            samples.append({
+                "page": page_num,
+                "issue_type": "latin_ext_cluster",
+                "char_start": m.start(),
+                "char_end": m.end(),
+                "snippet": text[start:end],
+            })
+        for m in _MOJIBAKE_RE.finditer(text):
+            if len(samples) >= max_samples:
+                break
+            start = max(0, m.start() - SAMPLE_SNIPPET_RADIUS)
+            end = min(len(text), m.end() + SAMPLE_SNIPPET_RADIUS)
+            samples.append({
+                "page": page_num,
+                "issue_type": "mojibake_sequence",
+                "char_start": m.start(),
+                "char_end": m.end(),
+                "snippet": text[start:end],
+            })
+    return samples
 
 
 def compute_gate(doc_mode, replacement_char_ratio, control_char_ratio,
-                 avg_chars_per_page, page_char_counts, pages_text=None,
-                 mojibake_ratio=0.0):
-    """
-    Compute gate color and reason codes.
-    RED is evaluated immediately — must short-circuit before YELLOW.
-    Returns (gate_color, reasons) where reasons is a list of strings.
-    """
+                 avg_chars_per_page, page_char_counts):
     reasons = []
+    trace = []
 
-    # RED checks (immediate)
-    if replacement_char_ratio > GATE_RED_REPLACEMENT_RATIO:
+    r1 = replacement_char_ratio > GATE_RED_REPLACEMENT_RATIO
+    trace.append({
+        "rule": "replacement_char_ratio > %.2f" % GATE_RED_REPLACEMENT_RATIO,
+        "value": round(replacement_char_ratio, 6),
+        "threshold": GATE_RED_REPLACEMENT_RATIO,
+        "result": "FAIL" if r1 else "PASS",
+        "level": "RED",
+    })
+    if r1:
         reasons.append("replacement_char_ratio_exceeded:%.4f>%.4f" % (replacement_char_ratio, GATE_RED_REPLACEMENT_RATIO))
-    if control_char_ratio > GATE_RED_CONTROL_RATIO:
-        reasons.append("control_char_ratio_exceeded:%.4f>%.4f" % (control_char_ratio, GATE_RED_CONTROL_RATIO))
-    if mojibake_ratio > GATE_RED_MOJIBAKE_RATIO:
-        reasons.append("mojibake_ratio_exceeded:%.4f>%.4f" % (mojibake_ratio, GATE_RED_MOJIBAKE_RATIO))
-    if reasons:
-        return "RED", reasons
 
-    # YELLOW checks
-    if doc_mode == "MIXED":
+    r2 = control_char_ratio > GATE_RED_CONTROL_RATIO
+    trace.append({
+        "rule": "control_char_ratio > %.2f" % GATE_RED_CONTROL_RATIO,
+        "value": round(control_char_ratio, 6),
+        "threshold": GATE_RED_CONTROL_RATIO,
+        "result": "FAIL" if r2 else "PASS",
+        "level": "RED",
+    })
+    if r2:
+        reasons.append("control_char_ratio_exceeded:%.4f>%.4f" % (control_char_ratio, GATE_RED_CONTROL_RATIO))
+
+    if reasons:
+        return "RED", reasons, trace
+
+    y1 = doc_mode == "MIXED"
+    trace.append({
+        "rule": "doc_mode == MIXED",
+        "value": doc_mode,
+        "threshold": "MIXED",
+        "result": "FAIL" if y1 else "PASS",
+        "level": "YELLOW",
+    })
+    if y1:
         reasons.append("doc_mode_mixed")
-    if avg_chars_per_page < GATE_YELLOW_AVG_CHARS:
+
+    y2 = avg_chars_per_page < GATE_YELLOW_AVG_CHARS
+    trace.append({
+        "rule": "avg_chars_per_page < %d" % GATE_YELLOW_AVG_CHARS,
+        "value": round(avg_chars_per_page, 2),
+        "threshold": GATE_YELLOW_AVG_CHARS,
+        "result": "FAIL" if y2 else "PASS",
+        "level": "YELLOW",
+    })
+    if y2:
         reasons.append("avg_chars_per_page_low:%.1f<%d" % (avg_chars_per_page, GATE_YELLOW_AVG_CHARS))
+
+    sparse_ratio = 0.0
     if page_char_counts:
         sparse_pages = sum(1 for c in page_char_counts if c < GATE_YELLOW_SPARSE_CHARS)
         sparse_ratio = sparse_pages / len(page_char_counts)
-        if sparse_ratio > GATE_YELLOW_SPARSE_RATIO:
-            reasons.append("sparse_pages_exceeded:%.2f>%.2f" % (sparse_ratio, GATE_YELLOW_SPARSE_RATIO))
-    if mojibake_ratio > GATE_YELLOW_MOJIBAKE_RATIO:
-        reasons.append("mojibake_detected:%.4f>%.4f" % (mojibake_ratio, GATE_YELLOW_MOJIBAKE_RATIO))
-    if reasons:
-        return "YELLOW", reasons
+    y3 = sparse_ratio > GATE_YELLOW_SPARSE_RATIO
+    trace.append({
+        "rule": ">%.0f%% pages have <%d chars" % (GATE_YELLOW_SPARSE_RATIO * 100, GATE_YELLOW_SPARSE_CHARS),
+        "value": round(sparse_ratio, 4),
+        "threshold": GATE_YELLOW_SPARSE_RATIO,
+        "result": "FAIL" if y3 else "PASS",
+        "level": "YELLOW",
+    })
+    if y3:
+        reasons.append("sparse_pages_exceeded:%.2f>%.2f" % (sparse_ratio, GATE_YELLOW_SPARSE_RATIO))
 
-    return "GREEN", ["all_checks_passed"]
+    if reasons:
+        return "YELLOW", reasons, trace
+
+    return "GREEN", ["all_checks_passed"], trace
 
 
 def derive_cache_identity(workspace_id, file_url):
-    """Generate deterministic doc identity when doc_id is missing."""
     raw = "%s|%s" % (workspace_id or "", file_url or "")
     h = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:24]
     return "doc_derived_%s" % h
 
 
 def run_preflight(pages_data):
-    """
-    Run full preflight analysis on extracted page data.
-    
-    pages_data: list of dicts with keys:
-      - page (int): 1-indexed page number
-      - text (str): extracted text
-      - char_count (int, optional): precomputed char count
-      - image_coverage_ratio (float, optional): 0.0-1.0, defaults to 0.0
-    
-    Returns dict with:
-      - doc_mode
-      - gate_color
-      - gate_reasons
-      - page_classifications: list of per-page results
-      - metrics: computed metrics
-    """
     if not pages_data:
         return {
             "doc_mode": "MIXED",
             "gate_color": "RED",
             "gate_reasons": ["no_pages"],
+            "decision_trace": [],
+            "corruption_samples": [],
             "page_classifications": [],
             "metrics": {},
         }
@@ -220,16 +297,19 @@ def run_preflight(pages_data):
     total_chars = sum(page_char_counts)
     avg_chars = total_chars / len(page_char_counts) if page_char_counts else 0.0
 
-    gate_color, gate_reasons = compute_gate(
+    gate_color, gate_reasons, decision_trace = compute_gate(
         doc_mode, replacement_ratio, control_ratio,
-        avg_chars, page_char_counts, pages_text,
-        mojibake_ratio=mojibake_ratio
+        avg_chars, page_char_counts
     )
+
+    corruption_samples = extract_corruption_samples(pages_text)
 
     return {
         "doc_mode": doc_mode,
         "gate_color": gate_color,
         "gate_reasons": gate_reasons,
+        "decision_trace": decision_trace,
+        "corruption_samples": corruption_samples,
         "page_classifications": page_results,
         "metrics": {
             "total_pages": len(pages_data),

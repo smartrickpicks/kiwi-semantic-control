@@ -1502,6 +1502,30 @@
     .pftl-raw-toggle:hover { text-decoration: underline; }
     .pftl-raw-content { background: #f8f8f8; border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 0.75em; max-height: 300px; overflow: auto; white-space: pre-wrap; word-break: break-all; display: none; }
     .pftl-raw-content.open { display: block; }
+    .pftl-why-gate { background: #f0f4ff; border: 1px solid #bbdefb; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.85em; color: #1565c0; line-height: 1.5; }
+    .pftl-trace-table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+    .pftl-trace-table th { background: #f5f5f5; padding: 6px 10px; text-align: left; font-weight: 600; color: #555; border-bottom: 2px solid #e0e0e0; }
+    .pftl-trace-table td { padding: 5px 10px; border-bottom: 1px solid #f0f0f0; color: #444; }
+    .pftl-trace-table tr:hover td { background: #fafbfc; }
+    .pftl-trace-pass { color: #2e7d32; font-weight: 600; }
+    .pftl-trace-fail { color: #c62828; font-weight: 600; }
+    .pftl-trace-level { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.8em; font-weight: 600; }
+    .pftl-trace-level.red { background: #ffebee; color: #c62828; }
+    .pftl-trace-level.yellow { background: #fff8e1; color: #f57f17; }
+    .pftl-sample-snippet { font-family: monospace; font-size: 0.85em; background: #fff8e1; border: 1px solid #ffe082; border-radius: 4px; padding: 3px 6px; word-break: break-all; max-width: 400px; display: inline-block; }
+    .pftl-sample-type { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.78em; font-weight: 600; }
+    .pftl-sample-type.replacement_char { background: #ffebee; color: #c62828; }
+    .pftl-sample-type.control_char { background: #fce4ec; color: #ad1457; }
+    .pftl-sample-type.latin_ext_cluster { background: #fff3e0; color: #e65100; }
+    .pftl-sample-type.mojibake_sequence { background: #fff8e1; color: #f57f17; }
+    .pftl-footer { display: flex; gap: 10px; align-items: center; padding: 12px 24px; border-top: 1px solid #e0e0e0; }
+    .pftl-footer-note { font-size: 0.75em; color: #999; font-style: italic; margin-left: auto; }
+    .pftl-action-btn { padding: 8px 18px; border-radius: 6px; font-size: 0.85em; cursor: pointer; border: none; font-weight: 600; }
+    .pftl-action-btn.accept-risk { background: #ff8f00; color: white; }
+    .pftl-action-btn.accept-risk:hover { background: #ffa000; }
+    .pftl-action-btn.escalate-ocr { background: #c62828; color: white; }
+    .pftl-action-btn.escalate-ocr:hover { background: #d32f2f; }
+    .pftl-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .sync-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .sync-header h3 { margin: 0; font-size: 1em; color: #333; }
     .sync-run-btn { padding: 6px 16px; background: #1565c0; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85em; font-weight: 600; }
@@ -51827,7 +51851,13 @@ var P022_RuntimeValidation = {
       html += _pftlRenderReport(_pftlState.result);
     }
 
-    html += '</div></div>';
+    html += '</div>';
+
+    if (_pftlState.result && !_pftlState.forbidden) {
+      html += _pftlRenderFooter(_pftlState.result);
+    }
+
+    html += '</div>';
     overlay.innerHTML = html;
   }
 
@@ -51849,6 +51879,8 @@ var P022_RuntimeValidation = {
     }
     html += '</div>';
 
+    html += _pftlWhyGate(r);
+
     if (r.gate_reasons && r.gate_reasons.length > 0) {
       html += '<div class="pftl-section">';
       html += '<div class="pftl-section-title">Reason Codes</div>';
@@ -51858,6 +51890,8 @@ var P022_RuntimeValidation = {
       }
       html += '</ul></div>';
     }
+
+    html += _pftlRenderCorruptionSamples(r);
 
     var m = r.metrics || {};
     html += '<div class="pftl-section">';
@@ -51882,6 +51916,8 @@ var P022_RuntimeValidation = {
     }
     html += _pftlMetricCard(_pftlFmt(sparseRatio, 2), 'Sparse Page Ratio');
     html += '</div></div>';
+
+    html += _pftlRenderDecisionTrace(r);
 
     var pages = r.page_classifications || [];
     if (pages.length > 0) {
@@ -51923,6 +51959,135 @@ var P022_RuntimeValidation = {
     html += '</div>';
     return html;
   }
+
+  function _pftlWhyGate(r) {
+    var gate = r.gate_color || 'GREEN';
+    var trace = r.decision_trace || [];
+    var msg = '';
+    if (gate === 'GREEN') {
+      msg = 'All quality checks passed. This document meets the minimum text quality standards for reliable data extraction.';
+    } else if (gate === 'RED') {
+      var failedRules = [];
+      for (var i = 0; i < trace.length; i++) {
+        if (trace[i].result === 'FAIL' && trace[i].level === 'RED') {
+          failedRules.push(trace[i].rule);
+        }
+      }
+      msg = 'This document failed critical quality checks';
+      if (failedRules.length > 0) {
+        msg += ': ' + failedRules.join('; ');
+      }
+      msg += '. Text extracted from this PDF contains too many encoding errors for reliable use. Consider re-uploading a cleaner copy or escalating to OCR.';
+    } else {
+      var failedRules = [];
+      for (var i = 0; i < trace.length; i++) {
+        if (trace[i].result === 'FAIL' && trace[i].level === 'YELLOW') {
+          failedRules.push(trace[i].rule);
+        }
+      }
+      msg = 'This document has potential quality concerns';
+      if (failedRules.length > 0) {
+        msg += ': ' + failedRules.join('; ');
+      }
+      msg += '. Review the decision trace and corruption samples below before proceeding.';
+    }
+    return '<div class="pftl-why-gate">' + _pftlEsc(msg) + '</div>';
+  }
+
+  function _pftlRenderDecisionTrace(r) {
+    var trace = r.decision_trace || [];
+    if (trace.length === 0) return '';
+    var html = '<div class="pftl-section">';
+    html += '<div class="pftl-section-title">Decision Trace</div>';
+    html += '<div style="border:1px solid #e0e0e0;border-radius:6px;overflow:hidden;">';
+    html += '<table class="pftl-trace-table">';
+    html += '<thead><tr><th>Level</th><th>Rule</th><th>Measured</th><th>Threshold</th><th>Result</th></tr></thead>';
+    html += '<tbody>';
+    for (var i = 0; i < trace.length; i++) {
+      var t = trace[i];
+      var levelClass = (t.level || '').toLowerCase();
+      var resultClass = t.result === 'FAIL' ? 'pftl-trace-fail' : 'pftl-trace-pass';
+      html += '<tr>';
+      html += '<td><span class="pftl-trace-level ' + levelClass + '">' + _pftlEsc(t.level) + '</span></td>';
+      html += '<td>' + _pftlEsc(t.rule) + '</td>';
+      html += '<td style="font-family:monospace;">' + _pftlEsc(String(t.value)) + '</td>';
+      html += '<td style="font-family:monospace;">' + _pftlEsc(String(t.threshold)) + '</td>';
+      html += '<td><span class="' + resultClass + '">' + t.result + '</span></td>';
+      html += '</tr>';
+    }
+    html += '</tbody></table></div></div>';
+    return html;
+  }
+
+  function _pftlRenderCorruptionSamples(r) {
+    var samples = r.corruption_samples || [];
+    if (samples.length === 0) return '';
+    var html = '<div class="pftl-section">';
+    html += '<div class="pftl-section-title">Corruption Samples (' + samples.length + ' found)</div>';
+    html += '<div style="max-height:250px;overflow-y:auto;border:1px solid #e0e0e0;border-radius:6px;">';
+    html += '<table class="pftl-table">';
+    html += '<thead><tr><th>Page</th><th>Type</th><th>Position</th><th>Text Excerpt</th></tr></thead>';
+    html += '<tbody>';
+    for (var i = 0; i < samples.length; i++) {
+      var s = samples[i];
+      var typeLabel = _pftlHumanizeSampleType(s.issue_type);
+      html += '<tr>';
+      html += '<td>' + s.page + '</td>';
+      html += '<td><span class="pftl-sample-type ' + _pftlEsc(s.issue_type) + '">' + _pftlEsc(typeLabel) + '</span></td>';
+      html += '<td style="font-family:monospace;font-size:0.82em;">' + s.char_start + '-' + s.char_end + '</td>';
+      html += '<td><span class="pftl-sample-snippet">' + _pftlEsc(s.snippet) + '</span></td>';
+      html += '</tr>';
+    }
+    html += '</tbody></table></div></div>';
+    return html;
+  }
+
+  function _pftlHumanizeSampleType(t) {
+    if (t === 'replacement_char') return 'Replacement Char';
+    if (t === 'control_char') return 'Control Char';
+    if (t === 'latin_ext_cluster') return 'Encoding Cluster';
+    if (t === 'mojibake_sequence') return 'Mojibake';
+    return t;
+  }
+
+  function _pftlRenderFooter(r) {
+    var role = _pftlGetRole();
+    var isAdmin = (role === 'admin' || role === 'architect');
+    var gate = r.gate_color || 'GREEN';
+    var isMaterialized = r.materialized === true;
+    var html = '<div class="pftl-footer">';
+    if (!isAdmin) {
+      html += '<span style="color:#999;font-size:0.85em;">Admin-only sandbox. Actions are restricted.</span>';
+    } else if (gate === 'GREEN') {
+      html += '<span style="color:#2e7d32;font-size:0.85em;font-weight:500;">All checks passed — no action needed.</span>';
+    } else {
+      html += '<button class="pftl-action-btn accept-risk" onclick="pftlAcceptRisk()">Accept Risk</button>';
+      html += '<button class="pftl-action-btn escalate-ocr" onclick="pftlEscalateOcr()">Escalate OCR</button>';
+      if (!isMaterialized) {
+        html += '<span class="pftl-footer-note">Document not materialized — action will be deferred until patch submission.</span>';
+      }
+    }
+    html += '</div>';
+    return html;
+  }
+
+  window.pftlAcceptRisk = function() {
+    if (!_pftlState.result) return;
+    _pftlState.result._action = 'accept_risk';
+    _pftlState.result._action_by = _pftlGetRole();
+    _pftlState.result._action_ts = new Date().toISOString();
+    if (typeof showToast === 'function') showToast('Risk accepted — noted for audit trail', 'warning');
+    _pftlRender();
+  };
+
+  window.pftlEscalateOcr = function() {
+    if (!_pftlState.result) return;
+    _pftlState.result._action = 'escalate_ocr';
+    _pftlState.result._action_by = _pftlGetRole();
+    _pftlState.result._action_ts = new Date().toISOString();
+    if (typeof showToast === 'function') showToast('Escalated to OCR — re-extraction recommended', 'info');
+    _pftlRender();
+  };
 
   window.pftlToggleRaw = function() {
     var el = document.getElementById('pftl-raw-json');
