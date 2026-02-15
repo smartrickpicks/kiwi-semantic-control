@@ -4394,22 +4394,21 @@
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <h2>Admin Panel</h2>
           </div>
-          <p class="page-desc">Centralized admin tools for governance, schema standards, patch operations, team access, quality assurance, and runtime configuration.</p>
+          <p class="page-desc">Centralized admin tools for pipeline operations, schema standards, quality gates, patch management, and team access.</p>
         </div>
 
         <!-- Admin Panel Tabs -->
         <div class="admin-console-tabs" style="display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0; padding-bottom: 0; flex-wrap: wrap;">
-          <button class="admin-tab active" data-admin-tab="governance" onclick="switchAdminTab('governance')" style="padding: 10px 20px; background: #1976d2; color: white; border: none; border-radius: 6px 6px 0 0; cursor: pointer; font-weight: 600;">Governance</button>
+          <button class="admin-tab active" data-admin-tab="governance" onclick="switchAdminTab('governance')" style="padding: 10px 20px; background: #1976d2; color: white; border: none; border-radius: 6px 6px 0 0; cursor: pointer; font-weight: 600;">Pipeline</button>
           <button class="admin-tab" data-admin-tab="standardizer" onclick="switchAdminTab('standardizer')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Schema &amp; Standards</button>
+          <button class="admin-tab" data-admin-tab="quality" onclick="switchAdminTab('quality')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Quality &amp; Gates</button>
           <button class="admin-tab" data-admin-tab="patch-ops" onclick="switchAdminTab('patch-ops')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Patch Ops <span id="patch-queue-count" style="display:none; background:#e91e63; color:white; padding:1px 6px; border-radius:10px; font-size:0.8em; margin-left:4px;">0</span></button>
           <button class="admin-tab" data-admin-tab="people" onclick="switchAdminTab('people')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">People &amp; Access</button>
-          <button class="admin-tab" data-admin-tab="qa-runner" onclick="switchAdminTab('qa-runner')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">QA Runner</button>
-          <button class="admin-tab" data-admin-tab="runtime-config" onclick="switchAdminTab('runtime-config')" style="padding: 10px 20px; background: #f5f5f5; color: #666; border: none; border-radius: 6px 6px 0 0; cursor: pointer;">Runtime Config</button>
         </div>
 
         <!-- GOVERNANCE TAB -->
         <div id="admin-tab-governance" class="admin-tab-panel" data-admin-section="true">
-          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Artifact registry, workflow pipeline, batch management, version baselines, and evidence gates.</span></div>
+          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Artifact registry, workflow pipeline, batch management, and data operations.</span></div>
         <!-- Masterline / Artifact Registry Section -->
         <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -4454,23 +4453,6 @@
           </div>
         </div>
 
-        <!-- Governance Notes -->
-        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Governance Notes</h3>
-          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Admin-level notes and overrides are recorded here.</p>
-          <div id="admin-governance-notes" style="background: #f9f9f9; padding: 15px; border-radius: 6px; min-height: 60px;">
-            <em style="color: #888;">No governance notes recorded.</em>
-          </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Quick Actions</h3>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button class="toolbar-btn" onclick="var _btn = document.getElementById('btn-run'); if (_btn) _btn.click()">Run Commands</button>
-            <button class="toolbar-btn" onclick="switchAdminTab('runtime-config')">Open Inspector</button>
-          </div>
-        </div>
           <!-- v1.6.48: Batch Add Settings -->
           <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Contract Line Item Wizard <span class="info-icon" title="Contract Line Item Wizard allows Analysts to mark records as catalog item anchors and batch-add catalog items. The feature is per-record.">&#9432;</span></h3>
@@ -4504,102 +4486,10 @@
   </div>
 </div>
 
-        <!-- Governance Controls (consolidated from former separate tab) -->
-        <div style="margin-top: 24px; border-top: 2px solid #e0e0e0; padding-top: 20px;">
-        <h3 style="margin: 0 0 6px; font-size: 1.05em; color: #6a1b9a;">Governance Controls</h3>
-        <p style="font-size: 0.82em; color: #888; margin: 0 0 16px;">Version baselines, evidence gates, and governance policy settings.</p>
-        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Version & Baseline</h3>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-            <div>
-              <label style="font-size: 0.75em; color: #666; text-transform: uppercase;">Current Base Version</label>
-              <div style="font-family: monospace; font-size: 1em; margin-top: 4px;" id="admin-base-version">--</div>
-            </div>
-            <div>
-              <label style="font-size: 0.75em; color: #666; text-transform: uppercase;">Patch Target Version</label>
-              <div style="font-family: monospace; font-size: 1em; margin-top: 4px;" id="admin-patch-version">--</div>
-            </div>
-            <div>
-              <label style="font-size: 0.75em; color: #666; text-transform: uppercase;">Last Smoke Test</label>
-              <div style="font-size: 0.9em; margin-top: 4px;" id="admin-last-smoke">Not Run</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Evidence Gates</h3>
-          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Status of preflight checks. Evidence is pasted in (UI does not run these).</p>
-          <div id="admin-evidence-gates" style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <div class="state-chip pending">Validation: Pending</div>
-            <div class="state-chip pending">Conflicts: Pending</div>
-            <div class="state-chip pending">Smoke Baseline: Pending</div>
-            <div class="state-chip pending">Smoke Edge: Pending</div>
-          </div>
-        </div>
-
-        <div class="admin-section" id="pftl-entry-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: none;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <h3 style="margin: 0 0 4px; font-size: 1.1em; color: #333;">Preflight Test Lab <span style="font-size: 0.7em; color: #999; font-weight: 400;">Admin Sandbox</span></h3>
-              <p style="margin: 0; font-size: 0.82em; color: #666;">Upload a PDF to run document mode preflight and view a detailed quality report.</p>
-            </div>
-            <button class="pftl-btn run" id="pftl-open-btn" onclick="pftlOpen()">Open Test Lab</button>
-          </div>
-          <div id="pftl-nonadmin-note" style="display: none; margin-top: 8px;" class="pf-admin-note">Admin-only sandbox.</div>
-        </div>
-        </div>
         </div><!-- end admin-tab-governance -->
 
         <!-- P0.6: Architect Controls moved to bottom utility rail -->
 
-        <!-- USERS TAB (v1.4.21) -->
-        <div id="admin-tab-users" class="admin-tab-panel" data-admin-section="true" style="display: none;">
-          <!-- Environment Mode Toggle (v1.6.17) -->
-          <div class="admin-section" style="background: white; padding: 16px 20px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <h4 style="margin: 0 0 4px 0; font-size: 0.95em; color: #333;">Environment Mode</h4>
-                <p style="margin: 0; font-size: 0.8em; color: #666;">Sandbox mode enables permissionless access with guided Next progression. Production mode uses strict auth and role gates.</p>
-              </div>
-              <div id="env-mode-toggle" style="display: flex; border: 1px solid #ddd; border-radius: 6px; overflow: hidden;">
-                <button id="env-mode-prod" onclick="setEnvMode('production')" style="padding: 8px 16px; border: none; background: #f5f5f5; color: #666; cursor: pointer; font-size: 0.85em; font-weight: 500;">Production</button>
-                <button id="env-mode-playground" onclick="setEnvMode('playground')" style="padding: 8px 16px; border: none; background: #f5f5f5; color: #666; cursor: pointer; font-size: 0.85em; font-weight: 500;">Sandbox</button>
-              </div>
-            </div>
-          </div>
-          <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-              <h3 style="margin: 0; font-size: 1.1em; color: #333;">User Access <span class="info-icon" title="Manage user roles. In Sandbox mode, changes are stored locally. No Admin role in Sandbox.">&#9432;</span></h3>
-              <div id="add-user-btn-container" style="display: flex; gap: 10px; align-items: center;">
-                <button id="add-user-btn" class="toolbar-btn" onclick="openAddUserModal()" style="background: #4caf50; color: white; padding: 8px 14px; font-size: 0.85em; display: flex; align-items: center; gap: 6px;">
-                  <span style="font-size: 1.1em;">+</span> Add User
-                </button>
-              </div>
-            </div>
-            <p id="users-mode-desc" style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Assign roles to users. Changes persist in local storage only.</p>
-            
-            <div id="users-table-container" style="border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
-                <thead style="background: #f5f5f5;">
-                  <tr>
-                    <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 20%;">User</th>
-                    <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 28%;">Email</th>
-                    <th style="padding: 12px 8px; text-align: left; border-bottom: 1px solid #e0e0e0; width: 18%;">Role</th>
-                    <th style="padding: 12px 8px; text-align: center; border-bottom: 1px solid #e0e0e0; width: 14%;">Status</th>
-                    <th style="padding: 12px 8px; text-align: center; border-bottom: 1px solid #e0e0e0; width: 20%;">Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="users-table-body">
-                </tbody>
-              </table>
-            </div>
-            
-            <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
-              <button class="toolbar-btn" onclick="resetDemoUsers()">Reset to Defaults</button>
-              <span style="font-size: 0.8em; color: #888;">Last updated: <span id="users-last-updated">—</span></span>
-            </div>
-          </div>
-        </div><!-- end admin-tab-users -->
 
         <!-- ADD USER MODAL (v1.6.16) -->
         <div id="add-user-modal" class="modal-overlay">
@@ -4907,9 +4797,57 @@
         </div>
         </div><!-- end admin-tab-standardizer (Schema & Standards) -->
 
-        <!-- CONFIG TAB -->
-        <div id="admin-tab-runtime-config" class="admin-tab-panel" data-admin-section="true" style="display: none;">
-          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Read-only diagnostics: config pack comparison, glossary management, and raw JSON inspection.</span></div>
+        <!-- QUALITY & GATES TAB -->
+        <div id="admin-tab-quality" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Version baselines, evidence gates, document preflight, quality assurance, and artifact inspection.</span></div>
+
+        <!-- Version & Baseline -->
+        <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Version & Baseline</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div>
+              <label style="font-size: 0.75em; color: #666; text-transform: uppercase;">Current Base Version</label>
+              <div style="font-family: monospace; font-size: 1em; margin-top: 4px;" id="admin-base-version">--</div>
+            </div>
+            <div>
+              <label style="font-size: 0.75em; color: #666; text-transform: uppercase;">Patch Target Version</label>
+              <div style="font-family: monospace; font-size: 1em; margin-top: 4px;" id="admin-patch-version">--</div>
+            </div>
+            <div>
+              <label style="font-size: 0.75em; color: #666; text-transform: uppercase;">Last Smoke Test</label>
+              <div style="font-size: 0.9em; margin-top: 4px;" id="admin-last-smoke">Not Run</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Evidence Gates -->
+        <div class="admin-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Evidence Gates</h3>
+          <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Status of preflight checks. Evidence is pasted in (UI does not run these).</p>
+          <div id="admin-evidence-gates" style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div class="state-chip pending">Validation: Pending</div>
+            <div class="state-chip pending">Conflicts: Pending</div>
+            <div class="state-chip pending">Smoke Baseline: Pending</div>
+            <div class="state-chip pending">Smoke Edge: Pending</div>
+          </div>
+        </div>
+
+        <!-- Preflight Test Lab -->
+        <div class="admin-section" id="pftl-entry-section" data-admin-section="true" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <h3 style="margin: 0 0 4px; font-size: 1.1em; color: #333;">Preflight Test Lab <span style="font-size: 0.7em; color: #999; font-weight: 400;">Admin Sandbox</span></h3>
+              <p style="margin: 0; font-size: 0.82em; color: #666;">Upload a PDF to run document mode preflight and view a detailed quality report.</p>
+            </div>
+            <button class="pftl-btn run" id="pftl-open-btn" onclick="pftlOpen()">Open Test Lab</button>
+          </div>
+          <div id="pftl-nonadmin-note" style="display: none; margin-top: 8px;" class="pf-admin-note">Admin-only sandbox.</div>
+        </div>
+
+        <!-- Runtime Config & Inspection -->
+        <div style="margin-top: 24px; border-top: 2px solid #e0e0e0; padding-top: 20px;">
+        <h3 style="margin: 0 0 6px; font-size: 1.05em; color: #6a1b9a;">Runtime Config & Inspection</h3>
+        <p style="font-size: 0.82em; color: #888; margin: 0 0 16px;">Config pack comparison, glossary management, and raw JSON inspection.</p>
           <div class="admin-section" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             <h3 style="margin: 0 0 15px; font-size: 1.1em; color: #333;">Config + Patch Inspector</h3>
             <p style="font-size: 0.85em; color: #666; margin-bottom: 15px;">Load and compare config packs. View ruleset deltas between base and patch.</p>
@@ -4969,83 +4907,12 @@
               <button class="toolbar-btn" onclick="copyInspectorJSON()">Copy JSON</button>
             </div>
           </div>
-        </div><!-- end admin-tab-runtime-config -->
+        </div><!-- end runtime-config section -->
 
-        <!-- PEOPLE TAB (P0.7) -->
-        <div id="admin-tab-people" class="admin-tab-panel" data-admin-section="true" style="display: none;">
-          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Team members, role assignments, and invite management.</span></div>
-          <!-- Environment Mode Toggle (moved from Users tab) -->
-          <div class="admin-section" style="background: white; padding: 16px 20px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <h4 style="margin: 0 0 4px 0; font-size: 0.95em; color: #333;">Environment Mode</h4>
-                <p style="margin: 0; font-size: 0.8em; color: #666;">Sandbox mode enables permissionless access with guided Next progression. Production mode uses strict auth and role gates.</p>
-              </div>
-              <div id="env-mode-toggle-people" style="display: flex; border: 1px solid #ddd; border-radius: 6px; overflow: hidden;">
-                <button id="env-mode-prod-people" onclick="setEnvMode('production')" style="padding: 8px 16px; border: none; background: #f5f5f5; color: #666; cursor: pointer; font-size: 0.85em; font-weight: 500;">Production</button>
-                <button id="env-mode-playground-people" onclick="setEnvMode('playground')" style="padding: 8px 16px; border: none; background: #f5f5f5; color: #666; cursor: pointer; font-size: 0.85em; font-weight: 500;">Sandbox</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- People Sub-Tabs -->
-          <div style="display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid #e0e0e0;">
-            <button class="people-sub-tab active" data-people-tab="members" onclick="switchPeopleTab('members')" style="padding: 8px 16px; background: #1976d2; color: white; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 0.85em; font-weight: 600;">Members</button>
-            <button class="people-sub-tab" data-people-tab="roles" onclick="switchPeopleTab('roles')" style="padding: 8px 16px; background: #f5f5f5; color: #666; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 0.85em;">Roles</button>
-            <button class="people-sub-tab" data-people-tab="invites" onclick="switchPeopleTab('invites')" style="padding: 8px 16px; background: #f5f5f5; color: #666; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 0.85em;">Invites</button>
-          </div>
-
-          <!-- Members Sub-Panel -->
-          <div id="people-tab-members" class="people-sub-panel" style="background: white; padding: 16px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <h4 style="margin: 0; font-size: 0.95em; color: #333;">Members</h4>
-              <button id="people-add-user-btn" class="toolbar-btn" onclick="openAddUserModal()" style="background: #4caf50; color: white; padding: 8px 14px; font-size: 0.85em; display: flex; align-items: center; gap: 6px;">
-                <span style="font-size: 1.1em;">+</span> Add User
-              </button>
-            </div>
-            <p id="people-mode-desc" style="font-size: 0.85em; color: #666; margin-bottom: 12px;"></p>
-            <div id="people-members-table"></div>
-            <div style="margin-top: 12px; display: flex; gap: 10px; align-items: center;">
-              <span style="font-size: 0.8em; color: #888;">Last updated: <span id="people-last-updated">—</span></span>
-            </div>
-          </div>
-
-          <!-- Roles Sub-Panel -->
-          <div id="people-tab-roles" class="people-sub-panel" style="display: none; background: white; padding: 16px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h4 style="margin: 0 0 12px; font-size: 0.95em; color: #333;">Role Configuration <span style="font-size: 0.75em; color: #999;">(Architect-only edit)</span></h4>
-            <div id="people-roles-table"></div>
-          </div>
-
-          <!-- Invites Sub-Panel -->
-          <div id="people-tab-invites" class="people-sub-panel" style="display: none; background: white; padding: 16px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h4 style="margin: 0 0 12px; font-size: 0.95em; color: #333;">Invites</h4>
-            <div id="people-invite-form" style="margin-bottom: 16px; padding: 12px; background: #f9f9f9; border-radius: 6px; border: 1px solid #eee;">
-              <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end;">
-                <div>
-                  <label style="font-size: 0.75em; color: #666; display: block;">Role</label>
-                  <select id="invite-role-select" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85em;">
-                    <option value="analyst">Analyst</option>
-                    <option value="verifier">Verifier</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-                <div>
-                  <label style="font-size: 0.75em; color: #666; display: block;">Expiry (hours)</label>
-                  <input type="number" id="invite-expiry-input" placeholder="optional" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85em; width: 80px;">
-                </div>
-                <div>
-                  <label style="font-size: 0.75em; color: #666; display: block;">Note</label>
-                  <input type="text" id="invite-note-input" placeholder="optional" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85em; width: 140px;">
-                </div>
-                <button onclick="createInviteFromForm()" style="padding: 6px 14px; font-size: 0.85em; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer;">Create Invite</button>
-              </div>
-            </div>
-            <div id="people-invites-table"></div>
-          </div>
-        </div><!-- end admin-tab-people -->
-
-        <div id="admin-tab-qa-runner" class="admin-tab-panel" data-admin-section="true" style="display: none;">
-          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Run and review quality assurance validation checks.</span></div>
+        <!-- QA Runner (moved from standalone tab) -->
+        <div style="margin-top: 24px; border-top: 2px solid #e0e0e0; padding-top: 20px;">
+        <h3 style="margin: 0 0 6px; font-size: 1.05em; color: #6a1b9a;">Quality Assurance</h3>
+        <p style="font-size: 0.82em; color: #888; margin: 0 0 16px;">Run and review validation suites for governance features.</p>
           <h3 style="margin: 0 0 16px 0; color: #1a237e;">QA Runner</h3>
           <p style="color: #666; font-size: 0.9em; margin: 0 0 16px 0;">Run in-browser validation suites to verify all governance features are working correctly. Each suite targets a specific area of the system. Hover over any button for a quick summary, or expand the Suite Reference below for full details.</p>
           <div id="p1b-run-controls" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
@@ -5152,7 +5019,83 @@
             </thead>
             <tbody id="p1b-history-tbody"></tbody>
           </table>
-        </div><!-- end admin-tab-qa-runner -->
+        </div><!-- end qa-runner section -->
+
+        </div><!-- end admin-tab-quality -->
+
+        <!-- PEOPLE TAB (P0.7) -->
+        <div id="admin-tab-people" class="admin-tab-panel" data-admin-section="true" style="display: none;">
+          <div style="margin-bottom: 8px;"><span style="font-size: 0.85em; color: #888;">Team members, role assignments, and invite management.</span></div>
+          <!-- Environment Mode Toggle (moved from Users tab) -->
+          <div class="admin-section" style="background: white; padding: 16px 20px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <h4 style="margin: 0 0 4px 0; font-size: 0.95em; color: #333;">Environment Mode</h4>
+                <p style="margin: 0; font-size: 0.8em; color: #666;">Sandbox mode enables permissionless access with guided Next progression. Production mode uses strict auth and role gates.</p>
+              </div>
+              <div id="env-mode-toggle-people" style="display: flex; border: 1px solid #ddd; border-radius: 6px; overflow: hidden;">
+                <button id="env-mode-prod-people" onclick="setEnvMode('production')" style="padding: 8px 16px; border: none; background: #f5f5f5; color: #666; cursor: pointer; font-size: 0.85em; font-weight: 500;">Production</button>
+                <button id="env-mode-playground-people" onclick="setEnvMode('playground')" style="padding: 8px 16px; border: none; background: #f5f5f5; color: #666; cursor: pointer; font-size: 0.85em; font-weight: 500;">Sandbox</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- People Sub-Tabs -->
+          <div style="display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid #e0e0e0;">
+            <button class="people-sub-tab active" data-people-tab="members" onclick="switchPeopleTab('members')" style="padding: 8px 16px; background: #1976d2; color: white; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 0.85em; font-weight: 600;">Members</button>
+            <button class="people-sub-tab" data-people-tab="roles" onclick="switchPeopleTab('roles')" style="padding: 8px 16px; background: #f5f5f5; color: #666; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 0.85em;">Roles</button>
+            <button class="people-sub-tab" data-people-tab="invites" onclick="switchPeopleTab('invites')" style="padding: 8px 16px; background: #f5f5f5; color: #666; border: none; border-radius: 4px 4px 0 0; cursor: pointer; font-size: 0.85em;">Invites</button>
+          </div>
+
+          <!-- Members Sub-Panel -->
+          <div id="people-tab-members" class="people-sub-panel" style="background: white; padding: 16px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h4 style="margin: 0; font-size: 0.95em; color: #333;">Members</h4>
+              <button id="people-add-user-btn" class="toolbar-btn" onclick="openAddUserModal()" style="background: #4caf50; color: white; padding: 8px 14px; font-size: 0.85em; display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 1.1em;">+</span> Add User
+              </button>
+            </div>
+            <p id="people-mode-desc" style="font-size: 0.85em; color: #666; margin-bottom: 12px;"></p>
+            <div id="people-members-table"></div>
+            <div style="margin-top: 12px; display: flex; gap: 10px; align-items: center;">
+              <span style="font-size: 0.8em; color: #888;">Last updated: <span id="people-last-updated">—</span></span>
+            </div>
+          </div>
+
+          <!-- Roles Sub-Panel -->
+          <div id="people-tab-roles" class="people-sub-panel" style="display: none; background: white; padding: 16px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h4 style="margin: 0 0 12px; font-size: 0.95em; color: #333;">Role Configuration <span style="font-size: 0.75em; color: #999;">(Architect-only edit)</span></h4>
+            <div id="people-roles-table"></div>
+          </div>
+
+          <!-- Invites Sub-Panel -->
+          <div id="people-tab-invites" class="people-sub-panel" style="display: none; background: white; padding: 16px; border-radius: 8px; margin-bottom: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h4 style="margin: 0 0 12px; font-size: 0.95em; color: #333;">Invites</h4>
+            <div id="people-invite-form" style="margin-bottom: 16px; padding: 12px; background: #f9f9f9; border-radius: 6px; border: 1px solid #eee;">
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end;">
+                <div>
+                  <label style="font-size: 0.75em; color: #666; display: block;">Role</label>
+                  <select id="invite-role-select" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85em;">
+                    <option value="analyst">Analyst</option>
+                    <option value="verifier">Verifier</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size: 0.75em; color: #666; display: block;">Expiry (hours)</label>
+                  <input type="number" id="invite-expiry-input" placeholder="optional" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85em; width: 80px;">
+                </div>
+                <div>
+                  <label style="font-size: 0.75em; color: #666; display: block;">Note</label>
+                  <input type="text" id="invite-note-input" placeholder="optional" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85em; width: 140px;">
+                </div>
+                <button onclick="createInviteFromForm()" style="padding: 6px 14px; font-size: 0.85em; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer;">Create Invite</button>
+              </div>
+            </div>
+            <div id="people-invites-table"></div>
+          </div>
+        </div><!-- end admin-tab-people -->
+
 
         <!-- ARCHITECT UTILITY RAIL (bottom bar, visible on admin/architect pages, collapsible) -->
         <div id="architect-utility-rail" style="display: none; position: fixed; bottom: 0; left: 280px; right: 0; z-index: 900; background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); border-top: 2px solid #ce93d8; box-shadow: 0 -2px 8px rgba(0,0,0,0.1);">
@@ -17659,14 +17602,16 @@
 
       _ns.Engines.AdminTabState = {
         _id: 'Engines.AdminTabState',
-        _validTabs: ['governance', 'users', 'patch-ops', 'standardizer', 'runtime-config', 'people', 'qa-runner'],
+        _validTabs: ['governance', 'users', 'patch-ops', 'standardizer', 'quality', 'people'],
         _aliasMap: {
           'patch-queue': 'patch-ops',
           'patch-console': 'patch-ops',
           'evidence': 'governance',
           'gov-controls': 'governance',
-          'config': 'runtime-config',
-          'inspector': 'runtime-config',
+          'config': 'quality',
+          'inspector': 'quality',
+          'runtime-config': 'quality',
+          'qa-runner': 'quality',
           'unknown-cols': 'standardizer'
         },
         getCurrentTab: function() {
@@ -17779,27 +17724,19 @@
       _ns._registry.push('Components.AdminTabPeopleAccess');
       console.log('[APP-MODULES][P1D4] registered: Components.AdminTabPeopleAccess');
 
-      _ns.Components.AdminTabQARunner = {
-        _id: 'Components.AdminTabQARunner',
-        _panelId: 'admin-tab-qa-runner',
+      _ns.Components.AdminTabQuality = {
+        _id: 'Components.AdminTabQuality',
+        _panelId: 'admin-tab-quality',
         onActivate: function() {
+          if (typeof pftlInit === 'function') pftlInit();
           if (typeof QARunner !== 'undefined' && QARunner._onTabOpen) QARunner._onTabOpen();
-        }
-      };
-      _ns._registry.push('Components.AdminTabQARunner');
-      console.log('[APP-MODULES][P1D4] registered: Components.AdminTabQARunner');
-
-      _ns.Components.AdminTabRuntimeConfig = {
-        _id: 'Components.AdminTabRuntimeConfig',
-        _panelId: 'admin-tab-runtime-config',
-        onActivate: function() {
           if (typeof renderGlossarySummary === 'function') renderGlossarySummary();
         }
       };
-      _ns._registry.push('Components.AdminTabRuntimeConfig');
-      console.log('[APP-MODULES][P1D4] registered: Components.AdminTabRuntimeConfig');
+      _ns._registry.push('Components.AdminTabQuality');
+      console.log('[APP-MODULES][P1D4] registered: Components.AdminTabQuality');
 
-      console.log('[APP-MODULES][P1D4] admin_modules_registered: AdminTabState, AdminTabsNav, AdminTabGovernance, AdminTabSchemaStandards, AdminTabPatchOps, AdminTabPeopleAccess, AdminTabQARunner, AdminTabRuntimeConfig');
+      console.log('[APP-MODULES][P1D4] admin_modules_registered: AdminTabState, AdminTabsNav, AdminTabGovernance, AdminTabSchemaStandards, AdminTabPatchOps, AdminTabPeopleAccess, AdminTabQuality');
     })();
     // ========== END PHASE D4 ==========
 
@@ -25033,10 +24970,11 @@
           if (typeof _initArchitectRailState === 'function') _initArchitectRailState();
         }
       }
-      var tabs = ['governance', 'users', 'patch-ops', 'patch-queue', 'runtime-config', 'config', 'inspector', 'standardizer', 'patch-console', 'gov-controls', 'evidence', 'unknown-cols', 'people', 'qa-runner'];
+      var tabs = ['governance', 'users', 'patch-ops', 'patch-queue', 'runtime-config', 'config', 'inspector', 'standardizer', 'patch-console', 'gov-controls', 'evidence', 'unknown-cols', 'people', 'qa-runner', 'quality'];
       if (tabName === 'patch-queue' || tabName === 'patch-console') tabName = 'patch-ops';
       if (tabName === 'evidence' || tabName === 'gov-controls') tabName = 'governance';
-      if (tabName === 'config' || tabName === 'inspector') tabName = 'runtime-config';
+      if (tabName === 'config' || tabName === 'inspector' || tabName === 'runtime-config') tabName = 'quality';
+      if (tabName === 'qa-runner') tabName = 'quality';
       if (tabName === 'unknown-cols') tabName = 'standardizer';
       if (tabs.indexOf(tabName) === -1) tabName = 'governance';
       
@@ -25123,22 +25061,10 @@
         }
       }
 
-      if (window.AppModules && window.AppModules.Components.AdminTabQARunner) {
-        if (tabName === 'qa-runner') {
-          window.AppModules.Components.AdminTabQARunner.onActivate();
-        }
-      } else {
-        if (tabName === 'qa-runner') {
-          QARunner._onTabOpen();
-        }
-      }
-
-      if (window.AppModules && window.AppModules.Components.AdminTabRuntimeConfig) {
-        if (tabName === 'runtime-config') {
-          window.AppModules.Components.AdminTabRuntimeConfig.onActivate();
-        }
-      } else {
-        if (tabName === 'runtime-config' && typeof renderGlossarySummary === 'function') renderGlossarySummary();
+      if (tabName === 'quality') {
+        if (typeof pftlInit === 'function') pftlInit();
+        if (typeof QARunner !== 'undefined' && QARunner._onTabOpen) QARunner._onTabOpen();
+        if (typeof renderGlossarySummary === 'function') renderGlossarySummary();
       }
     }
 
